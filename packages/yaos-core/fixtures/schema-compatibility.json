@@ -1,0 +1,19 @@
+{
+  "upstreamCommit": "e3d73d6850349f772812fbe7758cf5f3f6b11390",
+  "fixtures": [
+    {
+      "schemaVersion": 1,
+      "path": "legacy/hello.md",
+      "fileId": "legacy-note-id",
+      "content": "Legacy fixture",
+      "updateBase64": "AQXDq9zwBQAoAQNzeXMNc2NoZW1hVmVyc2lvbgF9ASgBCHBhdGhUb0lkD2xlZ2FjeS9oZWxsby5tZAF3DmxlZ2FjeS1ub3RlLWlkJwEIaWRUb1RleHQObGVnYWN5LW5vdGUtaWQCBADDq9zwBQIOTGVnYWN5IGZpeHR1cmUoAQRtZXRhDmxlZ2FjeS1ub3RlLWlkAXYDBHBhdGh3D2xlZ2FjeS9oZWxsby5tZAdkZWxldGVkeQVtdGltZXtCeLz+VoAAAAA="
+    },
+    {
+      "schemaVersion": 3,
+      "path": "current/hello.md",
+      "fileId": "current-note-id",
+      "content": "Current fixture",
+      "updateBase64": "AQjxmK/HBAAoAQNzeXMNc2NoZW1hVmVyc2lvbgF9AygBCHBhdGhUb0lkEGN1cnJlbnQvaGVsbG8ubWQBdw9jdXJyZW50LW5vdGUtaWQnAQhpZFRvVGV4dA9jdXJyZW50LW5vdGUtaWQCBADxmK/HBAIPQ3VycmVudCBmaXh0dXJlJwEEbWV0YQ9jdXJyZW50LW5vdGUtaWQBKADxmK/HBBIEcGF0aAF3EGN1cnJlbnQvaGVsbG8ubWQoAPGYr8cEEgVtdGltZQF7QnoxhcUAAAAoAPGYr8cEEgZkZXZpY2UBdxFzeW50aGV0aWMtY3VycmVudAA="
+    }
+  ]
+}

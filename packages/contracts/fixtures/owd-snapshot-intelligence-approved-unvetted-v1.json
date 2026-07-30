@@ -1,0 +1,131 @@
+{
+  "approved": {
+    "classification": "approved",
+    "evidenceObjectCount": 1,
+    "evidenceObjects": [
+      {
+        "byteLength": 20,
+        "classification": "approved",
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+        "portableObjectId": "81000000-0000-4000-8000-000000000001",
+        "restoreDisposition": "restore-evidence-only"
+      }
+    ],
+    "logicalBytes": 700,
+    "newlyStoredBytes": 700,
+    "recordCount": 3,
+    "records": [
+      {
+        "byteLength": 200,
+        "classification": "approved",
+        "contentSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "dependencies": ["51000000-0000-4000-8000-000000000001"],
+        "evidenceOnly": true,
+        "originalState": { "disposition": "pending", "visibility": "private" },
+        "portableObjectId": "81000000-0000-4000-8000-000000000002",
+        "projectId": "20000000-0000-4000-8000-000000000001",
+        "recordId": "61000000-0000-4000-8000-000000000001",
+        "recordType": "artifact",
+        "restoreDisposition": "restore-evidence-only",
+        "schemaVersion": 1,
+        "workItemId": "30000000-0000-4000-8000-000000000001"
+      },
+      {
+        "byteLength": 300,
+        "classification": "approved",
+        "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "dependencies": [
+          "61000000-0000-4000-8000-000000000001",
+          "51000000-0000-4000-8000-000000000001"
+        ],
+        "evidenceOnly": false,
+        "originalState": { "disposition": "accepted", "visibility": "shared" },
+        "portableObjectId": "81000000-0000-4000-8000-000000000003",
+        "projectId": "20000000-0000-4000-8000-000000000001",
+        "recordId": "62000000-0000-4000-8000-000000000001",
+        "recordType": "handoff",
+        "restoreDisposition": "restore-approved",
+        "schemaVersion": 1,
+        "workItemId": "30000000-0000-4000-8000-000000000001"
+      },
+      {
+        "byteLength": 180,
+        "classification": "approved",
+        "contentSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "dependencies": ["62000000-0000-4000-8000-000000000001"],
+        "evidenceOnly": false,
+        "originalState": {
+          "disposition": "accepted",
+          "visibility": "owner-only"
+        },
+        "portableObjectId": "81000000-0000-4000-8000-000000000004",
+        "projectId": "20000000-0000-4000-8000-000000000001",
+        "recordId": "66000000-0000-4000-8000-000000000001",
+        "recordType": "decision",
+        "restoreDisposition": "restore-approved",
+        "schemaVersion": 1,
+        "workItemId": "30000000-0000-4000-8000-000000000001"
+      }
+    ]
+  },
+  "excludedAuthority": [
+    "oauth-access-tokens",
+    "oauth-refresh-tokens",
+    "oauth-authorization-codes",
+    "oauth-protocol-storage",
+    "sessions",
+    "passkeys",
+    "pairing-secrets",
+    "vault-credentials",
+    "live-agent-grants",
+    "recovery-private-keys",
+    "harness-context",
+    "provider-credentials",
+    "runtime-caches"
+  ],
+  "format": "owd-snapshot-intelligence-v1",
+  "requiredCapabilities": [
+    "owd.snapshot.approved-intelligence-v1",
+    "owd.snapshot.quarantined-intelligence-v1"
+  ],
+  "schemaVersion": 1,
+  "selection": "approved-and-unvetted",
+  "unvetted": {
+    "classification": "unvetted",
+    "evidenceObjectCount": 1,
+    "evidenceObjects": [
+      {
+        "byteLength": 24,
+        "classification": "unvetted",
+        "contentSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "evidenceObjectId": "82000000-0000-4000-8000-000000000001",
+        "portableObjectId": "82000000-0000-4000-8000-000000000002",
+        "restoreDisposition": "restore-quarantined"
+      }
+    ],
+    "logicalBytes": 244,
+    "newlyStoredBytes": 244,
+    "recordCount": 1,
+    "records": [
+      {
+        "byteLength": 220,
+        "classification": "unvetted",
+        "contentSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+        "dependencies": [
+          "61000000-0000-4000-8000-000000000001",
+          "82000000-0000-4000-8000-000000000001"
+        ],
+        "evidenceOnly": false,
+        "originalState": { "disposition": "pending", "visibility": "private" },
+        "portableObjectId": "82000000-0000-4000-8000-000000000003",
+        "projectId": "20000000-0000-4000-8000-000000000001",
+        "recordId": "64000000-0000-4000-8000-000000000001",
+        "recordType": "review",
+        "restoreDisposition": "restore-quarantined",
+        "schemaVersion": 1,
+        "workItemId": "30000000-0000-4000-8000-000000000001"
+      }
+    ]
+  }
+}

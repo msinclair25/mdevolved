@@ -1,0 +1,60 @@
+{
+  "authorizationContext": {
+    "grantId": "90000000-0000-4000-8000-000000000001",
+    "mode": "authorized-client",
+    "oauthClientId": "https://client.example/codex.json"
+  },
+  "format": "owd-collaboration-submission-v1",
+  "idempotencyKey": "synthetic-handoff-0001",
+  "integrity": {
+    "algorithm": "sha-256-jcs-rfc8785",
+    "digest": "ce9bd38d79741868ee66ebe7a589da709ea20ddaa32becaa87c4c12b0cd9a6ae",
+    "scope": "object-with-integrity-digest-omitted"
+  },
+  "participantRef": {
+    "claimedHarness": {
+      "assertedBy": "client",
+      "name": "Synthetic Harness A",
+      "verification": "claimed",
+      "version": "1.0.0"
+    },
+    "claimedModel": {
+      "assertedBy": "client",
+      "name": "Synthetic Model A",
+      "verification": "claimed",
+      "version": "2026-07"
+    },
+    "observedAt": 1784818900,
+    "oauthClient": {
+      "clientId": "https://client.example/codex.json",
+      "displayName": "Synthetic Codex client",
+      "origin": "https://client.example",
+      "verification": "authorization-bound-client"
+    },
+    "participantRefId": "40000000-0000-4000-8000-000000000001",
+    "recordType": "participant-ref",
+    "schemaVersion": 1
+  },
+  "projectId": "20000000-0000-4000-8000-000000000001",
+  "record": {
+    "artifactIds": ["61000000-0000-4000-8000-000000000001"],
+    "attemptId": "60000000-0000-4000-8000-000000000001",
+    "completed": ["Reviewed the proposed contract boundary."],
+    "evidenceCitationIds": ["52000000-0000-4000-8000-000000000001"],
+    "handoffId": "62000000-0000-4000-8000-000000000001",
+    "projectId": "20000000-0000-4000-8000-000000000001",
+    "recordType": "handoff",
+    "risks": ["A stale Work Packet must fail before submission storage."],
+    "schemaVersion": 1,
+    "suggestedNextActions": ["Have an independent client review the artifact."],
+    "summary": "The walking-skeleton contracts preserve bounded evidence and separate sharing from acceptance.",
+    "supersedesRecordId": null,
+    "unresolvedQuestions": [],
+    "workItemId": "30000000-0000-4000-8000-000000000001",
+    "workPacketId": "50000000-0000-4000-8000-000000000001"
+  },
+  "schemaVersion": 1,
+  "submissionId": "91000000-0000-4000-8000-000000000001",
+  "workItemId": "30000000-0000-4000-8000-000000000001",
+  "workPacketId": "50000000-0000-4000-8000-000000000001"
+}

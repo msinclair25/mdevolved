@@ -1,0 +1,48 @@
+name: Release OWD Sync plugin
+
+on:
+  push:
+    tags:
+      - "owd-sync-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm test
+      - run: pnpm package:plugin
+      - run: git merge-base --is-ancestor HEAD origin/main
+
+      - name: Publish plugin assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          packages/obsidian-plugin/release/LICENSE
+          packages/obsidian-plugin/release/UPSTREAM.md
+          packages/obsidian-plugin/release/main.js
+          packages/obsidian-plugin/release/manifest.json
+          packages/obsidian-plugin/release/styles.css
+          packages/obsidian-plugin/release/checksums.txt
+          packages/obsidian-plugin/release/owd-sync-*.zip
+          --generate-notes
+          --title "OWD Sync $GITHUB_REF_NAME"

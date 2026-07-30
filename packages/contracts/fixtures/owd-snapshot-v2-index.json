@@ -1,0 +1,35 @@
+{
+  "format": "owd-snapshot-v2",
+  "optionalCapabilities": [
+    "owd.snapshot.attachments-v1",
+    "owd.snapshot.obsidian-allowlist-v1"
+  ],
+  "parts": [
+    {
+      "ciphertextBytes": 512,
+      "portableObjectId": "50000000-0000-4000-8000-000000000001",
+      "role": "manifest"
+    },
+    {
+      "ciphertextBytes": 256,
+      "portableObjectId": "20000000-0000-4000-8000-000000000001",
+      "role": "content"
+    },
+    {
+      "ciphertextBytes": 256,
+      "portableObjectId": "20000000-0000-4000-8000-000000000002",
+      "role": "content"
+    },
+    {
+      "ciphertextBytes": 256,
+      "portableObjectId": "20000000-0000-4000-8000-000000000003",
+      "role": "content"
+    }
+  ],
+  "requiredCapabilities": [
+    "owd.snapshot.notes-v1",
+    "owd.snapshot.explicit-target-mapping-v1",
+    "owd.snapshot.age-x25519-objects-v1"
+  ],
+  "snapshotId": "10000000-0000-4000-8000-000000000001"
+}

@@ -1,0 +1,29 @@
+{
+  "collaborationLedgerFormats": ["owd-collaboration-ledger-v1"],
+  "format": "owd-collaboration-capabilities-v1",
+  "mcpProtocolRevision": "2025-11-25",
+  "recordSchemaVersions": {
+    "artifact": 1,
+    "attempt": 1,
+    "decision": 1,
+    "handoff": 1,
+    "knowledge-space": 1,
+    "knowledge-space-version": 1,
+    "owner-event": 1,
+    "participant-ref": 1,
+    "project": 1,
+    "project-version": 1,
+    "provenance-edge": 1,
+    "review": 1,
+    "work-item": 1,
+    "work-item-version": 1,
+    "work-packet": 1
+  },
+  "schemaVersion": 1,
+  "snapshotRequiredCapabilities": [
+    "owd.snapshot.approved-intelligence-v1",
+    "owd.snapshot.quarantined-intelligence-v1"
+  ],
+  "submissionFormats": ["owd-collaboration-submission-v1"],
+  "workPacketFormats": ["owd-work-packet-v1"]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@owd/web",
+  "version": "1.0.0-alpha.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "@owd/client-packs": "workspace:*",
+    "@owd/contracts": "workspace:*",
+    "@simplewebauthn/browser": "13.3.0",
+    "age-encryption": "0.3.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3"
+  }
+}

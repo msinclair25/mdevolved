@@ -1,0 +1,57 @@
+{
+  "brief": {
+    "constraints": ["Use only the cited disposable-vault evidence."],
+    "definitionOfDone": ["Return one evidence-linked handoff."],
+    "objective": "Prepare a portable collaboration contract review.",
+    "requestedOutput": "A concise Markdown handoff with risks and next actions."
+  },
+  "createdAt": 1784818800,
+  "evidenceObjects": [
+    {
+      "byteLength": 20,
+      "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+      "mediaType": "text/markdown"
+    }
+  ],
+  "excluded": ["All paths outside Projects/Portable Intelligence."],
+  "expiresAt": 1784905200,
+  "format": "owd-work-packet-v1",
+  "includedRecords": [],
+  "integrity": {
+    "algorithm": "sha-256-jcs-rfc8785",
+    "digest": "682542ab258833127c9ed6eaa7608eb3d870b5e5f2b58d48319711fa78f81641",
+    "scope": "object-with-integrity-digest-omitted"
+  },
+  "knowledgeSpaceVersionId": "10000000-0000-4000-8000-000000000002",
+  "outputContract": {
+    "acceptedMediaTypes": ["text/markdown", "application/json"],
+    "acceptedRecordTypes": ["attempt", "artifact", "handoff", "review"],
+    "maxSubmissionBytes": 1048576,
+    "submissionFormat": "owd-collaboration-submission-v1"
+  },
+  "packetId": "50000000-0000-4000-8000-000000000001",
+  "projectId": "20000000-0000-4000-8000-000000000001",
+  "projectVersionId": "20000000-0000-4000-8000-000000000002",
+  "recordType": "work-packet",
+  "requestedRole": { "authority": "none", "label": "research" },
+  "schemaVersion": 1,
+  "sourceCitations": [
+    {
+      "citationId": "52000000-0000-4000-8000-000000000001",
+      "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+      "excerptByteRange": { "endExclusive": 20, "start": 0 },
+      "generationId": "53000000-0000-4000-8000-000000000001",
+      "path": "Projects/Portable Intelligence/Brief.md",
+      "sourceByteLength": 32,
+      "sourceContentSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "stateLayer": "materialized-library",
+      "vaultId": "54000000-0000-4000-8000-000000000001"
+    }
+  ],
+  "truncationNotices": [
+    "The source was retained as the selected 20-byte excerpt."
+  ],
+  "workItemId": "30000000-0000-4000-8000-000000000001",
+  "workItemVersionId": "30000000-0000-4000-8000-000000000002"
+}

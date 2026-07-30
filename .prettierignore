@@ -1,0 +1,7 @@
+dist/
+node_modules/
+apps/worker/src/worker-configuration.d.ts
+apps/marketing/src/worker-configuration.d.ts
+pnpm-lock.yaml
+packages/obsidian-plugin/vendor/
+packages/obsidian-plugin/main.js

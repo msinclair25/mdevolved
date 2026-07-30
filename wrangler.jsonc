@@ -1,0 +1,101 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "owd-platform",
+  "main": "apps/worker/src/index.ts",
+  "compatibility_date": "2026-07-26",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "preview_urls": false,
+  "version_metadata": {
+    "binding": "WORKER_VERSION",
+  },
+  "assets": {
+    "directory": "./apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/vault/*",
+      "/healthz",
+      "/mcp",
+      "/mcp/*",
+      "/token",
+      "/register",
+      "/.well-known/*",
+    ],
+  },
+  "vars": {
+    "APP_DEPLOYMENT_MODE": "community",
+    "APP_ENVIRONMENT": "production",
+    "APP_VERSION": "1.0.0-alpha.3",
+    "EXPECTED_HOSTNAME": "",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "owd-platform-db",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "VAULT_STORAGE",
+      "bucket_name": "owd-platform-vaults",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+    },
+  ],
+  "ratelimits": [
+    {
+      "name": "OAUTH_REGISTRATION_ROUTE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 300,
+        "period": 60,
+      },
+    },
+    {
+      "name": "OAUTH_REGISTRATION_CLIENT_LIMITER",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 10,
+        "period": 60,
+      },
+    },
+    {
+      "name": "OAUTH_TOKEN_CLIENT_LIMITER",
+      "namespace_id": "1003",
+      "simple": {
+        "limit": 60,
+        "period": 60,
+      },
+    },
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VAULTS",
+        "class_name": "VaultCoordinator",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["VaultCoordinator"],
+    },
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": false,
+    },
+  },
+  "triggers": {
+    "crons": ["17 * * * *"],
+  },
+}

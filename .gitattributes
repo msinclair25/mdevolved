@@ -1,0 +1,2 @@
+apps/marketing/src/worker-configuration.d.ts whitespace=-trailing-space
+apps/worker/src/worker-configuration.d.ts whitespace=-trailing-space

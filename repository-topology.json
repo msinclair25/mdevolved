@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "community": {
+    "deployment": "single-owner-data-plane",
+    "wranglerConfig": "wrangler.jsonc",
+    "migrations": "migrations",
+    "requiredPaths": [
+      ".node-version",
+      "AGENTS.md",
+      "LICENSE",
+      "SECURITY.md",
+      "apps/marketing/package.json",
+      "apps/web/package.json",
+      "apps/worker/package.json",
+      "packages/client-packs/package.json",
+      "packages/contracts/package.json",
+      "packages/obsidian-plugin/package.json",
+      "packages/yaos-core/package.json",
+      "docs/ALPHA-STATUS.md",
+      "docs/QUALITY-GATES.md",
+      "docs/ROADMAP.md",
+      "compatibility/upstreams.json",
+      "migrations/README.md",
+      "wrangler.jsonc"
+    ],
+    "packageManifests": [
+      "apps/marketing/package.json",
+      "apps/web/package.json",
+      "apps/worker/package.json",
+      "packages/client-packs/package.json",
+      "packages/contracts/package.json",
+      "packages/obsidian-plugin/package.json",
+      "packages/yaos-core/package.json"
+    ],
+    "forbiddenDependencyPrefixes": ["@owd/control-plane", "@owd/managed-"]
+  },
+  "managed": {
+    "status": "manual-private-alpha",
+    "controlPlane": "apps/control-plane",
+    "infrastructure": "infra/managed",
+    "requiredByCommunity": false,
+    "isolationModel": "one-owner-per-cell"
+  }
+}

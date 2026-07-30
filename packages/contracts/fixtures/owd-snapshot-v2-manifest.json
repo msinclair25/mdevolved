@@ -1,0 +1,98 @@
+{
+  "captureCompletedAt": 1784772005,
+  "captureStartedAt": 1784772000,
+  "excludedSecuritySections": [
+    "oauth",
+    "sessions",
+    "passkeys",
+    "pairing-secrets",
+    "agent-grants",
+    "pending-agent-proposals",
+    "harness-context",
+    "unknown-obsidian-plugin-data"
+  ],
+  "format": "owd-snapshot-v2",
+  "includedSections": ["notes", "attachments", "obsidian-allowlist"],
+  "logicalBytes": 33,
+  "objects": [
+    {
+      "byteLength": 8,
+      "contentSha256": "90f8ec5669cd34183b9b0fdf8b94f5efb4c3672876330f4aa76088c2b4ad17be",
+      "portableObjectId": "20000000-0000-4000-8000-000000000001",
+      "section": "notes"
+    },
+    {
+      "byteLength": 4,
+      "contentSha256": "054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8",
+      "portableObjectId": "20000000-0000-4000-8000-000000000002",
+      "section": "attachments"
+    },
+    {
+      "byteLength": 21,
+      "contentSha256": "f8e7f5c5e046fc780e63d42463019aeb82a06ed7ce1ea6a39b57fcf36fe5ea8a",
+      "portableObjectId": "20000000-0000-4000-8000-000000000003",
+      "section": "obsidian-allowlist"
+    }
+  ],
+  "optionalCapabilities": [
+    "owd.snapshot.attachments-v1",
+    "owd.snapshot.obsidian-allowlist-v1"
+  ],
+  "recipientFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "requiredCapabilities": [
+    "owd.snapshot.notes-v1",
+    "owd.snapshot.explicit-target-mapping-v1",
+    "owd.snapshot.age-x25519-objects-v1"
+  ],
+  "reservedSections": [
+    "accepted-handoffs",
+    "durable-knowledge",
+    "skills",
+    "evaluations",
+    "provenance",
+    "policy"
+  ],
+  "scope": "selected",
+  "snapshotId": "10000000-0000-4000-8000-000000000001",
+  "unavailableSections": [],
+  "vaults": [
+    {
+      "entries": [
+        {
+          "byteLength": 8,
+          "contentSha256": "90f8ec5669cd34183b9b0fdf8b94f5efb4c3672876330f4aa76088c2b4ad17be",
+          "modifiedAt": 1784771990,
+          "path": "Notes/Hello.md",
+          "portableObjectId": "20000000-0000-4000-8000-000000000001",
+          "section": "notes"
+        },
+        {
+          "byteLength": 4,
+          "contentSha256": "054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8",
+          "modifiedAt": 1784771991,
+          "path": "Assets/pixel.bin",
+          "portableObjectId": "20000000-0000-4000-8000-000000000002",
+          "section": "attachments"
+        },
+        {
+          "byteLength": 21,
+          "contentSha256": "f8e7f5c5e046fc780e63d42463019aeb82a06ed7ce1ea6a39b57fcf36fe5ea8a",
+          "modifiedAt": 1784771992,
+          "path": ".obsidian/appearance.json",
+          "portableObjectId": "20000000-0000-4000-8000-000000000003",
+          "section": "obsidian-allowlist"
+        }
+      ],
+      "snapshotVaultId": "30000000-0000-4000-8000-000000000001",
+      "sourceGeneration": {
+        "completedAt": 1784771995,
+        "createdAt": 1784771990,
+        "generationId": "40000000-0000-4000-8000-000000000001",
+        "noteCount": 1,
+        "sourceStateVectorSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "totalBytes": 8
+      },
+      "vaultName": "Synthetic portable vault"
+    }
+  ]
+}

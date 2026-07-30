@@ -1,0 +1,33 @@
+{
+  "name": "@owd/obsidian-plugin",
+  "version": "0.1.6",
+  "private": true,
+  "description": "The OWD Sync companion plugin for Obsidian.",
+  "license": "Apache-2.0 AND 0BSD",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production && node scripts/guard-production-bundles.mjs",
+    "guard:bundles": "node scripts/guard-production-bundles.mjs",
+    "package": "pnpm build && node scripts/package-release.mjs",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "fast-diff": "1.3.0",
+    "fflate": "0.8.2",
+    "js-yaml": "4.3.0",
+    "partyserver": "0.3.2",
+    "y-codemirror.next": "0.3.5",
+    "y-indexeddb": "9.0.12",
+    "y-partyserver": "2.1.2",
+    "yjs": "13.6.29"
+  },
+  "devDependencies": {
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "esbuild": "0.25.5",
+    "obsidian": "1.13.1",
+    "tslib": "2.4.0"
+  }
+}

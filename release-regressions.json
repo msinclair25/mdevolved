@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "findingRange": "MTR-001..MTR-043",
+  "findings": [
+    {
+      "id": "MTR-001",
+      "title": "Remote migration parsing",
+      "controls": [
+        { "kind": "static", "path": "scripts/check-release-contract.mjs" },
+        { "kind": "test", "path": "apps/worker/test/migrations-empty.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-002",
+      "title": "Atomic managed owner invitation claim",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "apps/worker/test/managed-owner-claim.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "MTR-003",
+      "title": "Custom-domain certificate cleanup",
+      "controls": [{ "kind": "manual", "path": "docs/QUALITY-GATES.md" }]
+    },
+    {
+      "id": "MTR-004",
+      "title": "Managed hostname isolation",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "apps/worker/test/managed-owner-claim.test.ts"
+        },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-005",
+      "title": "Minimal MCP bootstrap scopes",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-006",
+      "title": "Persistent Project initialization handoff",
+      "controls": [{ "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }]
+    },
+    {
+      "id": "MTR-007",
+      "title": "Explicit vault selection",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-008",
+      "title": "OWD pairing handler availability",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "packages/obsidian-plugin/test/pairing-contract.test.ts"
+        },
+        {
+          "kind": "static",
+          "path": "packages/obsidian-plugin/scripts/guard-production-bundles.mjs"
+        },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-009",
+      "title": "Restored-source quarantine",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-010",
+      "title": "Exact Project documentation paths",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "apps/worker/test/project-context-policy.test.ts"
+        },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-011",
+      "title": "Fresh-cell and direct plugin installation",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "apps/web/test/obsidian-plugin-installer.test.ts"
+        },
+        { "kind": "test", "path": "apps/web/test/plugin-setup-guide.test.ts" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-012",
+      "title": "Fresh build before manual deployment",
+      "controls": [
+        { "kind": "static", "path": "scripts/check-release-contract.mjs" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-013",
+      "title": "Automatic library prerequisite for Project initialization",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/materialization.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-014",
+      "title": "Vault names never imply Project identity",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-015",
+      "title": "Per-vault setup readiness",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/setup-readiness.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-016",
+      "title": "Semantic duplicate Project prevention",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-017",
+      "title": "Exact-current library authorization",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/materialization.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/content.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-018",
+      "title": "Recoverable pending Project consent",
+      "controls": [
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-019",
+      "title": "Cascading source revocation",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-020",
+      "title": "Managed trial policy and diagnostics",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "apps/worker/test/managed-owner-claim.test.ts"
+        },
+        { "kind": "test", "path": "apps/worker/test/pairing.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/worker.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-021",
+      "title": "Jitless browser validation",
+      "controls": [
+        { "kind": "static", "path": "packages/contracts/src/zod.ts" },
+        { "kind": "test", "path": "apps/web/test/static-headers.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-022",
+      "title": "Managed beacon prevention and immutable asset caching",
+      "controls": [
+        { "kind": "test", "path": "apps/web/test/static-headers.test.ts" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-023",
+      "title": "Read-only agent access without recovery gate",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/setup-readiness.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-024",
+      "title": "Vault, library, and agent page order",
+      "controls": [
+        { "kind": "test", "path": "apps/web/test/operational-region.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-025",
+      "title": "Automatic Work Packet rotation",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-026",
+      "title": "Cross-vault Project invisibility and new work",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" }
+      ]
+    },
+    {
+      "id": "MTR-027",
+      "title": "Automatic exact-current successor libraries",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/materialization.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/content.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-028",
+      "title": "Unmissable Project approval handoff",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-029",
+      "title": "Durable one-command Project connection",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/setup-readiness.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-030",
+      "title": "Polluted Project catalog hardening",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-project-connection-upgrade.test.ts"
+        },
+        { "kind": "static", "path": "apps/worker/src/mcp-server.ts" },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/materialization-store.ts"
+        },
+        {
+          "kind": "static",
+          "path": "scripts/production-agent-acceptance.mjs"
+        }
+      ]
+    },
+    {
+      "id": "MTR-031",
+      "title": "Atomic cross-client Project identity",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-project-connection-upgrade.test.ts"
+        },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/project-initialization-store.ts"
+        }
+      ]
+    },
+    {
+      "id": "MTR-032",
+      "title": "Actionable Project repair and exact pending request routing",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/setup-readiness.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-033",
+      "title": "Same-token production Project acceptance and internal-data privacy",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "scripts/production-agent-acceptance.mjs"
+        },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-034",
+      "title": "Shared owner-and-agent Project creation fence",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-project-creation-commit-upgrade.test.ts"
+        },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-project-creation-unicode-upgrade.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "MTR-035",
+      "title": "Stable Project consent across source rotation and approval crashes",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        {
+          "kind": "static",
+          "path": "migrations/0024_agent_grant_continuity.sql"
+        }
+      ]
+    },
+    {
+      "id": "MTR-036",
+      "title": "Single-link closed Work Item repair and Project connection",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/project-initialization-store.ts"
+        }
+      ]
+    },
+    {
+      "id": "MTR-037",
+      "title": "Owner-only Project privacy and polluted-catalog isolation",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/collaboration.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        {
+          "kind": "static",
+          "path": "migrations/0025_project_agent_visibility.sql"
+        }
+      ]
+    },
+    {
+      "id": "MTR-038",
+      "title": "Truthful production Project acceptance boundary",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "scripts/production-agent-acceptance.mjs"
+        },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-039",
+      "title": "Owner-designated local vault writer safety",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "apps/worker/src/project-context-policy.ts"
+        },
+        { "kind": "static", "path": "apps/worker/src/mcp-server.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/project-context-policy.test.ts"
+        },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-040",
+      "title": "Durable vault-wide primary writer and later-agent warnings",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "migrations/0026_vault_primary_writer.sql"
+        },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/project-local-vault-access.ts"
+        },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-vault-primary-writer-upgrade.test.ts"
+        },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-041",
+      "title": "Key-complete cross-client Project connection",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "apps/worker/test/setup-readiness.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        {
+          "kind": "static",
+          "path": "scripts/production-agent-acceptance.mjs"
+        }
+      ]
+    },
+    {
+      "id": "MTR-042",
+      "title": "Single-use first-Project handoff prepared during web onboarding",
+      "controls": [
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/setup-readiness.test.ts"
+        },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-prepared-project-handoffs-upgrade.test.ts"
+        },
+        {
+          "kind": "static",
+          "path": "migrations/0028_prepared_project_handoffs.sql"
+        },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/setup-readiness-routes.ts"
+        },
+        {
+          "kind": "manual",
+          "path": "docs/QUALITY-GATES.md"
+        }
+      ]
+    },
+    {
+      "id": "MTR-043",
+      "title": "Responsive folder navigation and deferred workspace payloads",
+      "controls": [
+        {
+          "kind": "test",
+          "path": "apps/web/test/workspace-navigation.test.ts"
+        },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        { "kind": "static", "path": "apps/web/src/App.tsx" },
+        { "kind": "static", "path": "apps/web/src/BackupPanel.tsx" },
+        {
+          "kind": "static",
+          "path": "apps/web/src/CollaborationPanel.tsx"
+        },
+        { "kind": "static", "path": "apps/web/vite.config.ts" },
+        {
+          "kind": "manual",
+          "path": "docs/QUALITY-GATES.md"
+        }
+      ]
+    }
+  ]
+}

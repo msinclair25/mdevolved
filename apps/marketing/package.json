@@ -1,0 +1,18 @@
+{
+  "name": "@owd/marketing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The MD Evolved promotional website.",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "deploy": "pnpm build && wrangler deploy --config wrangler.jsonc",
+    "deploy:dry-run": "pnpm build && wrangler deploy --dry-run --config wrangler.jsonc --outdir ../../dist/marketing-worker",
+    "dev": "vite",
+    "dev:worker": "pnpm build && wrangler dev --config wrangler.jsonc",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "types": "wrangler types src/worker-configuration.d.ts --config wrangler.jsonc",
+    "types:check": "wrangler types src/worker-configuration.d.ts --config wrangler.jsonc --check"
+  }
+}

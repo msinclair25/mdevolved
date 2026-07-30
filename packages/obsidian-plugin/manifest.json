@@ -1,0 +1,9 @@
+{
+  "id": "owd-sync",
+  "name": "OWD Sync",
+  "version": "0.1.6",
+  "minAppVersion": "1.5.0",
+  "description": "Private, self-hosted Obsidian sync through your OWD Cloudflare deployment.",
+  "author": "OWD Platform contributors",
+  "isDesktopOnly": false
+}

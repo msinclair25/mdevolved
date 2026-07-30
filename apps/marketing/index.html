@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="OWD carries cited work and owner Decisions from one AI agent to the next, with standard MCP and a source-verified Eve.dev integration."
+    />
+    <meta
+      name="keywords"
+      content="Obsidian sync, AI handoffs, cited agent context, Eve.dev integration, owner-controlled AI projects, portable project memory"
+    />
+    <meta name="theme-color" content="#10120f" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="canonical" href="https://mdevolved.com/" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MD Evolved" />
+    <meta
+      property="og:title"
+      content="Make one AI’s work the next AI’s head start."
+    />
+    <meta
+      property="og:description"
+      content="Keep every agent in its own tool. Connect Eve.dev through standard MCP and carry cited work forward with your decisions attached."
+    />
+    <meta property="og:url" content="https://mdevolved.com/" />
+    <meta
+      property="og:image"
+      content="https://mdevolved.com/og-head-start.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Make one AI’s work the next AI’s head start."
+    />
+    <meta
+      name="twitter:description"
+      content="Keep every agent in its own tool. Connect Eve.dev through standard MCP and carry cited work forward with your decisions attached."
+    />
+    <meta
+      name="twitter:image"
+      content="https://mdevolved.com/og-head-start.png"
+    />
+
+    <title>MD Evolved — Make one AI’s work the next AI’s head start</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "MD Evolved",
+            "url": "https://mdevolved.com/",
+            "description": "The public home of OWD, an owner-controlled handoff and project-memory layer for independent AI agents, including a source-verified Eve.dev integration."
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "name": "OWD Platform",
+            "codeRepository": "https://github.com/msinclair25/owd-platform",
+            "license": "https://www.apache.org/licenses/LICENSE-2.0",
+            "programmingLanguage": ["TypeScript", "JavaScript"],
+            "description": "The owner-controlled OWD application for cited AI handoffs, project continuity, and recovery."
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "name": "OWD Sync",
+            "codeRepository": "https://github.com/msinclair25/owd-sync",
+            "license": "https://www.apache.org/licenses/LICENSE-2.0",
+            "programmingLanguage": ["TypeScript", "JavaScript"],
+            "description": "The Obsidian companion for OWD Platform."
+          }
+        ]
+      }
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-header>
+      <div class="shell header-inner">
+        <a class="brand" href="#top" aria-label="MD Evolved home">
+          <span class="brand-mark" aria-hidden="true">MD</span>
+          <span class="brand-name">Evolved</span>
+        </a>
+
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          data-nav-toggle
+        >
+          <span class="sr-only">Open navigation</span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Primary" data-nav>
+          <a href="#foundation">Foundation</a>
+          <a href="#collaboration">How it works</a>
+          <a href="#eve">Eve.dev</a>
+          <a href="#principles">Trust model</a>
+          <a href="#journey">Your path</a>
+          <a class="nav-cta" href="#alpha-access"
+            >Request alpha <span aria-hidden="true">↓</span></a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="shell hero-layout">
+          <div class="hero-copy" data-reveal>
+            <p class="eyebrow">
+              <span class="status-dot" aria-hidden="true"></span>
+              Apache-2.0 · owner-controlled · Obsidian-native
+            </p>
+            <h1>
+              <span class="hero-line">Make one AI’s work</span><br />
+              <span class="hero-line">the next AI’s</span><br />
+              <em>head start.</em>
+            </h1>
+            <p class="hero-lede">
+              The AI tools you subscribe to are good at different things. OWD
+              carries the work you choose to share from one compatible client to
+              the next, with its sources and your Decisions attached. You choose
+              every handoff, so the next agent starts further ahead.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#journey">
+                See the setup path
+                <span aria-hidden="true">↓</span>
+              </a>
+              <a class="button button-quiet" href="#collaboration">
+                See how the agents work
+              </a>
+            </div>
+            <p class="hero-note">
+              Invitation-only acceptance testers use one isolated OWD workspace.
+              OWD Cloud is not publicly available; Community self-hosting
+              remains the public release path.
+            </p>
+            <div class="hero-status-row" aria-label="Current project status">
+              <span><b>Your workspace</b> isolated per owner</span>
+              <span><b>Your vault</b> explicit access</span>
+              <span><b>Your Decision</b> durable truth</span>
+            </div>
+          </div>
+
+          <div class="memory-stage" data-reveal data-delay="1">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <div class="memory-core">
+              <span class="core-label">project record</span>
+              <strong>project/<br />decision.md</strong>
+              <span class="core-state">reviewed · portable · recoverable</span>
+            </div>
+            <div class="orbit orbit-one" aria-hidden="true"></div>
+            <div class="orbit orbit-two" aria-hidden="true"></div>
+            <ul class="connection-list" aria-label="Connected experiences">
+              <li class="connection connection-obsidian">
+                <span>01</span> Obsidian
+              </li>
+              <li class="connection connection-web"><span>02</span> Agent A</li>
+              <li class="connection connection-agents">
+                <span>03</span> Agent B
+              </li>
+              <li class="connection connection-backup">
+                <span>04</span> Owner
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="signal-strip" aria-label="Product qualities">
+        <div class="shell signal-row">
+          <span>Eve.dev profile + provider-neutral MCP</span>
+          <span>Standard MCP + OAuth</span>
+          <span>Plain Markdown + JSON</span>
+          <span>Cited, revocable context</span>
+        </div>
+      </section>
+
+      <section class="section product-section" id="foundation">
+        <div class="shell">
+          <div class="section-heading" data-reveal>
+            <p class="kicker">A complete owner-controlled foundation</p>
+            <h2>Vaults first.<br />Then intelligence that can travel.</h2>
+            <p>
+              Shared agent context only works when the foundation is
+              trustworthy. OWD keeps every vault bounded, every grant explicit,
+              every edit version-aware, and every recovery point independently
+              portable.
+            </p>
+          </div>
+
+          <div class="capability-grid">
+            <article class="capability-card card-own" data-reveal>
+              <span class="card-index">01 / SYNC</span>
+              <h3>Write here. Pick up there.</h3>
+              <p>
+                Pair only the vaults you choose, then keep working as usual.
+                Changes move between paired devices without making the web
+                dashboard the owner of your files.
+              </p>
+              <div class="file-stack" aria-hidden="true">
+                <span>desktop · synced</span>
+                <span>laptop · synced</span>
+                <span>phone · synced</span>
+              </div>
+            </article>
+
+            <article
+              class="capability-card card-recover"
+              data-reveal
+              data-delay="1"
+            >
+              <span class="card-index">02 / FIND + CONNECT</span>
+              <h3>Find it—and let the right agent find it.</h3>
+              <p>
+                Search the current library across paired vaults. Compatible AI
+                agents get read-only access to one exact vault and selected
+                folders, with the source identified on every result.
+              </p>
+              <div class="recovery-meter" aria-label="Search scope">
+                <span>Choose vault</span>
+                <span>Set folders</span>
+                <span>Approve agent</span>
+                <span>Revoke anytime</span>
+              </div>
+            </article>
+
+            <article class="capability-card card-connect" data-reveal>
+              <span class="card-index">03 / EDIT</span>
+              <h3>Fix a note from the web.</h3>
+              <p>
+                Correct a line or start a Markdown note when Obsidian is not in
+                front of you. Clear version checks keep an old browser tab from
+                quietly overwriting newer work.
+              </p>
+              <div class="agent-row" aria-label="Web editing capabilities">
+                <span>Markdown text</span>
+                <span>New notes</span>
+                <span>Version checks</span>
+                <span>Visible sync state</span>
+              </div>
+            </article>
+
+            <article
+              class="capability-card card-evolve"
+              data-reveal
+              data-delay="1"
+            >
+              <span class="card-index">04 / RECOVER</span>
+              <h3>Keep a snapshot you can restore.</h3>
+              <p>
+                Encrypted, versioned snapshots live outside the sync layer.
+                Before anything is restored, you can inspect it, verify it, and
+                preview exactly what will change.
+              </p>
+              <div class="evolve-line" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section collaboration-section" id="collaboration">
+        <div class="shell">
+          <div class="section-heading" data-reveal>
+            <p class="kicker">
+              Agent-first collaboration · explicit owner control
+            </p>
+            <h2>One body of work.<br />Many independent agents.</h2>
+            <p>
+              OWD carries a bounded packet from one independently authorized
+              agent to another, with cited context, explicit sharing, owner-only
+              Decisions, revocation checked on every call, recovery, and exact
+              provenance.
+            </p>
+          </div>
+
+          <ol class="collab-flow" aria-label="OWD collaboration flow">
+            <li class="flow-step" data-reveal>
+              <span>01</span>
+              <h3>Project</h3>
+              <p>The durable home for a goal, its evidence, and its history.</p>
+            </li>
+            <li class="flow-step" data-reveal>
+              <span>02</span>
+              <h3>Work Packet</h3>
+              <p>A bounded assignment an owner can give to any chosen agent.</p>
+            </li>
+            <li class="flow-step" data-reveal>
+              <span>03</span>
+              <h3>Attempt + Artifact</h3>
+              <p>
+                The agent’s contribution, sources, outputs, and open questions.
+              </p>
+            </li>
+            <li class="flow-step" data-reveal>
+              <span>04</span>
+              <h3>Handoff + Review</h3>
+              <p>
+                Another agent can inspect the work and add a separate judgment.
+              </p>
+            </li>
+            <li class="flow-step" data-reveal>
+              <span>05</span>
+              <h3>Owner Decision</h3>
+              <p>The owner accepts, rejects, or asks for another attempt.</p>
+            </li>
+            <li class="flow-step flow-step-accent" data-reveal>
+              <span>06</span>
+              <h3>Continuity</h3>
+              <p>
+                The next packet carries the accepted Decision and exact
+                provenance forward.
+              </p>
+            </li>
+          </ol>
+
+          <p class="workflow-note" data-reveal>
+            You choose the agents, roles, order, and workflow. MD Evolved does
+            not force a planner–builder–reviewer pattern.
+          </p>
+        </div>
+      </section>
+
+      <section class="section vision-section" id="eve">
+        <div class="shell">
+          <div class="section-heading" data-reveal>
+            <p class="kicker">Source-verified Eve.dev integration</p>
+            <h2>Eve runs the agent.<br />OWD makes the work portable.</h2>
+            <p>
+              Keep Eve’s durable sessions, subagents, sandboxes, channels, and
+              schedules. Add OWD through Eve’s native remote MCP connection so
+              selected work can become cited, owner-governed Project context for
+              whichever agent works next.
+            </p>
+          </div>
+
+          <div class="graph-grid">
+            <article class="graph-card" data-reveal>
+              <span class="card-index">EVE.DEV</span>
+              <h3>Execution stays native</h3>
+              <ul>
+                <li>Durable sessions and agent-owned runtime state</li>
+                <li>Subagents, channels, sandboxes, and schedules</li>
+                <li>Native user-scoped Vercel Connect authorization</li>
+              </ul>
+            </article>
+            <article class="graph-card graph-card-accent" data-reveal>
+              <span class="card-index">OWD PROFILE</span>
+              <h3>Continuity travels</h3>
+              <ul>
+                <li>Exact vault and folder consent through standard MCP</li>
+                <li>Cited Projects, Handoffs, Reviews, and owner Decisions</li>
+                <li>Independent agent identities and portable recovery</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="release-principles" data-reveal>
+            <span>Eve 0.29</span>
+            <span>Streamable HTTP MCP</span>
+            <span>OAuth 2.1 + PKCE</span>
+            <span>No custom transport</span>
+          </div>
+
+          <p class="graph-footnote" data-reveal>
+            One generated <code>agent/connections/owd.ts</code> module connects
+            the two. The profile is source-verified against Eve 0.29.2 and
+            @vercel/connect 0.6.0; live client acceptance remains explicit
+            rather than assumed.
+          </p>
+        </div>
+      </section>
+
+      <section class="section graph-section" id="graph">
+        <div class="shell">
+          <div class="section-heading" data-reveal>
+            <p class="kicker">Optional graph orchestration</p>
+            <h2>
+              Graph engineering multiplies execution.<br />MD Evolved makes the
+              gains persist.
+            </h2>
+            <p>
+              A graph runtime and MD Evolved solve different parts of the
+              problem. They can work together, but neither is required to
+              pretend it is the other.
+            </p>
+          </div>
+
+          <figure class="agent-visual" data-reveal>
+            <img
+              src="/og-head-start.png"
+              width="1200"
+              height="630"
+              loading="lazy"
+              alt="Make one AI's work the next AI's head start. Three independent agents contribute cited work to an owner-controlled Project record."
+            />
+            <figcaption>
+              <strong>Make one AI's work the next AI's head start.</strong>
+              <span>
+                Each agent keeps its own tools and session. The work they leave
+                behind can become reviewed context for whoever works next.
+              </span>
+            </figcaption>
+          </figure>
+
+          <div class="graph-grid">
+            <article class="graph-card" data-reveal>
+              <span class="card-index">THE GRAPH RUNTIME</span>
+              <h3>Runs the work</h3>
+              <ul>
+                <li>Routes tasks and model calls</li>
+                <li>Handles branches, loops, and parallel steps</li>
+                <li>Maintains live execution state</li>
+              </ul>
+            </article>
+            <article class="graph-card graph-card-accent" data-reveal>
+              <span class="card-index">MD EVOLVED</span>
+              <h3>Keeps what should survive</h3>
+              <ul>
+                <li>Durable context and provenance</li>
+                <li>Artifacts, reviews, and owner decisions</li>
+                <li>Portability, governance, and recovery</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="role-grid" data-reveal>
+            <div>
+              <b>Harnesses</b
+              ><span>execute with their own tools and sessions</span>
+            </div>
+            <div>
+              <b>Graphs</b><span>orchestrate a chosen execution pattern</span>
+            </div>
+            <div>
+              <b>Obsidian</b
+              ><span>keeps the owner’s readable source material</span>
+            </div>
+            <div>
+              <b>MD Evolved</b
+              ><span>preserves reviewed intelligence across them</span>
+            </div>
+          </div>
+          <p class="graph-footnote">
+            No replacement subscription. No bundled frontier model. No required
+            graph. MCP and other interoperability layers can connect tools; MD
+            Evolved supplies the durable project record.
+          </p>
+        </div>
+      </section>
+
+      <section class="section principles-section" id="principles">
+        <div class="shell principles-layout">
+          <div class="principles-intro" data-reveal>
+            <p class="kicker">Owner control is part of the architecture</p>
+            <h2>Agent output is evidence—not automatic truth.</h2>
+          </div>
+
+          <ol class="principle-list">
+            <li data-reveal>
+              <span>01</span>
+              <div>
+                <h3>The owner governs the record.</h3>
+                <p>
+                  Agents contribute. Reviews add separate judgment. Only the
+                  owner accepts decisions and promotes durable intelligence.
+                </p>
+              </div>
+            </li>
+            <li data-reveal>
+              <span>02</span>
+              <div>
+                <h3>“Learning” does not mean model training.</h3>
+                <p>
+                  The system improves future inputs by preserving reviewed
+                  context and Decisions. It does not change a provider’s model
+                  weights.
+                </p>
+              </div>
+            </li>
+            <li data-reveal>
+              <span>03</span>
+              <div>
+                <h3>Every vault and grant stays bounded.</h3>
+                <p>
+                  Pairing, access, browsing, editing, and recovery always name
+                  the vault they touch. Agent grants remain scoped and
+                  revocable.
+                </p>
+              </div>
+            </li>
+            <li data-reveal>
+              <span>04</span>
+              <div>
+                <h3>Harnesses keep their independence.</h3>
+                <p>
+                  Each agent keeps its own tools, session, and subscription. MD
+                  Evolved carries the durable work, evidence, and approval
+                  history between them.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section path-section journey-section" id="journey">
+        <div class="shell">
+          <div class="section-heading path-heading" data-reveal>
+            <p class="kicker">Guided once · agent-first after that</p>
+            <h2>Set up OWD once.<br />Then work from the agent.</h2>
+            <p>
+              The OWD workspace walks you through the vault, searchable library,
+              agents, and first Project. After that, Project work begins in the
+              agent you already use.
+            </p>
+          </div>
+
+          <ol class="journey-list">
+            <li data-reveal>
+              <span class="journey-index">01</span>
+              <div>
+                <h3>Open your OWD workspace</h3>
+                <p>
+                  A managed tester opens one private invitation to one isolated
+                  workspace. The Community edition will deploy the same
+                  owner-controlled data plane to your Cloudflare account.
+                </p>
+              </div>
+              <span class="status-tag">Your workspace</span>
+            </li>
+            <li data-reveal>
+              <span class="journey-index">02</span>
+              <div>
+                <h3>Pair an Obsidian vault</h3>
+                <p>
+                  Install OWD Sync, select the exact vault, and approve the
+                  destination. OWD publishes its current searchable library
+                  automatically.
+                </p>
+              </div>
+              <span class="status-tag">Your files</span>
+            </li>
+            <li data-reveal>
+              <span class="journey-index">03</span>
+              <div>
+                <h3>Connect the agents you choose</h3>
+                <p>
+                  Add OWD as a standard MCP server. Authorize each agent for one
+                  exact vault and optional folders. Choose the agent that should
+                  coordinate local vault edits first; later agents are warned to
+                  remain read-only unless you transfer that advisory role.
+                </p>
+              </div>
+              <span class="status-tag">Your boundary</span>
+            </li>
+            <li data-reveal>
+              <span class="journey-index">04</span>
+              <div>
+                <h3>Prepare the first Project once</h3>
+                <p>
+                  During setup, choose the agent, Project name, vault, and
+                  Project folder. OWD keeps that exact approved handoff ready;
+                  the human remains the vault owner and OWD's MCP vault tools
+                  remain read-only.
+                </p>
+              </div>
+              <span class="status-tag">Your choice</span>
+            </li>
+            <li data-reveal>
+              <span class="journey-index">05</span>
+              <div>
+                <h3>Say “Connect this project to OWD”</h3>
+                <p>
+                  Stay in the working agent. OWD creates, joins, or resumes the
+                  exact Project without copied prompts, daily renewals, or
+                  another MCP authorization.
+                </p>
+              </div>
+              <span class="status-tag">Agent-first</span>
+            </li>
+            <li data-reveal>
+              <span class="journey-index">06</span>
+              <div>
+                <h3>Keep what should survive</h3>
+                <p>
+                  Carry cited Artifacts, Reviews, owner Decisions, and approved
+                  context forward—with revocation and encrypted recovery still
+                  under owner control.
+                </p>
+              </div>
+              <span class="status-tag">Your record</span>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section source-section" id="source">
+        <div class="shell">
+          <div class="section-heading source-heading" data-reveal>
+            <p class="kicker">Start with the source</p>
+            <h2>Own the stack.<br />Inspect every boundary.</h2>
+            <p>
+              OWD Platform is the core repository. OWD Sync is its Obsidian
+              companion. Both use Apache-2.0 licensing and preserve the owner’s
+              ability to inspect, deploy, export, recover, and leave.
+            </p>
+          </div>
+
+          <div class="source-grid">
+            <article class="source-card source-card-primary" data-reveal>
+              <div class="source-card-topline">
+                <span class="card-index">CORE REPOSITORY</span>
+                <span class="status-tag">Private acceptance</span>
+              </div>
+              <h3>OWD Platform</h3>
+              <p>
+                The owner-controlled web application, Cloudflare data plane, and
+                cited handoff layer that preserves the durable project record.
+              </p>
+              <ul class="source-facts" aria-label="OWD Platform capabilities">
+                <li>Web application + Cloudflare Worker</li>
+                <li>Cited handoffs + owner Decisions</li>
+                <li>Snapshots + portable recovery</li>
+              </ul>
+              <div class="source-actions">
+                <a
+                  class="button button-primary"
+                  href="https://github.com/msinclair25/owd-platform"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  OWD Platform on GitHub <span aria-hidden="true">↗</span>
+                </a>
+                <a
+                  class="text-link"
+                  href="https://github.com/msinclair25/owd-platform#readme"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Invited collaborators <span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </article>
+
+            <article class="source-card" data-reveal data-delay="1">
+              <div class="source-card-topline">
+                <span class="card-index">OBSIDIAN COMPANION</span>
+                <span class="status-tag">Public repository</span>
+              </div>
+              <h3>OWD Sync</h3>
+              <p>
+                The Apache-2.0 Obsidian companion that pairs one selected vault
+                with one owner-controlled OWD Platform installation.
+              </p>
+              <ul class="source-facts" aria-label="OWD Sync capabilities">
+                <li>Vault-explicit pairing</li>
+                <li>In-app pairing workflow</li>
+                <li>Version-matched releases</li>
+              </ul>
+              <div class="source-actions">
+                <a
+                  class="button button-quiet"
+                  href="https://github.com/msinclair25/owd-sync"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Explore OWD Sync <span aria-hidden="true">↗</span>
+                </a>
+                <a
+                  class="text-link"
+                  href="https://github.com/msinclair25/owd-sync/releases"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Browse releases <span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </article>
+          </div>
+
+          <div class="release-principles" data-reveal>
+            <span>Apache-2.0</span>
+            <span>Complete Community edition</span>
+            <span>Isolated managed workspaces</span>
+            <span>Markdown + JSON portability</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing-section" id="alpha-access">
+        <div class="shell alpha-layout">
+          <div class="closing-inner" data-reveal>
+            <p class="kicker">Private alpha · limited access</p>
+            <h2>Put a real Project<br />through OWD.</h2>
+            <p class="alpha-lede">
+              We are choosing a small group of people who already use Obsidian
+              and more than one AI client. Tell us what you would test. If it is
+              a strong fit for this alpha, we will reply with the next step.
+            </p>
+            <ul class="alpha-signals" aria-label="What the alpha includes">
+              <li>One isolated OWD workspace</li>
+              <li>Your chosen vault and agents</li>
+              <li>A real cross-agent Project</li>
+            </ul>
+          </div>
+
+          <form
+            class="alpha-form"
+            action="/api/alpha-access"
+            method="post"
+            aria-labelledby="alpha-form-title"
+            data-alpha-form
+            data-reveal
+            data-delay="1"
+          >
+            <div class="form-heading">
+              <span>Alpha request / 01</span>
+              <h3 id="alpha-form-title">What would you put through OWD?</h3>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Your name</span>
+                <input
+                  type="text"
+                  name="name"
+                  autocomplete="name"
+                  maxlength="100"
+                  required
+                />
+              </label>
+
+              <label class="form-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  name="email"
+                  autocomplete="email"
+                  maxlength="254"
+                  required
+                />
+              </label>
+            </div>
+
+            <label class="form-field">
+              <span>AI tools you already use</span>
+              <input
+                type="text"
+                name="tools"
+                autocomplete="off"
+                maxlength="200"
+                placeholder="Claude Code, Codex, Grok, Obsidian Mind…"
+                required
+              />
+            </label>
+
+            <label class="form-field">
+              <span>What would you test?</span>
+              <textarea
+                name="testPlan"
+                rows="5"
+                minlength="10"
+                maxlength="1200"
+                placeholder="The real Project and handoff you want to try."
+                required
+              ></textarea>
+            </label>
+
+            <div class="form-trap" aria-hidden="true">
+              <label>
+                Website
+                <input
+                  type="text"
+                  name="website"
+                  autocomplete="off"
+                  tabindex="-1"
+                />
+              </label>
+            </div>
+
+            <div class="form-submit-row">
+              <button
+                class="button alpha-submit"
+                type="submit"
+                data-alpha-submit
+              >
+                <span data-alpha-submit-label>Request alpha access</span>
+                <span aria-hidden="true">→</span>
+              </button>
+              <p class="form-note">
+                Sent directly to
+                <a href="mailto:support@mdevolved.com">support@mdevolved.com</a
+                >. No account or marketing list is created.
+              </p>
+            </div>
+
+            <p
+              class="form-status"
+              role="status"
+              aria-live="polite"
+              data-alpha-status
+            ></p>
+
+            <noscript>
+              <p class="form-status" data-state="error">
+                JavaScript is required for this form. Email
+                <a href="mailto:support@mdevolved.com">support@mdevolved.com</a>
+                instead.
+              </p>
+            </noscript>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-inner">
+        <a class="brand footer-brand" href="#top" aria-label="MD Evolved home">
+          <span class="brand-mark" aria-hidden="true">MD</span>
+          <span class="brand-name">Evolved</span>
+        </a>
+        <p>Built from plain text upward.</p>
+        <p>
+          <a
+            class="footer-link"
+            href="https://github.com/msinclair25/owd-platform"
+            target="_blank"
+            rel="noopener noreferrer"
+            >OWD Platform private alpha ↗</a
+          >
+          ·
+          <a
+            class="footer-link"
+            href="https://github.com/msinclair25/owd-sync"
+            target="_blank"
+            rel="noopener noreferrer"
+            >OWD Sync ↗</a
+          >
+          ·
+          <a class="footer-link" href="mailto:support@mdevolved.com"
+            >support@mdevolved.com</a
+          >
+          · © 2026 MD Evolved
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

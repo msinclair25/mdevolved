@@ -1,0 +1,13 @@
+{
+  "name": "@owd/client-packs",
+  "version": "1.0.0-alpha.3",
+  "private": true,
+  "description": "Thin, protocol-neutral compatibility profiles for OWD clients and vault runtimes.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./owd-eve": "./owd-eve/SKILL.md",
+    "./owd-obsidian-mind": "./owd-obsidian-mind/SKILL.md"
+  }
+}

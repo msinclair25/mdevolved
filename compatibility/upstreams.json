@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "monitorRepository": "msinclair25/owd-platform",
+  "issueLabel": {
+    "name": "upstream-compatibility",
+    "color": "8250df",
+    "description": "An upstream client profile changed and requires compatibility review."
+  },
+  "profiles": [
+    {
+      "id": "obsidian-mind",
+      "name": "Obsidian Mind",
+      "source": {
+        "kind": "github-release",
+        "repository": "breferrari/obsidian-mind",
+        "releaseTag": "v8.2.0",
+        "commit": "216821bbc030211476e68270e287c915d09b4390",
+        "reviewedAt": "2026-07-30"
+      },
+      "criticalPaths": [
+        "vault-manifest.json",
+        ".mcp.json",
+        ".claude/scripts/om-mcp.mjs",
+        ".claude/scripts/lib/mcp-*.ts",
+        ".claude/scripts/lib/memory-write.ts",
+        ".claude/scripts/session-start.ts",
+        ".claude/scripts/stop-checklist.ts",
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "evidence": [
+        {
+          "path": "packages/client-packs/src/obsidian-mind.ts",
+          "requiredMarkers": [
+            "216821bbc030211476e68270e287c915d09b4390",
+            "version: \"8.2.0\"",
+            "reviewedAt: \"2026-07-30\""
+          ]
+        },
+        {
+          "path": "docs/OBSIDIAN-MIND-COMPATIBILITY.md",
+          "requiredMarkers": [
+            "`8.2.0`",
+            "`216821bbc030211476e68270e287c915d09b4390`"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eve",
+      "name": "Eve.dev",
+      "source": {
+        "kind": "github-release",
+        "repository": "vercel/eve",
+        "releaseTag": "eve@0.29.2",
+        "commit": "7ec1c93ce43488e136a2a043cc3e6a310cd03841",
+        "reviewedAt": "2026-07-30"
+      },
+      "dependencies": [
+        {
+          "kind": "npm",
+          "package": "@vercel/connect",
+          "version": "0.6.0",
+          "integrity": "sha512-+v9zc5kzvIw2l/UmHotLFw7DugttvhNAXCRrTdsJNZP6E0OiCcqfTRtx9GvFotFxPBj2k6BVZf7BlF7KmjytXw=="
+        }
+      ],
+      "criticalPaths": [
+        "packages/eve/package.json",
+        "packages/eve/CHANGELOG.md",
+        "packages/eve/src/public/definitions/connections/**",
+        "packages/eve/src/public/connections/**",
+        "packages/eve/src/runtime/connections/**",
+        "packages/eve/src/setup/**",
+        "packages/eve/src/cli/commands/integration-*.ts",
+        "packages/eve/src/cli/commands/registry*.ts",
+        "docs/connections/**",
+        "apps/docs/registry/**"
+      ],
+      "evidence": [
+        {
+          "path": "packages/client-packs/src/eve.ts",
+          "requiredMarkers": [
+            "commit: \"7ec1c93ce43488e136a2a043cc3e6a310cd03841\"",
+            "connectVersion: \"0.6.0\"",
+            "eveVersion: \"0.29.2\"",
+            "reviewedAt: \"2026-07-30\""
+          ]
+        },
+        {
+          "path": "docs/EVE-COMPATIBILITY.md",
+          "requiredMarkers": [
+            "`0.29.2`",
+            "`7ec1c93ce43488e136a2a043cc3e6a310cd03841`",
+            "`0.6.0`"
+          ]
+        }
+      ]
+    }
+  ]
+}

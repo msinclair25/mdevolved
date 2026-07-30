@@ -1,0 +1,23 @@
+{
+  "approved": null,
+  "excludedAuthority": [
+    "oauth-access-tokens",
+    "oauth-refresh-tokens",
+    "oauth-authorization-codes",
+    "oauth-protocol-storage",
+    "sessions",
+    "passkeys",
+    "pairing-secrets",
+    "vault-credentials",
+    "live-agent-grants",
+    "recovery-private-keys",
+    "harness-context",
+    "provider-credentials",
+    "runtime-caches"
+  ],
+  "format": "owd-snapshot-intelligence-v1",
+  "requiredCapabilities": [],
+  "schemaVersion": 1,
+  "selection": "none",
+  "unvetted": null
+}

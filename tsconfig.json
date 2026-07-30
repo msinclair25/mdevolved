@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/client-packs" },
+    { "path": "./packages/contracts" },
+    { "path": "./packages/yaos-core" },
+    { "path": "./packages/obsidian-plugin" },
+    { "path": "./apps/marketing" },
+    { "path": "./apps/worker" },
+    { "path": "./apps/web" }
+  ]
+}

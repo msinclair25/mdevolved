@@ -1,0 +1,491 @@
+{
+  "format": "owd-collaboration-ledger-v1",
+  "ownerEvents": [
+    {
+      "createdAt": 1784819200,
+      "eventId": "63000000-0000-4000-8000-000000000001",
+      "eventType": "record.shared",
+      "ownerAuthenticated": true,
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "reason": "Share the handoff for independent review.",
+      "recordType": "owner-event",
+      "schemaVersion": 1,
+      "target": {
+        "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "recordId": "62000000-0000-4000-8000-000000000001",
+        "recordType": "handoff",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "createdAt": 1784820200,
+      "eventId": "65000000-0000-4000-8000-000000000001",
+      "eventType": "record.accepted",
+      "ownerAuthenticated": true,
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "reason": "Accept the reviewed handoff into the Project record.",
+      "recordType": "owner-event",
+      "schemaVersion": 1,
+      "target": {
+        "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "recordId": "62000000-0000-4000-8000-000000000001",
+        "recordType": "handoff",
+        "schemaVersion": 1
+      }
+    }
+  ],
+  "provenanceEdges": [
+    {
+      "createdAt": 1784819000,
+      "edgeId": "70000000-0000-4000-8000-000000000001",
+      "object": {
+        "id": "50000000-0000-4000-8000-000000000001",
+        "provClass": "entity",
+        "recordType": "work-packet"
+      },
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "provenance-edge",
+      "relation": "used",
+      "schemaVersion": 1,
+      "subject": {
+        "id": "60000000-0000-4000-8000-000000000001",
+        "provClass": "activity",
+        "recordType": "attempt"
+      }
+    },
+    {
+      "createdAt": 1784819000,
+      "edgeId": "70000000-0000-4000-8000-000000000002",
+      "object": {
+        "id": "60000000-0000-4000-8000-000000000001",
+        "provClass": "activity",
+        "recordType": "attempt"
+      },
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "provenance-edge",
+      "relation": "was-generated-by",
+      "schemaVersion": 1,
+      "subject": {
+        "id": "61000000-0000-4000-8000-000000000001",
+        "provClass": "entity",
+        "recordType": "artifact"
+      }
+    },
+    {
+      "createdAt": 1784819100,
+      "edgeId": "70000000-0000-4000-8000-000000000003",
+      "object": {
+        "id": "60000000-0000-4000-8000-000000000001",
+        "provClass": "activity",
+        "recordType": "attempt"
+      },
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "provenance-edge",
+      "relation": "was-generated-by",
+      "schemaVersion": 1,
+      "subject": {
+        "id": "62000000-0000-4000-8000-000000000001",
+        "provClass": "entity",
+        "recordType": "handoff"
+      }
+    },
+    {
+      "createdAt": 1784819900,
+      "edgeId": "70000000-0000-4000-8000-000000000004",
+      "object": {
+        "id": "61000000-0000-4000-8000-000000000001",
+        "provClass": "entity",
+        "recordType": "artifact"
+      },
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "provenance-edge",
+      "relation": "used",
+      "schemaVersion": 1,
+      "subject": {
+        "id": "64000000-0000-4000-8000-000000000001",
+        "provClass": "activity",
+        "recordType": "review"
+      }
+    },
+    {
+      "createdAt": 1784820100,
+      "edgeId": "70000000-0000-4000-8000-000000000005",
+      "object": {
+        "id": "62000000-0000-4000-8000-000000000001",
+        "provClass": "entity",
+        "recordType": "handoff"
+      },
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "provenance-edge",
+      "relation": "was-derived-from",
+      "schemaVersion": 1,
+      "subject": {
+        "id": "66000000-0000-4000-8000-000000000001",
+        "provClass": "entity",
+        "recordType": "decision"
+      }
+    }
+  ],
+  "records": [
+    {
+      "createdAt": 1784818000,
+      "initialLabel": "Portable Intelligence",
+      "knowledgeSpaceId": "10000000-0000-4000-8000-000000000001",
+      "recordType": "knowledge-space",
+      "schemaVersion": 1
+    },
+    {
+      "createdAt": 1784818010,
+      "knowledgeSpaceId": "10000000-0000-4000-8000-000000000001",
+      "knowledgeSpaceVersionId": "10000000-0000-4000-8000-000000000002",
+      "members": [
+        {
+          "exclusions": [],
+          "pathPrefixes": [
+            {
+              "path": "Projects/Portable Intelligence",
+              "pathKey": "projects/portable intelligence"
+            }
+          ],
+          "vaultId": "54000000-0000-4000-8000-000000000001"
+        }
+      ],
+      "previousVersionId": null,
+      "recordType": "knowledge-space-version",
+      "schemaVersion": 1,
+      "selectorSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "version": 1
+    },
+    {
+      "createdAt": 1784818020,
+      "initialLabel": "Phase 9A contracts",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "project",
+      "schemaVersion": 1
+    },
+    {
+      "createdAt": 1784818030,
+      "knowledgeSpaceVersionId": "10000000-0000-4000-8000-000000000002",
+      "objective": "Design and validate the collaboration walking skeleton before migrations.",
+      "packetPolicy": {
+        "maxCitationCount": 64,
+        "maxEvidenceBytes": 4194304,
+        "maxSharedRecordCount": 64
+      },
+      "previousVersionId": null,
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "projectVersionId": "20000000-0000-4000-8000-000000000002",
+      "recordType": "project-version",
+      "schemaVersion": 1,
+      "version": 1
+    },
+    {
+      "createdAt": 1784818040,
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "work-item",
+      "schemaVersion": 1,
+      "workItemId": "30000000-0000-4000-8000-000000000001"
+    },
+    {
+      "brief": {
+        "constraints": ["Use only the cited disposable-vault evidence."],
+        "definitionOfDone": ["Return one evidence-linked handoff."],
+        "objective": "Prepare a portable collaboration contract review.",
+        "requestedOutput": "A concise Markdown handoff with risks and next actions."
+      },
+      "createdAt": 1784818050,
+      "previousVersionId": null,
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "work-item-version",
+      "schemaVersion": 1,
+      "version": 1,
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workItemVersionId": "30000000-0000-4000-8000-000000000002"
+    },
+    {
+      "claimedHarness": {
+        "assertedBy": "client",
+        "name": "Synthetic Harness A",
+        "verification": "claimed",
+        "version": "1.0.0"
+      },
+      "claimedModel": {
+        "assertedBy": "client",
+        "name": "Synthetic Model A",
+        "verification": "claimed",
+        "version": "2026-07"
+      },
+      "observedAt": 1784818900,
+      "oauthClient": {
+        "clientId": "https://client.example/codex.json",
+        "displayName": "Synthetic Codex client",
+        "origin": "https://client.example",
+        "verification": "authorization-bound-client"
+      },
+      "participantRefId": "40000000-0000-4000-8000-000000000001",
+      "recordType": "participant-ref",
+      "schemaVersion": 1
+    },
+    {
+      "claimedHarness": {
+        "assertedBy": "client",
+        "name": "Synthetic Harness B",
+        "verification": "claimed",
+        "version": "1.0.0"
+      },
+      "claimedModel": null,
+      "observedAt": 1784819800,
+      "oauthClient": {
+        "clientId": "https://reviewer.example/client.json",
+        "displayName": "Synthetic reviewer client",
+        "origin": "https://reviewer.example",
+        "verification": "authorization-bound-client"
+      },
+      "participantRefId": "40000000-0000-4000-8000-000000000002",
+      "recordType": "participant-ref",
+      "schemaVersion": 1
+    },
+    {
+      "brief": {
+        "constraints": ["Use only the cited disposable-vault evidence."],
+        "definitionOfDone": ["Return one evidence-linked handoff."],
+        "objective": "Prepare a portable collaboration contract review.",
+        "requestedOutput": "A concise Markdown handoff with risks and next actions."
+      },
+      "createdAt": 1784818800,
+      "evidenceObjects": [
+        {
+          "byteLength": 20,
+          "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+          "mediaType": "text/markdown"
+        }
+      ],
+      "excluded": ["All paths outside Projects/Portable Intelligence."],
+      "expiresAt": 1784905200,
+      "format": "owd-work-packet-v1",
+      "includedRecords": [],
+      "integrity": {
+        "algorithm": "sha-256-jcs-rfc8785",
+        "digest": "682542ab258833127c9ed6eaa7608eb3d870b5e5f2b58d48319711fa78f81641",
+        "scope": "object-with-integrity-digest-omitted"
+      },
+      "knowledgeSpaceVersionId": "10000000-0000-4000-8000-000000000002",
+      "outputContract": {
+        "acceptedMediaTypes": ["text/markdown", "application/json"],
+        "acceptedRecordTypes": ["attempt", "artifact", "handoff", "review"],
+        "maxSubmissionBytes": 1048576,
+        "submissionFormat": "owd-collaboration-submission-v1"
+      },
+      "packetId": "50000000-0000-4000-8000-000000000001",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "projectVersionId": "20000000-0000-4000-8000-000000000002",
+      "recordType": "work-packet",
+      "requestedRole": { "authority": "none", "label": "research" },
+      "schemaVersion": 1,
+      "sourceCitations": [
+        {
+          "citationId": "52000000-0000-4000-8000-000000000001",
+          "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+          "excerptByteRange": { "endExclusive": 20, "start": 0 },
+          "generationId": "53000000-0000-4000-8000-000000000001",
+          "path": "Projects/Portable Intelligence/Brief.md",
+          "sourceByteLength": 32,
+          "sourceContentSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "stateLayer": "materialized-library",
+          "vaultId": "54000000-0000-4000-8000-000000000001"
+        }
+      ],
+      "truncationNotices": [
+        "The source was retained as the selected 20-byte excerpt."
+      ],
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workItemVersionId": "30000000-0000-4000-8000-000000000002"
+    },
+    {
+      "attemptId": "60000000-0000-4000-8000-000000000001",
+      "claimedCompletedAt": 1784819100,
+      "claimedStartedAt": 1784818900,
+      "grantId": "90000000-0000-4000-8000-000000000001",
+      "participantRefId": "40000000-0000-4000-8000-000000000001",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "attempt",
+      "requestedRole": { "authority": "none", "label": "research" },
+      "schemaVersion": 1,
+      "supersedesRecordId": null,
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workPacketId": "50000000-0000-4000-8000-000000000001"
+    },
+    {
+      "artifactId": "61000000-0000-4000-8000-000000000001",
+      "attemptId": "60000000-0000-4000-8000-000000000001",
+      "content": {
+        "byteLength": 128,
+        "contentSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "kind": "stored-object",
+        "mediaType": "text/markdown",
+        "portableObjectId": "80000000-0000-4000-8000-000000000001"
+      },
+      "label": "Contract review",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "artifact",
+      "schemaVersion": 1,
+      "supersedesRecordId": null,
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workPacketId": "50000000-0000-4000-8000-000000000001"
+    },
+    {
+      "artifactIds": ["61000000-0000-4000-8000-000000000001"],
+      "attemptId": "60000000-0000-4000-8000-000000000001",
+      "completed": ["Reviewed the proposed contract boundary."],
+      "evidenceCitationIds": ["52000000-0000-4000-8000-000000000001"],
+      "handoffId": "62000000-0000-4000-8000-000000000001",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "handoff",
+      "risks": ["A stale Work Packet must fail before submission storage."],
+      "schemaVersion": 1,
+      "suggestedNextActions": [
+        "Have an independent client review the artifact."
+      ],
+      "summary": "The walking-skeleton contracts preserve bounded evidence and separate sharing from acceptance.",
+      "supersedesRecordId": null,
+      "unresolvedQuestions": [],
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workPacketId": "50000000-0000-4000-8000-000000000001"
+    },
+    {
+      "brief": {
+        "constraints": [
+          "Review only the shared handoff and its exact artifact."
+        ],
+        "definitionOfDone": [
+          "Return evidence-linked findings and a claimed verdict."
+        ],
+        "objective": "Independently review the first agent's artifact.",
+        "requestedOutput": "A structured review."
+      },
+      "createdAt": 1784819700,
+      "evidenceObjects": [
+        {
+          "byteLength": 20,
+          "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+          "mediaType": "text/markdown"
+        }
+      ],
+      "excluded": ["The first agent's private harness conversation."],
+      "expiresAt": 1784906100,
+      "format": "owd-work-packet-v1",
+      "includedRecords": [
+        {
+          "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "includedAs": "shared-handoff",
+          "recordId": "62000000-0000-4000-8000-000000000001",
+          "recordType": "handoff",
+          "schemaVersion": 1,
+          "selectionReason": "The owner shared this handoff for review.",
+          "visibilityAtAssembly": "shared"
+        }
+      ],
+      "integrity": {
+        "algorithm": "sha-256-jcs-rfc8785",
+        "digest": "99921954dccf37477a0a1eb1d4fd81e1d5f6744718f75ecbceb760ed85382db7",
+        "scope": "object-with-integrity-digest-omitted"
+      },
+      "knowledgeSpaceVersionId": "10000000-0000-4000-8000-000000000002",
+      "outputContract": {
+        "acceptedMediaTypes": ["application/json"],
+        "acceptedRecordTypes": ["attempt", "review"],
+        "maxSubmissionBytes": 1048576,
+        "submissionFormat": "owd-collaboration-submission-v1"
+      },
+      "packetId": "50000000-0000-4000-8000-000000000002",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "projectVersionId": "20000000-0000-4000-8000-000000000002",
+      "recordType": "work-packet",
+      "requestedRole": { "authority": "none", "label": "review" },
+      "schemaVersion": 1,
+      "sourceCitations": [
+        {
+          "citationId": "52000000-0000-4000-8000-000000000001",
+          "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+          "excerptByteRange": { "endExclusive": 20, "start": 0 },
+          "generationId": "53000000-0000-4000-8000-000000000001",
+          "path": "Projects/Portable Intelligence/Brief.md",
+          "sourceByteLength": 32,
+          "sourceContentSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "stateLayer": "materialized-library",
+          "vaultId": "54000000-0000-4000-8000-000000000001"
+        }
+      ],
+      "truncationNotices": [],
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workItemVersionId": "30000000-0000-4000-8000-000000000002"
+    },
+    {
+      "attemptId": "60000000-0000-4000-8000-000000000002",
+      "claimedCompletedAt": 1784820000,
+      "claimedStartedAt": 1784819800,
+      "grantId": "90000000-0000-4000-8000-000000000002",
+      "participantRefId": "40000000-0000-4000-8000-000000000002",
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "attempt",
+      "requestedRole": { "authority": "none", "label": "review" },
+      "schemaVersion": 1,
+      "supersedesRecordId": null,
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workPacketId": "50000000-0000-4000-8000-000000000002"
+    },
+    {
+      "artifactIds": ["61000000-0000-4000-8000-000000000001"],
+      "attemptId": "60000000-0000-4000-8000-000000000002",
+      "findings": [
+        {
+          "artifactIds": ["61000000-0000-4000-8000-000000000001"],
+          "evidenceCitationIds": ["52000000-0000-4000-8000-000000000001"],
+          "findingId": "64100000-0000-4000-8000-000000000001",
+          "severity": "medium",
+          "summary": "The implementation must compare the packet and grant Knowledge Space versions."
+        }
+      ],
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "recordType": "review",
+      "reviewId": "64000000-0000-4000-8000-000000000001",
+      "schemaVersion": 1,
+      "supersedesRecordId": null,
+      "verdict": "pass-with-findings",
+      "verdictAuthority": "producer-claim",
+      "workItemId": "30000000-0000-4000-8000-000000000001",
+      "workPacketId": "50000000-0000-4000-8000-000000000002"
+    },
+    {
+      "createdAt": 1784820100,
+      "decisionId": "66000000-0000-4000-8000-000000000001",
+      "inputRecords": [
+        {
+          "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "ownerDisposition": "accepted",
+          "recordId": "62000000-0000-4000-8000-000000000001",
+          "recordType": "handoff",
+          "schemaVersion": 1
+        },
+        {
+          "contentSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+          "ownerDisposition": "accepted",
+          "recordId": "64000000-0000-4000-8000-000000000001",
+          "recordType": "review",
+          "schemaVersion": 1
+        }
+      ],
+      "ownerAuthored": true,
+      "projectId": "20000000-0000-4000-8000-000000000001",
+      "rationale": "Accept the contract direction with the review's stale-version requirement.",
+      "recordType": "decision",
+      "resolution": "accepted",
+      "schemaVersion": 1,
+      "supersedesDecisionId": null,
+      "workItemId": "30000000-0000-4000-8000-000000000001"
+    }
+  ],
+  "schemaVersion": 1
+}

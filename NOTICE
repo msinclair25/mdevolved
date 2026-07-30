@@ -1,0 +1,14 @@
+OWD Platform
+Copyright 2026 OWD Platform contributors
+
+This product includes adapted software from YAOS:
+
+Repository: https://github.com/kavinsood/yaos
+Pinned commit: e3d73d6850349f772812fbe7758cf5f3f6b11390
+Copyright (C) 2026 by Kavin Sood
+License: 0BSD; reproduced at packages/yaos-core/LICENSE
+
+Imported and modified components are recorded in
+packages/yaos-core/UPSTREAM.md and packages/obsidian-plugin/UPSTREAM.md. OWD
+Platform modifications remain licensed under Apache-2.0; the vendored YAOS
+components retain their 0BSD notice.

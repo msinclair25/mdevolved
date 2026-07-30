@@ -1,0 +1,2096 @@
+import { MarkdownView, Modal, Notice, Platform, Plugin, TFile, arrayBufferToHex } from "obsidian";
+import {
+	DEFAULT_SETTINGS,
+	VaultSyncSettingTab,
+	generateVaultId,
+	type VaultSyncSettings,
+} from "./settings";
+import { SettingsStore } from "./settings/settingsStore";
+import { VaultSync, type ReconcileMode } from "./sync/vaultSync";
+import { SCHEMA_VERSION } from "./sync/vaultSync";
+import { EditorBindingManager } from "./sync/editorBinding";
+import { DiskMirror } from "./sync/diskMirror";
+import { type BlobQueueSnapshot, type BlobSyncManager } from "./sync/blobSync";
+import {
+	type ServerCapabilities,
+} from "./sync/serverCapabilities";
+import { isMarkdownSyncable, isBlobSyncable } from "./types";
+import { planCategoryRenameAction } from "./sync/policy/renameAdmissionPolicy";
+import { classifySyncPath } from "./paths/pathCategory";
+import type { TraceSink } from "./observability/traceSink";
+import { NoopTraceSink } from "./observability/noopTraceSink";
+import {
+	type FrontmatterValidationResult,
+} from "./sync/frontmatterGuard";
+import {
+	readPersistedFrontmatterQuarantine,
+	type FrontmatterQuarantineEntry,
+} from "./sync/frontmatterQuarantine";
+import {
+	FrontmatterGuardCoordinator,
+} from "./sync/frontmatterGuardCoordinator";
+import { createSocketTicketCache, isTicketEndpointUnsupported } from "./sync/socketTicket";
+import {
+	type DiskIndex,
+	moveIndexEntries,
+	waitForDiskQuiet,
+} from "./sync/diskIndex";
+import {
+	type BlobHashCache,
+	moveCachedHashes,
+} from "./sync/blobHashCache";
+import type { PreservedUnresolvedEntry } from "./sync/preservedUnresolved";
+import {
+	SnapshotService,
+} from "./snapshots/snapshotService";
+import type {
+	TraceEventDetails,
+	TraceHttpContext,
+} from "./observability/traceContext";
+import {
+	CapabilityUpdateService,
+	readPersistedServerCapabilitiesCache,
+	readPersistedUpdateManifestCache,
+	type PersistedServerCapabilitiesCache,
+	type PersistedUpdateManifestCache,
+	type UpdateState,
+} from "./runtime/capabilityUpdateService";
+import {
+	ConnectionController,
+	type ConnectionState,
+} from "./runtime/connectionController";
+import {
+	buildRuntimeConfig,
+	type RuntimeConfig,
+} from "./runtime/runtimeConfig";
+import {
+	ReconciliationController,
+} from "./runtime/reconciliationController";
+import { AttachmentOrchestrator } from "./runtime/attachmentOrchestrator";
+import { EditorWorkspaceOrchestrator } from "./runtime/editorWorkspaceOrchestrator";
+import { SetupLinkController } from "./runtime/setupLinkController";
+import { TraceRuntimeController } from "./runtime/traceRuntimeController";
+import { registerCommands } from "./commands";
+import {
+	getSyncStatusLabel,
+	renderConnectionState,
+	renderSyncStatus,
+	type SyncStatus,
+} from "./status/statusBarController";
+import { formatUnknown, yTextToString } from "./utils/format";
+import { randomBase64Url } from "./utils/base64url";
+import { ConfirmModal } from "./ui/ConfirmModal";
+import { runSchemaMigrationToV2 } from "./migrations/schemaV2";
+import { isLocalOrigin } from "./sync/origins";
+import type { EngineControlPort, DiskIngestPort } from "./runtime/engineControlPort";
+import type { BindingPropagationGate } from "./sync/editorBinding";
+import * as Y from "yjs";
+
+// Build-time constant injected by esbuild.
+//   production build (main.js):          define __YAOS_QA_HARNESS_ENABLED__ = false
+//   QA product build (product-main.js):  define __YAOS_QA_HARNESS_ENABLED__ = true
+// When false, esbuild dead-code-eliminates all blocks gated on this constant.
+// The declare tells TypeScript the type; the actual value comes from the esbuild define.
+declare const __YAOS_QA_HARNESS_ENABLED__: boolean;
+
+type PersistedPluginState = Partial<VaultSyncSettings> & {
+	_diskIndex?: DiskIndex;
+	_blobHashCache?: BlobHashCache;
+	/**
+	 * Unix ms timestamp of the last successful saveDiskIndex() call.
+	 * Semantically: "the last time YAOS durably persisted its disk-index
+	 * baselines to data.json." Used by decideClosedFileConflict to detect
+	 * "disk file was edited while YAOS was inactive" when baselineHash is
+	 * missing. This is a heuristic timestamp — it is the last save, not
+	 * necessarily the last time YAOS observed the specific file.
+	 * See: src/sync/closedFileConflict.ts ClosedFileConflictInput.lastDiskIndexPersistedAt
+	 */
+	_lastDiskIndexPersistedAt?: number;
+	_blobQueue?: BlobQueueSnapshot;
+	_serverCapabilitiesCache?: PersistedServerCapabilitiesCache;
+	_updateManifestCache?: PersistedUpdateManifestCache;
+	_frontmatterQuarantine?: FrontmatterQuarantineEntry[];
+	_preservedUnresolved?: PreservedUnresolvedEntry[];
+};
+
+export default class VaultCrdtSyncPlugin extends Plugin {
+	settings: VaultSyncSettings = DEFAULT_SETTINGS;
+	private readonly settingsStore = new SettingsStore<PersistedPluginState>({
+		loadData: () => this.loadData(),
+		saveData: (data) => this.saveData(data),
+	});
+	private runtimeConfig: RuntimeConfig | null = null;
+
+	private vaultSync: VaultSync | null = null;
+	private connectionController: ConnectionController | null = null;
+	private editorBindings: EditorBindingManager | null = null;
+	private diskMirror: DiskMirror | null = null;
+	private attachmentOrchestrator: AttachmentOrchestrator | null = null;
+	private editorWorkspace: EditorWorkspaceOrchestrator | null = null;
+	private snapshotService: SnapshotService | null = null;
+	private reconciliationController!: ReconciliationController;
+	private setupLinkController: SetupLinkController | null = null;
+	private settingsTab: VaultSyncSettingTab | null = null;
+	private traceRuntime: TraceRuntimeController | null = null;
+	// ---------------------------------------------------------------------------
+	// QA harness state — only populated when __YAOS_QA_HARNESS_ENABLED__ is true.
+	//
+	// In production (main.js), esbuild defines __YAOS_QA_HARNESS_ENABLED__=false
+	// and dead-code-eliminates every block gated on it.  This field itself is
+	// declared here so TypeScript is satisfied; the constructor initialises it to
+	// null (one innocent assignment), and every meaningful access lives inside a
+	// gated block that disappears from main.js entirely.
+	//
+	// In the QA product build (product-main.js), __YAOS_QA_HARNESS_ENABLED__=true
+	// and the full state object is constructed in onload() before the first
+	// createReconciliationController() call.
+	// ---------------------------------------------------------------------------
+	private _qaState: {
+		diskIngestPort: DiskIngestPort | null;
+		externalEditPolicyOverride: import("./settings").ExternalEditPolicy | null;
+		pausedEditorPropagationPaths: Set<string>;
+		bindingReconfigureHook: ((path: string, deviceName: string, action: "pause" | "resume") => void) | null;
+		controlPort: EngineControlPort;
+	} | null = null;
+	/** Domain-level trace sink. Routes to lab when active, noop otherwise. */
+	private traceSink: TraceSink = new NoopTraceSink();
+	private statusBarEl: HTMLElement | null = null;
+	private statusInterval: ReturnType<typeof setInterval> | null = null;
+
+	/** Parsed exclude patterns from settings. */
+	private excludePatterns: string[] = [];
+
+	/** Max file size in characters (derived from settings KB). */
+	private maxFileSize = 0;
+
+	/** Persisted disk index: {path -> {mtime, size}}. */
+	private diskIndex: DiskIndex = {};
+	/**
+	 * Unix ms timestamp of the last saveDiskIndex() that completed successfully.
+	 * Semantics: "last time YAOS durably persisted disk-index state."
+	 * This is a global (not per-file) heuristic timestamp used only as a
+	 * tie-breaker in the missing-baseline closed-file conflict path.
+	 * Naming: lastDiskIndexPersistedAt, not lastPluginActiveAt — these are
+	 * not the same thing, and conflating them creates false certainty.
+	 */
+	private lastDiskIndexPersistedAt = 0;
+
+	/** Persisted blob hash cache: {path -> {mtime, size, hash}}. */
+	private blobHashCache: BlobHashCache = {};
+
+	/** Persisted blob queue snapshot for crash resilience. */
+	private savedBlobQueue: BlobQueueSnapshot | null = null;
+	private preservedUnresolvedEntries: PreservedUnresolvedEntry[] = [];
+	private persistedState: PersistedPluginState = {};
+	private persistWriteChain: Promise<void> = Promise.resolve();
+
+	/** Pending stability checks for newly created/dropped files. */
+	private pendingStabilityChecks = new Set<string>();
+
+	/** In-memory ring of recent high-level plugin events. */
+	private eventRing: Array<{ ts: string; msg: string }> = [];
+
+	private capabilityUpdateService: CapabilityUpdateService | null = null;
+	private commandsRegistered = false;
+	private idbDegradedHandled = false;
+	private frontmatterGuardCoordinator!: FrontmatterGuardCoordinator;
+	private frontmatterQuarantineEntries: FrontmatterQuarantineEntry[] = [];
+
+	/**
+	 * True when startup timed out waiting for provider sync.
+	 * We use this to force one authoritative reconcile on the first late
+	 * provider sync event, even if connection generation did not change.
+	 */
+	private awaitingFirstProviderSyncAfterStartup = false;
+	private createReconciliationController(): ReconciliationController {
+		this.reconciliationController = new ReconciliationController({
+			app: this.app,
+			getSettings: () => this.settings,
+			getRuntimeConfig: () => this.getRuntimeConfig(),
+			getVaultSync: () => this.vaultSync,
+			getDiskMirror: () => this.diskMirror,
+			getBlobSync: () => this.getBlobSync(),
+			getEditorBindings: () => this.editorBindings,
+			getDiskIndex: () => this.diskIndex,
+			setDiskIndex: (index) => {
+				this.diskIndex = index;
+			},
+			isMarkdownPathSyncable: (path) => this.isMarkdownPathSyncable(path),
+			shouldBlockFrontmatterIngest: (path, previousContent, nextContent, reason) =>
+				this.shouldBlockFrontmatterIngest(path, previousContent, nextContent, reason),
+			refreshServerCapabilities: (reason) => this.refreshServerCapabilities(reason),
+			validateOpenEditorBindings: (reason) => this.editorWorkspace?.validateOpenBindings(reason),
+			onReconciled: (reason) => this.editorWorkspace?.onReconciled(reason),
+			getAwaitingFirstProviderSyncAfterStartup: () => this.awaitingFirstProviderSyncAfterStartup,
+			setAwaitingFirstProviderSyncAfterStartup: (value) => {
+				this.awaitingFirstProviderSyncAfterStartup = value;
+			},
+			saveDiskIndex: () => this.saveDiskIndex(),
+			refreshStatusBar: () => this.refreshStatusBar(),
+			getLastSaveDiskIndexAt: () => this.lastDiskIndexPersistedAt,
+			trace: (source, msg, details) => this.trace(source, msg, details),
+			scheduleTraceStateSnapshot: (reason) => this.scheduleTraceStateSnapshot(reason),
+			log: (message) => this.log(message),
+			recordFlightEvent: (event) => this.recordFlightEvent(event),
+			recordFlightPathEvent: (event) => this.recordFlightPathEvent(event),
+			computeRecoveryStateHash: async () => null,
+			getEffectiveExternalEditPolicy: (runtimePolicy) => {
+				if (__YAOS_QA_HARNESS_ENABLED__) {
+					const override = this._qaState?.externalEditPolicyOverride;
+					if (override != null) return override;
+				}
+				return runtimePolicy;
+			},
+			registerDiskIngestPort: (port) => {
+				if (__YAOS_QA_HARNESS_ENABLED__ && this._qaState) {
+					this._qaState.diskIngestPort = port;
+				}
+			},
+		});
+		return this.reconciliationController;
+	}
+
+	private isMarkdownPathSyncable(path: string): boolean {
+		return isMarkdownSyncable(path, this.excludePatterns, this.getRuntimeConfig().vaultConfigDir);
+	}
+
+	private isBlobPathSyncable(path: string): boolean {
+		return isBlobSyncable(path, this.excludePatterns, this.getRuntimeConfig().vaultConfigDir);
+	}
+
+	private getRuntimeConfig(): RuntimeConfig {
+		if (!this.runtimeConfig) {
+			this.runtimeConfig = buildRuntimeConfig(this.settings, this.app.vault.configDir);
+		}
+		return this.runtimeConfig;
+	}
+
+	private getBlobSync(): BlobSyncManager | null {
+		return this.attachmentOrchestrator?.manager ?? null;
+	}
+
+	/** Overridden by the OWD distribution to start vault-explicit pairing. */
+	startOwdPairing(): void {
+		new Notice("Pairing is unavailable in this plugin build.", 5000);
+	}
+
+	/** OWD adapter bridge into YAOS's reviewed setup and restart behavior. */
+	async applyOwdConnection(params: {
+		host: string;
+		token: string;
+		vaultId: string;
+	}): Promise<void> {
+		if (!this.setupLinkController) {
+			throw new Error("Sync setup is not ready.");
+		}
+
+		await this.setupLinkController.applyOwdConnection(params);
+		if (
+			this.settings.host.replace(/\/$/u, "") !== params.host.replace(/\/$/u, "") ||
+			this.settings.token !== params.token ||
+			this.settings.vaultId !== params.vaultId
+		) {
+			throw new Error("The new OWD vault connection was not applied.");
+		}
+		this.settingsTab?.display();
+	}
+
+	/**
+	 * OWD adapter boundary: return a state vector only after local persistence,
+	 * provider sync, reconciliation, and the server's durable receipt all agree.
+	 */
+	protected async getOwdSyncConfirmationState(): Promise<ArrayBuffer> {
+		const deadline = Date.now() + 15_000;
+		while (Date.now() < deadline) {
+			const sync = this.vaultSync;
+			if (
+				sync?.connected === true &&
+				sync.providerSynced === true &&
+				this.reconciliationController?.isReconciled === true &&
+				sync.serverAppliedLocalState === true
+			) {
+				const bytes = Y.encodeStateVector(sync.ydoc);
+				const copy = new Uint8Array(bytes.byteLength);
+				copy.set(bytes);
+				return copy.buffer;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 125));
+		}
+		throw new Error(
+			"OWD has not received a durable, reconciled copy of this vault yet. Keep Obsidian open and retry.",
+		);
+	}
+
+	async onload() {
+		const onloadStartedAt = Date.now();
+
+		// Initialize QA harness state before any component construction so that
+		// registerDiskIngestPort (called from createReconciliationController) and
+		// BindingPropagationGate hooks can store into _qaState.
+		// In production this block is dead code — esbuild eliminates it entirely.
+		if (__YAOS_QA_HARNESS_ENABLED__) {
+			this._qaState = {
+				diskIngestPort: null,
+				externalEditPolicyOverride: null,
+				pausedEditorPropagationPaths: new Set(),
+				bindingReconfigureHook: null,
+				controlPort: {
+					ingestDiskFileNow: async (path, reason = "modify") => {
+						if (!this._qaState?.diskIngestPort) throw new Error("DiskIngestPort not registered (reconciliation controller not started?)");
+						await this._qaState.diskIngestPort.ingestDiskFileNow(path, reason);
+					},
+					pauseEditorPropagation: (path) => {
+						if (!this._qaState) return false;
+						if (this._qaState.pausedEditorPropagationPaths.has(path)) return false;
+						this._qaState.pausedEditorPropagationPaths.add(path);
+						this._qaState.bindingReconfigureHook?.(path, this.settings.deviceName, "pause");
+						return true;
+					},
+					resumeEditorPropagation: (path) => {
+						if (!this._qaState) return false;
+						if (!this._qaState.pausedEditorPropagationPaths.has(path)) return false;
+						this._qaState.pausedEditorPropagationPaths.delete(path);
+						this._qaState.bindingReconfigureHook?.(path, this.settings.deviceName, "resume");
+						return true;
+					},
+					setExternalEditPolicyOverride: (policy) => {
+						if (!this._qaState) throw new Error("QA state not initialised");
+						const previous = this._qaState.externalEditPolicyOverride ?? this.getRuntimeConfig().externalEditPolicy;
+						this._qaState.externalEditPolicyOverride = policy;
+						return previous;
+					},
+				},
+			};
+			// Attach the accessor as an instance property so the method name
+			// never appears on the class prototype in production bundles.
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(this as any).getEngineControlPort = (): EngineControlPort => {
+				if (!this._qaState) throw new Error("QA harness state not initialised");
+				return this._qaState.controlPort;
+			};
+		}
+
+		this.capabilityUpdateService = new CapabilityUpdateService({
+			getSettings: () => this.settings,
+			pluginVersion: this.manifest.version,
+			schemaVersion: SCHEMA_VERSION,
+			trace: (source, msg, details) => this.trace(source, msg, details),
+			log: (message) => this.log(message),
+			persistPluginState: () => this.persistPluginState(),
+			hasSyncRuntime: () => this.vaultSync !== null,
+			isSyncConnectedAndProviderSynced: () => !!this.vaultSync?.connected && !!this.vaultSync?.providerSynced,
+			refreshAttachmentSyncRuntime: (reason) => this.refreshAttachmentSyncRuntime(reason),
+			triggerDailySnapshot: () => { void this.snapshotService?.triggerDailySnapshot(); },
+			stopSyncRuntimeForCompatibility: () => {
+				if (this.vaultSync) {
+					void this.teardownSync();
+				}
+			},
+			setStatusError: () => this.updateStatusBar("error"),
+			scheduleTraceStateSnapshot: (reason) => this.scheduleTraceStateSnapshot(reason),
+			updateSettings: (mutator, reason) => this.updateSettings(mutator, reason),
+		});
+		await this.loadSettings();
+		if (this.settings.maxFileSizeKB > 1024) {
+			await this.updateSettings((settings) => {
+				settings.maxFileSizeKB = 1024;
+			}, "owd-library-size-limit");
+		}
+		this.applyRuntimeSettings("load-settings");
+		const self = this;
+		this.frontmatterGuardCoordinator = new FrontmatterGuardCoordinator({
+			get frontmatterGuardEnabled() { return self.settings.frontmatterGuardEnabled; },
+			trace: (source, event, data) => this.trace(source, event, data),
+			persistPluginState: () => this.persistPluginState(),
+			getFrontmatterQuarantineEntries: () => this.frontmatterQuarantineEntries,
+			setFrontmatterQuarantineEntries: (entries) => {
+				this.frontmatterQuarantineEntries = entries;
+			},
+		});
+		this.createReconciliationController();
+		this.editorWorkspace = new EditorWorkspaceOrchestrator({
+			app: this.app,
+			getSettings: () => this.settings,
+			getEditorBindings: () => this.editorBindings,
+			getDiskMirror: () => this.diskMirror,
+			maybeImportDeferredClosedOnlyPath: (path, reason) =>
+				this.reconciliationController.maybeImportDeferredClosedOnlyPath(path, reason),
+			scheduleTraceStateSnapshot: (reason) => this.scheduleTraceStateSnapshot(reason),
+			log: (message) => this.log(message),
+		});
+		this.snapshotService = new SnapshotService({
+			app: this.app,
+			getSettings: () => this.settings,
+			getTraceHttpContext: () => this.getTraceHttpContext(),
+			getVaultSync: () => this.vaultSync,
+			getDiskMirror: () => this.diskMirror,
+			getBlobSync: () => this.getBlobSync(),
+			getServerSupportsSnapshots: () => this.serverSupportsSnapshots,
+			log: (message) => this.log(message),
+			onEditorsNeedReconcile: (reason) => this.editorWorkspace?.onReconciled(reason),
+		});
+		this.setupLinkController = new SetupLinkController({
+			app: this.app,
+			getSettings: () => this.settings,
+			isMarkdownPathSyncable: (path) => this.isMarkdownPathSyncable(path),
+			updateSettings: (mutator, reason) => this.updateSettings(mutator, reason),
+			refreshServerCapabilities: (reason) => this.refreshServerCapabilities(reason),
+			hasSyncRuntime: () => this.vaultSync !== null,
+			initSync: () => this.initSync(),
+			restartSync: async () => {
+				await this.teardownSync();
+				await this.initSync();
+			},
+		});
+		let generatedVaultId = false;
+		if (!this.settings.vaultId) {
+			await this.updateSettings((settings) => {
+				settings.vaultId = generateVaultId();
+			}, "startup-generate-vault-id");
+			generatedVaultId = true;
+		}
+
+		if (!this.settings.deviceName) {
+			await this.updateSettings((settings) => {
+				settings.deviceName = `device-${Date.now().toString(36)}`;
+			}, "startup-generate-device-name");
+		}
+
+			this.setupTraceRuntime();
+		this.attachmentOrchestrator = new AttachmentOrchestrator({
+			app: this.app,
+			getVaultSync: () => this.vaultSync,
+			getRuntimeConfig: () => this.getRuntimeConfig(),
+			getServerSupportsAttachments: () => this.serverSupportsAttachments,
+			getTraceHttpContext: () => this.getTraceHttpContext(),
+			getBlobHashCache: () => this.blobHashCache,
+			getExcludePatterns: () => this.excludePatterns,
+			persistBlobQueue: (snapshot) => this.persistBlobQueueSnapshot(snapshot),
+			clearPersistedBlobQueue: () => this.clearSavedBlobQueue(),
+			getPreservedUnresolvedEntries: () => this.preservedUnresolvedEntries,
+			onPreservedUnresolvedChanged: () => this.persistPreservedUnresolvedState(),
+			trace: (source, msg, details) => this.trace(source, msg, details),
+			scheduleTraceStateSnapshot: (reason) => this.scheduleTraceStateSnapshot(reason),
+			refreshStatusBar: () => this.refreshStatusBar(),
+			log: (message) => this.log(message),
+		});
+		this.attachmentOrchestrator.hydrateSavedQueue(this.savedBlobQueue);
+		this.savedBlobQueue = null;
+		if (generatedVaultId) {
+			this.log(`Generated vault ID: ${this.settings.vaultId}`);
+		}
+
+		this.settingsTab = new VaultSyncSettingTab(this.app, this, this);
+		this.addSettingTab(this.settingsTab);
+
+		this.statusBarEl = this.addStatusBarItem();
+		this.updateStatusBar("disconnected");
+
+		const finishOnload = (outcome: string): void => {
+			const durationMs = Date.now() - onloadStartedAt;
+			this.trace("trace", "startup-onload-complete", {
+				durationMs,
+				outcome,
+				hostConfigured: !!this.settings.host,
+				tokenConfigured: !!this.settings.token,
+			});
+			this.log(`Startup onload complete (${outcome}) in ${durationMs}ms`);
+		};
+
+		if (this.settings.host) {
+			void this.refreshServerCapabilities("startup-background");
+		}
+
+		if (!this.settings.host) {
+			this.log("Host not configured — sync disabled");
+			new Notice("Configure the server host in settings to enable sync.");
+			finishOnload("missing-host");
+			return;
+		}
+
+		if (!this.settings.token) {
+			this.log("Token not configured — sync disabled");
+			const message = this.serverAuthMode === "env"
+				? "OWD Sync: configure the server token in settings to enable sync."
+				: this.serverAuthMode === "claim" || this.serverAuthMode === "unclaimed"
+						? "OWD Sync: claim your deployment in a browser, then create an OWD pairing link."
+						: "OWD Sync: configure a token in settings, or claim the server in a browser first.";
+			new Notice(message, 10000);
+			finishOnload("missing-token");
+			return;
+		}
+
+		// Parse exclude patterns and file size limit from settings
+		this.applyRuntimeSettings("onload-pre-sync");
+
+		// Warn about insecure connections to non-localhost hosts
+		if (this.settings.host) {
+			try {
+				const url = new URL(this.settings.host);
+				const h = url.hostname;
+				if (url.protocol === "http:" && h !== "localhost" && h !== "127.0.0.1" && h !== "[::1]") {
+						this.log("WARNING: connecting over unencrypted HTTP to a remote host — token sent in plaintext");
+						new Notice(
+							"Connecting over unencrypted HTTP. Your token will be sent in plaintext. Use HTTPS for production.",
+							8000,
+						);
+					}
+			} catch { /* invalid URL, will fail at connect */ }
+		}
+
+		void this.initSync().then(() => this.mountQaDebugApi());
+		finishOnload("sync-started");
+	}
+
+	private async initSync(): Promise<void> {
+		const initSyncStartedAt = Date.now();
+		this.attachmentOrchestrator?.destroy();
+		this.trace("trace", "startup-init-sync-start", {
+			hostConfigured: !!this.settings.host,
+			tokenConfigured: !!this.settings.token,
+			hasCachedCapabilities: this.capabilityUpdateService?.hasCachedCapabilities ?? false,
+		});
+		try {
+			this.idbDegradedHandled = false;
+			this.applyRuntimeSettings("init-sync");
+			if (this.enforceCompatibilityGuard("init-sync-preflight")) {
+				return;
+			}
+
+			// 1. Create VaultSync (Y.Doc + IndexedDB + provider in parallel)
+			this.vaultSync = new VaultSync(this.settings, {
+				traceContext: this.getTraceHttpContext(),
+				trace: (source, msg, details) => this.trace(source, msg, details),
+					onFlightEvent: (event) => this.recordFlightEvent(event),
+				onFlightPathEvent: (event) => this.recordFlightPathEvent(event),
+			getSocketTicket: (() => {
+				// Each VaultSync instance gets its own ticket cache.  The cache
+				// is discarded when VaultSync is torn down and recreated.
+				const ticketCache = createSocketTicketCache();
+				const self = this;
+				return async (force = false): Promise<{
+					value: string;
+					expiresAt: number;
+					localExpiresAt: number;
+					ttlMs: number;
+				} | null> => {
+					const socketTicketAuth =
+						self.capabilityUpdateService?.capabilities?.socketTicketAuth;
+
+					// Known old server that explicitly signals no ticket support.
+					if (socketTicketAuth === false) return null;
+
+					// Already confirmed this server does not have the ticket
+					// endpoint — skip the network probe.
+					if (ticketCache.isUnsupported()) return null;
+
+					// socketTicketAuth === true  → confirmed support.
+					// socketTicketAuth === undefined → capability not yet fetched
+					//   (first run, empty cache, slow background poll).
+					// Both: try the ticket endpoint.
+					//
+					// On a clean "endpoint not found" signal (404/405/501) from an
+					// unknown-capability server, mark the cache unsupported and fall
+					// back to ?token= for this connection.  Any other failure (auth,
+					// network, 5xx) must propagate — never silently downgrade to the
+					// long-lived token.
+					//
+					// force=true is used by VaultSync's proactive refresh timer to
+					// bypass the cache and always obtain a fresh ticket.
+					if (force) ticketCache.invalidate();
+
+					try {
+						return await ticketCache.get(
+							self.settings.host,
+							self.settings.token,
+							self.settings.vaultId,
+						);
+					} catch (err) {
+						if (
+							socketTicketAuth === undefined
+							&& isTicketEndpointUnsupported(err)
+						) {
+							// Old server confirmed: stop probing on future reconnects.
+							ticketCache.markUnsupported();
+							self.log("socket ticket endpoint not found; using legacy ?token= for this connection");
+							return null;
+						}
+						// Real failure — propagate.
+						self.log(`socket ticket fetch failed: ${String(err)}`);
+						throw err;
+					}
+				};
+			})(),
+			});
+
+			// 2. EditorBindingManager
+			const bindingPropagationGate: BindingPropagationGate = {
+				isPaused: (path) => {
+					if (__YAOS_QA_HARNESS_ENABLED__ && this._qaState) {
+						return this._qaState.pausedEditorPropagationPaths.has(path);
+					}
+					return false;
+				},
+				registerReconfigureHook: (fn) => {
+					if (__YAOS_QA_HARNESS_ENABLED__ && this._qaState) {
+						this._qaState.bindingReconfigureHook = fn;
+					}
+				},
+			};
+			this.editorBindings = new EditorBindingManager(
+				this.vaultSync,
+				this.settings.debug,
+				(source, msg, details) => this.trace(source, msg, details),
+				(event) => this.recordFlightPathEvent(event),
+				bindingPropagationGate,
+			);
+
+			// 3. Global CM6 extension
+			this.registerEditorExtension(
+				this.editorBindings.getBaseExtension(),
+			);
+
+			// 4. DiskMirror
+			this.diskMirror = new DiskMirror(
+				this.app,
+				this.vaultSync,
+				this.editorBindings,
+				this.settings.debug,
+				(source, msg, details) => this.trace(source, msg, details),
+				() => this.settings.frontmatterGuardEnabled,
+				(path, direction, reason, validation, previousContent, nextContent) =>
+					this.handleFrontmatterValidation(
+						path,
+						direction,
+						reason,
+						validation,
+						previousContent,
+						nextContent,
+					),
+				() => this.settings.deviceName,
+				this.preservedUnresolvedEntries,
+				() => this.persistPreservedUnresolvedState(),
+			);
+			this.diskMirror.startMapObservers();
+				this.diskMirror.setFlightEventHandler((event) => this.recordFlightPathEvent(event));
+			// Track SHA-256 baseline hash after every successful flushWrite.
+			// Used by decideClosedFileConflict on startup/re-enable to determine
+			// which side actually changed from the last known stable state.
+			this.diskMirror.setDiskWriteCallback((path, contentHash) => {
+				const existing = this.diskIndex[path];
+				if (existing) {
+					existing.contentHash = contentHash;
+				} else {
+					this.diskIndex[path] = { mtime: 0, size: 0, contentHash };
+				}
+				// Req 17.2: mark dirty after post-readback verification succeeds.
+				// contentHash is baselineHash-domain — NOT published as diskHash.
+			});
+
+			// 4b. BlobSyncManager (if attachment sync is enabled)
+			this.attachmentOrchestrator?.start("startup", false);
+
+			// 5. Status tracking
+			this.connectionController = new ConnectionController({
+				getVaultSync: () => this.vaultSync,
+				isReconciled: () => this.reconciliationController.isReconciled,
+				getAwaitingFirstProviderSyncAfterStartup: () => this.awaitingFirstProviderSyncAfterStartup,
+				setAwaitingFirstProviderSyncAfterStartup: (value) => {
+					this.awaitingFirstProviderSyncAfterStartup = value;
+				},
+				getLastReconciledGeneration: () => this.reconciliationController.lastGeneration,
+				setReconnectPending: () => {
+					this.reconciliationController.markPending();
+				},
+				isReconcileInFlight: () => this.reconciliationController.isReconcileInFlight,
+				runReconnectReconciliation: (generation) => {
+					void this.reconciliationController.runReconnectReconciliation(generation);
+				},
+				refreshServerCapabilities: (reason) => {
+					void this.refreshServerCapabilities(reason);
+				},
+				flushOpenWrites: (reason) => {
+					void this.diskMirror?.flushOpenWrites(reason);
+				},
+				updateOfflineStatus: () => this.updateStatusBar("offline"),
+				refreshStatusBar: () => this.refreshStatusBar(),
+				scheduleTraceStateSnapshot: (reason) => this.scheduleTraceStateSnapshot(reason),
+				log: (message) => this.log(message),
+				trace: (source, msg, details) => this.trace(source, msg, details),
+				registerCleanup: (cleanup) => this.register(cleanup),
+			});
+			this.connectionController.start();
+
+			// Wire provider flight events
+			this.vaultSync.provider.on("status", (event: { status: string }) => {
+				if (event.status === "connected") {
+					this.recordFlightEvent({
+						priority: "important",
+						kind: "provider.connected",
+						severity: "info",
+						scope: "connection",
+						source: "connectionController",
+						layer: "provider",
+						connectionGeneration: this.vaultSync?.connectionGeneration,
+						data: { wsStatus: event.status },
+					});
+				} else if (event.status === "disconnected") {
+					this.recordFlightEvent({
+						priority: "important",
+						kind: "provider.disconnected",
+						severity: "info",
+						scope: "connection",
+						source: "connectionController",
+						layer: "provider",
+						connectionGeneration: this.vaultSync?.connectionGeneration,
+						data: { wsStatus: event.status },
+					});
+				}
+			});
+			this.vaultSync.provider.on("sync", (synced: boolean) => {
+				if (synced) {
+					this.recordFlightEvent({
+						priority: "important",
+						kind: "provider.sync.complete",
+						severity: "info",
+						scope: "connection",
+						source: "connectionController",
+						layer: "provider",
+						connectionGeneration: this.vaultSync?.connectionGeneration,
+					});
+				}
+			});
+			this.statusInterval = setInterval(() => {
+				this.refreshStatusBar();
+				if (this.reconciliationController.isReconciled && this.editorBindings) {
+					const touched = this.editorWorkspace?.auditBindings("status-tick") ?? 0;
+					if (touched > 0) {
+						this.log(`Binding health audit (status-tick) — touched ${touched}`);
+					}
+				}
+				// Periodically persist blob queue if transfers are active,
+				// or clear persisted queue if transfers completed
+				this.attachmentOrchestrator?.handleStatusTick();
+				const capabilityState = this.capabilityUpdateService?.capabilities ?? null;
+				const waitingForR2 =
+					!!this.settings.host &&
+					(!capabilityState || !capabilityState.attachments || !capabilityState.snapshots);
+				if (waitingForR2 && (this.capabilityUpdateService?.shouldRefreshCapabilities() ?? false)) {
+					void this.refreshServerCapabilities("background-poll");
+				}
+			}, 3000);
+			this.register(() => {
+				if (this.statusInterval) clearInterval(this.statusInterval);
+			});
+
+			// 6. Vault events (gated by reconciliation state)
+			this.registerVaultEvents();
+
+			// 7. Commands
+			if (!this.commandsRegistered) {
+				registerCommands(this, {
+					getVaultSync: () => this.vaultSync,
+					getConnectionController: () => this.connectionController,
+						getDiagnosticsService: () => null,
+					getSnapshotService: () => this.snapshotService,
+					getFilesNeedingAttentionText: () => this.buildFilesNeedingAttentionText(),
+					getUntrackedFileCount: () => this.reconciliationController.untrackedFileCount,
+					runReconciliation: (mode) => this.runReconciliation(mode),
+					runSchemaMigrationToV2: () => this.runSchemaMigrationToV2(),
+					importUntrackedFiles: () => this.importUntrackedFiles(),
+					clearLocalServerReceiptState: () => this.clearLocalServerReceiptState(),
+					resetLocalCache: () => this.resetLocalCache(),
+					nuclearReset: () => this.nuclearReset(),
+				});
+					this.commandsRegistered = true;
+			}
+
+			// 8. Rename batch callback → update editor bindings + disk mirror observers + disk index + blob hash cache
+			this.vaultSync.onRenameBatchFlushed((renames) => {
+				this.editorWorkspace?.onRenameBatchFlushed(renames);
+
+				// Move disk index entries
+				moveIndexEntries(this.diskIndex, renames);
+
+				// Move blob hash cache entries
+				moveCachedHashes(this.blobHashCache, renames);
+
+				// Redirect any pending dirty creates or modifies from oldPath → newPath.
+				// Two race classes this handles:
+				//   1. Pre-CRDT race: rename fires before create is processed →
+				//      pending create at oldPath redirected to newPath (ensureFile runs there).
+				//   2. Modify-then-rename race: modify queued, rename fires before drain →
+				//      pending modify at oldPath redirected to newPath (syncFileFromDisk runs there).
+				// Without this, both cases leave newPath with stale or missing CRDT content.
+				for (const [oldPath, newPath] of renames) {
+					this.reconciliationController.redirectPendingDirtyPath(oldPath, newPath);
+				}
+
+				// Defensive assertion: after rename admission policy (enforced at
+				// queue time), applyRenameBatch should never contain an excluded
+				// markdown destination. If one slips through, fail loudly in QA mode
+				// and tombstone as a production fallback.
+				for (const [, newPath] of renames) {
+					if (!this.isMarkdownPathSyncable(newPath) && newPath.endsWith(".md")) {
+						const msg = `[BUG] onRenameBatchFlushed: excluded markdown destination reached applyRenameBatch: "${newPath}"`;
+						if (this.settings.qaDebugMode) {
+							throw new Error(msg);
+						}
+						this.log(`${msg} — tombstoning as fallback`);
+						this.traceSink.recordPath({
+							kind: "rename.admission.invariant-failed",
+							scope: "file",
+							severity: "error",
+							path: newPath,
+							data: { bug: "excluded-destination-reached-applyRenameBatch" },
+						});
+						this.reconciliationController.dropDirtyPath(newPath);
+						if (this.vaultSync?.getFileId(newPath)) {
+							this.vaultSync.handleDelete(newPath);
+						}
+					}
+				}
+			});
+
+			// -----------------------------------------------------------
+			// STARTUP SEQUENCE
+			// -----------------------------------------------------------
+
+			this.updateStatusBar("loading");
+			this.log("Waiting for IndexedDB persistence...");
+			const localLoaded = await this.vaultSync.waitForLocalPersistence();
+			this.log(`IndexedDB: ${localLoaded ? "loaded" : "timed out"}`);
+			await this.vaultSync.initializeServerAckTracking(this.settings, this.manifest.version, {
+				localYjsPersistenceLoaded: localLoaded,
+			});
+
+			// Schema version check — refuse to run if a newer plugin wrote this data
+			const schemaError = this.vaultSync.checkSchemaVersion();
+			if (schemaError) {
+				console.error(`[yaos] ${schemaError}`);
+				new Notice(`OWD Sync: ${schemaError}`);
+				this.updateStatusBar("error");
+				return;
+			}
+
+			// Mark schema v3 if room is still at v2 (lazy, no metadata migration).
+			this.vaultSync.markSchemaV3(this.settings.deviceName);
+
+			// Check for fatal auth error before waiting for provider
+			if (this.vaultSync.fatalAuthError) {
+				this.log("Fatal auth error during startup");
+				if (this.vaultSync.fatalAuthCode === "update_required") {
+					this.updateStatusBar("error");
+					this.showFatalSyncNotice();
+					return;
+				}
+				this.updateStatusBar("unauthorized");
+				this.showFatalSyncNotice();
+				// Still reconcile with whatever we have locally
+				const mode = this.vaultSync.getSafeReconcileMode();
+				await this.runReconciliation(mode);
+				return;
+			}
+
+			this.updateStatusBar("syncing");
+			this.log("Waiting for provider sync...");
+			const providerSynced = await this.vaultSync.waitForProviderSync();
+			this.log(`Provider: ${providerSynced ? "synced" : "timed out (offline)"}`);
+			this.awaitingFirstProviderSyncAfterStartup = !providerSynced;
+			this.log(
+				`Startup sync gate: awaitingFirstProviderSyncAfterStartup=${this.awaitingFirstProviderSyncAfterStartup} ` +
+				`(gen=${this.vaultSync.connectionGeneration})`,
+			);
+
+			if (this.vaultSync.fatalAuthError) {
+				this.updateStatusBar(this.vaultSync.fatalAuthCode === "update_required" ? "error" : "unauthorized");
+				this.showFatalSyncNotice();
+				return;
+			}
+
+			const mode = this.vaultSync.getSafeReconcileMode();
+			this.log(`Reconciliation mode: ${mode}`);
+
+			await this.runReconciliation(mode);
+			this.reconciliationController.lastGeneration = this.vaultSync.connectionGeneration;
+			if (providerSynced) {
+				this.awaitingFirstProviderSyncAfterStartup = false;
+			}
+
+			this.refreshStatusBar();
+			this.trace("trace", "startup-init-sync-complete", {
+				durationMs: Date.now() - initSyncStartedAt,
+			});
+			this.log("Startup complete");
+			this.scheduleTraceStateSnapshot("startup-complete");
+			this.attachmentOrchestrator?.markStartupReady("startup-complete");
+			void this.traceRuntime?.refreshServerTrace();
+
+			// Trigger daily snapshot (noop if already taken today).
+			// Fire-and-forget — don't block startup on snapshot creation.
+			if (providerSynced && this.serverSupportsSnapshots) {
+				void this.snapshotService?.triggerDailySnapshot();
+			}
+		} catch (err) {
+			console.error("[yaos] Failed to initialize sync:", err);
+			new Notice(`OWD Sync: failed to initialize — ${formatUnknown(err)}`);
+			this.updateStatusBar("error");
+		}
+	}
+
+	private async runReconciliation(mode: ReconcileMode): Promise<void> {
+		await this.reconciliationController.runReconciliation(mode);
+	}
+
+	private async importUntrackedFiles(): Promise<void> {
+		await this.reconciliationController.importUntrackedFiles();
+	}
+
+	private async clearLocalServerReceiptState(): Promise<"cleared_persistent" | "cleared_memory_only" | "failed" | undefined> {
+		if (!this.vaultSync) return;
+		const result = await this.vaultSync.clearLocalServerReceiptState();
+		this.log(`Cleared local server-receipt state: ${result}`);
+		this.scheduleTraceStateSnapshot("clear-local-server-receipt-state");
+		this.refreshStatusBar();
+		return result;
+	}
+
+	// -------------------------------------------------------------------
+	// Vault event handlers
+	// -------------------------------------------------------------------
+
+	private newOpId(): string {
+		return `op-${randomBase64Url(10)}`;
+	}
+
+	private registerVaultEvents(): void {
+		// Layout change: clean up observers for closed files
+		this.registerEvent(
+			this.app.workspace.on("layout-change", () => {
+				if (!this.reconciliationController.isReconciled) return;
+				this.editorWorkspace?.onLayoutChange();
+			}),
+		);
+
+		this.registerEvent(
+			this.app.workspace.on("active-leaf-change", (leaf) => {
+				if (!this.reconciliationController.isReconciled) return;
+				this.editorWorkspace?.onActiveLeafChange(leaf);
+			}),
+		);
+
+		this.registerEvent(
+			this.app.workspace.on("file-open", (file) => {
+				if (!this.reconciliationController.isReconciled) return;
+				this.editorWorkspace?.onFileOpen(file?.path ?? null);
+				if (!file) return;
+
+				// Prefetch embedded attachments for the opened note
+				if (file.path.endsWith(".md") && this.getBlobSync()) {
+					this.prefetchEmbeddedAttachments(file);
+				}
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("modify", (file) => {
+				if (!this.reconciliationController.isReconciled) return;
+				if (!(file instanceof TFile)) return;
+
+				if (this.isMarkdownPathSyncable(file.path)) {
+					const opId = this.newOpId();
+					// Writer attribution for the disk modify event.
+					// suppressWindowActive: did YAOS issue a write whose
+					// suppression entry is still live at this moment?
+					// lastDiskWriteOkAtMs: monotonic ms timestamp of our
+					// last successful flushWrite for this path (null if
+					// YAOS has never written it this session).
+					// writerGuess: a coarse classification combining both.
+					// "yaos-write" is high-confidence; "external" is
+					// "no suppression active and our last write was either
+					// long ago or never"; "unknown" is the fallback when
+					// the diskMirror is not yet wired (early-startup race).
+						const dm = this.diskMirror;
+					const suppressWindowActive = !!dm?.isSuppressed(file.path);
+					const lastDiskWriteOkAtMs = dm?.getLastDiskWriteOkAt(file.path) ?? null;
+					const dtSinceWrite = lastDiskWriteOkAtMs === null
+						? null
+						: Date.now() - lastDiskWriteOkAtMs;
+					let writerGuess: "yaos-write" | "external" | "unknown";
+					if (!dm) {
+						writerGuess = "unknown";
+					} else if (suppressWindowActive) {
+						writerGuess = "yaos-write";
+					} else if (dtSinceWrite !== null && dtSinceWrite < 500) {
+						// Suppression entry may have expired between vault.modify
+						// dispatch and our handler. If our last write was very
+						// recent, attribute the modify to YAOS conservatively.
+						writerGuess = "yaos-write";
+					} else {
+						writerGuess = "external";
+					}
+					this.traceSink.recordPath({
+						kind: "disk.modify.observed",
+						scope: "file",
+						severity: "info",
+						opId,
+						path: file.path,
+						data: {
+							size: file.stat?.size ?? null,
+							writerGuess,
+							suppressWindowActive,
+							lastDiskWriteOkAtMs,
+							msSinceLastDiskWriteOk: dtSinceWrite,
+						},
+					});
+					this.reconciliationController.markMarkdownDirty(file, "modify", opId);
+				} else {
+					const blobSync = this.getBlobSync();
+					if (blobSync && this.isBlobPathSyncable(file.path) && !blobSync.isSuppressed(file.path)) {
+						blobSync.handleFileChange(file);
+					}
+				}
+			}),
+		);
+
+		// Rename: apply admission policy BEFORE queueing to ensure
+		// applyRenameBatch never receives an excluded markdown destination.
+		// Blob renames still go through the batch (blob exclusion is separate).
+		this.registerEvent(
+			this.app.vault.on("rename", (file, oldPath) => {
+				if (!this.reconciliationController.isReconciled) return;
+				if (!(file instanceof TFile)) return;
+
+				// Classify both paths using canonical path identity.
+				const configDir = this.getRuntimeConfig().vaultConfigDir;
+				const oldCategory = classifySyncPath({ path: oldPath, excludePatterns: this.excludePatterns, configDir });
+				const newCategory = classifySyncPath({ path: file.path, excludePatterns: this.excludePatterns, configDir });
+
+				// Skip entirely if both are excluded.
+				if (oldCategory.kind === "excluded" && newCategory.kind === "excluded") return;
+
+				const renameOpId = this.newOpId();
+
+				// Emit trace events for lineage via TraceSink (both sides).
+				if (oldCategory.kind === "markdown" || newCategory.kind === "markdown") {
+					this.traceSink.recordPath({
+						kind: "rename.observed",
+						scope: "file",
+						severity: "info",
+						opId: renameOpId,
+						path: oldPath,
+						data: { renameRole: "source", category: oldCategory.kind, opId: renameOpId },
+					});
+					this.traceSink.recordPath({
+						kind: "rename.observed",
+						scope: "file",
+						severity: "info",
+						opId: renameOpId,
+						path: file.path,
+						data: { renameRole: "target", category: newCategory.kind, opId: renameOpId },
+					});
+				}
+
+				// Plan the action using the category-aware planner.
+				const action = planCategoryRenameAction({ oldCategory, newCategory });
+
+				// Execute the planned action.
+				// All paths in actions are displayPath (original runtime paths).
+				switch (action.kind) {
+					case "queue-markdown-rename":
+						this.vaultSync?.queueRename(action.oldPath, action.newPath);
+						this.log(`Rename queued (markdown): "${oldPath}" -> "${file.path}"`);
+						break;
+
+					case "queue-blob-rename":
+						this.vaultSync?.queueRename(action.oldPath, action.newPath);
+						this.log(`Rename queued (blob): "${oldPath}" -> "${file.path}"`);
+						break;
+
+					case "tombstone-markdown":
+						for (const p of action.dropDirty) this.reconciliationController.dropDirtyPath(p);
+						this.vaultSync?.handleDelete(action.oldPath, this.settings.deviceName, renameOpId);
+						this.log(`Rename admission: tombstoning markdown "${oldPath}"`);
+						break;
+
+					case "admit-markdown":
+						for (const p of action.dropDirty) this.reconciliationController.dropDirtyPath(p);
+						this.reconciliationController.markMarkdownDirty(file, "create", renameOpId);
+						this.log(`Rename admission: admitting markdown "${file.path}"`);
+						break;
+
+					case "admit-blob-via-event":
+						// Blob admission: Obsidian will fire a create event for the new
+						// path, handled by blobSync.handleFileChange. No explicit action.
+						for (const p of action.dropDirty) this.reconciliationController.dropDirtyPath(p);
+						this.log(`Rename admission: blob "${file.path}" will be admitted via create event`);
+						break;
+
+					case "defer-blob-to-events":
+						// Blob leaves sync scope. Obsidian delete event for old path
+						// will be handled by blobSync. Just clean dirty state.
+						for (const p of action.dropDirty) this.reconciliationController.dropDirtyPath(p);
+						this.log(`Rename admission: blob "${oldPath}" leaving scope, deferred to events`);
+						break;
+
+					case "same-identity":
+						// NFC/NFD or separator variant rename. Same sync identity.
+						// No CRDT mutation needed — not a real rename from sync perspective.
+						this.log(`Rename admission: same identity (canonical equivalent): "${oldPath}" -> "${file.path}"`);
+						break;
+
+					case "ignore":
+						break;
+				}
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("delete", (file) => {
+				if (!this.reconciliationController.isReconciled) return;
+				if (!(file instanceof TFile)) return;
+
+				if (this.isMarkdownPathSyncable(file.path)) {
+					const opId = this.newOpId();
+					if (this.diskMirror?.consumeDeleteSuppression(file.path)) {
+						this.log(`Suppressed delete event for "${file.path}"`);
+						this.traceSink.recordPath({
+							kind: "disk.event.suppressed",
+							scope: "file",
+							severity: "debug",
+							priority: "important",
+							opId,
+							path: file.path,
+							data: {
+								reason: "suppressed-remote-writeback",
+								decision: "suppress",
+							},
+						});
+						return;
+					}
+					this.traceSink.recordPath({
+						kind: "disk.delete.observed",
+						scope: "file",
+						severity: "info",
+						priority: "critical",
+						opId,
+						path: file.path,
+					});
+					this.editorWorkspace?.onMarkdownDeleted(file.path);
+
+					this.vaultSync?.handleDelete(
+						file.path,
+						this.settings.deviceName,
+						opId,
+					);
+					this.log(`Delete: "${file.path}"`);
+					} else {
+						const blobSync = this.getBlobSync();
+						if (blobSync && this.isBlobPathSyncable(file.path) && !blobSync.isSuppressed(file.path)) {
+							blobSync.handleFileDelete(file.path, this.settings.deviceName);
+							this.log(`Delete (blob): "${file.path}"`);
+						}
+					}
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("create", (file) => {
+				if (!this.reconciliationController.isReconciled) return;
+				if (!(file instanceof TFile)) return;
+
+				if (this.isMarkdownPathSyncable(file.path)) {
+					const createOpId = this.newOpId();
+					this.traceSink.recordPath({
+						kind: "disk.create.observed",
+						scope: "file",
+						severity: "info",
+						opId: createOpId,
+						path: file.path,
+						data: { size: file.stat?.size ?? null },
+					});
+					this.reconciliationController.markMarkdownDirty(file, "create", createOpId);
+				} else if (this.isBlobPathSyncable(file.path)) {
+					const blobSync = this.getBlobSync();
+					if (blobSync && !blobSync.isSuppressed(file.path)) {
+						// For blob files, use the same stability check before uploading
+						if (this.pendingStabilityChecks.has(file.path)) return;
+						this.pendingStabilityChecks.add(file.path);
+
+						void waitForDiskQuiet(this.app, file.path).then((stable) => {
+							this.pendingStabilityChecks.delete(file.path);
+							if (stable) {
+								this.getBlobSync()?.handleFileChange(file);
+							} else {
+								this.log(`Create (blob): "${file.path}" unstable after timeout, skipping`);
+							}
+						});
+					} else if (!this.serverSupportsAttachments) {
+						this.attachmentOrchestrator?.notifyUnsupportedAttachmentCreate();
+					}
+				}
+			}),
+		);
+	}
+
+	// -------------------------------------------------------------------
+	// Teardown + reinit (for reset commands)
+	// -------------------------------------------------------------------
+
+	/**
+	 * Cleanly tear down all sync state: unbind editors, stop disk mirror,
+	 * destroy provider + persistence + ydoc, reset all flags.
+	 * After this, the plugin is in the same state as before initSync().
+	 */
+	private async teardownSync(): Promise<void> {
+		this.log("teardownSync: tearing down all sync state");
+
+		// Safe teardown ordering for disk index baseline persistence:
+		//   1. Flush all pending disk writes (callbacks fire, hashes recorded in memory)
+		//   2. Save disk index to data.json (hashes now current for next startup)
+		//   3. Destroy sync state (nothing pending left to flush)
+		if (this.diskMirror) {
+			await this.diskMirror.flushAllPendingWrites();
+		}
+		await this.saveDiskIndex();
+
+		this.editorBindings?.unbindAll();
+		this.diskMirror?.destroy();
+
+		this.attachmentOrchestrator?.destroy();
+
+		if (this.statusInterval) {
+			clearInterval(this.statusInterval);
+			this.statusInterval = null;
+		}
+		this.reconciliationController.reset();
+		this.connectionController?.stop();
+
+		await this.vaultSync?.destroy();
+
+		this.vaultSync = null;
+		this.connectionController = null;
+		this.editorBindings = null;
+		this.diskMirror = null;
+		this.awaitingFirstProviderSyncAfterStartup = false;
+		this.editorWorkspace?.reset();
+		this.idbDegradedHandled = false;
+
+		this.updateStatusBar("disconnected");
+	}
+
+	private resetLocalCache(): void {
+		if (!this.vaultSync) {
+			new Notice("Sync not initialized");
+			return;
+		}
+
+		const vaultId = this.settings.vaultId;
+		new ConfirmModal(
+			this.app,
+			"Reset local cache",
+			"This will clear the local IndexedDB cache and re-sync from the server. " +
+			"Your disk files and server state are not affected. Continue?",
+			async () => {
+				this.log("Reset cache: starting");
+				new Notice("Clearing cache and syncing again...");
+
+				await this.teardownSync();
+
+				try {
+					await VaultSync.deleteIdb(vaultId);
+					this.log("Reset cache: IDB deleted");
+				} catch (err) {
+					console.error("[yaos] Failed to delete IDB:", err);
+				}
+
+				this.log("Reset cache: reinitializing");
+				await this.initSync();
+				new Notice("Cache reset complete.");
+			},
+		).open();
+	}
+
+	private nuclearReset(): void {
+		if (!this.vaultSync) {
+			new Notice("Sync not initialized");
+			return;
+		}
+
+		const pathCount = this.vaultSync.getActiveMarkdownPaths().length;
+		new ConfirmModal(
+			this.app,
+			"Nuclear reset",
+			`This will wipe all CRDT state (${pathCount} files) on both this device and the server, ` +
+			`clear the local cache, then re-seed everything from your current disk files. ` +
+			`Other connected devices will also see the reset. This cannot be undone. Continue?`,
+			async () => {
+				this.log("Nuclear reset: starting");
+				new Notice("Nuclear reset in progress...");
+
+				// Clear CRDT maps before teardown so deletions propagate while connected.
+				const counts = this.vaultSync!.clearAllMaps();
+				this.log(
+					`Nuclear reset: cleared ${counts.pathCount} paths, ` +
+					`${counts.idCount} texts, ${counts.metaCount} meta, ` +
+					`${counts.blobCount} blob paths`,
+				);
+
+				await new Promise((r) => setTimeout(r, 500));
+
+				const vaultId = this.settings.vaultId;
+				await this.teardownSync();
+
+				try {
+					await VaultSync.deleteIdb(vaultId);
+					this.log("Nuclear reset: IDB deleted");
+				} catch (err) {
+					console.error("[yaos] Failed to delete IDB:", err);
+				}
+
+				this.log("Nuclear reset: reinitializing (will re-seed from disk)");
+				await this.initSync();
+				new Notice(
+					`OWD Sync: nuclear reset complete. ` +
+					`Re-seeded ${this.vaultSync?.getActiveMarkdownPaths().length ?? 0} files from disk.`,
+				);
+			},
+		).open();
+	}
+
+	// -------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------
+
+	/**
+	 * When a note opens, parse its embedded links (![[...]]) via Obsidian's
+	 * metadata cache and prefetch any missing blob attachments from R2.
+	 * This ensures images/PDFs render immediately rather than waiting for
+	 * the next reconcile or CRDT observer to trigger the download.
+	 */
+	private prefetchEmbeddedAttachments(file: TFile): void {
+		const blobSync = this.getBlobSync();
+		if (!blobSync) return;
+
+		const cache = this.app.metadataCache.getFileCache(file);
+		if (!cache?.embeds) return;
+
+		const pathsToFetch: string[] = [];
+
+		for (const embed of cache.embeds) {
+			// Resolve the link to an actual vault path.
+			// getFirstLinkpathDest handles relative paths, aliases, etc.
+			const resolved = this.app.metadataCache.getFirstLinkpathDest(
+				embed.link,
+				file.path,
+			);
+
+			if (resolved) {
+				// File already exists on disk — skip
+				continue;
+			}
+
+			// File doesn't exist on disk. Try to find it in the CRDT blob map.
+			// The link could be just a filename (e.g. "image.png") or a path.
+			// Check both the raw link text and common attachment patterns.
+			const linkPath = (embed.link.split("#")[0] ?? "").split("|")[0] ?? ""; // strip anchors/aliases
+
+			// Search pathToBlob for a matching path
+			let blobPath: string | null = null;
+			this.vaultSync?.pathToBlob.forEach((_ref, candidatePath) => {
+				if (blobPath) return; // already found
+				// Exact match
+				if (candidatePath === linkPath) {
+					blobPath = candidatePath;
+					return;
+				}
+				// Filename-only match (Obsidian's default "shortest path" mode)
+				const candidateFilename = candidatePath.split("/").pop();
+				if (candidateFilename === linkPath) {
+					blobPath = candidatePath;
+				}
+			});
+
+			if (blobPath) {
+				pathsToFetch.push(blobPath);
+			}
+		}
+
+		if (pathsToFetch.length > 0) {
+			const queued = blobSync.prioritizeDownloads(pathsToFetch);
+			if (queued > 0) {
+				this.log(`prefetch: queued ${queued} attachments for "${file.path}"`);
+			}
+		}
+	}
+
+	private shouldBlockFrontmatterIngest(
+		path: string,
+		previousContent: string | null,
+		nextContent: string,
+		reason: string,
+	): boolean {
+		return this.frontmatterGuardCoordinator.shouldBlockFrontmatterIngest(
+			path, previousContent, nextContent, reason,
+		);
+	}
+
+	private handleFrontmatterValidation(
+		path: string,
+		direction: "disk-to-crdt" | "crdt-to-disk",
+		reason: string,
+		validation: FrontmatterValidationResult,
+		previousContent: string | null,
+		nextContent: string,
+	): void {
+		this.frontmatterGuardCoordinator.handleFrontmatterValidation(
+			path, direction, reason, validation, previousContent, nextContent,
+		);
+	}
+
+	/**
+	 * Toggle remote cursor visibility via a CSS class on the document body.
+	 * The actual cursor styles from y-codemirror.next are hidden when the
+	 * class is absent; we add it when showRemoteCursors is true.
+	 */
+	applyCursorVisibility(): void {
+		document.body.toggleClass(
+			"vault-crdt-show-cursors",
+			this.settings.showRemoteCursors,
+		);
+	}
+
+	private refreshStatusBar(): void {
+		const state = this.computeSyncStatus();
+		if (state === "error" && this.vaultSync?.idbError) {
+			this.handleIndexedDbDegraded("status-check");
+		}
+		this.updateStatusBar(state);
+	}
+
+	private computeSyncStatus(): SyncStatus {
+		if (this.vaultSync?.idbError) {
+			return "error";
+		}
+
+		return this.syncStatusFromConnectionState(this.connectionController?.getState() ?? { kind: "disconnected" });
+	}
+
+	private syncStatusFromConnectionState(state: ConnectionState): SyncStatus {
+		switch (state.kind) {
+			case "disconnected":
+				return "disconnected";
+			case "loading_cache":
+				return "loading";
+			case "connecting":
+				return "syncing";
+			case "online":
+				return "connected";
+			case "offline":
+				return "offline";
+			case "auth_failed":
+				return "unauthorized";
+			case "server_update_required":
+				return "error";
+		}
+	}
+
+	getSettingsStatusSummary(): { state: SyncStatus; label: string } {
+		const state = this.computeSyncStatus();
+		return {
+			state,
+			label: getSyncStatusLabel(state).replace(/^CRDT:\s*/, ""),
+		};
+	}
+
+	private updateStatusBar(_coarseState: SyncStatus): void {
+		if (!this.statusBarEl) return;
+		const connectionState = this.connectionController?.getState();
+		const transferStatus = this.getBlobSync()?.transferStatus;
+		const diskAttention =
+			(this.diskMirror?.getDebugSnapshot().preservedUnresolved.totalCount ?? 0);
+		const blobAttention =
+			(this.getBlobSync()?.getDebugSnapshot().preservedUnresolved.totalCount ?? 0);
+		const attentionCount = diskAttention + blobAttention;
+		const vaultSync = this.vaultSync;
+		const serverReceipt = vaultSync ? {
+			serverAppliedLocalState: vaultSync.serverAppliedLocalState,
+			lastServerReceiptEchoAt: vaultSync.lastServerReceiptEchoAt,
+			lastKnownServerReceiptEchoAt: vaultSync.lastKnownServerReceiptEchoAt,
+			candidatePersistenceHealthy: vaultSync.candidatePersistenceHealthy,
+			serverReceiptStartupValidation: vaultSync.serverReceiptStartupValidation,
+		} : null;
+		if (connectionState) {
+			renderConnectionState(this.statusBarEl, connectionState, transferStatus, serverReceipt, attentionCount);
+		} else {
+			renderSyncStatus(this.statusBarEl, _coarseState, transferStatus, attentionCount);
+		}
+	}
+
+	private buildFilesNeedingAttentionText(): string {
+		const entries = this.collectPreservedUnresolvedEntries()
+			.sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+		if (entries.length === 0) return "No files currently need attention.";
+		return entries.map((entry) => [
+			entry.path,
+			`  kind: ${entry.kind}`,
+			`  reason: ${entry.reason}`,
+			`  first seen: ${new Date(entry.firstSeenAt).toLocaleString()}`,
+			`  last seen: ${new Date(entry.lastSeenAt).toLocaleString()}`,
+			"  suggested action: inspect the local file and conflict artifacts, then edit/save to keep local content or delete it to accept the remote delete.",
+		].join("\n")).join("\n\n");
+	}
+
+	private setupTraceRuntime(): void {
+		this.traceRuntime = new TraceRuntimeController({
+			app: this.app,
+			getSettings: () => this.settings,
+			buildSnapshot: (reason, recentServerTrace) =>
+				this.buildTraceStateSnapshot(reason, recentServerTrace),
+			isIndexedDbRelatedError: (err) => this.isIndexedDbRelatedError(err),
+			isObsidianFileMetadataRaceError: (err) => this.isObsidianFileMetadataRaceError(err),
+			handleIndexedDbDegraded: (source, err) => this.handleIndexedDbDegraded(source, err),
+			registerCleanup: (cleanup) => this.register(cleanup),
+			});
+			this.traceRuntime.start();
+		}
+
+	private getTraceHttpContext(): TraceHttpContext | undefined {
+		return this.traceRuntime?.httpContext;
+	}
+
+	private trace(
+		source: string,
+		msg: string,
+		details?: TraceEventDetails,
+	): void {
+		this.traceRuntime?.record(source, msg, details);
+	}
+
+		private recordFlightEvent(_event: unknown): void {
+		}
+
+		private recordFlightPathEvent(_event: unknown): void {
+	}
+
+	private scheduleTraceStateSnapshot(reason: string): void {
+		this.traceRuntime?.scheduleSnapshot(reason);
+	}
+
+	private async buildTraceStateSnapshot(
+		reason: string,
+		recentServerTrace: unknown[],
+	): Promise<Record<string, unknown>> {
+		return {
+			generatedAt: new Date().toISOString(),
+			reason,
+			trace: this.getTraceHttpContext() ?? null,
+			settings: {
+				host: this.settings.host,
+				vaultId: this.settings.vaultId,
+				deviceName: this.settings.deviceName,
+				debug: this.settings.debug,
+				enableAttachmentSync: this.settings.enableAttachmentSync,
+				externalEditPolicy: this.settings.externalEditPolicy,
+			},
+			state: {
+				reconciled: this.reconciliationController.getState().reconciled,
+				reconcileInFlight: this.reconciliationController.getState().reconcileInFlight,
+				reconcilePending: this.reconciliationController.getState().reconcilePending,
+				awaitingFirstProviderSyncAfterStartup: this.awaitingFirstProviderSyncAfterStartup,
+				lastReconciledGeneration: this.reconciliationController.getState().lastReconciledGeneration,
+				openFileCount: this.editorWorkspace?.openFileCount ?? 0,
+			},
+			sync: this.vaultSync?.getDebugSnapshot() ?? null,
+			diskMirror: this.diskMirror?.getDebugSnapshot() ?? null,
+			blobSync: this.getBlobSync()?.getDebugSnapshot() ?? null,
+			openFiles: await this.collectOpenFileTraceState(),
+			recentEvents: {
+				plugin: this.eventRing.slice(-120),
+				sync: this.vaultSync?.getRecentEvents(120) ?? [],
+			},
+			serverTrace: recentServerTrace,
+		};
+	}
+
+		private refreshFlightTraceState(_reason: string): void {
+	}
+
+	private async collectOpenFileTraceState(): Promise<Array<Record<string, unknown>>> {
+		if (!this.vaultSync) return [];
+
+		const probes: Array<Record<string, unknown>> = [];
+		const leaves: MarkdownView[] = [];
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view instanceof MarkdownView && leaf.view.file) {
+				leaves.push(leaf.view);
+			}
+		});
+
+		for (const view of leaves) {
+			const file = view.file;
+			if (!file) continue;
+
+			const path = file.path;
+			const editorContent = view.editor.getValue();
+			const diskContent = await this.app.vault.read(file).catch(() => null);
+			const crdtContent = yTextToString(this.vaultSync.getTextForPath(path));
+			const binding = this.editorBindings?.getBindingDebugInfoForView(view) ?? null;
+			const collab = this.editorBindings?.getCollabDebugInfoForView(view) ?? null;
+
+			const [editorHash, diskHash, crdtHash] = await Promise.all([
+				this.hashIfPresent(editorContent),
+				this.hashIfPresent(diskContent),
+				this.hashIfPresent(crdtContent),
+			]);
+
+			probes.push({
+				path,
+				leafId: binding?.leafId ?? ((view.leaf as unknown as { id?: string }).id ?? path),
+				binding,
+				collab,
+				hashes: {
+					editor: editorHash,
+					disk: diskHash,
+					crdt: crdtHash,
+				},
+				lengths: {
+					editor: editorContent.length,
+					disk: diskContent?.length ?? null,
+					crdt: crdtContent?.length ?? null,
+				},
+				editorVsDisk: this.describeContentDiff(editorContent, diskContent),
+				editorVsCrdt: this.describeContentDiff(editorContent, crdtContent),
+				diskVsCrdt: this.describeContentDiff(diskContent, crdtContent),
+			});
+		}
+
+		return probes;
+	}
+
+	private async hashIfPresent(text: string | null): Promise<string | null> {
+		if (text == null) return null;
+		return this.sha256Hex(text);
+	}
+
+	private describeContentDiff(
+		left: string | null,
+		right: string | null,
+	): Record<string, unknown> {
+		if (left == null || right == null) {
+			return {
+				comparable: false,
+				leftLength: left?.length ?? null,
+				rightLength: right?.length ?? null,
+			};
+		}
+
+		const firstDiffIndex = this.findFirstDiffIndex(left, right);
+		return {
+			comparable: true,
+			matches: firstDiffIndex === -1,
+			firstDiffIndex: firstDiffIndex === -1 ? null : firstDiffIndex,
+			leftLength: left.length,
+			rightLength: right.length,
+			leftSnippet: firstDiffIndex === -1 ? "" : left.slice(firstDiffIndex, firstDiffIndex + 160),
+			rightSnippet: firstDiffIndex === -1 ? "" : right.slice(firstDiffIndex, firstDiffIndex + 160),
+		};
+	}
+
+	private findFirstDiffIndex(left: string, right: string): number {
+		const max = Math.min(left.length, right.length);
+		for (let i = 0; i < max; i++) {
+			if (left[i] !== right[i]) return i;
+		}
+		return left.length === right.length ? -1 : max;
+	}
+
+	onunload() {
+		this.log("Unloading plugin");
+		void this.traceRuntime?.shutdown();
+		document.body.removeClass("vault-crdt-show-cursors");
+		// Remove plugin-owned debug global to prevent stale API references
+		// from confusing test harnesses after plugin reload.
+		const win = window as unknown as Record<string, unknown>;
+		if (win.__YAOS_DEBUG__) {
+			delete win.__YAOS_DEBUG__;
+		}
+		void this.teardownSync();
+	}
+
+	async loadSettings() {
+		const { settings, persistedState, migrated } = await this.settingsStore.load();
+		const data = persistedState;
+		this.persistedState = persistedState;
+		this.settings = settings;
+		// Load disk index from plugin data (stored under _diskIndex key)
+		if (data && typeof data._diskIndex === "object" && data._diskIndex !== null) {
+			this.diskIndex = data._diskIndex;
+		}
+		// Load lastDiskIndexPersistedAt for missing-baseline conflict tie-breaking
+		if (data && typeof data._lastDiskIndexPersistedAt === "number" && data._lastDiskIndexPersistedAt > 0) {
+			this.lastDiskIndexPersistedAt = data._lastDiskIndexPersistedAt;
+		}
+		// Load blob hash cache
+		if (data && typeof data._blobHashCache === "object" && data._blobHashCache !== null) {
+			this.blobHashCache = data._blobHashCache;
+		}
+		// Load persisted blob queue
+		if (data && typeof data._blobQueue === "object" && data._blobQueue !== null) {
+			this.savedBlobQueue = data._blobQueue;
+		}
+		if (Array.isArray(data?._preservedUnresolved)) {
+			this.preservedUnresolvedEntries = data._preservedUnresolved.filter(
+				(entry): entry is PreservedUnresolvedEntry =>
+					typeof entry === "object" &&
+					entry !== null &&
+					typeof (entry as PreservedUnresolvedEntry).path === "string" &&
+					((entry as PreservedUnresolvedEntry).kind === "markdown" ||
+						(entry as PreservedUnresolvedEntry).kind === "blob") &&
+					typeof (entry as PreservedUnresolvedEntry).reason === "string" &&
+					typeof (entry as PreservedUnresolvedEntry).firstSeenAt === "number" &&
+					typeof (entry as PreservedUnresolvedEntry).lastSeenAt === "number",
+			);
+		}
+		const cachedCapabilities = readPersistedServerCapabilitiesCache(data?._serverCapabilitiesCache);
+		const cachedUpdateManifest = readPersistedUpdateManifestCache(data?._updateManifestCache);
+		this.capabilityUpdateService?.hydratePersistedCaches(cachedCapabilities, cachedUpdateManifest);
+		this.frontmatterQuarantineEntries = readPersistedFrontmatterQuarantine(data?._frontmatterQuarantine);
+		this.refreshPersistedState();
+		if (migrated) {
+			await this.persistPluginState();
+		}
+	}
+
+	async saveSettings(reason = "settings-save") {
+		await this.persistPluginState();
+		this.applyRuntimeSettings(reason);
+		this.refreshStatusBar();
+	}
+
+	async updateSettings(
+		mutator: (settings: VaultSyncSettings) => void,
+		reason = "settings-update",
+	): Promise<void> {
+		mutator(this.settings);
+		await this.saveSettings(reason);
+	}
+
+	private applyRuntimeSettings(reason: string): void {
+		this.runtimeConfig = buildRuntimeConfig(this.settings, this.app.vault.configDir);
+		this.excludePatterns = this.runtimeConfig.excludePatterns;
+		this.maxFileSize = this.runtimeConfig.maxFileSizeBytes;
+		this.applyCursorVisibility();
+		void this.refreshFlightTraceState(reason);
+		this.trace("trace", "runtime-settings-applied", {
+			reason,
+			hostConfigured: !!this.runtimeConfig.host,
+			vaultIdConfigured: !!this.runtimeConfig.vaultId,
+			enableAttachmentSync: this.runtimeConfig.enableAttachmentSync,
+			externalEditPolicy: this.runtimeConfig.externalEditPolicy,
+			maxFileSizeKB: this.runtimeConfig.maxFileSizeKB,
+			excludePatternCount: this.runtimeConfig.excludePatterns.length,
+		});
+	}
+
+	get serverAuthMode(): ServerCapabilities["authMode"] | "unknown" {
+		return this.capabilityUpdateService?.authMode ?? "unknown";
+	}
+
+	get serverSupportsAttachments(): boolean {
+		return this.capabilityUpdateService?.supportsAttachments ?? true;
+	}
+
+	get serverSupportsSnapshots(): boolean {
+		return this.capabilityUpdateService?.supportsSnapshots ?? true;
+	}
+
+	get serverMaxBlobUploadBytes(): number | null {
+		return this.capabilityUpdateService?.capabilities?.maxBlobUploadBytes ?? null;
+	}
+
+	async refreshAttachmentSyncRuntime(reason = "settings-change"): Promise<void> {
+		await this.attachmentOrchestrator?.refresh(reason);
+	}
+
+	private enforceCompatibilityGuard(reason: string): boolean {
+		return this.capabilityUpdateService?.enforceCompatibilityGuard(reason) ?? false;
+	}
+
+	async refreshServerCapabilities(reason = "manual"): Promise<void> {
+		await this.capabilityUpdateService?.refreshServerCapabilities(reason);
+	}
+
+	async refreshUpdateManifest(reason = "manual", force = false): Promise<void> {
+		await this.capabilityUpdateService?.refreshUpdateManifest(reason, force);
+	}
+
+	getUpdateState(): UpdateState {
+		return this.capabilityUpdateService?.getUpdateState() ?? {
+			serverVersion: null,
+			latestServerVersion: null,
+			serverUpdateAvailable: false,
+			pluginVersion: this.manifest.version,
+			latestPluginVersion: null,
+			pluginUpdateRecommended: false,
+			migrationRequired: false,
+			updateProvider: "unknown",
+			updateRepoUrl: null,
+			updateActionUrl: null,
+			updateBootstrapUrl: null,
+			updateActionLabel: "OWD Sync settings",
+			legacyServerDetected: false,
+			pluginCompatibilityWarning: null,
+		};
+	}
+
+	buildServerUpdateUrl(): string | null {
+		return this.capabilityUpdateService?.buildServerUpdateUrl() ?? null;
+	}
+
+	buildGithubUpdaterBootstrapUrl(): string | null {
+		return this.capabilityUpdateService?.buildGithubUpdaterBootstrapUrl() ?? null;
+	}
+
+		private showFatalSyncNotice(): void {
+			const code = this.vaultSync?.fatalAuthCode;
+			if (code === "unclaimed") {
+				new Notice(
+					"This OWD deployment is unclaimed. Open it in a browser, then create a pairing link.",
+					10000,
+				);
+				return;
+			}
+
+			if (code === "server_misconfigured") {
+				new Notice("Server misconfigured.");
+				return;
+			}
+		if (code === "update_required") {
+			const details = this.vaultSync?.fatalAuthDetails;
+			const detailText =
+				details && (details.roomSchemaVersion !== null || details.clientSchemaVersion !== null)
+					? ` (client=${details.clientSchemaVersion ?? "unknown"}, room=${details.roomSchemaVersion ?? "unknown"})`
+					: "";
+			new Notice(
+				`OWD Sync: this vault was upgraded by a newer plugin schema${detailText}. ` +
+				"Update OWD Sync on this device to continue syncing.",
+				12000,
+			);
+			return;
+		}
+
+			new Notice("Unauthorized. Check your token in settings.");
+		}
+
+	private async saveDiskIndex(): Promise<void> {
+		const persistedAt = Date.now();
+		await this.persistPluginState((state) => {
+			state._lastDiskIndexPersistedAt = persistedAt;
+		});
+		this.lastDiskIndexPersistedAt = persistedAt;
+	}
+
+	private async persistBlobQueueSnapshot(snapshot: BlobQueueSnapshot): Promise<void> {
+		// Only write if there's actually something to persist
+		if (snapshot.uploads.length === 0 && snapshot.downloads.length === 0) return;
+		// The status tick runs every three seconds while transfers are active.
+		// Avoid rewriting the plugin's complete data.json when the resumable queue
+		// has not changed since the last durable snapshot.
+		if (JSON.stringify(this.persistedState._blobQueue) === JSON.stringify(snapshot)) return;
+		await this.persistPluginState((state) => {
+			state._blobQueue = snapshot;
+		});
+	}
+
+	/**
+	 * Clear the persisted blob queue once all transfers are done.
+	 * Only writes if there was previously a saved queue.
+	 */
+	private async clearSavedBlobQueue(): Promise<void> {
+		if (!this.persistedState._blobQueue) return;
+		await this.persistPluginState((state) => {
+			delete state._blobQueue;
+		});
+	}
+
+	private refreshPersistedState(): void {
+		const nextState: PersistedPluginState = {
+			...this.settingsStore.withSettings(this.persistedState, this.settings),
+			_diskIndex: this.diskIndex,
+			_blobHashCache: this.blobHashCache,
+			...(this.persistedState._blobQueue && { _blobQueue: this.persistedState._blobQueue }),
+			...(this.lastDiskIndexPersistedAt > 0 && { _lastDiskIndexPersistedAt: this.lastDiskIndexPersistedAt }),
+		};
+		const cachedCapabilities = this.capabilityUpdateService?.getPersistedServerCapabilitiesCache();
+		if (cachedCapabilities) {
+			nextState._serverCapabilitiesCache = cachedCapabilities;
+		} else {
+			delete nextState._serverCapabilitiesCache;
+		}
+		const cachedUpdateManifest = this.capabilityUpdateService?.getPersistedUpdateManifestCache();
+		if (cachedUpdateManifest) {
+			nextState._updateManifestCache = cachedUpdateManifest;
+		} else {
+			delete nextState._updateManifestCache;
+		}
+		if (this.frontmatterQuarantineEntries.length > 0) {
+			nextState._frontmatterQuarantine = this.frontmatterQuarantineEntries;
+		} else {
+			delete nextState._frontmatterQuarantine;
+		}
+		const preserved = this.collectPreservedUnresolvedEntries();
+		if (preserved.length > 0) {
+			nextState._preservedUnresolved = preserved;
+		} else {
+			delete nextState._preservedUnresolved;
+		}
+		this.persistedState = nextState;
+	}
+
+	private collectPreservedUnresolvedEntries(): PreservedUnresolvedEntry[] {
+		const entries = new Map<string, PreservedUnresolvedEntry>();
+		const hasDiskRegistry = this.diskMirror !== null;
+		const hasBlobRegistry = this.getBlobSync() !== null;
+		for (const entry of this.preservedUnresolvedEntries) {
+			if (entry.kind === "markdown" && hasDiskRegistry) continue;
+			if (entry.kind === "blob" && hasBlobRegistry) continue;
+			entries.set(`${entry.kind}:${entry.path}`, entry);
+		}
+		for (const entry of this.diskMirror?.getPreservedUnresolvedEntries() ?? []) {
+			entries.set(`${entry.kind}:${entry.path}`, entry);
+		}
+		for (const entry of this.getBlobSync()?.getPreservedUnresolvedEntries() ?? []) {
+			entries.set(`${entry.kind}:${entry.path}`, entry);
+		}
+		this.preservedUnresolvedEntries = Array.from(entries.values());
+		return this.preservedUnresolvedEntries;
+	}
+
+	private persistPreservedUnresolvedState(): void {
+		void this.persistPluginState();
+		this.refreshStatusBar();
+	}
+
+	private async persistPluginState(
+		mutate?: (state: PersistedPluginState) => void,
+	): Promise<void> {
+		// Serialize all plugin data writes so settings/index/blob queue updates
+		// cannot clobber each other with interleaved load/merge/save cycles.
+		const write = async () => {
+			this.refreshPersistedState();
+			mutate?.(this.persistedState);
+			await this.settingsStore.save(this.persistedState);
+		};
+
+		this.persistWriteChain = this.persistWriteChain
+			.catch(() => undefined)
+			.then(write);
+		await this.persistWriteChain;
+	}
+
+	private async sha256Hex(text: string): Promise<string> {
+		const data = new TextEncoder().encode(text);
+		const digest = await crypto.subtle.digest("SHA-256", data);
+		return arrayBufferToHex(digest);
+	}
+
+	private runSchemaMigrationToV2(): void {
+		if (!this.vaultSync) {
+			new Notice("Sync not initialized.");
+			return;
+		}
+		runSchemaMigrationToV2({
+			app: this.app,
+			vaultSync: this.vaultSync,
+			settings: this.settings,
+				diagnosticsService: null,
+			log: (msg) => this.log(msg),
+			runReconciliation: async () => {
+				const mode = this.vaultSync?.getSafeReconcileMode();
+				if (!mode) return;
+				await this.runReconciliation(mode);
+			},
+		});
+	}
+
+	// -------------------------------------------------------------------
+	// QA debug API surface
+	// -------------------------------------------------------------------
+
+	private mountQaDebugApi(): void {
+		if (!this.settings.qaDebugMode) return;
+		// window.__YAOS_DEBUG__ is the Puppeteer harness API.
+		// It is NOT part of the production telemetry runtime (telemetry.js).
+		// The Puppeteer harness (qa/harness/installPuppeteerRuntime.ts) mounts
+		// it when loaded externally for QA scenarios.
+		// In this product build, no mutation API is available — log explicitly
+		// so developers know what happened instead of silently finding no API.
+		this.log("qaDebugMode enabled, but window.__YAOS_DEBUG__ is not mounted by this build. Load the Puppeteer harness from qa/harness/ to get the QA debug API.");
+		new Notice("OWD Sync: qaDebugMode active — QA debug API not available in this build. See qa/harness/.", 8000);
+	}
+
+	private async exportFlightTraceForApi(privacy: "safe" | "full"): Promise<string | null> {
+		void privacy;
+		return null;
+	}
+
+	private log(msg: string): void {
+		this.eventRing.push({ ts: new Date().toISOString(), msg });
+		if (this.eventRing.length > 600) {
+			this.eventRing.splice(0, this.eventRing.length - 600);
+		}
+		this.trace("plugin", msg);
+		if (this.settings.debug) {
+				console.debug(`[yaos] ${msg}`);
+		}
+	}
+
+	private isIndexedDbRelatedError(err: unknown): boolean {
+		if (!err) return false;
+		const name =
+			typeof (err as { name?: unknown })?.name === "string"
+				? (err as { name: string }).name
+				: "";
+		const message =
+			typeof (err as { message?: unknown })?.message === "string"
+				? (err as { message: string }).message
+				: formatUnknown(err);
+		const haystack = `${name} ${message}`.toLowerCase();
+		return haystack.includes("quotaexceeded")
+			|| haystack.includes("quota exceeded")
+			|| haystack.includes("indexeddb")
+			|| haystack.includes("idb");
+	}
+
+	private isObsidianFileMetadataRaceError(err: unknown): boolean {
+		if (!err) return false;
+		const message =
+			typeof (err as { message?: unknown })?.message === "string"
+				? (err as { message: string }).message
+				: formatUnknown(err);
+		const haystack = message.toLowerCase();
+		return haystack.includes("cannot index file, since it has no obsidian file metadata")
+			|| (haystack.includes("failed to index file") && haystack.includes("no obsidian file metadata"));
+	}
+
+	private handleIndexedDbDegraded(source: string, err?: unknown): void {
+		if (!this.vaultSync) return;
+		if (err) {
+			this.vaultSync.reportIndexedDbError(err, "runtime");
+		}
+		if (!this.vaultSync.idbError || this.idbDegradedHandled) return;
+
+		this.idbDegradedHandled = true;
+		const kind = this.vaultSync.idbErrorDetails?.kind ?? "unknown";
+		this.log(`IndexedDB degraded (${source}): kind=${kind}`);
+		this.scheduleTraceStateSnapshot("idb-degraded");
+
+		void this.attachmentOrchestrator?.stop("idb-degraded");
+
+		const notice = kind === "quota_exceeded"
+			? "OWD Sync: Device storage is full. Sync durability is degraded and attachment transfers are paused. Free up storage, then restart Obsidian."
+			: "OWD Sync: IndexedDB persistence failed. Sync durability is degraded and attachment transfers are paused.";
+		new Notice(notice, 12000);
+	}
+}

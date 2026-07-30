@@ -1,0 +1,3909 @@
+import {
+  agentConnectionListResponseSchema,
+  apiErrorSchema,
+  authenticationOptionsSchema,
+  authenticationResultSchema,
+  csrfResponseSchema,
+  currentMaterializationResponseSchema,
+  healthResponseSchema,
+  liveMarkdownNoteSchema,
+  markdownNoteWriteResponseSchema,
+  materializationGenerationSchema,
+  materializationJobSchema,
+  materializedNotesResponseSchema,
+  materializedSearchResponseSchema,
+  MAX_MARKDOWN_NOTE_CHARACTERS,
+  MAX_SNAPSHOT_ITEMS,
+  MAX_SNAPSHOT_LOGICAL_BYTES,
+  MAX_SNAPSHOT_VAULTS,
+  pairingGrantResponseSchema,
+  prepareProjectHandoffResponseSchema,
+  prepareMarkdownNotePath,
+  registrationOptionsSchema,
+  ownerDiagnosticsResponseSchema,
+  setupReadinessSchema,
+  setupStatusSchema,
+  vaultListResponseSchema,
+  type AgentConnection,
+  type HealthResponse,
+  type MaterializedNoteSummary,
+  type MaterializedSearchResult,
+  type PairingGrantResponse,
+  type SetupReadiness,
+  type SetupStatus,
+  type SetupVaultReadiness,
+  type VaultSummary,
+} from "@owd/contracts";
+import {
+  browserSupportsWebAuthn,
+  startAuthentication,
+  startRegistration,
+} from "@simplewebauthn/browser";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  PairingCopyControl,
+  type PairingCopyState,
+} from "./PairingCopyControl";
+import { PluginSetupGuide } from "./PluginSetupGuide";
+import {
+  OPERATIONAL_REGION_OPEN_EVENT,
+  openOperationalRegion,
+  OperationalRegion,
+  revealOperationalRegion,
+} from "./OperationalRegion";
+import {
+  isWorkspaceSectionId,
+  WorkspaceNavigation,
+  workspaceSectionFromHash,
+  type WorkspaceSectionId,
+} from "./WorkspaceNavigation";
+import {
+  createAntigravityConfig,
+  createCursorInstallUrl,
+  createEveConnectionSource,
+  createObsidianMindMcpMergeConfig,
+  createObsidianMindProjectMcpCommand,
+} from "./agent-client-config";
+import {
+  captureOwnerClaimToken,
+  clearOwnerClaimToken,
+} from "./owner-claim-token";
+import { OWD_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
+import {
+  beginLibraryRefresh,
+  completeEmptyLibraryRefresh,
+  completeLibraryRefresh,
+  failLibraryRefresh,
+  type LibraryRefreshMode,
+  type LibraryState,
+} from "./library-refresh-state";
+import {
+  beginVaultRefresh,
+  completeVaultRefresh,
+  failVaultRefresh,
+  type VaultRefreshMode,
+  type VaultState,
+} from "./vault-refresh-state";
+import {
+  requestSetupReadinessRefresh,
+  SETUP_READINESS_REFRESH_EVENT,
+} from "./setup-readiness-events";
+import {
+  disconnectedHistoryLabel,
+  partitionVaults,
+} from "./vault-presentation";
+
+const loadAgentAuthorize = () =>
+  import("./AgentAuthorize").then((module) => ({
+    default: module.AgentAuthorize,
+  }));
+const loadBackupPanel = () =>
+  import("./BackupPanel").then((module) => ({
+    default: module.BackupPanel,
+  }));
+const loadCollaborationPanel = () =>
+  import("./CollaborationPanel").then((module) => ({
+    default: module.CollaborationPanel,
+  }));
+const loadProjectInitialize = () =>
+  import("./ProjectInitialize").then((module) => ({
+    default: module.ProjectInitialize,
+  }));
+
+const AgentAuthorize = lazy(loadAgentAuthorize);
+const BackupPanel = lazy(loadBackupPanel);
+const CollaborationPanel = lazy(loadCollaborationPanel);
+const ProjectInitialize = lazy(loadProjectInitialize);
+
+type LoadState =
+  | { kind: "loading" }
+  | { health: HealthResponse; kind: "ready"; setup: SetupStatus }
+  | { kind: "error" };
+
+type ActionState =
+  | { kind: "idle" }
+  | { kind: "working"; label: string }
+  | { kind: "success"; message: string }
+  | { kind: "error"; message: string };
+
+type SearchState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | {
+      generationId: string;
+      kind: "ready";
+      results: MaterializedSearchResult[];
+    }
+  | { kind: "error"; message: string };
+
+type NoteState =
+  | { kind: "idle" }
+  | { kind: "loading"; path: string }
+  | {
+      content: string;
+      contentVersion: string;
+      draft: string;
+      generationId: string | null;
+      kind: "ready";
+      mode: "edit" | "view";
+      path: string;
+    }
+  | { draft: string; kind: "creating"; path: string }
+  | { kind: "error"; message: string; path: string };
+
+class ApiRequestError extends Error {
+  readonly code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.code = code;
+  }
+}
+
+const architecture = [
+  ["Live", "Durable Objects", "One serialized Yjs state owner per vault."],
+  ["Browse", "D1 + R2", "Searchable, immutable materialized generations."],
+  [
+    "Recover",
+    "Encrypted export",
+    "Independent artifacts with verified manifests.",
+  ],
+] as const;
+
+async function loadSetup(signal: AbortSignal): Promise<SetupStatus> {
+  const response = await fetch("/api/setup/status", {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error("Setup status request failed.");
+  }
+
+  return setupStatusSchema.parse(await response.json());
+}
+
+async function loadHealth(signal: AbortSignal): Promise<HealthResponse> {
+  const response = await fetch("/healthz", {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error("Worker health request failed.");
+  }
+
+  return healthResponseSchema.parse(await response.json());
+}
+
+async function loadCsrf(): Promise<string> {
+  const response = await fetch("/api/auth/csrf", {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not start a secure request.");
+  }
+
+  return csrfResponseSchema.parse(await response.json()).csrfToken;
+}
+
+async function requestJson(
+  path: string,
+  csrfToken: string,
+  body?: unknown,
+  method: "POST" | "PUT" = "POST",
+): Promise<unknown> {
+  const response = await fetch(path, {
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: {
+      Accept: "application/json",
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      "X-OWD-CSRF": csrfToken,
+    },
+    method,
+  });
+  const payload: unknown =
+    response.status === 204 ? null : await response.json();
+
+  if (!response.ok) {
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new ApiRequestError(
+      parsedError.success ? parsedError.data.error.code : "request_failed",
+      parsedError.success
+        ? parsedError.data.error.message
+        : "The request could not be completed.",
+    );
+  }
+
+  return payload;
+}
+
+async function loadVaultList(signal?: AbortSignal): Promise<VaultSummary[]> {
+  const response = await fetch("/api/vaults", {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+  const payload: unknown = await response.json();
+
+  if (!response.ok) {
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new Error(
+      parsedError.success
+        ? parsedError.data.error.message
+        : "Vaults could not be loaded.",
+    );
+  }
+
+  return vaultListResponseSchema.parse(payload).vaults;
+}
+
+async function fetchApiJson(
+  path: string,
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const response = await fetch(path, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new Error(
+      parsedError.success
+        ? parsedError.data.error.message
+        : "The request could not be completed.",
+    );
+  }
+  return payload;
+}
+
+async function postApiJson(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const response = await fetch(path, {
+    body: JSON.stringify(body),
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+    signal,
+  });
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new ApiRequestError(
+      parsedError.success ? parsedError.data.error.code : "request_failed",
+      parsedError.success
+        ? parsedError.data.error.message
+        : "The request could not be completed.",
+    );
+  }
+  return payload;
+}
+
+function formatTimestamp(value: number | null): string {
+  if (value === null) return "Not yet";
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value * 1_000));
+}
+
+function VaultRow({
+  isWorking,
+  onReconnect,
+  onRevoke,
+  vault,
+}: {
+  isWorking: boolean;
+  onReconnect?: (vault: VaultSummary) => Promise<void>;
+  onRevoke: (vault: VaultSummary) => Promise<void>;
+  vault: VaultSummary;
+}) {
+  return (
+    <article className="vault-row">
+      <div className="vault-identity">
+        <span className={`vault-status vault-status--${vault.status}`}>
+          {vault.status}
+        </span>
+        <span className="vault-kind">Obsidian vault</span>
+        <h3>{vault.displayName ?? "Waiting for Obsidian"}</h3>
+        <span className="vault-id">{vault.id}</span>
+      </div>
+      <dl className="vault-details">
+        <div>
+          <dt>Paired</dt>
+          <dd>{formatTimestamp(vault.pairedAt)}</dd>
+        </div>
+        <div>
+          <dt>Last connected</dt>
+          <dd>{formatTimestamp(vault.lastConnectedAt)}</dd>
+        </div>
+      </dl>
+      {vault.status !== "revoked" && onReconnect !== undefined ? (
+        <div className="vault-row-actions">
+          <button
+            className="secondary-action"
+            type="button"
+            disabled={isWorking}
+            onClick={() => void onReconnect(vault)}
+          >
+            Reconnect same vault
+          </button>
+          <button
+            className="danger-action"
+            type="button"
+            disabled={isWorking}
+            onClick={() => void onRevoke(vault)}
+          >
+            Revoke access
+          </button>
+        </div>
+      ) : (
+        <span className="revoked-note">Access closed</span>
+      )}
+    </article>
+  );
+}
+
+function hasUnsavedDraft(state: NoteState): boolean {
+  return (
+    state.kind === "creating" ||
+    (state.kind === "ready" &&
+      state.mode === "edit" &&
+      state.draft !== state.content)
+  );
+}
+
+type ConnectionsState =
+  | { kind: "loading" }
+  | { connections: AgentConnection[]; kind: "ready"; mcpUrl: string }
+  | { initial: boolean; kind: "error"; message: string };
+
+type AgentSetupPrerequisite =
+  "checking" | "vault-required" | "library-required" | "ready";
+
+function AgentConnectionsPanel({
+  prerequisite,
+}: {
+  prerequisite: AgentSetupPrerequisite;
+}) {
+  const [state, setState] = useState<ConnectionsState>({ kind: "loading" });
+  const [message, setMessage] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
+  const settledRef = useRef(false);
+  const refreshSequenceRef = useRef(0);
+
+  async function refresh(signal?: AbortSignal): Promise<void> {
+    const refreshSequence = refreshSequenceRef.current + 1;
+    refreshSequenceRef.current = refreshSequence;
+    try {
+      const parsed = agentConnectionListResponseSchema.parse(
+        await fetchApiJson("/api/agent/connections", signal),
+      );
+      if (
+        signal?.aborted === true ||
+        refreshSequence !== refreshSequenceRef.current
+      ) {
+        return;
+      }
+      setState({
+        connections: parsed.connections,
+        kind: "ready",
+        mcpUrl: parsed.mcpUrl,
+      });
+      settledRef.current = true;
+    } catch (error: unknown) {
+      if (
+        (error instanceof DOMException && error.name === "AbortError") ||
+        signal?.aborted === true ||
+        refreshSequence !== refreshSequenceRef.current
+      ) {
+        return;
+      }
+      setState({
+        initial: !settledRef.current,
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Agent connections could not be loaded.",
+      });
+      settledRef.current = true;
+    }
+  }
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const refreshOnFocus = () => void refresh();
+    const refreshOnSetupChange = () => void refresh();
+    void refresh(controller.signal);
+    window.addEventListener("focus", refreshOnFocus);
+    window.addEventListener(
+      SETUP_READINESS_REFRESH_EVENT,
+      refreshOnSetupChange,
+    );
+    return () => {
+      controller.abort();
+      refreshSequenceRef.current += 1;
+      window.removeEventListener("focus", refreshOnFocus);
+      window.removeEventListener(
+        SETUP_READINESS_REFRESH_EVENT,
+        refreshOnSetupChange,
+      );
+    };
+  }, []);
+
+  async function copyMcpUrl(): Promise<void> {
+    if (state.kind !== "ready") return;
+    try {
+      await navigator.clipboard.writeText(state.mcpUrl);
+      setMessage(
+        "MCP URL copied. Add it as a remote HTTP MCP server in your agent.",
+      );
+    } catch {
+      setMessage(
+        "Clipboard access was blocked. Select and copy the MCP URL below.",
+      );
+    }
+  }
+
+  async function copyAntigravityConfig(): Promise<void> {
+    if (state.kind !== "ready") return;
+    try {
+      await navigator.clipboard.writeText(
+        createAntigravityConfig(state.mcpUrl),
+      );
+      setMessage(
+        "Antigravity config copied. Merge the md-evolved entry with any MCP servers you already use.",
+      );
+    } catch {
+      setMessage(
+        "Clipboard access was blocked. Select and copy the Antigravity config below.",
+      );
+    }
+  }
+
+  async function copyObsidianMindSetup(): Promise<void> {
+    if (state.kind !== "ready") return;
+    try {
+      await navigator.clipboard.writeText(
+        createObsidianMindProjectMcpCommand(state.mcpUrl),
+      );
+      setMessage(
+        "Obsidian Mind setup copied. Run it from the vault root; Claude updates .mcp.json without replacing qmd.",
+      );
+    } catch {
+      setMessage(
+        "Clipboard access was blocked. Select and copy the Obsidian Mind setup command below.",
+      );
+    }
+  }
+
+  async function copyEveSetup(): Promise<void> {
+    if (state.kind !== "ready") return;
+    try {
+      await navigator.clipboard.writeText(
+        createEveConnectionSource(state.mcpUrl),
+      );
+      setMessage(
+        "Eve connection copied. Save it as agent/connections/owd.ts; Eve will handle the user-scoped OAuth pause and resume.",
+      );
+    } catch {
+      setMessage(
+        "Clipboard access was blocked. Select and copy the Eve connection module below.",
+      );
+    }
+  }
+
+  async function revoke(connection: AgentConnection): Promise<void> {
+    if (
+      !window.confirm(
+        `Revoke ${connection.clientName}'s read access to ${connection.vaultName}? Its next tool call will be denied.`,
+      )
+    ) {
+      return;
+    }
+    setWorking(true);
+    setMessage(null);
+    try {
+      const csrf = await loadCsrf();
+      await requestJson(
+        `/api/agent/connections/${encodeURIComponent(connection.id)}/revoke`,
+        csrf,
+      );
+      await refresh();
+      requestSetupReadinessRefresh();
+      setMessage(
+        "Agent access revoked. Existing tokens can no longer read vault data.",
+      );
+    } catch (error: unknown) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "The connection could not be revoked.",
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function revokeAll(): Promise<void> {
+    if (
+      !window.confirm(
+        "Revoke every active agent connection? Their next tool calls will all be denied.",
+      )
+    ) {
+      return;
+    }
+    setWorking(true);
+    setMessage(null);
+    try {
+      const csrf = await loadCsrf();
+      await requestJson("/api/agent/connections/revoke-all", csrf);
+      await refresh();
+      requestSetupReadinessRefresh();
+      setMessage("All agent access has been revoked.");
+    } catch (error: unknown) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Agent connections could not be revoked.",
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  const active =
+    state.kind === "ready"
+      ? state.connections.filter((connection) => connection.status === "active")
+      : [];
+  const preparedConnection = active.find(
+    (connection) => connection.preparedProjectHandoff !== null,
+  );
+  const connectionSummary =
+    state.kind === "loading"
+      ? "Checking agent access…"
+      : state.kind === "error"
+        ? "Agent access needs attention"
+        : prerequisite === "checking"
+          ? "Checking agent prerequisites…"
+          : prerequisite === "vault-required"
+            ? "Pair a vault before connecting agents"
+            : prerequisite === "library-required"
+              ? "OWD is preparing the vault for agents"
+              : active.length === 0
+                ? "No active agent connections"
+                : `${active.length.toLocaleString()} active agent connection${
+                    active.length === 1 ? "" : "s"
+                  }`;
+
+  const content = (
+    <section className="agent-panel" aria-labelledby="agent-heading">
+      <div className="section-heading">
+        <div>
+          <span className="section-kicker">AI agent access</span>
+          <h2 id="agent-heading">Choose what each agent can access.</h2>
+        </div>
+        {active.length > 0 ? (
+          <button
+            className="danger-action"
+            type="button"
+            disabled={working}
+            onClick={() => void revokeAll()}
+          >
+            Revoke all agents
+          </button>
+        ) : null}
+      </div>
+
+      {state.kind === "loading" ? (
+        <p className="vault-message">Loading agent access…</p>
+      ) : state.kind === "error" ? (
+        <p className="action-error" role="alert">
+          {state.message}
+        </p>
+      ) : (
+        <>
+          {prerequisite === "ready" ? (
+            <>
+              <div className="agent-connect-card">
+                <div>
+                  <span className="pairing-label">OAuth · passkey consent</span>
+                  <h3>
+                    Connect Codex, Claude, Grok, Hoplon, or another MCP client
+                  </h3>
+                  <p>
+                    Add this as a remote HTTP MCP server. Your agent opens OWD,
+                    where you approve one selected vault and any folder limits
+                    you choose. To use another vault, authorize a separate
+                    connection for it. A separately named request-only
+                    capability can ask for Project initialization; it cannot
+                    create or join a Project by itself.
+                  </p>
+                  <p>
+                    Connect the agent you want coordinating vault edits first,
+                    then use that agent to establish this vault&apos;s first OWD
+                    Project. You remain the owner; that agent becomes the
+                    advisory primary writer, and later agents are warned to stay
+                    read-only.
+                  </p>
+                  <code>{state.mcpUrl}</code>
+                </div>
+                <button
+                  className="primary-action"
+                  type="button"
+                  onClick={() => void copyMcpUrl()}
+                >
+                  Copy MCP URL
+                </button>
+              </div>
+
+              <div className="agent-client-grid">
+                <article className="agent-client-card">
+                  <span className="pairing-label">Cursor</span>
+                  <h3>Install with one click</h3>
+                  <p>
+                    Open Cursor&apos;s MCP installer with this deployment
+                    already filled in. OWD still requires your passkey and exact
+                    vault approval before any note can be read.
+                  </p>
+                  <a
+                    className="primary-action agent-client-action"
+                    href={createCursorInstallUrl(state.mcpUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Add to Cursor ↗
+                  </a>
+                  <small>
+                    Sends only this deployment&apos;s public MCP URL to Cursor
+                    when clicked—never a token or vault credential.
+                  </small>
+                </article>
+
+                <article className="agent-client-card">
+                  <span className="pairing-label">Antigravity</span>
+                  <h3>Copy the current config</h3>
+                  <p>
+                    Open Antigravity Settings → Customizations → MCP Servers,
+                    then merge this entry into your existing configuration and
+                    choose Authenticate.
+                  </p>
+                  <pre>
+                    <code>{createAntigravityConfig(state.mcpUrl)}</code>
+                  </pre>
+                  <button
+                    className="secondary-action agent-client-action"
+                    type="button"
+                    onClick={() => void copyAntigravityConfig()}
+                  >
+                    Copy Antigravity config
+                  </button>
+                  <small>
+                    Merge the entry if you already use MCP servers; do not
+                    replace them.
+                  </small>
+                </article>
+
+                <article className="agent-client-card">
+                  <span className="pairing-label">Obsidian Mind 8.x</span>
+                  <h3>Keep the local brain. Add OWD beside it.</h3>
+                  <p>
+                    From the Obsidian Mind vault root, run this once. Claude
+                    merges OWD into the project&apos;s existing{" "}
+                    <code>.mcp.json</code>, preserving <code>qmd</code>.
+                  </p>
+                  <pre>
+                    <code>
+                      {createObsidianMindProjectMcpCommand(state.mcpUrl)}
+                    </code>
+                  </pre>
+                  <button
+                    className="secondary-action agent-client-action"
+                    type="button"
+                    onClick={() => void copyObsidianMindSetup()}
+                  >
+                    Copy one-command setup
+                  </button>
+                  <small>
+                    Other clients can merge{" "}
+                    <code>
+                      {createObsidianMindMcpMergeConfig(state.mcpUrl)}
+                    </code>
+                    . OWD handles Projects and provenance; Mind keeps local
+                    graph search and scoped memory.
+                  </small>
+                </article>
+
+                <article className="agent-client-card">
+                  <span className="pairing-label">Eve 0.29</span>
+                  <h3>Drop in one user-scoped connection</h3>
+                  <p>
+                    Save this complete module as{" "}
+                    <code>agent/connections/owd.ts</code>. Eve pauses the tool
+                    call for OAuth, returns you here for the exact vault
+                    approval, then resumes automatically.
+                  </p>
+                  <pre>
+                    <code>{createEveConnectionSource(state.mcpUrl)}</code>
+                  </pre>
+                  <button
+                    className="secondary-action agent-client-action"
+                    type="button"
+                    onClick={() => void copyEveSetup()}
+                  >
+                    Copy Eve connection
+                  </button>
+                  <small>
+                    This uses user-scoped OAuth—never a static token. Give a
+                    genuinely independent Eve reviewer its own connector UID,
+                    such as <code>oauth/owd-reviewer</code>.
+                  </small>
+                </article>
+
+                <article className="agent-client-card">
+                  <span className="pairing-label">Gemini · local · other</span>
+                  <h3>Use any compatible client</h3>
+                  <ol>
+                    <li>
+                      Add the URL above as a remote Streamable HTTP MCP server.
+                    </li>
+                    <li>
+                      Start authentication and return to this OWD dashboard.
+                    </li>
+                    <li>
+                      Approve exactly one vault and any folder restrictions.
+                    </li>
+                    <li>Revoke the connection here whenever you are done.</li>
+                  </ol>
+                  <button
+                    className="secondary-action agent-client-action"
+                    type="button"
+                    onClick={() => void copyMcpUrl()}
+                  >
+                    Copy universal MCP URL
+                  </button>
+                  <small>
+                    Works with clients that support remote MCP plus OAuth
+                    dynamic registration or client metadata documents.
+                  </small>
+                </article>
+              </div>
+            </>
+          ) : prerequisite === "library-required" ? (
+            <article className="agent-connect-card agent-setup-blocked">
+              <div>
+                <span className="pairing-label">Library preparing</span>
+                <h3>OWD is preparing the searchable library</h3>
+                <p>
+                  OWD automatically publishes the current vault after sync
+                  settles. Agent authorization opens when that atomic build is
+                  ready, so a connection never starts with unusable context.
+                </p>
+              </div>
+              <button
+                className="primary-action"
+                type="button"
+                onClick={() => revealOperationalRegion("library")}
+              >
+                View library status
+              </button>
+            </article>
+          ) : prerequisite === "vault-required" ? (
+            <article className="agent-connect-card agent-setup-blocked">
+              <div>
+                <span className="pairing-label">Vault required first</span>
+                <h3>Pair the vault for this workspace before adding agents</h3>
+                <p>
+                  Agent setup stays closed until OWD has an active vault. This
+                  prevents a reused workspace from silently offering an older
+                  vault or its Project history during authorization.
+                </p>
+              </div>
+              <button
+                className="primary-action"
+                type="button"
+                onClick={() => revealOperationalRegion("vaults")}
+              >
+                Set up a vault
+              </button>
+            </article>
+          ) : (
+            <p className="vault-message">Checking agent prerequisites…</p>
+          )}
+
+          {active.length === 0 ? (
+            <div className="empty-vaults agent-empty">
+              <h3>No active agent connections.</h3>
+              <p>
+                Nothing can read a vault through MCP until you complete the
+                passkey approval screen from an agent client.
+              </p>
+            </div>
+          ) : (
+            <>
+              {prerequisite === "ready" ? (
+                <article
+                  className="agent-connect-card agent-project-handoff"
+                  aria-labelledby="agent-project-handoff-heading"
+                >
+                  <div>
+                    <span className="pairing-label">
+                      {preparedConnection === undefined
+                        ? "Agent connected · finish onboarding"
+                        : "First Project prepared · final step"}
+                    </span>
+                    <h3 id="agent-project-handoff-heading">
+                      {preparedConnection === undefined
+                        ? "Prepare the first Project in How OWD works"
+                        : `In ${preparedConnection.clientName}, say: Connect this project to OWD`}
+                    </h3>
+                    {preparedConnection === undefined ? (
+                      <>
+                        <p>
+                          Choose the Project name, folder, and primary agent
+                          once in the guided onboarding. Then return to that
+                          agent and use one sentence—there is no second website
+                          approval for the matching first Project.
+                        </p>
+                        <button
+                          className="primary-action"
+                          type="button"
+                          onClick={() =>
+                            revealOperationalRegion("architecture")
+                          }
+                        >
+                          Finish onboarding
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          OWD will use the owner-prepared Project{" "}
+                          <strong>
+                            {
+                              preparedConnection.preparedProjectHandoff
+                                ?.projectLabel
+                            }
+                          </strong>{" "}
+                          in{" "}
+                          <strong>
+                            {preparedConnection.preparedProjectHandoff
+                              ?.folderBoundary || "the entire approved vault"}
+                          </strong>
+                          . The matching first request completes on this same
+                          MCP connection.
+                        </p>
+                        <p>
+                          No prompt to copy, reconnect, daily renewal, or return
+                          to OWD is required. A different Project name or folder
+                          still stops for exact owner review.
+                        </p>
+                        <details className="project-handoff-advanced">
+                          <summary>Change the prepared first Project</summary>
+                          <ProjectHandoffSetup
+                            onPrepared={refresh}
+                            vaultId={preparedConnection.vaultId}
+                            vaultName={preparedConnection.vaultName}
+                          />
+                        </details>
+                      </>
+                    )}
+                  </div>
+                </article>
+              ) : null}
+
+              <div className="agent-list">
+                {active.map((connection) => (
+                  <article className="agent-row" key={connection.id}>
+                    <div>
+                      <span className="vault-status vault-status--active">
+                        read only
+                      </span>
+                      <h3>{connection.clientName}</h3>
+                      <span className="vault-id">
+                        {connection.clientOrigin}
+                      </span>
+                    </div>
+                    <dl className="agent-details">
+                      <div>
+                        <dt>Vault</dt>
+                        <dd>{connection.vaultName}</dd>
+                      </div>
+                      <div>
+                        <dt>Folders</dt>
+                        <dd>
+                          {connection.pathPrefixes.length === 0
+                            ? "Entire vault"
+                            : connection.pathPrefixes.join(", ")}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Restored sources</dt>
+                        <dd>
+                          {connection.approvedRestoredSources.length === 0
+                            ? "None"
+                            : connection.approvedRestoredSources
+                                .map((source) => source.sourceVaultName)
+                                .join(", ")}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Last used</dt>
+                        <dd>{formatTimestamp(connection.lastUsedAt)}</dd>
+                      </div>
+                    </dl>
+                    <button
+                      className="danger-action"
+                      type="button"
+                      disabled={working}
+                      onClick={() => void revoke(connection)}
+                    >
+                      Revoke agent
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+          {message !== null ? (
+            <p className="agent-message" aria-live="polite">
+              {message}
+            </p>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+
+  return (
+    <OperationalRegion
+      attention={state.kind === "error" ? "error" : "none"}
+      autoOpen={state.kind === "error" && state.initial}
+      heading="Agent access"
+      id="agents"
+      kicker="OWD MCP"
+      summary={connectionSummary}
+    >
+      {content}
+    </OperationalRegion>
+  );
+}
+
+type ProjectHandoffSetupState =
+  | { kind: "loading" }
+  | { connections: AgentConnection[]; kind: "ready" }
+  | { kind: "error"; message: string };
+
+function ProjectHandoffSetup({
+  onPrepared,
+  vaultId,
+  vaultName,
+}: {
+  onPrepared: () => Promise<void>;
+  vaultId: string;
+  vaultName: string;
+}) {
+  const [state, setState] = useState<ProjectHandoffSetupState>({
+    kind: "loading",
+  });
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [projectLabel, setProjectLabel] = useState(vaultName);
+  const [folderBoundary, setFolderBoundary] = useState("");
+  const [working, setWorking] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchApiJson("/api/agent/connections", controller.signal)
+      .then((payload) => {
+        const parsed = agentConnectionListResponseSchema.parse(payload);
+        const eligible = parsed.connections.filter(
+          (connection) =>
+            connection.status === "active" &&
+            connection.vaultId === vaultId &&
+            connection.scopes.some(
+              (scope) => scope === "project.initialize.request",
+            ) &&
+            connection.scopes.some(
+              (scope) => scope === "project.connect.request",
+            ),
+        );
+        setState({ connections: eligible, kind: "ready" });
+        const preferred =
+          eligible.find(
+            (connection) => connection.preparedProjectHandoff !== null,
+          ) ?? eligible[0];
+        setSelectedAgentId(preferred?.id ?? "");
+        setProjectLabel(
+          preferred?.preparedProjectHandoff?.projectLabel ?? vaultName,
+        );
+        setFolderBoundary(
+          preferred?.preparedProjectHandoff?.folderBoundary ??
+            preferred?.pathPrefixes[0] ??
+            "",
+        );
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setState({
+          kind: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Agent connections could not be loaded.",
+        });
+      });
+    return () => controller.abort();
+  }, [vaultId, vaultName]);
+
+  useEffect(() => {
+    setProjectLabel(vaultName);
+  }, [vaultId, vaultName]);
+
+  const selectedConnection =
+    state.kind === "ready"
+      ? (state.connections.find(
+          (connection) => connection.id === selectedAgentId,
+        ) ?? null)
+      : null;
+  const approvedFolderRoots = selectedConnection?.pathPrefixes ?? [];
+  const folderSuggestionsId = `project-folders-${vaultId}`;
+
+  async function prepare(): Promise<void> {
+    if (selectedConnection === null || projectLabel.trim() === "") return;
+    setWorking(true);
+    setMessage(null);
+    try {
+      const csrf = await loadCsrf();
+      const response = prepareProjectHandoffResponseSchema.parse(
+        await requestJson(
+          `/api/agent/connections/${encodeURIComponent(
+            selectedConnection.id,
+          )}/prepare-first-project`,
+          csrf,
+          {
+            folderBoundary,
+            projectLabel,
+          },
+        ),
+      );
+      setMessage(
+        `${response.handoff.projectLabel} is prepared for ${selectedConnection.clientName}.`,
+      );
+      requestSetupReadinessRefresh();
+      await onPrepared();
+    } catch (error: unknown) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "The first Project could not be prepared.",
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  if (state.kind === "loading") {
+    return <p className="vault-message">Loading eligible agents…</p>;
+  }
+  if (state.kind === "error") {
+    return (
+      <p className="action-error" role="alert">
+        {state.message}
+      </p>
+    );
+  }
+  if (state.connections.length === 0) {
+    return (
+      <p className="action-error" role="alert">
+        No active agent for this vault has both Project permissions. Reconnect
+        one agent from the Agent access section.
+      </p>
+    );
+  }
+
+  return (
+    <form
+      className="project-handoff-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void prepare();
+      }}
+    >
+      <label>
+        <span>Primary Project agent</span>
+        <select
+          value={selectedAgentId}
+          onChange={(event) => {
+            const nextAgentId = event.target.value;
+            const nextAgent =
+              state.connections.find(
+                (connection) => connection.id === nextAgentId,
+              ) ?? null;
+            setSelectedAgentId(nextAgentId);
+            setProjectLabel(
+              nextAgent?.preparedProjectHandoff?.projectLabel ?? vaultName,
+            );
+            setFolderBoundary(
+              nextAgent?.preparedProjectHandoff?.folderBoundary ??
+                nextAgent?.pathPrefixes[0] ??
+                "",
+            );
+            setMessage(null);
+          }}
+        >
+          {state.connections.map((connection) => (
+            <option key={connection.id} value={connection.id}>
+              {connection.clientName} · {connection.vaultName}
+            </option>
+          ))}
+        </select>
+        <small>
+          Use the agent you want coordinating the first Project. You remain the
+          owner; later agents are warned before writing directly to the vault.
+        </small>
+      </label>
+      <label>
+        <span>Project name</span>
+        <input
+          maxLength={120}
+          required
+          value={projectLabel}
+          onChange={(event) => {
+            setProjectLabel(event.target.value);
+            setMessage(null);
+          }}
+        />
+        <small>
+          OWD matches this exact name so the agent cannot silently choose
+          another Project.
+        </small>
+      </label>
+      <label>
+        <span>Project folder</span>
+        <input
+          list={folderSuggestionsId}
+          maxLength={1_024}
+          placeholder={
+            approvedFolderRoots.length === 0
+              ? "Leave blank for the entire approved vault"
+              : approvedFolderRoots[0]
+          }
+          value={folderBoundary}
+          onChange={(event) => {
+            setFolderBoundary(event.target.value);
+            setMessage(null);
+          }}
+        />
+        <datalist id={folderSuggestionsId}>
+          {approvedFolderRoots.map((folder) => (
+            <option key={folder} value={folder} />
+          ))}
+        </datalist>
+        <small>
+          {approvedFolderRoots.length === 0
+            ? "Leave blank for the whole approved vault, or enter a narrower folder such as docs."
+            : `Use ${approvedFolderRoots.join(
+                " or ",
+              )}, or a narrower folder inside one of those approved roots.`}
+        </small>
+      </label>
+      <button
+        className="primary-action"
+        disabled={working || projectLabel.trim() === ""}
+        type="submit"
+      >
+        {working ? "Preparing…" : "Prepare first Project"}
+      </button>
+      {message !== null ? (
+        <small className="setup-receipt" aria-live="polite">
+          {message}
+        </small>
+      ) : null}
+    </form>
+  );
+}
+
+type SetupGuidance = {
+  actionLabel: string | null;
+  description: string;
+  title: string;
+};
+
+function setupGuidance(
+  step: SetupVaultReadiness["nextStep"] | "connect-vault" | null,
+  vaultName: string,
+  libraryState: SetupVaultReadiness["libraryState"] | null,
+  preparedProjectHandoff: SetupVaultReadiness["preparedProjectHandoff"] | null,
+): SetupGuidance {
+  switch (step) {
+    case "connect-vault":
+      return {
+        actionLabel: "Connect an Obsidian vault",
+        description:
+          "Install OWD Sync in the exact vault you want to use, then approve its one-time pairing request.",
+        title: "Connect the first content source",
+      };
+    case "sync-vault":
+      return {
+        actionLabel: "Open vault connection help",
+        description: `${vaultName} has a credential, but OWD has not yet received a durable reconciled first sync. Keep that vault open in Obsidian with OWD Sync enabled. The plugin confirms sync and starts the first library automatically.`,
+        title: `Finish ${vaultName}'s first sync`,
+      };
+    case "build-library":
+      if (libraryState === "failed") {
+        return {
+          actionLabel: "Open library repair",
+          description: `${vaultName}'s automatic build stopped safely. Open its status and select Build now to retry; the previous generation remains unchanged.`,
+          title: `${vaultName}'s library needs attention`,
+        };
+      }
+      return {
+        actionLabel: "View library status",
+        description: `OWD automatically rebuilds ${vaultName}'s searchable library after sync settles. Keep Obsidian open; no owner action is required.`,
+        title: `Preparing ${vaultName}'s searchable library`,
+      };
+    case "create-recovery-point":
+      return {
+        actionLabel: "Connect an agent",
+        description: `${vaultName} has a searchable library. Connect the agent you want coordinating vault edits first, then establish its first Project with that agent. You remain the owner; later agents are warned to stay read-only. A recovery point is recommended, not required.`,
+        title: `Connect an agent to ${vaultName}`,
+      };
+    case "connect-agent":
+      return {
+        actionLabel: "Connect an agent",
+        description: `Authorize the agent you want coordinating ${vaultName}'s edits first. You will choose its exact first Project here during the next onboarding step. You remain the owner, and later agents are warned to stay read-only. The consent screen must name this exact vault and folder boundary.`,
+        title: `Connect an agent to ${vaultName}`,
+      };
+    case "prepare-project-handoff":
+      return {
+        actionLabel: null,
+        description: `Choose the agent, exact Project name, and approved folder once. OWD will prepare that single first Project so the matching agent request can finish without another website approval.`,
+        title: `Prepare ${vaultName}'s first Project`,
+      };
+    case "approve-project":
+      return {
+        actionLabel: "Review and approve Project",
+        description:
+          "This request does not match an unused first-Project handoff, or it is an older/advanced request. Review the exact Project once; do not reconnect or create a duplicate.",
+        title: "An exact Project request needs owner review",
+      };
+    case "create-or-select-project":
+      return {
+        actionLabel: null,
+        description:
+          preparedProjectHandoff === null
+            ? `In your selected agent, say “Connect this project to OWD.” OWD will use the exact first Project prepared during onboarding.`
+            : `${preparedProjectHandoff.projectLabel} is prepared for ${preparedProjectHandoff.clientName} using ${
+                preparedProjectHandoff.folderBoundary ||
+                "the entire approved vault"
+              }. Go to that agent and say “Connect this project to OWD.” The matching first request finishes there—no return to this website, copied prompt, reconnect, or daily renewal.`,
+        title:
+          preparedProjectHandoff === null
+            ? "Tell your agent to connect this Project"
+            : `Finish in ${preparedProjectHandoff.clientName}`,
+      };
+    case "reauthenticate-project":
+      return {
+        actionLabel: null,
+        description:
+          "Approval is complete. Continue in your agent—nothing to copy. The current MCP flow will finish this exact Project connection; no reconnect is required.",
+        title: "Your exact Project connection is ready",
+      };
+    case "ready":
+      return {
+        actionLabel: null,
+        description: `${vaultName} has a current library, an approved agent connection, and an approved Project. Continue in your agent—OWD restores the exact Project connection automatically if needed.`,
+        title: `${vaultName} is Project-ready`,
+      };
+    default:
+      return {
+        actionLabel: "Checking readiness…",
+        description:
+          "OWD is checking each prerequisite against one coherent vault boundary.",
+        title: "Checking the next truthful step",
+      };
+  }
+}
+
+function StateAwareSetup({
+  onReadinessChange,
+}: {
+  onReadinessChange: (readiness: SetupReadiness) => void;
+}) {
+  const [readiness, setReadiness] = useState<SetupReadiness | null>(null);
+  const [selectedVaultId, setSelectedVaultId] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const refreshSequenceRef = useRef(0);
+
+  async function refresh(): Promise<void> {
+    const refreshSequence = refreshSequenceRef.current + 1;
+    refreshSequenceRef.current = refreshSequence;
+    const response = await fetch("/api/setup/readiness", {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error("Setup readiness is unavailable.");
+    const parsed = setupReadinessSchema.parse(await response.json());
+    if (refreshSequence !== refreshSequenceRef.current) return;
+    setReadiness(parsed);
+    onReadinessChange(parsed);
+  }
+
+  useEffect(() => {
+    void refresh().catch(() => setMessage("Setup readiness is unavailable."));
+    const onFocus = () => void refresh();
+    const onStateChange = () => void refresh();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener(SETUP_READINESS_REFRESH_EVENT, onStateChange);
+    return () => {
+      refreshSequenceRef.current += 1;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener(SETUP_READINESS_REFRESH_EVENT, onStateChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (readiness === null) return;
+    setSelectedVaultId((current) =>
+      readiness.vaults.some((vault) => vault.id === current)
+        ? current
+        : (readiness.vaults.find((vault) => vault.nextStep !== "ready")?.id ??
+          readiness.vaults[0]?.id ??
+          ""),
+    );
+  }, [readiness]);
+
+  const selectedVault =
+    readiness?.vaults.find((vault) => vault.id === selectedVaultId) ?? null;
+  const selectedStep =
+    selectedVault?.nextStep ??
+    (readiness !== null && readiness.activeVaultCount === 0
+      ? "connect-vault"
+      : null);
+
+  useEffect(() => {
+    if (selectedStep !== "create-or-select-project") return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void refresh().catch(() =>
+          setMessage("Setup readiness is unavailable."),
+        );
+      }
+    }, 2_000);
+    return () => window.clearInterval(interval);
+  }, [selectedStep]);
+
+  function primaryAction(): void {
+    if (selectedStep === null) return;
+    if (selectedStep === "connect-vault") {
+      revealOperationalRegion("vaults");
+      return;
+    }
+    if (selectedStep === "sync-vault") {
+      revealOperationalRegion("vaults");
+      return;
+    }
+    if (selectedStep === "build-library") {
+      revealOperationalRegion("library");
+      return;
+    }
+    if (selectedStep === "create-recovery-point") {
+      revealOperationalRegion("agents");
+      return;
+    }
+    if (selectedStep === "connect-agent") {
+      revealOperationalRegion("agents");
+      return;
+    }
+    if (
+      selectedStep === "approve-project" &&
+      selectedVault?.pendingProjectReviewUrl !== null &&
+      selectedVault?.pendingProjectReviewUrl !== undefined
+    ) {
+      window.location.assign(selectedVault.pendingProjectReviewUrl);
+    }
+  }
+
+  const completedMilestones = [
+    {
+      complete: selectedVault !== null,
+      label: "Vault credential created",
+    },
+    {
+      complete: selectedVault?.syncConfirmed === true,
+      label: "First sync confirmed",
+    },
+    {
+      complete: selectedVault?.libraryReady === true,
+      label: "Current searchable library",
+    },
+    {
+      complete: selectedVault?.verifiedSnapshot === true,
+      label: "Optional recovery point verified",
+    },
+    {
+      complete: (selectedVault?.activeAgentCount ?? 0) > 0,
+      label: "Agent access approved",
+    },
+    {
+      complete: selectedVault?.preparedProjectHandoff != null,
+      label: "First Project handoff prepared",
+    },
+    {
+      complete: (selectedVault?.activeProjectCount ?? 0) > 0,
+      label: "OWD Project selected",
+    },
+    {
+      complete: (selectedVault?.activeProjectGrantCount ?? 0) > 0,
+      label: "Project authorization active",
+    },
+  ].filter((milestone) => milestone.complete);
+  const guidance = setupGuidance(
+    selectedStep,
+    selectedVault?.displayName ?? "This vault",
+    selectedVault?.libraryState ?? null,
+    selectedVault?.preparedProjectHandoff ?? null,
+  );
+  const pendingProjectRequests = selectedVault?.pendingProjectRequests ?? [];
+  const guidanceActionLabel =
+    selectedStep === "approve-project" && pendingProjectRequests.length > 1
+      ? null
+      : guidance.actionLabel;
+
+  return (
+    <section
+      className="setup-panel setup-panel--active"
+      aria-labelledby="setup-heading"
+      id="setup"
+    >
+      <div className="section-heading">
+        <div>
+          <span className="section-kicker">Set up OWD</span>
+          <h2 id="setup-heading">
+            Connect your Obsidian vault, then let your existing AI agents
+            collaborate without moving your work into OWD.
+          </h2>
+        </div>
+        <span className="time-target">
+          {selectedStep === "ready" ? "Project-ready" : "Do this next"}
+        </span>
+      </div>
+      {readiness !== null && readiness.vaults.length > 0 ? (
+        <label className="setup-vault-selector">
+          <span>Set up this Obsidian vault</span>
+          <select
+            aria-label="Set up this Obsidian vault"
+            value={selectedVaultId}
+            onChange={(event) => {
+              setSelectedVaultId(event.target.value);
+              setMessage(null);
+            }}
+          >
+            {readiness.vaults.map((vault) => (
+              <option key={vault.id} value={vault.id}>
+                {vault.displayName}
+                {vault.nextStep === "ready" ? " · Project-ready" : ""}
+              </option>
+            ))}
+          </select>
+          <small>
+            Each vault completes this journey independently. Progress from
+            another vault never fills these steps.
+          </small>
+        </label>
+      ) : null}
+      <div className="setup-readiness setup-readiness--single-action">
+        <article className="setup-next-action">
+          <span>Next action</span>
+          <strong>{guidance.title}</strong>
+          <p>{guidance.description}</p>
+          {selectedStep === "prepare-project-handoff" &&
+          selectedVault !== null ? (
+            <ProjectHandoffSetup
+              key={selectedVault.id}
+              onPrepared={refresh}
+              vaultId={selectedVault.id}
+              vaultName={selectedVault.displayName}
+            />
+          ) : null}
+          {selectedStep === "create-or-select-project" &&
+          selectedVault?.preparedProjectHandoff !== null &&
+          selectedVault?.preparedProjectHandoff !== undefined ? (
+            <dl className="prepared-project-receipt">
+              <div>
+                <dt>Agent</dt>
+                <dd>{selectedVault.preparedProjectHandoff.clientName}</dd>
+              </div>
+              <div>
+                <dt>Project</dt>
+                <dd>{selectedVault.preparedProjectHandoff.projectLabel}</dd>
+              </div>
+              <div>
+                <dt>Folder</dt>
+                <dd>
+                  {selectedVault.preparedProjectHandoff.folderBoundary ||
+                    "Entire approved vault"}
+                </dd>
+              </div>
+              <div>
+                <dt>Say this</dt>
+                <dd>Connect this project to OWD</dd>
+              </div>
+            </dl>
+          ) : null}
+          {selectedStep === "approve-project" &&
+          pendingProjectRequests.length > 1 ? (
+            <div className="setup-pending-projects">
+              <p>
+                More than one agent is waiting. Choose the named Project and
+                client you are currently using; OWD will not guess.
+              </p>
+              {pendingProjectRequests.map((request) => (
+                <button
+                  className="secondary-action"
+                  key={`${request.reviewUrl}:${request.clientName}`}
+                  type="button"
+                  onClick={() => window.location.assign(request.reviewUrl)}
+                >
+                  Review {request.projectLabel}
+                  <small>
+                    {request.requestKind === "create" ? "Create" : "Connect"} ·{" "}
+                    {request.clientName}
+                  </small>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {guidanceActionLabel !== null ? (
+            <button
+              className="primary-action"
+              disabled={selectedStep === null}
+              type="button"
+              onClick={primaryAction}
+            >
+              {guidanceActionLabel} <span aria-hidden="true">↗</span>
+            </button>
+          ) : null}
+          {selectedStep === "ready" ? (
+            <button
+              className="text-action setup-projects-action"
+              type="button"
+              onClick={() => revealOperationalRegion("collaboration")}
+            >
+              View active Projects
+            </button>
+          ) : null}
+          {message !== null ? (
+            <small className="setup-receipt" aria-live="polite">
+              {message}
+            </small>
+          ) : null}
+        </article>
+        {selectedVault !== null ? (
+          <details className="setup-progress-receipt">
+            <summary>
+              {completedMilestones.length} verified milestone
+              {completedMilestones.length === 1 ? "" : "s"} · show details
+            </summary>
+            <ul>
+              {completedMilestones.map((milestone) => (
+                <li key={milestone.label}>{milestone.label}</li>
+              ))}
+            </ul>
+            <p>
+              Sync:{" "}
+              {selectedVault.syncConfirmed
+                ? `confirmed ${formatTimestamp(selectedVault.initialSyncAt)}`
+                : "waiting for Obsidian"}
+              {" · "}Library: {selectedVault.libraryState}
+              {" · "}Last vault change:{" "}
+              {formatTimestamp(selectedVault.lastSyncAt)}
+            </p>
+          </details>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function initialWorkspaceSection(): WorkspaceSectionId {
+  if (typeof window === "undefined") return "architecture";
+  return workspaceSectionFromHash(window.location.hash);
+}
+
+type DeferredWorkspaceRegionProps = {
+  heading: string;
+  id: Extract<WorkspaceSectionId, "collaboration" | "recovery">;
+  kicker: string;
+  summary: string;
+};
+
+function DeferredWorkspaceRegion({
+  heading,
+  id,
+  kicker,
+  summary,
+}: DeferredWorkspaceRegionProps) {
+  return (
+    <OperationalRegion
+      autoOpen
+      heading={heading}
+      id={id}
+      kicker={kicker}
+      summary={summary}
+    >
+      <div
+        aria-busy="true"
+        aria-live="polite"
+        className="workspace-section-loading"
+        role="status"
+      >
+        <span aria-hidden="true" />
+        <div>
+          <strong>Opening {heading}…</strong>
+          <p>The workspace is loading this folder’s private tools.</p>
+        </div>
+      </div>
+    </OperationalRegion>
+  );
+}
+
+function EmptyRecoveryRegion() {
+  return (
+    <OperationalRegion
+      autoOpen
+      heading="Backup and recovery"
+      id="recovery"
+      kicker="Owner-controlled recovery"
+      summary="Connect a vault first"
+    >
+      <section className="workspace-empty-folder">
+        <span className="section-kicker">Nothing to protect yet</span>
+        <h3>Connect a vault before creating a recovery point.</h3>
+        <p>
+          Recovery is independent from onboarding, but OWD still needs one
+          paired vault before it can create or inspect a backup.
+        </p>
+        <button
+          className="primary-action"
+          type="button"
+          onClick={() => revealOperationalRegion("vaults")}
+        >
+          Open Vaults <span aria-hidden="true">↗</span>
+        </button>
+      </section>
+    </OperationalRegion>
+  );
+}
+
+function RouteLoading({ label }: { label: string }) {
+  return (
+    <main className="route-loading" aria-busy="true" aria-live="polite">
+      <span aria-hidden="true" />
+      <p>{label}</p>
+    </main>
+  );
+}
+
+function Dashboard() {
+  const initialSection = initialWorkspaceSection();
+  const [loadState, setLoadState] = useState<LoadState>({ kind: "loading" });
+  const [actionState, setActionState] = useState<ActionState>({ kind: "idle" });
+  const [vaultState, setVaultState] = useState<VaultState>({ kind: "idle" });
+  const [pairingGrant, setPairingGrant] = useState<PairingGrantResponse | null>(
+    null,
+  );
+  const [pairingCopyState, setPairingCopyState] = useState<PairingCopyState>({
+    kind: "idle",
+  });
+  const [pairingClock, setPairingClock] = useState(() =>
+    Math.floor(Date.now() / 1_000),
+  );
+  const [autoOpenVaultRegion, setAutoOpenVaultRegion] = useState(false);
+  const [selectedVaultId, setSelectedVaultId] = useState("");
+  const [libraryState, setLibraryState] = useState<LibraryState>({
+    kind: "idle",
+  });
+  const [libraryHasOpened, setLibraryHasOpened] = useState(false);
+  const [searchState, setSearchState] = useState<SearchState>({ kind: "idle" });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [noteState, setNoteState] = useState<NoteState>({ kind: "idle" });
+  const [onboardingReadiness, setOnboardingReadiness] =
+    useState<SetupReadiness | null>(null);
+  const [activeWorkspaceSection, setActiveWorkspaceSection] =
+    useState<WorkspaceSectionId>(initialSection);
+  const [visitedWorkspaceSections, setVisitedWorkspaceSections] = useState<
+    ReadonlySet<WorkspaceSectionId>
+  >(() => new Set([initialSection]));
+  const [pendingAgentAdvanceVaultId, setPendingAgentAdvanceVaultId] = useState<
+    string | null
+  >(null);
+  const [ownerClaimToken] = useState(() => captureOwnerClaimToken());
+  const pairingCardRef = useRef<HTMLElement>(null);
+  const vaultRefreshControllerRef = useRef<AbortController | null>(null);
+  const libraryRefreshControllerRef = useRef<AbortController | null>(null);
+  const supportsPasskeys = browserSupportsWebAuthn();
+  const noteLibraryOpened = useCallback((open: boolean) => {
+    if (open) setLibraryHasOpened(true);
+  }, []);
+  const rememberWorkspaceSection = useCallback(
+    (section: WorkspaceSectionId) => {
+      setVisitedWorkspaceSections((current) => {
+        if (current.has(section)) return current;
+        return new Set([...current, section]);
+      });
+    },
+    [],
+  );
+  const navigateWorkspace = useCallback(
+    (section: WorkspaceSectionId) => {
+      rememberWorkspaceSection(section);
+      setActiveWorkspaceSection(section);
+      const nextHash = `#${section}`;
+      if (window.location.hash !== nextHash) {
+        window.history.pushState(null, "", nextHash);
+      }
+      window.requestAnimationFrame(() => openOperationalRegion(section));
+    },
+    [rememberWorkspaceSection],
+  );
+
+  useEffect(() => {
+    const useLocation = () => {
+      const section = workspaceSectionFromHash(window.location.hash);
+      rememberWorkspaceSection(section);
+      setActiveWorkspaceSection(section);
+    };
+    const useOperationalRegion = (event: Event) => {
+      if (
+        !(event instanceof CustomEvent) ||
+        !isWorkspaceSectionId(event.detail)
+      ) {
+        return;
+      }
+      rememberWorkspaceSection(event.detail);
+      setActiveWorkspaceSection((current) => {
+        if (current === event.detail) return current;
+        const nextHash = `#${event.detail}`;
+        if (window.location.hash !== nextHash) {
+          window.history.pushState(null, "", nextHash);
+        }
+        return event.detail;
+      });
+    };
+
+    window.addEventListener("hashchange", useLocation);
+    window.addEventListener("popstate", useLocation);
+    window.addEventListener(
+      OPERATIONAL_REGION_OPEN_EVENT,
+      useOperationalRegion,
+    );
+    return () => {
+      window.removeEventListener("hashchange", useLocation);
+      window.removeEventListener("popstate", useLocation);
+      window.removeEventListener(
+        OPERATIONAL_REGION_OPEN_EVENT,
+        useOperationalRegion,
+      );
+    };
+  }, [rememberWorkspaceSection]);
+
+  useEffect(() => {
+    window.requestAnimationFrame(() =>
+      openOperationalRegion(activeWorkspaceSection),
+    );
+  }, [activeWorkspaceSection]);
+
+  async function refreshSetup(signal?: AbortSignal): Promise<void> {
+    setLoadState({ kind: "loading" });
+
+    try {
+      const requestSignal = signal ?? new AbortController().signal;
+      const [setup, health] = await Promise.all([
+        loadSetup(requestSignal),
+        loadHealth(requestSignal),
+      ]);
+      setLoadState({
+        health,
+        kind: "ready",
+        setup,
+      });
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setLoadState({ kind: "error" });
+    }
+  }
+
+  async function refreshVaults(
+    mode: VaultRefreshMode = "background",
+  ): Promise<void> {
+    vaultRefreshControllerRef.current?.abort();
+    const controller = new AbortController();
+    vaultRefreshControllerRef.current = controller;
+    setVaultState((current) => beginVaultRefresh(current, mode));
+
+    try {
+      const vaults = await loadVaultList(controller.signal);
+      if (vaultRefreshControllerRef.current !== controller) return;
+      if (mode === "initial") {
+        setAutoOpenVaultRegion(
+          !vaults.some((vault) => vault.status === "active"),
+        );
+      }
+      setPairingGrant((current) =>
+        current !== null &&
+        vaults.some(
+          (vault) => vault.id === current.vaultId && vault.status === "active",
+        )
+          ? null
+          : current,
+      );
+      setVaultState(completeVaultRefresh(vaults));
+      requestSetupReadinessRefresh();
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (mode === "initial") setAutoOpenVaultRegion(true);
+      const message =
+        error instanceof Error ? error.message : "Vaults could not be loaded.";
+      setVaultState((current) => failVaultRefresh(current, message));
+    } finally {
+      if (vaultRefreshControllerRef.current === controller) {
+        vaultRefreshControllerRef.current = null;
+      }
+    }
+  }
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void refreshSetup(controller.signal);
+    return () => controller.abort();
+  }, []);
+
+  const setup = loadState.kind === "ready" ? loadState.setup : null;
+
+  useEffect(() => {
+    if (setup?.authenticated !== true) {
+      setVaultState({ kind: "idle" });
+      setAutoOpenVaultRegion(false);
+      setPairingGrant(null);
+      setSelectedVaultId("");
+      setLibraryState({ kind: "idle" });
+      setLibraryHasOpened(false);
+      setSearchState({ kind: "idle" });
+      setNoteState({ kind: "idle" });
+      setOnboardingReadiness(null);
+      setPendingAgentAdvanceVaultId(null);
+      return;
+    }
+
+    void refreshVaults("initial");
+
+    return () => {
+      vaultRefreshControllerRef.current?.abort();
+      vaultRefreshControllerRef.current = null;
+    };
+  }, [setup?.authenticated]);
+
+  useEffect(() => {
+    if (setup?.authenticated !== true) return;
+
+    const warmWorkspaceFolders = () => {
+      void Promise.allSettled([loadBackupPanel(), loadCollaborationPanel()]);
+    };
+    const idleWindow: {
+      cancelIdleCallback?: Window["cancelIdleCallback"];
+      requestIdleCallback?: Window["requestIdleCallback"];
+    } = window;
+
+    if (idleWindow.requestIdleCallback !== undefined) {
+      const handle = idleWindow.requestIdleCallback(warmWorkspaceFolders, {
+        timeout: 2_500,
+      });
+      return () => idleWindow.cancelIdleCallback?.(handle);
+    }
+
+    const handle = window.setTimeout(warmWorkspaceFolders, 1_200);
+    return () => window.clearTimeout(handle);
+  }, [setup?.authenticated]);
+
+  useEffect(() => {
+    if (setup?.authenticated !== true || pairingGrant === null) return;
+    const refreshAfterObsidian = () => {
+      if (Math.floor(Date.now() / 1_000) < pairingGrant.expiresAt) {
+        void refreshVaults();
+      }
+    };
+    const pollingHandle = window.setInterval(refreshAfterObsidian, 3_000);
+    const stopHandle = window.setTimeout(
+      () => window.clearInterval(pollingHandle),
+      Math.max(0, pairingGrant.expiresAt * 1_000 - Date.now()),
+    );
+    window.addEventListener("focus", refreshAfterObsidian);
+    return () => {
+      window.clearInterval(pollingHandle);
+      window.clearTimeout(stopHandle);
+      window.removeEventListener("focus", refreshAfterObsidian);
+    };
+  }, [pairingGrant, setup?.authenticated]);
+
+  useEffect(() => {
+    if (pairingGrant === null) return;
+    setPairingClock(Math.floor(Date.now() / 1_000));
+    const clockHandle = window.setInterval(
+      () => setPairingClock(Math.floor(Date.now() / 1_000)),
+      1_000,
+    );
+    return () => window.clearInterval(clockHandle);
+  }, [pairingGrant]);
+
+  useEffect(() => {
+    if (vaultState.kind !== "ready") return;
+    const activeVaults = vaultState.vaults.filter(
+      (vault) => vault.status === "active",
+    );
+    setSelectedVaultId((current) =>
+      activeVaults.some((vault) => vault.id === current)
+        ? current
+        : (activeVaults[0]?.id ?? ""),
+    );
+  }, [vaultState]);
+
+  useEffect(() => {
+    if (selectedVaultId === "") {
+      libraryRefreshControllerRef.current?.abort();
+      libraryRefreshControllerRef.current = null;
+      setLibraryState({ kind: "idle" });
+      return;
+    }
+    if (!libraryHasOpened) return;
+    void refreshLibrary(selectedVaultId, "initial");
+    return () => {
+      libraryRefreshControllerRef.current?.abort();
+      libraryRefreshControllerRef.current = null;
+    };
+  }, [libraryHasOpened, selectedVaultId]);
+
+  useEffect(() => {
+    if (
+      pendingAgentAdvanceVaultId === null ||
+      onboardingReadiness === null ||
+      !onboardingReadiness.vaults.some(
+        (vault) =>
+          vault.id === pendingAgentAdvanceVaultId && vault.libraryReady,
+      )
+    ) {
+      return;
+    }
+    setPendingAgentAdvanceVaultId(null);
+    revealOperationalRegion("agents");
+  }, [onboardingReadiness, pendingAgentAdvanceVaultId]);
+
+  useEffect(() => {
+    if (pairingGrant === null) return;
+
+    window.requestAnimationFrame(() => {
+      pairingCardRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      pairingCardRef.current?.focus({ preventScroll: true });
+    });
+  }, [pairingGrant]);
+
+  async function claimOwner(): Promise<void> {
+    setActionState({ kind: "working", label: "Waiting for your passkey…" });
+
+    try {
+      const csrfToken = await loadCsrf();
+      const options = registrationOptionsSchema.parse(
+        await requestJson(
+          "/api/auth/register/options",
+          csrfToken,
+          setup?.claimMode === "invitation"
+            ? { claimToken: ownerClaimToken }
+            : undefined,
+        ),
+      );
+      const credential = await startRegistration({ optionsJSON: options });
+      authenticationResultSchema.parse(
+        await requestJson("/api/auth/register/verify", csrfToken, credential),
+      );
+      clearOwnerClaimToken();
+      setActionState({ kind: "idle" });
+      await refreshSetup();
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The passkey could not be created.",
+      });
+    }
+  }
+
+  async function signIn(): Promise<void> {
+    setActionState({ kind: "working", label: "Waiting for your passkey…" });
+
+    try {
+      const csrfToken = await loadCsrf();
+      const options = authenticationOptionsSchema.parse(
+        await requestJson("/api/auth/login/options", csrfToken),
+      );
+      const credential = await startAuthentication({ optionsJSON: options });
+      authenticationResultSchema.parse(
+        await requestJson("/api/auth/login/verify", csrfToken, credential),
+      );
+      setActionState({ kind: "idle" });
+      await refreshSetup();
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The passkey could not be verified.",
+      });
+    }
+  }
+
+  async function addBackupPasskey(): Promise<void> {
+    setActionState({
+      kind: "working",
+      label: "Waiting for your additional passkey…",
+    });
+    try {
+      const csrfToken = await loadCsrf();
+      const options = registrationOptionsSchema.parse(
+        await requestJson("/api/auth/passkeys/register/options", csrfToken),
+      );
+      const credential = await startRegistration({ optionsJSON: options });
+      await requestJson(
+        "/api/auth/passkeys/register/verify",
+        csrfToken,
+        credential,
+      );
+      setActionState({
+        kind: "success",
+        message:
+          "Additional passkey added. Test it from another device before relying on it for recovery.",
+      });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The additional passkey could not be added.",
+      });
+    }
+  }
+
+  async function copyOwnerDiagnostics(): Promise<void> {
+    setActionState({
+      kind: "working",
+      label: "Preparing redacted diagnostics…",
+    });
+    try {
+      const diagnostics = ownerDiagnosticsResponseSchema.parse(
+        await fetchApiJson("/api/diagnostics"),
+      );
+      const serialized = `${JSON.stringify(diagnostics, null, 2)}\n`;
+      try {
+        await navigator.clipboard.writeText(serialized);
+        setActionState({
+          kind: "success",
+          message:
+            "Redacted diagnostics copied. They contain IDs and state, but no names, note paths, content, credentials, or Project text.",
+        });
+      } catch {
+        const url = URL.createObjectURL(
+          new Blob([serialized], { type: "application/json" }),
+        );
+        const link = document.createElement("a");
+        link.download = `owd-diagnostics-${diagnostics.generatedAt}.json`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        setActionState({
+          kind: "success",
+          message:
+            "Clipboard access was blocked, so OWD downloaded the redacted diagnostics instead.",
+        });
+      }
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The redacted diagnostics could not be prepared.",
+      });
+    }
+  }
+
+  async function signOut(): Promise<void> {
+    setActionState({ kind: "working", label: "Ending the owner session…" });
+
+    try {
+      const csrfToken = await loadCsrf();
+      await requestJson("/api/auth/logout", csrfToken);
+      setActionState({ kind: "idle" });
+      await refreshSetup();
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error ? error.message : "Sign out could not finish.",
+      });
+    }
+  }
+
+  async function createPairingLink(): Promise<void> {
+    setActionState({ kind: "working", label: "Creating a private link…" });
+
+    try {
+      const csrfToken = await loadCsrf();
+      const grant = pairingGrantResponseSchema.parse(
+        await requestJson("/api/pairing/grants", csrfToken),
+      );
+      setPairingGrant(grant);
+      setPairingCopyState({ kind: "idle" });
+      setActionState({
+        kind: "success",
+        message: "Pairing request ready. Open it from the panel below.",
+      });
+      await refreshVaults();
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The pairing link could not be created.",
+      });
+    }
+  }
+
+  async function copyPairingLink(): Promise<void> {
+    if (pairingGrant === null) return;
+
+    try {
+      await navigator.clipboard.writeText(pairingGrant.pairingUrl);
+      setPairingCopyState({ kind: "copied" });
+    } catch {
+      setPairingCopyState({
+        kind: "error",
+        message:
+          "The browser blocked clipboard access. Allow clipboard access and copy the pairing link again.",
+      });
+    }
+  }
+
+  async function createReconnectLink(vault: VaultSummary): Promise<void> {
+    setActionState({
+      kind: "working",
+      label: `Creating a reconnect request for ${vault.displayName ?? "this vault"}…`,
+    });
+    try {
+      const csrfToken = await loadCsrf();
+      const grant = pairingGrantResponseSchema.parse(
+        await requestJson(
+          `/api/vaults/${encodeURIComponent(vault.id)}/reconnect-grant`,
+          csrfToken,
+        ),
+      );
+      setPairingGrant(grant);
+      setPairingCopyState({ kind: "idle" });
+      setActionState({
+        kind: "success",
+        message:
+          "Reconnect request ready. It preserves this vault ID and rotates the old credential only after the new sync is confirmed.",
+      });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The vault reconnect request could not be created.",
+      });
+    }
+  }
+
+  async function revokeVaultAccess(vault: VaultSummary): Promise<void> {
+    const vaultName = vault.displayName ?? "this pending vault";
+    if (
+      !window.confirm(
+        `Revoke sync access for ${vaultName}? Any active connection will close immediately. Your stored vault data will not be deleted.`,
+      )
+    ) {
+      return;
+    }
+
+    setActionState({ kind: "working", label: "Revoking vault access…" });
+
+    try {
+      const csrfToken = await loadCsrf();
+      await requestJson(
+        `/api/vaults/${encodeURIComponent(vault.id)}/revoke`,
+        csrfToken,
+      );
+      if (pairingGrant?.vaultId === vault.id) setPairingGrant(null);
+      await refreshVaults();
+      setActionState({ kind: "idle" });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Vault access could not be revoked.",
+      });
+    }
+  }
+
+  async function refreshLibrary(
+    vaultId = selectedVaultId,
+    mode: LibraryRefreshMode = "background",
+  ): Promise<void> {
+    if (vaultId === "") return;
+    libraryRefreshControllerRef.current?.abort();
+    const controller = new AbortController();
+    libraryRefreshControllerRef.current = controller;
+    const previousGenerationId =
+      libraryState.kind === "ready"
+        ? libraryState.generation.generationId
+        : null;
+    setLibraryState((current) => beginLibraryRefresh(current, mode));
+
+    try {
+      const status = currentMaterializationResponseSchema.parse(
+        await fetchApiJson(
+          `/api/vaults/${encodeURIComponent(vaultId)}/materialization`,
+          controller.signal,
+        ),
+      );
+      if (libraryRefreshControllerRef.current !== controller) return;
+      if (status.generation === null) {
+        setLibraryState(completeEmptyLibraryRefresh());
+        setSearchState({ kind: "idle" });
+        setNoteState({ kind: "idle" });
+        return;
+      }
+      const page = materializedNotesResponseSchema.parse(
+        await postApiJson(
+          `/api/vaults/${encodeURIComponent(vaultId)}/notes`,
+          { cursor: null },
+          controller.signal,
+        ),
+      );
+      if (libraryRefreshControllerRef.current !== controller) return;
+      if (page.generation.generationId !== status.generation.generationId) {
+        throw new Error(
+          "The library changed while notes were loading. Refresh it.",
+        );
+      }
+      setLibraryState(
+        completeLibraryRefresh(page.generation, page.notes, page.nextCursor),
+      );
+      if (
+        mode === "initial" ||
+        previousGenerationId !== page.generation.generationId
+      ) {
+        setSearchState({ kind: "idle" });
+        setNoteState({ kind: "idle" });
+      }
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      const message =
+        error instanceof Error
+          ? error.message
+          : "The searchable library could not be loaded.";
+      setLibraryState((current) => failLibraryRefresh(current, message));
+    } finally {
+      if (libraryRefreshControllerRef.current === controller) {
+        libraryRefreshControllerRef.current = null;
+      }
+    }
+  }
+
+  async function buildMaterialization(): Promise<void> {
+    if (selectedVaultId === "") return;
+    const vaultId = selectedVaultId;
+    const selectedReadiness = onboardingReadiness?.vaults.find(
+      (vault) => vault.id === vaultId,
+    );
+    const shouldAdvanceToAgents =
+      selectedReadiness?.libraryReady === false ||
+      libraryState.kind === "empty";
+    setActionState({
+      kind: "working",
+      label: "Building an immutable searchable library…",
+    });
+
+    try {
+      const csrfToken = await loadCsrf();
+      let job = materializationJobSchema.parse(
+        await requestJson(
+          `/api/vaults/${encodeURIComponent(vaultId)}/materializations`,
+          csrfToken,
+        ),
+      );
+      for (
+        let attempt = 0;
+        attempt < 360 && (job.status === "queued" || job.status === "running");
+        attempt += 1
+      ) {
+        setActionState({
+          kind: "working",
+          label: `Building searchable library · ${job.processedNoteCount.toLocaleString()} of ${job.totalNoteCount.toLocaleString()} notes…`,
+        });
+        await new Promise((resolve) => window.setTimeout(resolve, 500));
+        job = materializationJobSchema.parse(
+          await fetchApiJson(
+            `/api/vaults/${encodeURIComponent(vaultId)}/materializations/${encodeURIComponent(job.jobId)}`,
+          ),
+        );
+      }
+      if (job.status !== "completed") {
+        throw new Error(
+          job.status === "failed"
+            ? "The searchable library build stopped safely. The previous library is unchanged."
+            : "The searchable library is still building. Refresh its status in a moment.",
+        );
+      }
+      const generation = materializationGenerationSchema.parse(job.generation);
+      await refreshLibrary(vaultId);
+      if (shouldAdvanceToAgents) {
+        setPendingAgentAdvanceVaultId(vaultId);
+      }
+      requestSetupReadinessRefresh();
+      setActionState({
+        kind: "success",
+        message: `${generation.noteCount.toLocaleString()} notes published as one generation.`,
+      });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The searchable library could not be built.",
+      });
+    }
+  }
+
+  async function loadMoreNotes(): Promise<void> {
+    if (
+      libraryState.kind !== "ready" ||
+      libraryState.nextCursor === null ||
+      selectedVaultId === ""
+    ) {
+      return;
+    }
+    try {
+      const page = materializedNotesResponseSchema.parse(
+        await postApiJson(
+          `/api/vaults/${encodeURIComponent(selectedVaultId)}/notes`,
+          { cursor: libraryState.nextCursor },
+        ),
+      );
+      if (
+        page.generation.generationId !== libraryState.generation.generationId
+      ) {
+        await refreshLibrary(selectedVaultId);
+        return;
+      }
+      setLibraryState({
+        ...libraryState,
+        nextCursor: page.nextCursor,
+        notes: [...libraryState.notes, ...page.notes],
+      });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "More notes could not be loaded.",
+      });
+    }
+  }
+
+  async function searchNotes(): Promise<void> {
+    if (selectedVaultId === "" || libraryState.kind !== "ready") return;
+    if (searchQuery.trim() === "") {
+      setSearchState({ kind: "idle" });
+      return;
+    }
+    setSearchState({ kind: "loading" });
+    setNoteState({ kind: "idle" });
+
+    try {
+      const result = materializedSearchResponseSchema.parse(
+        await postApiJson(
+          `/api/vaults/${encodeURIComponent(selectedVaultId)}/search`,
+          { query: searchQuery },
+        ),
+      );
+      if (
+        result.generation.generationId !== libraryState.generation.generationId
+      ) {
+        await refreshLibrary(selectedVaultId);
+        return;
+      }
+      setSearchState({
+        generationId: result.generation.generationId,
+        kind: "ready",
+        results: result.results,
+      });
+    } catch (error: unknown) {
+      setSearchState({
+        kind: "error",
+        message:
+          error instanceof Error ? error.message : "Search could not finish.",
+      });
+    }
+  }
+
+  async function openNote(note: MaterializedNoteSummary): Promise<void> {
+    if (selectedVaultId === "" || libraryState.kind !== "ready") return;
+    if (
+      hasUnsavedDraft(noteState) &&
+      !window.confirm("Discard the unsaved Markdown draft?")
+    ) {
+      return;
+    }
+    const expectedGeneration = libraryState.generation.generationId;
+    setNoteState({ kind: "loading", path: note.path });
+
+    try {
+      const response = await fetch(
+        `/api/vaults/${encodeURIComponent(selectedVaultId)}/note`,
+        {
+          body: JSON.stringify({ path: note.path }),
+          headers: {
+            Accept: "text/markdown",
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        },
+      );
+      if (!response.ok) {
+        const payload: unknown = await response.json();
+        const parsedError = apiErrorSchema.safeParse(payload);
+        throw new Error(
+          parsedError.success
+            ? parsedError.data.error.message
+            : "The note could not be opened.",
+        );
+      }
+      const generationId = response.headers.get("X-OWD-Generation");
+      if (generationId !== expectedGeneration) {
+        await refreshLibrary(selectedVaultId);
+        throw new Error("The library changed. Choose the note again.");
+      }
+      setNoteState({
+        content: await response.text(),
+        contentVersion: note.contentSha256,
+        draft: "",
+        generationId,
+        kind: "ready",
+        mode: "view",
+        path: note.path,
+      });
+    } catch (error: unknown) {
+      setNoteState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The note could not be opened.",
+        path: note.path,
+      });
+    }
+  }
+
+  async function loadLiveNoteForEditing(force = false): Promise<void> {
+    if (selectedVaultId === "" || noteState.kind !== "ready") return;
+    if (
+      !force &&
+      hasUnsavedDraft(noteState) &&
+      !window.confirm("Replace the unsaved draft with the current live note?")
+    ) {
+      return;
+    }
+
+    setActionState({ kind: "working", label: "Loading the live note…" });
+    try {
+      const live = liveMarkdownNoteSchema.parse(
+        await postApiJson(
+          `/api/vaults/${encodeURIComponent(selectedVaultId)}/live-note`,
+          { path: noteState.path },
+        ),
+      );
+      setNoteState({
+        content: live.content,
+        contentVersion: live.contentVersion,
+        draft: live.content,
+        generationId: null,
+        kind: "ready",
+        mode: "edit",
+        path: live.path,
+      });
+      setActionState({ kind: "idle" });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The live note could not be loaded.",
+      });
+    }
+  }
+
+  function beginCreateNote(): void {
+    if (libraryState.kind !== "ready") return;
+    if (
+      hasUnsavedDraft(noteState) &&
+      !window.confirm("Discard the unsaved Markdown draft?")
+    ) {
+      return;
+    }
+    setNoteState({ draft: "", kind: "creating", path: "" });
+    setActionState({ kind: "idle" });
+  }
+
+  function cancelEditing(): void {
+    if (
+      hasUnsavedDraft(noteState) &&
+      !window.confirm("Discard the unsaved Markdown draft?")
+    ) {
+      return;
+    }
+    if (noteState.kind === "creating") {
+      setNoteState({ kind: "idle" });
+    } else if (noteState.kind === "ready") {
+      setNoteState({
+        ...noteState,
+        draft: noteState.content,
+        mode: "view",
+      });
+    }
+  }
+
+  async function saveLiveNote(): Promise<void> {
+    if (
+      selectedVaultId === "" ||
+      (noteState.kind !== "creating" &&
+        !(noteState.kind === "ready" && noteState.mode === "edit"))
+    ) {
+      return;
+    }
+
+    const preparedPath =
+      noteState.kind === "creating"
+        ? prepareMarkdownNotePath(noteState.path)
+        : null;
+    if (preparedPath !== null && !preparedPath.ok) {
+      setActionState({ kind: "error", message: preparedPath.message });
+      return;
+    }
+
+    const request = {
+      content: noteState.draft,
+      expectedVersion:
+        noteState.kind === "creating" ? null : noteState.contentVersion,
+      path: preparedPath?.path ?? noteState.path,
+    };
+    setActionState({
+      kind: "working",
+      label:
+        noteState.kind === "creating"
+          ? "Creating the live note…"
+          : "Saving to the live vault…",
+    });
+
+    try {
+      const csrfToken = await loadCsrf();
+      const saved = markdownNoteWriteResponseSchema.parse(
+        await requestJson(
+          `/api/vaults/${encodeURIComponent(selectedVaultId)}/live-note`,
+          csrfToken,
+          request,
+          "PUT",
+        ),
+      );
+      setNoteState({
+        content: saved.note.content,
+        contentVersion: saved.note.contentVersion,
+        draft: saved.note.content,
+        generationId: null,
+        kind: "ready",
+        mode: "edit",
+        path: saved.note.path,
+      });
+      setActionState({
+        kind: "success",
+        message:
+          "Saved durably to the live vault. Browse and search will move to a new snapshot in the background.",
+      });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The live note could not be saved.",
+      });
+    }
+  }
+
+  const vaults = vaultState.kind === "ready" ? vaultState.vaults : [];
+  const { connected: connectedVaults, disconnected: disconnectedVaults } =
+    partitionVaults(vaults);
+  const activeVaults = connectedVaults.filter(
+    (vault) => vault.status === "active",
+  );
+  const visibleNotes =
+    searchState.kind === "ready"
+      ? searchState.results
+      : libraryState.kind === "ready"
+        ? libraryState.notes
+        : [];
+  const isWorking = actionState.kind === "working";
+  const pairingExpired =
+    pairingGrant !== null && pairingClock >= pairingGrant.expiresAt;
+  const editorActive =
+    noteState.kind === "creating" ||
+    (noteState.kind === "ready" && noteState.mode === "edit");
+  const selectedVault = activeVaults.find(
+    (vault) => vault.id === selectedVaultId,
+  );
+  const selectedVaultReadiness =
+    onboardingReadiness?.vaults.find((vault) => vault.id === selectedVaultId) ??
+    null;
+  const vaultSummary =
+    vaultState.kind === "loading"
+      ? "Checking vault connections…"
+      : vaultState.kind === "error"
+        ? "Vault connections need attention"
+        : vaultState.kind === "ready"
+          ? `${activeVaults.length.toLocaleString()} active · ${(
+              connectedVaults.length - activeVaults.length
+            ).toLocaleString()} pending · ${disconnectedVaults.length.toLocaleString()} disconnected`
+          : "Vault connections not loaded";
+  const librarySummary = !libraryHasOpened
+    ? "Selected vault · open to load"
+    : libraryState.kind === "ready"
+      ? `${libraryState.generation.noteCount.toLocaleString()} notes · checked ${formatTimestamp(libraryState.generation.completedAt)}${
+          libraryState.refreshing ? " · refreshing" : ""
+        }`
+      : libraryState.kind === "empty"
+        ? "No checked library generation"
+        : libraryState.kind === "error"
+          ? "Selected library needs attention"
+          : libraryState.kind === "loading"
+            ? "Loading the selected library…"
+            : "Selected library not loaded";
+  const createPathPreparation =
+    noteState.kind === "creating"
+      ? prepareMarkdownNotePath(noteState.path)
+      : null;
+  const apiState =
+    loadState.kind === "ready"
+      ? loadState.setup.authenticated
+        ? "Owner authenticated"
+        : "Worker connected"
+      : loadState.kind === "error"
+        ? "Worker unavailable"
+        : "Checking Worker";
+  const managedPilot = setup?.claimMode === "invitation";
+  const deploymentLabel = managedPilot ? "Managed pilot" : "Community";
+  const managedClaimReady =
+    managedPilot && ownerClaimToken !== null && setup?.claimAvailable === true;
+  const agentSetupPrerequisite: AgentSetupPrerequisite =
+    onboardingReadiness === null
+      ? "checking"
+      : onboardingReadiness.activeVaultCount === 0
+        ? "vault-required"
+        : !onboardingReadiness.vaults.some((vault) => vault.libraryReady)
+          ? "library-required"
+          : "ready";
+  const setupSummary =
+    onboardingReadiness === null
+      ? "Checking your next action…"
+      : onboardingReadiness.activeVaultCount === 0
+        ? "Connect your first vault"
+        : onboardingReadiness.vaults.every(
+              (vault) => vault.nextStep === "ready",
+            )
+          ? "Project-ready"
+          : "One next action";
+  const onboardingComplete =
+    onboardingReadiness !== null &&
+    onboardingReadiness.activeVaultCount > 0 &&
+    onboardingReadiness.vaults.every((vault) => vault.nextStep === "ready");
+  const workspaceSummaries: Partial<Record<WorkspaceSectionId, string>> = {
+    agents:
+      agentSetupPrerequisite === "ready"
+        ? "Ready for MCP clients"
+        : agentSetupPrerequisite === "library-required"
+          ? "Waiting for the library"
+          : agentSetupPrerequisite === "vault-required"
+            ? "Pair a vault first"
+            : "Checking access…",
+    architecture: setupSummary,
+    collaboration: "Projects and owner decisions",
+    health: apiState,
+    library: librarySummary,
+    recovery: vaults.some((vault) => vault.status !== "pending")
+      ? "Backups and recovery"
+      : "Pair a vault first",
+    vaults: vaultSummary,
+  };
+
+  return (
+    <div
+      className={`app-shell${
+        setup?.authenticated === true ? " app-shell--workspace" : ""
+      }`}
+    >
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="OWD Platform home">
+          <span className="brand-mark" aria-hidden="true">
+            O
+          </span>
+          <span>OWD Platform</span>
+        </a>
+        <div className="environment" aria-label={apiState}>
+          <span
+            className={`pulse pulse--${loadState.kind}`}
+            aria-hidden="true"
+          />
+          <span className="environment-label">{apiState}</span>
+          {loadState.kind === "ready" ? (
+            <span className="build-version">
+              {deploymentLabel} {loadState.health.version} ·{" "}
+              {(
+                loadState.health.releaseTag ?? loadState.health.releaseId
+              ).slice(0, 12)}
+            </span>
+          ) : null}
+        </div>
+      </header>
+
+      <main
+        className={setup?.authenticated === true ? "workspace-main" : undefined}
+        data-active-section={
+          setup?.authenticated === true ? activeWorkspaceSection : undefined
+        }
+      >
+        {setup?.authenticated !== true ? (
+          <section className="hero">
+            <div className="eyebrow">
+              {managedPilot
+                ? "Private founding pilot · isolated workspace"
+                : "Your notes. Your infrastructure."}
+            </div>
+            <h1>
+              {managedPilot && setup?.claimed === false ? (
+                <>Your OWD workspace is ready.</>
+              ) : (
+                <>
+                  One quiet place for
+                  <br />
+                  every Obsidian vault.
+                </>
+              )}
+            </h1>
+            <p className="hero-copy">
+              {managedPilot && setup?.claimed === false
+                ? `Create one passkey, then connect your first Obsidian vault. This private trial starts when you claim it and includes two active vaults with no agent-seat limit.`
+                : "Sync, search, and recover your vaults from a private Cloudflare deployment—with encrypted backups that remain yours."}
+            </p>
+            {managedPilot && setup?.claimed === false ? (
+              <div className="managed-claim-disclosure" role="note">
+                <strong>Before you start</strong>
+                <span>
+                  OWD Sync reads only the vaults you explicitly pair. Agents get
+                  only the access you approve. During this managed technical
+                  pilot, the operator can technically access live service data
+                  through Cloudflare administration, but OWD has no routine
+                  content-access or owner-impersonation tool. Usage limits apply
+                  during the {setup.trialDays ?? 30}-day pilot.
+                </span>
+              </div>
+            ) : null}
+            {managedPilot && setup?.trialExpired ? (
+              <div className="managed-claim-disclosure" role="alert">
+                <strong>Managed trial ended</strong>
+                <span>
+                  Sign-in, inspection, and read-only export remain available.
+                  New sync, Project, and authorization changes are paused for
+                  this workspace.
+                </span>
+              </div>
+            ) : null}
+            <div className="hero-actions">
+              <button
+                className="primary-action"
+                type="button"
+                disabled={
+                  setup === null ||
+                  isWorking ||
+                  !supportsPasskeys ||
+                  (managedPilot &&
+                    setup.claimed === false &&
+                    !managedClaimReady)
+                }
+                onClick={() =>
+                  void (setup?.claimed === true ? signIn() : claimOwner())
+                }
+              >
+                {setup?.claimed === true
+                  ? "Sign in with a passkey"
+                  : managedPilot
+                    ? "Start my workspace"
+                    : "Claim with a passkey"}
+                <span aria-hidden="true">↗</span>
+              </button>
+              <span className="availability" aria-live="polite">
+                {actionState.kind === "working"
+                  ? actionState.label
+                  : actionState.kind === "success"
+                    ? actionState.message
+                    : managedPilot && ownerClaimToken === null
+                      ? "Open the complete private invitation link"
+                      : managedPilot && setup?.claimAvailable === false
+                        ? "This invitation is unavailable or expired"
+                        : supportsPasskeys
+                          ? "No password or copied secret required"
+                          : "This browser does not support passkeys"}
+              </span>
+            </div>
+            {actionState.kind === "error" ? (
+              <p className="action-error" role="alert">
+                {actionState.message}
+              </p>
+            ) : null}
+            {setup?.claimed === false ? (
+              <p className="claim-note">
+                {managedPilot
+                  ? "Your passkey binds to this permanent workspace hostname. The private link is removed from the address bar before setup begins."
+                  : "Passkeys bind to this hostname. Claim from the permanent workers.dev or custom-domain URL, not a temporary preview URL."}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <WorkspaceNavigation
+            active={activeWorkspaceSection}
+            deploymentLabel={deploymentLabel}
+            onNavigate={navigateWorkspace}
+            onSignOut={() => {
+              navigateWorkspace("architecture");
+              void signOut();
+            }}
+            summaries={workspaceSummaries}
+          />
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <header className="workspace-start-intro">
+            <span className="section-kicker">
+              {onboardingComplete ? "Workspace guide" : "Start here"}
+            </span>
+            <h1>
+              {onboardingComplete ? "How OWD works." : "Set up your workspace."}
+            </h1>
+            <p>
+              {onboardingComplete
+                ? "Your onboarding checks are complete. Keep the verified setup receipt here, then use the advanced architecture below whenever you want the deeper model."
+                : "OWD shows one verified next action. Finish it, then return here until the vault is Project-ready."}
+            </p>
+          </header>
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <StateAwareSetup onReadinessChange={setOnboardingReadiness} />
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <aside className="workspace-start-pointer">
+            <span className="section-kicker">
+              {onboardingComplete ? "Advanced guide" : "After setup"}
+            </span>
+            <p>
+              {onboardingComplete
+                ? "You are Project-ready. The deeper architecture and trust model are now available immediately below your setup receipt."
+                : "Everything else lives in the folders at left: manage vaults, review Projects, connect agents, browse notes, or open recovery tools only when you need them."}
+            </p>
+          </aside>
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <OperationalRegion
+            attention={
+              vaultState.kind === "error" ||
+              (vaultState.kind === "ready" && vaultState.refreshError !== null)
+                ? "error"
+                : "none"
+            }
+            autoOpen={pairingGrant !== null || autoOpenVaultRegion}
+            heading="Vault connections"
+            id="vaults"
+            kicker="OWD Sync"
+            summary={vaultSummary}
+          >
+            <section className="vault-panel" aria-labelledby="vault-heading">
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">Obsidian connection</span>
+                  <h2 id="vault-heading">Your paired vaults.</h2>
+                </div>
+                <button
+                  className="text-action"
+                  type="button"
+                  disabled={
+                    vaultState.kind === "loading" ||
+                    (vaultState.kind === "ready" && vaultState.refreshing)
+                  }
+                  onClick={() => void refreshVaults()}
+                >
+                  {vaultState.kind === "ready" && vaultState.refreshing
+                    ? "Refreshing…"
+                    : "Refresh status"}
+                </button>
+              </div>
+
+              <PluginSetupGuide />
+
+              {pairingGrant === null ? (
+                <aside
+                  className="pairing-ready-card"
+                  aria-labelledby="pairing-ready-heading"
+                >
+                  <div>
+                    <span className="pairing-label">
+                      Install and enable first
+                    </span>
+                    <h3 id="pairing-ready-heading">
+                      Ready in the exact vault you want to pair?
+                    </h3>
+                    <p>
+                      Open that vault in Obsidian and confirm OWD Sync{" "}
+                      {OWD_SYNC_REQUIRED_VERSION} is enabled. Then create the
+                      private, ten-minute pairing request.
+                    </p>
+                    <p className="pairing-install-note">
+                      Each vault has its own plugin installation. If this vault
+                      shows an older version,{" "}
+                      <a href="#owd-sync-installer">
+                        install or update OWD Sync {OWD_SYNC_REQUIRED_VERSION}
+                      </a>{" "}
+                      here before continuing.
+                    </p>
+                  </div>
+                  <button
+                    className="primary-action"
+                    type="button"
+                    disabled={isWorking}
+                    onClick={() => void createPairingLink()}
+                  >
+                    I see OWD Sync {OWD_SYNC_REQUIRED_VERSION} — create request
+                  </button>
+                </aside>
+              ) : null}
+
+              {pairingGrant !== null ? (
+                <aside
+                  className="pairing-card"
+                  aria-labelledby="pairing-heading"
+                  ref={pairingCardRef}
+                  tabIndex={-1}
+                >
+                  <div>
+                    <span className="pairing-label">Private · single use</span>
+                    <h3 id="pairing-heading">Pair from the selected vault</h3>
+                    <p>
+                      Obsidian will show the exact current vault and workspace
+                      before anything changes. This request expires{" "}
+                      {formatTimestamp(pairingGrant.expiresAt)}.
+                    </p>
+                    <ol className="pairing-steps">
+                      <li>
+                        Open the exact vault you want to pair and enable OWD
+                        Sync {OWD_SYNC_REQUIRED_VERSION}.
+                      </li>
+                      <li>
+                        Click below. In Obsidian, verify the current vault name
+                        and OWD workspace, then choose{" "}
+                        <strong>Pair and start sync</strong>.
+                      </li>
+                    </ol>
+                    <p className="pairing-install-note">
+                      The link never chooses a vault silently. OWD refreshes
+                      this page automatically after the one-time exchange.
+                    </p>
+                  </div>
+                  <div className="pairing-launch-controls">
+                    {pairingExpired ? (
+                      <button
+                        className="primary-action"
+                        disabled={isWorking}
+                        type="button"
+                        onClick={() => void createPairingLink()}
+                      >
+                        Create a fresh pairing request
+                      </button>
+                    ) : (
+                      <a
+                        className="primary-action"
+                        href={pairingGrant.obsidianUrl}
+                      >
+                        Open Obsidian and pair <span aria-hidden="true">↗</span>
+                      </a>
+                    )}
+                    {pairingExpired ? (
+                      <p className="action-error" role="status">
+                        This request expired without changing any vault. Create
+                        a fresh request; OWD has stopped polling it.
+                      </p>
+                    ) : null}
+                    <details>
+                      <summary>Manual fallback</summary>
+                      <p>
+                        If Obsidian says{" "}
+                        <strong>unrecognized URI action</strong>, OWD Sync is
+                        not loaded at version {OWD_SYNC_REQUIRED_VERSION} in the
+                        vault Obsidian opened. Install or update and enable OWD
+                        Sync there, then reopen this request. If the direct
+                        handoff is still blocked, copy the request, run{" "}
+                        <strong>OWD Sync: Pair this vault with OWD</strong>, and
+                        paste it. This request remains usable until its expiry
+                        above.
+                      </p>
+                      <PairingCopyControl
+                        state={pairingCopyState}
+                        onCopy={() =>
+                          pairingExpired
+                            ? void createPairingLink()
+                            : void copyPairingLink()
+                        }
+                      />
+                    </details>
+                  </div>
+                </aside>
+              ) : null}
+
+              {vaultState.kind === "loading" ? (
+                <p className="vault-message" aria-live="polite">
+                  Loading vaults…
+                </p>
+              ) : vaultState.kind === "error" ? (
+                <p className="action-error" role="alert">
+                  {vaultState.message}
+                </p>
+              ) : vaultState.kind === "ready" ? (
+                <>
+                  {connectedVaults.length === 0 ? (
+                    <div className="empty-vaults">
+                      <h3>No active or pending vaults.</h3>
+                      <p>
+                        Create a private pairing link when you are ready.
+                        Disconnected records remain available below as retained
+                        history.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="vault-list">
+                      {connectedVaults.map((vault) => (
+                        <VaultRow
+                          isWorking={isWorking}
+                          key={vault.id}
+                          vault={vault}
+                          onReconnect={createReconnectLink}
+                          onRevoke={revokeVaultAccess}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {disconnectedVaults.length > 0 ? (
+                    <details className="disconnected-vaults">
+                      <summary>
+                        <strong>Disconnected history</strong>
+                        <span>
+                          {disconnectedHistoryLabel(disconnectedVaults.length)}
+                        </span>
+                      </summary>
+                      <p>
+                        Revocation permanently blocks the old sync credentials.
+                        These records remain only for recovery references and
+                        the redacted audit trail; hiding them is not deletion.
+                      </p>
+                      <div className="vault-list">
+                        {disconnectedVaults.map((vault) => (
+                          <VaultRow
+                            isWorking={isWorking}
+                            key={vault.id}
+                            vault={vault}
+                            onRevoke={revokeVaultAccess}
+                          />
+                        ))}
+                      </div>
+                    </details>
+                  ) : null}
+                </>
+              ) : null}
+              {vaultState.kind === "ready" &&
+              vaultState.refreshError !== null ? (
+                <p className="action-error" role="alert">
+                  {vaultState.refreshError}
+                </p>
+              ) : null}
+            </section>
+          </OperationalRegion>
+        ) : null}
+
+        {setup?.authenticated === true && activeVaults.length > 0 ? (
+          <OperationalRegion
+            attention={libraryState.kind === "error" ? "error" : "none"}
+            heading="Note library"
+            id="library"
+            kicker="Private browse and edit"
+            lazy
+            onOpenChange={noteLibraryOpened}
+            summary={librarySummary}
+          >
+            <section
+              className="library-panel"
+              aria-labelledby="library-heading"
+            >
+              <div className="section-heading library-heading">
+                <div>
+                  <span className="section-kicker">Private note library</span>
+                  <h2 id="library-heading">Browse the current library.</h2>
+                </div>
+                <div className="library-controls">
+                  <label>
+                    <span>Active vault</span>
+                    <select
+                      disabled={editorActive}
+                      value={selectedVaultId}
+                      onChange={(event) =>
+                        setSelectedVaultId(event.target.value)
+                      }
+                    >
+                      {activeVaults.map((vault) => (
+                        <option value={vault.id} key={vault.id}>
+                          {vault.displayName ?? vault.id}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    className="primary-action library-build"
+                    type="button"
+                    disabled={
+                      isWorking || selectedVaultId === "" || editorActive
+                    }
+                    onClick={() => void buildMaterialization()}
+                  >
+                    {libraryState.kind === "ready" && libraryState.refreshing
+                      ? "Refreshing library…"
+                      : libraryState.kind === "ready"
+                        ? "Refresh now"
+                        : "Build now"}
+                  </button>
+                  <button
+                    className="secondary-action library-new"
+                    type="button"
+                    disabled={
+                      isWorking ||
+                      selectedVaultId === "" ||
+                      libraryState.kind !== "ready"
+                    }
+                    onClick={beginCreateNote}
+                  >
+                    New note
+                  </button>
+                </div>
+              </div>
+
+              {libraryState.kind === "ready" &&
+              selectedVaultReadiness !== null &&
+              !selectedVaultReadiness.libraryReady ? (
+                <div className="client-warning" role="alert">
+                  <strong>
+                    This displayed generation is retained history.
+                  </strong>
+                  <span>
+                    The vault has newer or incomplete sync state, so agents and
+                    Projects cannot use this generation.{" "}
+                    {selectedVaultReadiness.libraryState === "building"
+                      ? "Wait for the current library build to finish."
+                      : selectedVaultReadiness.libraryState === "failed"
+                        ? "The automatic build stopped safely. Select Build now to retry, then copy redacted diagnostics if it fails again."
+                        : "OWD rebuilds automatically after sync settles. Keep Obsidian open; Build now is only an immediate retry."}
+                  </span>
+                </div>
+              ) : null}
+
+              {libraryState.kind === "loading" ? (
+                <p className="vault-message" aria-live="polite">
+                  Loading the current generation…
+                </p>
+              ) : libraryState.kind === "error" ? (
+                <p className="action-error" role="alert">
+                  {libraryState.message}
+                </p>
+              ) : libraryState.kind === "empty" ? (
+                <div className="empty-vaults library-empty">
+                  <h3>No searchable library yet.</h3>
+                  <p>
+                    OWD builds one automatically from the vault’s durable sync
+                    state. It becomes visible only after every note and search
+                    row succeeds.
+                  </p>
+                </div>
+              ) : libraryState.kind === "ready" ? (
+                <>
+                  <div className="generation-strip">
+                    <span>
+                      Generation{" "}
+                      {libraryState.generation.generationId.slice(0, 8)}
+                    </span>
+                    <span>
+                      {libraryState.generation.noteCount.toLocaleString()} notes
+                      · {formatTimestamp(libraryState.generation.completedAt)}
+                    </span>
+                  </div>
+                  <form
+                    className="search-form"
+                    role="search"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void searchNotes();
+                    }}
+                  >
+                    <label htmlFor="vault-search">Search this generation</label>
+                    <div>
+                      <input
+                        disabled={editorActive}
+                        id="vault-search"
+                        maxLength={200}
+                        placeholder="Words in titles, paths, or notes"
+                        type="search"
+                        value={searchQuery}
+                        onChange={(event) => {
+                          setSearchQuery(event.target.value);
+                          if (event.target.value === "") {
+                            setSearchState({ kind: "idle" });
+                          }
+                        }}
+                      />
+                      <button
+                        className="secondary-action"
+                        type="submit"
+                        disabled={
+                          searchState.kind === "loading" || editorActive
+                        }
+                      >
+                        {searchState.kind === "loading"
+                          ? "Searching…"
+                          : "Search"}
+                      </button>
+                    </div>
+                  </form>
+                  {searchState.kind === "error" ? (
+                    <p className="action-error" role="alert">
+                      {searchState.message}
+                    </p>
+                  ) : null}
+
+                  <div className="library-grid">
+                    <div className="note-browser" aria-label="Library notes">
+                      <div className="note-browser-heading">
+                        <span>
+                          {searchState.kind === "ready"
+                            ? `${searchState.results.length} search results`
+                            : "Notes"}
+                        </span>
+                        {searchState.kind === "ready" ? (
+                          <button
+                            className="text-action"
+                            type="button"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setSearchState({ kind: "idle" });
+                            }}
+                          >
+                            Clear search
+                          </button>
+                        ) : null}
+                      </div>
+                      {visibleNotes.length === 0 ? (
+                        <p className="note-list-empty">
+                          {searchState.kind === "ready"
+                            ? "No notes match those words."
+                            : "This generation contains no Markdown notes."}
+                        </p>
+                      ) : (
+                        <div className="note-list">
+                          {visibleNotes.map((note) => (
+                            <button
+                              className={`note-list-item${
+                                noteState.kind !== "idle" &&
+                                noteState.path === note.path
+                                  ? " note-list-item--selected"
+                                  : ""
+                              }`}
+                              type="button"
+                              key={note.path}
+                              onClick={() => void openNote(note)}
+                            >
+                              <strong>{note.title}</strong>
+                              <span>{note.path}</span>
+                              {"snippet" in note &&
+                              typeof note.snippet === "string" &&
+                              note.snippet !== "" ? (
+                                <small>{note.snippet}</small>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {searchState.kind !== "ready" &&
+                      libraryState.nextCursor !== null ? (
+                        <button
+                          className="text-action load-more"
+                          type="button"
+                          onClick={() => void loadMoreNotes()}
+                        >
+                          Load more notes
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <article className="note-reader" aria-live="polite">
+                      {noteState.kind === "idle" ? (
+                        <div className="note-reader-empty">
+                          <span>Markdown source</span>
+                          <h3>Choose a note or create one.</h3>
+                          <p>
+                            HTML and links remain inert in this safety-first
+                            source view.
+                          </p>
+                        </div>
+                      ) : noteState.kind === "loading" ? (
+                        <p className="note-reader-message">
+                          Opening {noteState.path}…
+                        </p>
+                      ) : noteState.kind === "error" ? (
+                        <div className="note-reader-empty">
+                          <h3>{noteState.path}</h3>
+                          <p role="alert">{noteState.message}</p>
+                        </div>
+                      ) : noteState.kind === "creating" ? (
+                        <>
+                          <header>
+                            <h3>Create a Markdown note</h3>
+                            <span>Live vault</span>
+                          </header>
+                          <form
+                            className="note-editor"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              void saveLiveNote();
+                            }}
+                          >
+                            <p className="write-target">
+                              Writing only to{" "}
+                              <strong>
+                                {selectedVault?.displayName ?? selectedVaultId}
+                              </strong>
+                            </p>
+                            <label>
+                              <span>Note name or location</span>
+                              <input
+                                aria-describedby="create-note-path-feedback"
+                                aria-invalid={
+                                  noteState.path !== "" &&
+                                  createPathPreparation?.ok === false
+                                }
+                                autoFocus
+                                maxLength={1_024}
+                                placeholder="Project ideas or Projects/Project ideas"
+                                value={noteState.path}
+                                onChange={(event) => {
+                                  setActionState({ kind: "idle" });
+                                  setNoteState({
+                                    ...noteState,
+                                    path: event.target.value,
+                                  });
+                                }}
+                              />
+                            </label>
+                            <p
+                              className={`note-path-feedback${
+                                createPathPreparation?.ok === false &&
+                                noteState.path !== ""
+                                  ? " note-path-feedback--error"
+                                  : ""
+                              }`}
+                              id="create-note-path-feedback"
+                              aria-live="polite"
+                            >
+                              {noteState.path === ""
+                                ? "Choose a name. OWD adds .md automatically. Use / to place it in a folder."
+                                : createPathPreparation?.ok === true
+                                  ? "Will create: "
+                                  : createPathPreparation?.message}
+                              {noteState.path !== "" &&
+                              createPathPreparation?.ok === true ? (
+                                <code>{createPathPreparation.path}</code>
+                              ) : null}
+                            </p>
+                            <label className="markdown-field">
+                              <span>Markdown source</span>
+                              <textarea
+                                maxLength={MAX_MARKDOWN_NOTE_CHARACTERS}
+                                spellCheck="true"
+                                value={noteState.draft}
+                                onChange={(event) =>
+                                  setNoteState({
+                                    ...noteState,
+                                    draft: event.target.value,
+                                  })
+                                }
+                              />
+                            </label>
+                            <div className="editor-footer">
+                              <span>
+                                {noteState.draft.length.toLocaleString()}{" "}
+                                characters
+                              </span>
+                              <div>
+                                <button
+                                  className="text-action"
+                                  type="button"
+                                  disabled={isWorking}
+                                  onClick={cancelEditing}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  className="primary-action"
+                                  type="submit"
+                                  disabled={
+                                    isWorking ||
+                                    createPathPreparation?.ok !== true
+                                  }
+                                >
+                                  Create live note
+                                </button>
+                              </div>
+                            </div>
+                            {actionState.kind === "error" ? (
+                              <p className="editor-status editor-status--error">
+                                {actionState.message}
+                              </p>
+                            ) : null}
+                          </form>
+                        </>
+                      ) : (
+                        <>
+                          <header>
+                            <h3>{noteState.path}</h3>
+                            <div className="note-reader-actions">
+                              <span>
+                                {noteState.generationId === null
+                                  ? "Live vault"
+                                  : "Generation " +
+                                    noteState.generationId.slice(0, 8)}
+                              </span>
+                              {noteState.mode === "view" ? (
+                                <button
+                                  className="text-action"
+                                  type="button"
+                                  disabled={isWorking}
+                                  onClick={() =>
+                                    void loadLiveNoteForEditing(true)
+                                  }
+                                >
+                                  Edit live note
+                                </button>
+                              ) : null}
+                            </div>
+                          </header>
+                          {noteState.mode === "view" ? (
+                            <pre>{noteState.content}</pre>
+                          ) : (
+                            <form
+                              className="note-editor"
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                void saveLiveNote();
+                              }}
+                            >
+                              <p className="write-target">
+                                Writing only to{" "}
+                                <strong>
+                                  {selectedVault?.displayName ??
+                                    selectedVaultId}
+                                </strong>
+                                . Path and vault cannot change in this editor.
+                              </p>
+                              <label className="markdown-field">
+                                <span>Markdown source</span>
+                                <textarea
+                                  autoFocus
+                                  maxLength={MAX_MARKDOWN_NOTE_CHARACTERS}
+                                  spellCheck="true"
+                                  value={noteState.draft}
+                                  onChange={(event) =>
+                                    setNoteState({
+                                      ...noteState,
+                                      draft: event.target.value,
+                                    })
+                                  }
+                                />
+                              </label>
+                              <div className="editor-footer">
+                                <span>
+                                  {noteState.draft.length.toLocaleString()}{" "}
+                                  characters · expected version{" "}
+                                  {noteState.contentVersion.slice(0, 8)}
+                                </span>
+                                <div>
+                                  <button
+                                    className="text-action"
+                                    type="button"
+                                    disabled={isWorking}
+                                    onClick={() =>
+                                      void loadLiveNoteForEditing()
+                                    }
+                                  >
+                                    Reload live
+                                  </button>
+                                  <button
+                                    className="text-action"
+                                    type="button"
+                                    disabled={isWorking}
+                                    onClick={cancelEditing}
+                                  >
+                                    Close editor
+                                  </button>
+                                  <button
+                                    className="primary-action"
+                                    type="submit"
+                                    disabled={
+                                      isWorking ||
+                                      noteState.draft === noteState.content
+                                    }
+                                  >
+                                    Save live note
+                                  </button>
+                                </div>
+                              </div>
+                              {actionState.kind === "success" ? (
+                                <p className="editor-status">
+                                  {actionState.message}
+                                </p>
+                              ) : actionState.kind === "error" ? (
+                                <p className="editor-status editor-status--error">
+                                  {actionState.message}
+                                </p>
+                              ) : null}
+                            </form>
+                          )}
+                        </>
+                      )}
+                    </article>
+                  </div>
+                </>
+              ) : null}
+              {(libraryState.kind === "ready" ||
+                libraryState.kind === "empty") &&
+              libraryState.refreshError !== null ? (
+                <p className="action-error" role="alert">
+                  {libraryState.refreshError}
+                </p>
+              ) : null}
+            </section>
+          </OperationalRegion>
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <AgentConnectionsPanel prerequisite={agentSetupPrerequisite} />
+        ) : null}
+
+        {setup?.authenticated === true &&
+        visitedWorkspaceSections.has("recovery") ? (
+          vaults.some((vault) => vault.status !== "pending") ? (
+            <Suspense
+              fallback={
+                <DeferredWorkspaceRegion
+                  heading="Backup and recovery"
+                  id="recovery"
+                  kicker="Owner-controlled recovery"
+                  summary="Opening private recovery tools…"
+                />
+              }
+            >
+              <BackupPanel
+                activeVaults={activeVaults}
+                autoOpen={activeWorkspaceSection === "recovery"}
+                initialVaultId={selectedVaultId}
+                onRestoreApplied={(vaultId) =>
+                  vaultId === selectedVaultId
+                    ? refreshLibrary(vaultId)
+                    : undefined
+                }
+                vaults={vaults}
+              />
+            </Suspense>
+          ) : (
+            <EmptyRecoveryRegion />
+          )
+        ) : null}
+
+        {setup?.authenticated === true &&
+        visitedWorkspaceSections.has("collaboration") ? (
+          <Suspense
+            fallback={
+              <DeferredWorkspaceRegion
+                heading="Projects and owner decisions"
+                id="collaboration"
+                kicker="Agent-first collaboration"
+                summary="Opening private Project tools…"
+              />
+            }
+          >
+            <CollaborationPanel
+              activeVaults={activeVaults}
+              autoOpen={activeWorkspaceSection === "collaboration"}
+            />
+          </Suspense>
+        ) : null}
+
+        {setup?.authenticated === true ? (
+          <OperationalRegion
+            attention={
+              loadState.kind === "error" || vaultState.kind === "error"
+                ? "error"
+                : "none"
+            }
+            heading="System health"
+            id="health"
+            kicker="Owner-safe status"
+            summary={`${activeVaults.length.toLocaleString()} active vault${
+              activeVaults.length === 1 ? "" : "s"
+            } · ${deploymentLabel} ${
+              loadState.kind === "ready"
+                ? loadState.health.version
+                : "unavailable"
+            }`}
+          >
+            <section
+              className="foundation-health"
+              aria-labelledby="foundation-health-heading"
+            >
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">Redacted owner health</span>
+                  <h2 id="foundation-health-heading">Foundation status</h2>
+                </div>
+                <span className="time-target">
+                  Community{" "}
+                  {loadState.kind === "ready"
+                    ? loadState.health.version
+                    : "unavailable"}
+                </span>
+              </div>
+              <div className="foundation-health-grid">
+                <article>
+                  <span>Vault access</span>
+                  <strong>
+                    {activeVaults.length.toLocaleString()} active ·{" "}
+                    {(vaults.length - activeVaults.length).toLocaleString()}{" "}
+                    inactive
+                  </strong>
+                  <p>
+                    {vaultState.kind === "error"
+                      ? "Vault status failed to refresh. Retry before creating a recovery point."
+                      : "Names, note paths, credentials, and content are excluded from this summary."}
+                  </p>
+                </article>
+                <article>
+                  <span>Selected library</span>
+                  <strong>
+                    {libraryState.kind === "ready"
+                      ? `Checked generation ${libraryState.generation.generationId.slice(0, 8)}`
+                      : libraryState.kind === "empty"
+                        ? "No checked generation"
+                        : libraryState.kind === "error"
+                          ? "Needs attention"
+                          : "Waiting for selection"}
+                  </strong>
+                  <p>
+                    {libraryState.kind === "error"
+                      ? "Refresh the selected library before snapshotting it."
+                      : "A snapshot uses only a complete, verified library generation."}
+                  </p>
+                </article>
+                <article>
+                  <span>Operation budgets</span>
+                  <strong>
+                    {MAX_SNAPSHOT_VAULTS} vaults ·{" "}
+                    {MAX_SNAPSHOT_ITEMS.toLocaleString()} items ·{" "}
+                    {(
+                      MAX_SNAPSHOT_LOGICAL_BYTES /
+                      1024 /
+                      1024
+                    ).toLocaleString()}{" "}
+                    MiB
+                  </strong>
+                  <p>
+                    Snapshot cards show complete logical bytes separately from
+                    newly stored encrypted bytes. See the release contract for
+                    restore, MCP, and retention limits.
+                  </p>
+                </article>
+              </div>
+              <div className="health-owner-actions">
+                <div>
+                  <strong>Owner recovery access</strong>
+                  <p>
+                    Add a second passkey on another device so one lost device
+                    does not lock you out of this workspace.
+                  </p>
+                </div>
+                <button
+                  className="secondary-action"
+                  disabled={isWorking}
+                  type="button"
+                  onClick={() => void addBackupPasskey()}
+                >
+                  Add another passkey
+                </button>
+              </div>
+              <div className="health-owner-actions">
+                <div>
+                  <strong>Safe troubleshooting receipt</strong>
+                  <p>
+                    Copy exact release, vault, sync, library, and Project state
+                    without names, note paths, note content, credentials, or
+                    Project text.
+                  </p>
+                </div>
+                <button
+                  className="secondary-action"
+                  disabled={isWorking}
+                  type="button"
+                  onClick={() => void copyOwnerDiagnostics()}
+                >
+                  Copy redacted diagnostics
+                </button>
+              </div>
+            </section>
+          </OperationalRegion>
+        ) : null}
+
+        {setup?.authenticated !== true || onboardingComplete ? (
+          <OperationalRegion
+            autoOpen={
+              setup?.authenticated === true &&
+              activeWorkspaceSection === "architecture"
+            }
+            heading="Safety architecture"
+            id="architecture"
+            kicker="Advanced inspection"
+            summary="Live sync · checked browse · encrypted recovery"
+          >
+            <section
+              className="architecture"
+              aria-labelledby="architecture-heading"
+            >
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">Designed for recovery</span>
+                  <h2 id="architecture-heading">
+                    Sync is only one layer of safety.
+                  </h2>
+                </div>
+              </div>
+
+              <div className="architecture-grid">
+                {architecture.map(([label, technology, description]) => (
+                  <article className="architecture-card" key={label}>
+                    <span>{label}</span>
+                    <h3>{technology}</h3>
+                    <p>{description}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </OperationalRegion>
+        ) : null}
+      </main>
+
+      <footer>
+        <span>
+          Self-hosted on Cloudflare
+          {loadState.kind === "ready"
+            ? ` · ${deploymentLabel} ${loadState.health.version}`
+            : ""}
+        </span>
+        <span>Apache-2.0 · Private by default</span>
+      </footer>
+    </div>
+  );
+}
+
+export function App() {
+  if (window.location.pathname === "/authorize") {
+    return (
+      <Suspense fallback={<RouteLoading label="Opening agent approval…" />}>
+        <AgentAuthorize />
+      </Suspense>
+    );
+  }
+  if (
+    window.location.pathname === "/connect" ||
+    window.location.pathname === "/initialize"
+  ) {
+    return (
+      <Suspense fallback={<RouteLoading label="Opening Project approval…" />}>
+        <ProjectInitialize />
+      </Suspense>
+    );
+  }
+  return <Dashboard />;
+}

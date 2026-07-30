@@ -1,0 +1,56 @@
+name: Verify Community release
+
+on:
+  push:
+    tags:
+      - "community-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod
+      - run: pnpm public-source:check
+      - run: pnpm check
+      - run: pnpm test
+      - run: pnpm test:e2e
+      - run: pnpm build
+      - run: pnpm deploy:dry-run
+
+      - name: Verify tag and source identity
+        run: |
+          CORE_VERSION="$(node -p "require('./package.json').version")"
+          test "$GITHUB_REF_NAME" = "community-v${CORE_VERSION}"
+          git merge-base --is-ancestor HEAD origin/main
+          git diff --exit-code
+          git rev-parse HEAD | tee community-release-commit.txt
+          git archive --format=tar HEAD | sha256sum | tee community-source.sha256
+          pnpm release:hash > community-artifacts.sha256
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: community-release-receipt
+          path: |
+            community-release-commit.txt
+            community-source.sha256
+            community-artifacts.sha256
+          if-no-files-found: error
+          retention-days: 90
