@@ -976,6 +976,9 @@ describe("scoped universal agent access", () => {
     expect(prompts.result.prompts).toContainEqual(
       expect.objectContaining({ name: "connect-eve" }),
     );
+    expect(prompts.result.prompts).toContainEqual(
+      expect.objectContaining({ name: "resume-owd-project" }),
+    );
 
     const connectionResponse = await productionFetch("tools/call", {
       arguments: {},
@@ -1521,6 +1524,9 @@ describe("scoped universal agent access", () => {
     expect(status.continuity?.managedInstructionBlock).toContain(
       "inspect `localVaultAccess.role`",
     );
+    expect(status.continuity?.managedInstructionBlock).toContain(
+      "writer role is **unconfirmed**",
+    );
 
     const opened = await callTool(bootstrap.accessToken, "open_project", {
       projectId: status.projectId,
@@ -1568,7 +1574,7 @@ describe("scoped universal agent access", () => {
         contextFilePath: ".owdignore",
         instructionFilePath: "AGENTS.md",
         managedInstructionBlock: expect.stringContaining(
-          "inspect `localVaultAccess.role`",
+          "writer role is **unconfirmed**",
         ),
         requiredTool: "resume_project",
       },

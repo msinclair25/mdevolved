@@ -91,6 +91,10 @@ describe("Project context policy", () => {
       "inspect `localVaultAccess.role`",
     );
     expect(receipt.managedInstructionBlock).toContain(
+      "writer role is **unconfirmed**",
+    );
+    expect(receipt.managedInstructionBlock).toContain("**OWD resume project**");
+    expect(receipt.managedInstructionBlock).toContain(
       "A `read-only-collaborator` must warn the owner",
     );
     expect(receipt.managedInstructionBlock).toContain(
@@ -126,6 +130,9 @@ describe("Project context policy", () => {
       "Every later agent is a read-only collaborator",
     );
     expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain("call resume_project");
+    expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain(
+      "fresh session's writer role is unconfirmed",
+    );
   });
 
   it.each([

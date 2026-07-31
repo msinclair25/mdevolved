@@ -96,6 +96,14 @@ No prompt is copied back into the agent. The prepared first Project requires no
 second MCP authorization and no daily packet renewal. A changed boundary or a
 later unmatched Project still returns to one exact owner consent.
 
+> [!TIP]
+> **A new agent session continues the same Project.** OWD-compatible agents
+> should read `.owdignore` and call `resume_project` automatically before using
+> prior Project context or reporting their writer role. If a client misses that
+> startup step after a crash or reset, say **OWD resume project**. OWD restores
+> the exact Project and durable writer role without reconnecting MCP or asking
+> for new approval.
+
 ## Why it is different
 
 | One owner-controlled record                                                                              | Agents stay agents                                                                                                |

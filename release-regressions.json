@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "findingRange": "MTR-001..MTR-043",
+  "findingRange": "MTR-001..MTR-044",
   "findings": [
     {
       "id": "MTR-001",
@@ -473,6 +473,23 @@
           "kind": "manual",
           "path": "docs/QUALITY-GATES.md"
         }
+      ]
+    },
+    {
+      "id": "MTR-044",
+      "title": "Fresh-session Project and writer-role resume",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "apps/worker/src/project-context-policy.ts"
+        },
+        { "kind": "static", "path": "apps/worker/src/mcp-server.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/project-context-policy.test.ts"
+        },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
       ]
     }
   ]

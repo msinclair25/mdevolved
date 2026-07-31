@@ -2,14 +2,14 @@ import { access, readFile } from "node:fs/promises";
 
 const ledger = JSON.parse(await readFile("release-regressions.json", "utf8"));
 const expectedIds = Array.from(
-  { length: 43 },
+  { length: 44 },
   (_, index) => `MTR-${String(index + 1).padStart(3, "0")}`,
 );
 const allowedKinds = new Set(["manual", "static", "test"]);
 
 if (
   ledger.schemaVersion !== 1 ||
-  ledger.findingRange !== "MTR-001..MTR-043" ||
+  ledger.findingRange !== "MTR-001..MTR-044" ||
   !Array.isArray(ledger.findings)
 ) {
   throw new Error("The release regression ledger header is invalid.");
@@ -186,12 +186,16 @@ if (
   !projectContextPolicy.includes(
     "A \\`read-only-collaborator\\` must warn the owner",
   ) ||
+  !projectContextPolicy.includes("writer role is **unconfirmed**") ||
+  !projectContextPolicy.includes("**OWD resume project**") ||
   !projectContextPolicy.includes("most-recently-focused vault") ||
   !projectContextPolicy.includes("vault=<exact vault name>") ||
   !projectContextPolicy.includes("not a filesystem lock") ||
   !mcpServer.includes("OWD_LOCAL_VAULT_WRITE_SUMMARY") ||
   !mcpServer.includes("continuity: projectContinuityReceipt(") ||
-  !mcpServer.includes("projectLocalVaultAccess")
+  !mcpServer.includes("projectLocalVaultAccess") ||
+  !mcpServer.includes('"resume-owd-project"') ||
+  !mcpServer.includes("No MCP reconnect or new owner authorization")
 ) {
   throw new Error(
     "MTR-039 regression: generated Project continuity must preserve local single-writer safety and refresh it during resume.",
@@ -266,6 +270,17 @@ if (
 ) {
   throw new Error(
     "MTR-043 regression: narrow navigation must keep every folder discoverable while heavy private tools and production source maps stay off the critical path.",
+  );
+}
+if (
+  !app.includes("Returning after a crash or new session?") ||
+  !app.includes("<q>OWD resume project</q>") ||
+  !collaborationPanel.includes("New session, same Project") ||
+  !mcpServer.includes('"resume-owd-project"') ||
+  !projectContextPolicy.includes("writer role is **unconfirmed**")
+) {
+  throw new Error(
+    "MTR-044 regression: fresh sessions must resume the durable Project and writer role before reporting access or asking for reconnection.",
   );
 }
 

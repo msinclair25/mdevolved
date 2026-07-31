@@ -1127,6 +1127,17 @@ test("keeps routine Work Packet rotation out of the owner workflow", async ({
   await expect(
     page.getByText("Automatic · refreshed when an agent connects or resumes"),
   ).toBeVisible();
+  await expect(
+    operationalRegion(page, "collaboration").getByText(
+      "New session, same Project",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    operationalRegion(page, "collaboration").getByText("OWD resume project", {
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(page.getByText(/No owner action is required/u)).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Renew .*packet/u }),
@@ -1264,6 +1275,12 @@ test("keeps onboarding progress bound to one explicitly named vault", async ({
   await selector.selectOption(targetVaultId);
   await expect(
     setup.getByText("Recovery target is Project-ready"),
+  ).toBeVisible();
+  await expect(
+    setup.getByText("Returning after a crash or new session?"),
+  ).toBeVisible();
+  await expect(
+    setup.getByText("OWD resume project", { exact: true }),
   ).toBeVisible();
   await expect(setup.locator(".setup-progress-receipt")).toContainText(
     "7 verified milestones · show details",

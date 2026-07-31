@@ -83,6 +83,13 @@ Eve qualifies discovered tools with the connection name. For `owd.ts`, use:
 Read `.owdignore` first when it exists and pass its exact Project UUID and
 context policy. Otherwise pass the visible Project name the user supplied.
 
+In a fresh Eve session, the writer role is unconfirmed until
+`owd__resume_project` returns the current `localVaultAccess.role`. Never infer
+that a session reset changed the durable role from the agent name, channel,
+sandbox, or prior conversation. Treat **OWD resume project** as a direct request
+to perform this receipt-based resume without reconnecting or asking for new
+authorization.
+
 If `owd__open_project` returns pending, show its one owner approval URL and call
 `owd__wait_for_project_connection` with the exact returned key. Do not start a
 second OAuth flow, ask the owner to copy a prompt, renew a routine packet,

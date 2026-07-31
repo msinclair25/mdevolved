@@ -321,6 +321,15 @@ export function ProjectInitialize() {
                 exact approved Project flow without another owner selection.
               </span>
             </div>
+            <div className="client-warning" role="note">
+              <strong>Later sessions resume the same Project</strong>
+              <span>
+                OWD should resume from the local <code>.owdignore</code> receipt
+                automatically. If a fresh session misses that step, say{" "}
+                <q>OWD resume project</q>. No reconnect or new approval is
+                required.
+              </span>
+            </div>
             <details className="consent-advanced">
               <summary>Technical receipt</summary>
               <dl className="consent-details">

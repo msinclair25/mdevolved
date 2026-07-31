@@ -1329,7 +1329,7 @@ function setupGuidance(
     case "ready":
       return {
         actionLabel: null,
-        description: `${vaultName} has a current library, an approved agent connection, and an approved Project. Continue in your agent—OWD restores the exact Project connection automatically if needed.`,
+        description: `${vaultName} has a current library, an approved agent connection, and an approved Project. Continue in your agent. In a new session, OWD should resume the exact Project and writer role automatically.`,
         title: `${vaultName} is Project-ready`,
       };
     default:
@@ -1538,6 +1538,17 @@ function StateAwareSetup({
           <span>Next action</span>
           <strong>{guidance.title}</strong>
           <p>{guidance.description}</p>
+          {selectedStep === "ready" ? (
+            <div className="project-resume-cue" role="note">
+              <strong>Returning after a crash or new session?</strong>
+              <span>
+                OWD should resume automatically. If it does not, say{" "}
+                <q>OWD resume project</q>. OWD restores the exact Project and
+                writer role from <code>.owdignore</code>—no reconnect, copied
+                prompt, or new approval.
+              </span>
+            </div>
+          ) : null}
           {selectedStep === "prepare-project-handoff" &&
           selectedVault !== null ? (
             <ProjectHandoffSetup

@@ -56,6 +56,13 @@ explicitly transfers one bounded task after confirming the prior writer
 stopped. This deters accidental writes but is not an operating-system or
 filesystem lock.
 
+A crash, restart, or fresh agent session does not change the vault-wide writer
+assignment. When `.owdignore` exists, the agent resumes it as its first OWD
+action and treats the role as unconfirmed until the current
+`localVaultAccess.role` response arrives. The normal path is automatic; **OWD
+resume project** is the visible fallback and never means reconnect MCP, repeat
+consent, or create another Project.
+
 The operational regions follow the same top-to-bottom order as the state
 machine: **Vault connections → Note library → Agent access**. After the
 automatic first library build succeeds and authoritative readiness confirms the
