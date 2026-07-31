@@ -176,6 +176,14 @@ The normal client algorithm is fixed:
 6. In a fresh task, call `resume_project` with the complete `.owdignore`
    context policy and its exact Project ID.
 
+When `.owdignore` exists, step 6 is the first OWD action. The session's writer
+role remains unconfirmed until `resume_project` returns
+`localVaultAccess.role`; a fresh chat, process, or context window does not
+change the durable assignment. Clients must not report “not primary,” reconnect
+MCP, or seek new Project approval based only on missing conversation memory.
+If automatic startup is missed, **OWD resume project** is the human fallback
+phrase for the same receipt-based call.
+
 If a wrapper or context compaction loses the pending envelope before the wait,
 the client repeats the exact same `open_project` arguments once. Idempotent
 recovery returns the same durable request, approval URL, and wait key; it does

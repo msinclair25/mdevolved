@@ -31,6 +31,12 @@ Read `.owdignore` first. When present, call `resume_project` with its exact
 Project UUID and complete context policy. Never use `.om-project`, a folder
 name, or a display label as OWD authority.
 
+In a fresh session, the writer role is unconfirmed until `resume_project`
+returns the current `localVaultAccess.role`. Never infer that a restarted
+session lost or retained primary status from chat history, session labels, or
+Mind tool availability. Treat **OWD resume project** as a direct request to run
+this receipt-based resume; do not reconnect or request new authorization.
+
 When no receipt exists, call `open_project` with the Project name the user
 gave. Do not ask the user to copy a prompt, reconnect, or choose New versus
 Existing before OWD reports that choice is genuinely required.
@@ -85,5 +91,5 @@ The same rule applies to Obsidian CLI, skills, shell, and filesystem writes.
 
 Persist `.owdignore` and replace only OWD's marked block in `AGENTS.md`.
 Preserve every Obsidian Mind instruction outside that block. On each new task,
-resume OWD before trusting prior Project context, then use Obsidian Mind recall
-only within its own declared scope.
+resume OWD as the first OWD action before trusting prior Project context, then
+use Obsidian Mind recall only within its own declared scope.

@@ -171,6 +171,15 @@ Codex reads the applicable `AGENTS.md` instruction chain at the start of a new
 task. The OWD block therefore tells a fresh task to read `.owdignore` and call
 `resume_project` before using prior Project context.
 
+That resume is the first OWD action when `.owdignore` exists. Until it returns,
+the fresh session's writer role is **unconfirmed**—the agent must not claim that
+it is or is not primary from chat history, a new session identity, or local
+tool availability. The current `localVaultAccess.role` response is
+authoritative. A compliant client should perform this automatically. If it
+does not after a crash, restart, or context reset, the owner can say **OWD
+resume project**; the agent resumes the existing receipt without reconnecting
+MCP or requesting new authorization.
+
 `resume_project` uses the `projectId` in `.owdignore` rather than inferring a
 Project from a label or whichever grant was most recently used. It rechecks the
 live OAuth client, audience, Project scopes, authoritative D1 grant, revocation,

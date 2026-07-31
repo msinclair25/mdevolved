@@ -3933,6 +3933,20 @@ footer {
   background: var(--green-deep);
 }
 
+.project-resume-cue {
+  display: grid;
+  gap: 6px;
+}
+
+.project-resume-cue q {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.project-resume-cue code {
+  color: #dbe6d4;
+}
+
 .collaboration-card label {
   display: grid;
   gap: 7px;

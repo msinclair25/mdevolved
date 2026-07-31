@@ -695,6 +695,19 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         </article>
       ) : null}
 
+      {activeProjects.length > 0 ? (
+        <article className="client-warning project-resume-cue" role="note">
+          <strong>New session, same Project</strong>
+          <span>
+            OWD should resume automatically from the local{" "}
+            <code>.owdignore</code> receipt. If an agent misses that startup
+            step, say <q>OWD resume project</q>. A restart does not change its
+            durable writer role and does not require reconnecting or approving
+            the Project again.
+          </span>
+        </article>
+      ) : null}
+
       {activeProjects.length === 0 ? (
         <article className="collaboration-empty">
           <span className="backup-step">Project collaboration</span>
