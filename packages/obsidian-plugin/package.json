@@ -15,13 +15,13 @@
   },
   "dependencies": {
     "fast-diff": "1.3.0",
-    "fflate": "0.8.2",
+    "fflate": "0.8.3",
     "js-yaml": "4.3.0",
-    "partyserver": "0.3.2",
+    "partyserver": "0.5.8",
     "y-codemirror.next": "0.3.5",
     "y-indexeddb": "9.0.12",
-    "y-partyserver": "2.1.2",
-    "yjs": "13.6.29"
+    "y-partyserver": "2.2.0",
+    "yjs": "13.6.31"
   },
   "devDependencies": {
     "@codemirror/state": "6.5.0",
