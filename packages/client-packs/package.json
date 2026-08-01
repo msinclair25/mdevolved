@@ -7,6 +7,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./owd-albatross": "./owd-albatross/SKILL.md",
     "./owd-eve": "./owd-eve/SKILL.md",
     "./owd-obsidian-mind": "./owd-obsidian-mind/SKILL.md"
   }

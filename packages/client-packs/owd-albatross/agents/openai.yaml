@@ -1,0 +1,4 @@
+interface:
+  display_name: "OWD + Albatross"
+  short_description: "Connect Albatross to OWD safely"
+  default_prompt: "Use $owd-albatross to connect or resume this Albatross workspace with OWD."

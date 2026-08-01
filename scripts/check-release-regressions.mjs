@@ -2,14 +2,14 @@ import { access, readFile } from "node:fs/promises";
 
 const ledger = JSON.parse(await readFile("release-regressions.json", "utf8"));
 const expectedIds = Array.from(
-  { length: 44 },
+  { length: 45 },
   (_, index) => `MTR-${String(index + 1).padStart(3, "0")}`,
 );
 const allowedKinds = new Set(["manual", "static", "test"]);
 
 if (
   ledger.schemaVersion !== 1 ||
-  ledger.findingRange !== "MTR-001..MTR-044" ||
+  ledger.findingRange !== "MTR-001..MTR-045" ||
   !Array.isArray(ledger.findings)
 ) {
   throw new Error("The release regression ledger header is invalid.");
@@ -95,10 +95,16 @@ const [
   preparedProjectHandoffMigration,
   preparedProjectHandoffService,
   preparedProjectHandoffStore,
+  vaultPrimaryWriterTransferMigration,
+  vaultLocalWriterStore,
+  agentAccessRoutes,
 ] = await Promise.all([
   readFile("migrations/0028_prepared_project_handoffs.sql", "utf8"),
   readFile("apps/worker/src/prepared-project-handoff-service.ts", "utf8"),
   readFile("apps/worker/src/prepared-project-handoff-store.ts", "utf8"),
+  readFile("migrations/0029_vault_primary_writer_transfer.sql", "utf8"),
+  readFile("apps/worker/src/vault-local-writer-store.ts", "utf8"),
+  readFile("apps/worker/src/agent-access-routes.ts", "utf8"),
 ]);
 const normalizedAgents = agents.replace(/\s+/gu, " ");
 const normalizedOnboardingContract = onboardingContract.replace(/\s+/gu, " ");
@@ -211,13 +217,32 @@ if (
   !projectLocalVaultAccess.includes('scope: "vault"') ||
   !projectLocalVaultAccess.includes('"owner-requested-bounded-task-only"') ||
   !projectLocalVaultAccess.includes(
-    '"owner-explicit-bounded-task-after-primary-stops"',
+    '"owner-dashboard-transfer-after-previous-writer-stops"',
   ) ||
   !projectLocalVaultAccess.includes("collaborationGrantId") ||
   !projectLocalVaultAccess.includes("JOIN agent_grants source")
 ) {
   throw new Error(
     "MTR-040 regression: the first Project agent must retain one durable vault-wide writer role while later agents receive advisory read-only warnings.",
+  );
+}
+if (
+  !vaultPrimaryWriterTransferMigration.includes(
+    "CREATE TABLE IF NOT EXISTS vault_local_writer_transfers",
+  ) ||
+  !vaultPrimaryWriterTransferMigration.includes(
+    "CHECK (from_oauth_client_id != to_oauth_client_id)",
+  ) ||
+  !vaultLocalWriterStore.includes("transferVaultLocalWriter") ||
+  !vaultLocalWriterStore.includes("db.batch") ||
+  !vaultLocalWriterStore.includes("project_grants.status = 'active'") ||
+  !agentAccessRoutes.includes("make-primary-writer") ||
+  !app.includes("confirmedPreviousWriterStopped") ||
+  !app.includes("Make primary") ||
+  !app.includes("Primary follows the OWD client, not the chat")
+) {
+  throw new Error(
+    "MTR-045 regression: a replacement Project client needs one owner-confirmed, durable, audited primary-writer transfer.",
   );
 }
 if (

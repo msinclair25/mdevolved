@@ -581,6 +581,18 @@ export const oauthRedirectResponseSchema = z
 
 export type OAuthRedirectResponse = z.infer<typeof oauthRedirectResponseSchema>;
 
+export const vaultLocalWriterRoleSchema = z.enum([
+  "primary-writer",
+  "read-only-collaborator",
+  "unassigned",
+]);
+
+export const vaultLocalWriterAssignmentBasisSchema = z.enum([
+  "project-creator",
+  "first-project-agent",
+  "owner-transfer",
+]);
+
 export const agentConnectionSchema = z
   .object({
     id: z.string().uuid(),
@@ -598,6 +610,11 @@ export const agentConnectionSchema = z
     revokedAt: z.number().int().nonnegative().nullable(),
     lastUsedAt: z.number().int().nonnegative().nullable(),
     preparedProjectHandoff: preparedProjectHandoffSchema.nullable(),
+    writerAssignmentBasis: vaultLocalWriterAssignmentBasisSchema.nullable(),
+    writerAssignedAt: z.number().int().nonnegative().nullable(),
+    writerEligible: z.boolean(),
+    writerRole: vaultLocalWriterRoleSchema,
+    writerUpdatedAt: z.number().int().nonnegative().nullable(),
   })
   .strict();
 
@@ -612,6 +629,25 @@ export const agentConnectionListResponseSchema = z
 
 export type AgentConnectionListResponse = z.infer<
   typeof agentConnectionListResponseSchema
+>;
+
+export const transferVaultLocalWriterRequestSchema = z
+  .object({
+    confirmedPreviousWriterStopped: z.literal(true),
+  })
+  .strict();
+
+export const transferVaultLocalWriterResponseSchema = z
+  .object({
+    connectionId: z.string().uuid(),
+    transferredAt: z.number().int().nonnegative(),
+    vaultId: vaultIdSchema,
+    writerRole: z.literal("primary-writer"),
+  })
+  .strict();
+
+export type TransferVaultLocalWriterResponse = z.infer<
+  typeof transferVaultLocalWriterResponseSchema
 >;
 
 export const sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/u);

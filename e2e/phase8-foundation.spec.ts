@@ -261,6 +261,11 @@ function activeAgentConnection(
     status: "active",
     vaultId: targetVaultId,
     vaultName: "Recovery target",
+    writerAssignedAt: null,
+    writerAssignmentBasis: null,
+    writerEligible: false,
+    writerRole: "unassigned",
+    writerUpdatedAt: null,
     ...overrides,
   };
 }
@@ -2509,5 +2514,107 @@ test("allows read-only agent setup without a recovery point", async ({
       name: "Verify a recovery point before adding a new agent",
     }),
   ).not.toBeVisible();
+  await context.close();
+});
+
+test("moves the primary writer to an eligible replacement client once", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  const readiness: SetupReadiness = {
+    activeAgentCount: 2,
+    activeProjectCount: 2,
+    activeProjectGrantCount: 2,
+    activeVaultCount: 1,
+    libraryReady: true,
+    nextStep: "ready",
+    verifiedSnapshot: false,
+    vaults: [
+      setupVaultReadiness({
+        activeAgentCount: 2,
+        activeProjectCount: 2,
+        activeProjectGrantCount: 2,
+        nextStep: "ready",
+      }),
+    ],
+  };
+  let transferred = false;
+  await mockFoundation(context, readiness);
+  await context.route("**/api/agent/connections", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        connections: [
+          activeAgentConnection({
+            clientName: "Original writer",
+            writerAssignedAt: now - 30,
+            writerAssignmentBasis: "project-creator",
+            writerEligible: true,
+            writerRole: transferred
+              ? "read-only-collaborator"
+              : "primary-writer",
+            writerUpdatedAt: transferred ? now : now - 30,
+          }),
+          activeAgentConnection({
+            clientId: "https://replacement.example/client.json",
+            clientName: "Replacement client",
+            clientOrigin: "https://replacement.example",
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            writerAssignedAt: now - 30,
+            writerAssignmentBasis: transferred
+              ? "owner-transfer"
+              : "project-creator",
+            writerEligible: true,
+            writerRole: transferred
+              ? "primary-writer"
+              : "read-only-collaborator",
+            writerUpdatedAt: transferred ? now : now - 30,
+          }),
+        ],
+        mcpUrl: `${e2eOrigin}/mcp`,
+      }),
+      contentType: "application/json",
+    });
+  });
+  await context.route(
+    "**/api/agent/connections/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/make-primary-writer",
+    async (route) => {
+      expect(route.request().method()).toBe("POST");
+      expect(route.request().postDataJSON()).toEqual({
+        confirmedPreviousWriterStopped: true,
+      });
+      transferred = true;
+      await route.fulfill({
+        body: JSON.stringify({
+          connectionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          transferredAt: now,
+          vaultId: targetVaultId,
+          writerRole: "primary-writer",
+        }),
+        contentType: "application/json",
+      });
+    },
+  );
+
+  const page = await context.newPage();
+  page.on("dialog", (dialog) => void dialog.accept());
+  await page.goto("/");
+  await openOperationalRegion(page, "agents");
+
+  const agents = operationalRegion(page, "agents");
+  await expect(
+    agents.getByText("Primary follows the OWD client, not the chat."),
+  ).toBeVisible();
+  await agents.getByRole("button", { name: "Make primary" }).click();
+  await expect(
+    agents.getByText(
+      "Replacement client is now the primary writer for Recovery target. Have that client run OWD resume project; the prior client is now read-only.",
+    ),
+  ).toBeVisible();
+  await expect(
+    agents
+      .locator(".agent-row", { hasText: "Replacement client" })
+      .getByText("Primary writer"),
+  ).toBeVisible();
+  expect(transferred).toBe(true);
   await context.close();
 });

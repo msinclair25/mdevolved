@@ -21,6 +21,7 @@ import projectAgentVisibilityMigration from "../../../migrations/0025_project_ag
 import vaultPrimaryWriterMigration from "../../../migrations/0026_vault_primary_writer.sql";
 import vaultRuntimeProfilesMigration from "../../../migrations/0027_vault_runtime_profiles.sql";
 import preparedProjectHandoffsMigration from "../../../migrations/0028_prepared_project_handoffs.sql";
+import vaultPrimaryWriterTransferMigration from "../../../migrations/0029_vault_primary_writer_transfer.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -88,6 +89,10 @@ export const migrations = [
     file: "0028_prepared_project_handoffs.sql",
     source: preparedProjectHandoffsMigration,
   },
+  {
+    file: "0029_vault_primary_writer_transfer.sql",
+    source: vaultPrimaryWriterTransferMigration,
+  },
 ] as const;
 
 export const priorReleaseMigrations = migrations.slice(0, 10);
@@ -106,6 +111,7 @@ export const projectAgentVisibilityMigrationEntry = migrations[19]!;
 export const vaultPrimaryWriterMigrationEntry = migrations[20]!;
 export const vaultRuntimeProfilesMigrationEntry = migrations[21]!;
 export const preparedProjectHandoffsMigrationEntry = migrations[22]!;
+export const vaultPrimaryWriterTransferMigrationEntry = migrations[23]!;
 
 export function executableMigration(source: string): string {
   return source
@@ -265,6 +271,22 @@ export async function applyVaultPrimaryWriterMigration(
     .first<{ count: number }>();
   if (table?.count !== 1) {
     await applyMigrations(db, [vaultPrimaryWriterMigrationEntry]);
+  }
+}
+
+export async function applyVaultPrimaryWriterTransferMigration(
+  db: D1Database,
+): Promise<void> {
+  const table = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM sqlite_master
+       WHERE type = 'table'
+         AND name = 'vault_local_writer_transfers'`,
+    )
+    .first<{ count: number }>();
+  if (table?.count !== 1) {
+    await applyMigrations(db, [vaultPrimaryWriterTransferMigrationEntry]);
   }
 }
 

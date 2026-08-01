@@ -47,7 +47,7 @@ operational visibility.
 
 The collaboration and managed-release ledger from
 `0010_phase9a_collaboration.sql` through
-`0026_vault_primary_writer.sql` is different: these migrations are release
+`0029_vault_primary_writer_transfer.sql` is different: these migrations are release
 prerequisites and are never imported or applied by production request handlers.
 Apply the reviewed ledger before deploying the matching Worker. CI runs
 `pnpm test:migrations` against the full empty ledger and populated
@@ -196,6 +196,13 @@ the exact owner-approval path. Revocation closes the handoff, and OWD content
 snapshots never restore it. Application rollback may leave the additive table
 intact, but the prepared row will be ignored and the existing approval flow
 will fail closed.
+
+The vault-primary-writer-transfer migration adds an append-only audit ledger
+for owner-confirmed changes to the advisory vault writer. A transfer succeeds
+only when the target OAuth client has an active Project grant for the same
+vault and the authenticated owner confirms the previous writer has stopped.
+The assignment update and transfer receipt commit atomically. This adds no MCP
+write scope and does not make the selected client the human owner.
 
 Phase 7 bootstrap is additive and retry-safe. Only the public age recipient is
 stored in D1; the recovery identity is never server-held. Backup rows remain in

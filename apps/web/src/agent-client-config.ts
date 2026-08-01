@@ -1,4 +1,7 @@
 import {
+  createAlbatrossAuthorizationCommand as createProfileAlbatrossAuthorizationCommand,
+  createAlbatrossMcpMergeConfig as createProfileAlbatrossMcpMergeConfig,
+  createAlbatrossSetupKit as createProfileAlbatrossSetupKit,
   createEveConnectionSource as createProfileEveConnectionSource,
   createObsidianMindMcpMergeConfig as createProfileMcpMergeConfig,
   createObsidianMindProjectMcpCommand as createProfileProjectMcpCommand,
@@ -50,4 +53,25 @@ export function createEveConnectionSource(
   connectorUid?: string,
 ): string {
   return createProfileEveConnectionSource(mcpUrl, connectorUid);
+}
+
+export function createAlbatrossAuthorizationCommand(
+  mcpUrl: string,
+  participantId?: string,
+): string {
+  return createProfileAlbatrossAuthorizationCommand(mcpUrl, participantId);
+}
+
+export function createAlbatrossMcpMergeConfig(
+  mcpUrl: string,
+  participantId?: string,
+): string {
+  return createProfileAlbatrossMcpMergeConfig(mcpUrl, participantId);
+}
+
+export function createAlbatrossSetupKit(
+  mcpUrl: string,
+  participantId?: string,
+): string {
+  return createProfileAlbatrossSetupKit(mcpUrl, participantId);
 }
