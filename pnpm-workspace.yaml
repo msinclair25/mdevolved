@@ -2,6 +2,9 @@ packages:
   - apps/*
   - packages/*
 
+minimumReleaseAgeExclude:
+  - eve@0.29.4
+
 overrides:
   "@hono/node-server": 2.0.11
   sharp: 0.35.0
