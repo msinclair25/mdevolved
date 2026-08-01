@@ -46,12 +46,12 @@ test("renders a single stable review issue with critical source paths", () => {
   const report = renderProfileReport({
     id: "eve",
     name: "Eve.dev",
-    reviewedAt: "2026-07-30",
+    reviewedAt: "2026-07-31",
     drift: true,
     source: {
       kind: "github-release",
       drift: true,
-      reviewedTag: "eve@0.29.2",
+      reviewedTag: "eve@0.29.4",
       reviewedCommit: "a".repeat(40),
       latestTag: "eve@0.30.0",
       latestCommit: "b".repeat(40),

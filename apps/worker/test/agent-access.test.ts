@@ -932,8 +932,8 @@ describe("scoped universal agent access", () => {
         memoryRoot: "memories",
       },
       source: {
-        commit: "216821bbc030211476e68270e287c915d09b4390",
-        version: "8.2.0",
+        commit: "538522e4ea660cdc1265f8ef71ef43966e1d9a96",
+        version: "8.3.1",
       },
     });
     expect(resources.result.resources).toContainEqual(
@@ -963,9 +963,9 @@ describe("scoped universal agent access", () => {
       format: "owd-client-profile-v1",
       id: "eve",
       source: {
-        commit: "7ec1c93ce43488e136a2a043cc3e6a310cd03841",
+        commit: "85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d",
         connectVersion: "0.6.0",
-        eveVersion: "0.29.2",
+        eveVersion: "0.29.4",
         repository: "https://github.com/vercel/eve",
       },
     });

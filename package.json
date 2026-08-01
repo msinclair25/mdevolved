@@ -54,7 +54,7 @@
     "types": "wrangler types apps/worker/src/worker-configuration.d.ts && pnpm --filter @owd/marketing types",
     "types:check": "wrangler types apps/worker/src/worker-configuration.d.ts --check && pnpm --filter @owd/marketing types:check",
     "upstream:check": "node scripts/check-upstream-compatibility.mjs",
-    "upstream:config:check": "node --test scripts/check-upstream-compatibility.test.mjs && node scripts/check-upstream-compatibility.mjs --validate"
+    "upstream:config:check": "node --test scripts/check-upstream-compatibility.test.mjs scripts/check-client-profile-fixtures.test.mjs && node scripts/check-upstream-compatibility.mjs --validate"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.18.7",

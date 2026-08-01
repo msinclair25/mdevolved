@@ -10,11 +10,11 @@ The reviewed profile is pinned to:
 
 | Contract          | Reviewed value                             |
 | ----------------- | ------------------------------------------ |
-| Eve               | `0.29.2`                                   |
-| Eve source commit | `7ec1c93ce43488e136a2a043cc3e6a310cd03841` |
+| Eve               | `0.29.4`                                   |
+| Eve source commit | `85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d` |
 | `@vercel/connect` | `0.6.0`                                    |
 | License           | Apache-2.0                                 |
-| Reviewed          | July 30, 2026                              |
+| Reviewed          | July 31, 2026                              |
 
 This is a source-verified compatibility profile. It does not yet claim that a
 live Eve deployment has completed OWD's independent two-agent acceptance run.
@@ -26,6 +26,14 @@ Eve 0.29 replaces its retired `/connect` setup command with `eve add` and
 module remains a supported authored MCP connection. Until OWD is accepted into
 an Eve registry, use the dashboard-generated module rather than claiming an
 `eve add` package that does not exist.
+
+Eve 0.29.4 leaves its authored MCP definition, runtime MCP client, and
+`@vercel/connect` contract unchanged. It adds trusted setup for official
+connection registry items, which creates a path to a future
+`eve add connection/owd` installer. Eve executes declared connector setup only
+for its official registry, so OWD will not advertise that command until an
+upstream registry contribution is accepted. The dashboard-generated module
+below remains the complete supported setup in the meantime.
 
 ## Architecture
 

@@ -10,5 +10,9 @@
     "./owd-albatross": "./owd-albatross/SKILL.md",
     "./owd-eve": "./owd-eve/SKILL.md",
     "./owd-obsidian-mind": "./owd-obsidian-mind/SKILL.md"
+  },
+  "devDependencies": {
+    "@vercel/connect": "0.6.0",
+    "eve": "0.29.4"
   }
 }
