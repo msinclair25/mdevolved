@@ -3,69 +3,103 @@ import {
   browserSupportsOwdSyncInstall,
   chooseVaultAndInstallOwdSync,
   isOwdSyncInstallCancellation,
-  OwdSyncInstallerError,
+  normalizeOwdSyncInstallerError,
 } from "./obsidian-plugin-installer";
 import { OWD_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
 
 type InstallState =
   | { kind: "idle" }
-  | { kind: "installing" }
+  | { kind: "choosing" }
+  | { kind: "installing"; vaultName: string }
   | { kind: "success"; vaultName: string }
+  | { kind: "cancelled" }
   | { kind: "error"; message: string };
 
-export function ObsidianPluginInstaller() {
+type ObsidianPluginInstallerProps = {
+  onFallbackNeeded?: () => void;
+};
+
+export function ObsidianPluginInstaller({
+  onFallbackNeeded,
+}: ObsidianPluginInstallerProps) {
   const [state, setState] = useState<InstallState>({ kind: "idle" });
   const supported = browserSupportsOwdSyncInstall();
+  const busy = state.kind === "choosing" || state.kind === "installing";
 
   const install = async () => {
-    setState({ kind: "installing" });
+    setState({ kind: "choosing" });
     try {
-      const result = await chooseVaultAndInstallOwdSync();
+      const result = await chooseVaultAndInstallOwdSync(undefined, (progress) =>
+        setState({ kind: "installing", vaultName: progress.vaultName }),
+      );
       setState({ kind: "success", vaultName: result.vaultName });
     } catch (error) {
       if (isOwdSyncInstallCancellation(error)) {
-        setState({ kind: "idle" });
+        setState({ kind: "cancelled" });
         return;
       }
+      const installerError = normalizeOwdSyncInstallerError(error);
       setState({
         kind: "error",
-        message:
-          error instanceof OwdSyncInstallerError
-            ? error.message
-            : "OWD Sync could not be installed. Your existing vault files were left unchanged.",
+        message: installerError.message,
       });
+      onFallbackNeeded?.();
     }
   };
 
   return (
     <div className="plugin-installer">
-      <p className="plugin-installer-prerequisite">
-        First time only: in Obsidian, open{" "}
-        <strong>Settings → Community plugins</strong> and choose{" "}
-        <strong>Turn on community plugins</strong>. Obsidian requires that
-        security consent; OWD will not bypass it.
-      </p>
-      <div className="plugin-installer-action">
-        <button
-          className="primary-action"
-          disabled={!supported || state.kind === "installing"}
-          type="button"
-          onClick={() => void install()}
-        >
-          {state.kind === "installing"
-            ? "Installing and verifying…"
-            : `Install OWD Sync ${OWD_SYNC_REQUIRED_VERSION}`}
-        </button>
-        <span>
-          Close Obsidian, click once, and choose the vault folder. Your browser
-          will ask for local write permission.
-        </span>
-      </div>
+      <ol className="plugin-installer-steps">
+        <li>
+          In Obsidian, turn on <strong>Settings → Community plugins</strong>,
+          then choose <strong>Obsidian → Quit Obsidian</strong> or press{" "}
+          <strong>⌘Q</strong>. Closing the Mac window is not enough. Obsidian
+          requires this one-time security consent; OWD cannot bypass it.
+        </li>
+        <li>
+          <div className="plugin-installer-action">
+            <button
+              className="primary-action"
+              disabled={!supported || busy}
+              type="button"
+              onClick={() => void install()}
+            >
+              {state.kind === "choosing"
+                ? "Waiting for Chrome’s folder picker…"
+                : state.kind === "installing"
+                  ? `Installing in ${state.vaultName}…`
+                  : `Choose vault and install OWD Sync ${OWD_SYNC_REQUIRED_VERSION}`}
+            </button>
+            <span>
+              Choose the vault root containing your notes and hidden{" "}
+              <code>.obsidian</code> folder—not the <code>.obsidian</code>{" "}
+              folder itself—then choose <strong>Allow</strong> if Chrome asks.
+            </span>
+          </div>
+        </li>
+        <li>
+          Reopen that exact vault and confirm OWD Sync{" "}
+          <strong>{OWD_SYNC_REQUIRED_VERSION}</strong> is enabled under
+          Community plugins. Then return here to pair it.
+        </li>
+      </ol>
 
       {!supported ? (
         <p className="plugin-installer-status" role="status">
-          Direct install needs current Chrome or Edge over HTTPS. Use the
-          fallback below in Safari or Firefox.
+          Direct install needs current Chrome or Edge over HTTPS. No vault was
+          changed. Use the BRAT fallback below.
+        </p>
+      ) : null}
+      {state.kind === "choosing" ? (
+        <p className="plugin-installer-status" role="status">
+          Chrome should now be showing its folder picker. If you cancel it, OWD
+          will confirm that nothing changed.
+        </p>
+      ) : null}
+      {state.kind === "installing" ? (
+        <p className="plugin-installer-status" role="status">
+          Verifying the pinned release and installing it in{" "}
+          <strong>{state.vaultName}</strong>. Keep this tab open.
         </p>
       ) : null}
       {state.kind === "success" ? (
@@ -73,18 +107,47 @@ export function ObsidianPluginInstaller() {
           className="plugin-installer-status plugin-installer-status--success"
           role="status"
         >
-          OWD Sync {OWD_SYNC_REQUIRED_VERSION} is installed and queued as
-          enabled in <strong>{state.vaultName}</strong>. Reopen Obsidian once,
-          confirm it is enabled, then return here to create the pairing request.
+          OWD Sync {OWD_SYNC_REQUIRED_VERSION} is installed in{" "}
+          <strong>{state.vaultName}</strong> and added to Obsidian&apos;s
+          enabled list. Reopen that vault, confirm the plugin is running, then
+          return here to pair it. Do not also install it with BRAT.
         </p>
       ) : null}
+      {state.kind === "cancelled" ? (
+        <div className="plugin-installer-status" role="status">
+          <p>No folder selected; nothing changed.</p>
+          <button
+            className="text-action"
+            type="button"
+            onClick={() => void install()}
+          >
+            Try again
+          </button>
+        </div>
+      ) : null}
       {state.kind === "error" ? (
-        <p
+        <div
           className="plugin-installer-status plugin-installer-status--error"
           role="alert"
         >
-          {state.message}
-        </p>
+          <p>{state.message}</p>
+          <div className="plugin-installer-status-actions">
+            <button
+              className="text-action"
+              type="button"
+              onClick={() => void install()}
+            >
+              Try again
+            </button>
+            <button
+              className="text-action"
+              type="button"
+              onClick={onFallbackNeeded}
+            >
+              Show BRAT fallback
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );

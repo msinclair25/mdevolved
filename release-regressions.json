@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "findingRange": "MTR-001..MTR-045",
+  "findingRange": "MTR-001..MTR-046",
   "findings": [
     {
       "id": "MTR-001",
@@ -515,6 +515,30 @@
         { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
         { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
         { "kind": "static", "path": "apps/web/src/App.tsx" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-046",
+      "title": "Deterministic clean-macOS OWD Sync installation and BRAT recovery",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "apps/web/src/ObsidianPluginInstaller.tsx"
+        },
+        {
+          "kind": "static",
+          "path": "apps/web/src/PluginSetupGuide.tsx"
+        },
+        {
+          "kind": "test",
+          "path": "apps/web/test/obsidian-plugin-installer.test.ts"
+        },
+        {
+          "kind": "test",
+          "path": "apps/web/test/plugin-setup-guide.test.ts"
+        },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
         { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
       ]
     }

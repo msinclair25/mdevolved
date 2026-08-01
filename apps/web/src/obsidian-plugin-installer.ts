@@ -75,6 +75,11 @@ export type OwdSyncInstallResult = {
   version: string;
 };
 
+export type OwdSyncInstallProgress = {
+  kind: "vault-selected";
+  vaultName: string;
+};
+
 export type OwdSyncInstallerDependencies = {
   fetch: typeof fetch;
   sha256: (value: Uint8Array) => Promise<string>;
@@ -186,6 +191,13 @@ function isAbortError(error: unknown): boolean {
     (error instanceof DOMException && error.name === "AbortError") ||
     (isRecord(error) && error.name === "AbortError")
   );
+}
+
+function errorName(error: unknown): string | null {
+  if (error instanceof DOMException) {
+    return error.name;
+  }
+  return isRecord(error) && typeof error.name === "string" ? error.name : null;
 }
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -450,8 +462,45 @@ export function isOwdSyncInstallCancellation(error: unknown): boolean {
   return isAbortError(error);
 }
 
+export function normalizeOwdSyncInstallerError(
+  error: unknown,
+): OwdSyncInstallerError {
+  if (error instanceof OwdSyncInstallerError) {
+    return error;
+  }
+
+  switch (errorName(error)) {
+    case "NotAllowedError":
+      return new OwdSyncInstallerError(
+        "folder_permission_denied",
+        "Chrome did not receive permission to change that vault. Choose Try again, select the vault root, and choose Allow when Chrome asks for access.",
+        { cause: error },
+      );
+    case "SecurityError":
+      return new OwdSyncInstallerError(
+        "folder_picker_blocked",
+        "Chrome blocked the folder picker. Keep this secure OWD tab active, choose Try again, and allow the folder prompt. If it is still blocked, use the BRAT fallback below.",
+        { cause: error },
+      );
+    case "NotReadableError":
+    case "NoModificationAllowedError":
+      return new OwdSyncInstallerError(
+        "vault_not_writable",
+        "Chrome could not update that vault. Fully quit Obsidian with ⌘Q, confirm the vault is writable in Finder, then choose Try again.",
+        { cause: error },
+      );
+    default:
+      return new OwdSyncInstallerError(
+        "install_failed",
+        "OWD Sync could not be installed. Your existing vault files were left unchanged. Try again or use the BRAT fallback below.",
+        { cause: error },
+      );
+  }
+}
+
 export async function chooseVaultAndInstallOwdSync(
   dependencies: OwdSyncInstallerDependencies = defaultDependencies,
+  onProgress?: (progress: OwdSyncInstallProgress) => void,
 ): Promise<OwdSyncInstallResult> {
   if (
     !browserSupportsOwdSyncInstall() ||
@@ -468,6 +517,7 @@ export async function chooseVaultAndInstallOwdSync(
     mode: "readwrite",
     startIn: "documents",
   });
+  onProgress?.({ kind: "vault-selected", vaultName: vaultDirectory.name });
   return installOwdSyncIntoVault(vaultDirectory, dependencies);
 }
 
@@ -560,13 +610,6 @@ export async function installOwdSyncIntoVault(
     };
   } catch (error) {
     await rollback(backups, obsidianDirectory, removePluginDirectory);
-    if (error instanceof OwdSyncInstallerError) {
-      throw error;
-    }
-    throw new OwdSyncInstallerError(
-      "install_failed",
-      "OWD Sync could not be installed. The prior vault plugin files were restored.",
-      { cause: error },
-    );
+    throw normalizeOwdSyncInstallerError(error);
   }
 }

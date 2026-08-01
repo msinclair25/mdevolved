@@ -29,6 +29,16 @@ full durable Project ID and exact source-vault/context relationship.
 | Project approved | Keep working in the same agent connection                     | `wait_for_project_connection` returns the ready exact Project                |
 | Ready            | Start or resume the task                                      | `.owdignore` supplies `projectId` and the approved context policy            |
 
+The plugin-install step is itself stateful and truthful. On macOS it says to
+quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q** because closing
+the window does not quit the app. It distinguishes a waiting Chrome folder
+picker from an active verified install, reports cancellation as “nothing
+changed,” and gives named recovery for permission or write failures. The BRAT
+fallback is pinned to the compatible OWD Sync version and says that its deep
+link opens a form; the user must still choose **Add Plugin**, wait for BRAT,
+and enable OWD Sync. Direct install and BRAT are never presented as simultaneous
+steps.
+
 Recovery is tracked beside this path, not inside it. OWD recommends a verified
 encrypted recovery point as soon as the library is current, but it does not
 block read-only agent authorization. A current verified recovery point is

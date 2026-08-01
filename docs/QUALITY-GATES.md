@@ -34,6 +34,12 @@ hostname to an issue or test receipt.
 - Apply the complete migration chain before activating the matching Worker.
 - Claim the owner once and verify a second claim fails.
 - Install the exact OWD Sync version advertised by the platform.
+- On a clean macOS profile in current Chrome, fully quit Obsidian with ⌘Q,
+  cancel the vault picker once, retry, and confirm the page reports both states
+  without implying an install. Complete the direct install from the vault root.
+- Separately enable BRAT, wait until its command is registered, and verify the
+  pinned deep link opens a form that still requires **Add Plugin** and enabling
+  OWD Sync. Do not run both installation paths in the same check.
 - Pair only the open test vault and wait for its library to publish
   automatically.
 - Confirm read-only agent access does not require a recovery point.
