@@ -14,6 +14,7 @@ describe("Obsidian plugin links", () => {
     expect(installUrl.protocol).toBe("obsidian:");
     expect(installUrl.hostname).toBe("brat");
     expect(installUrl.searchParams.get("plugin")).toBe("msinclair25/owd-sync");
+    expect(installUrl.searchParams.get("version")).toBe("0.1.6");
   });
 
   it("pins every tester fallback to the compatible OWD Sync release", () => {

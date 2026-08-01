@@ -446,12 +446,21 @@ a:focus-visible {
   max-width: 850px;
 }
 
-.plugin-installer-prerequisite {
+.plugin-installer-steps {
   max-width: 760px;
-  margin: 0 0 18px;
+  margin: 0;
+  padding-left: 22px;
   color: #aeb7a8;
   font-size: 0.86rem;
   line-height: 1.55;
+}
+
+.plugin-installer-steps > li {
+  padding-left: 6px;
+}
+
+.plugin-installer-steps > li + li {
+  margin-top: 18px;
 }
 
 .plugin-installer-action {
@@ -469,6 +478,10 @@ a:focus-visible {
   color: #aeb7a8;
   font-size: 0.86rem;
   line-height: 1.55;
+}
+
+.plugin-installer-action code {
+  color: var(--green);
 }
 
 .plugin-installer-status {
@@ -492,6 +505,17 @@ a:focus-visible {
   color: #f0beb7;
 }
 
+.plugin-installer-status > p {
+  margin: 0;
+}
+
+.plugin-installer-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+}
+
 .plugin-path-note {
   margin-top: 22px !important;
   padding-left: 14px;
@@ -508,6 +532,17 @@ a:focus-visible {
   max-width: 760px;
   margin-top: 20px;
   color: var(--muted);
+}
+
+.plugin-manual-fallback ol {
+  padding-left: 22px;
+  color: #aeb7a8;
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.plugin-manual-fallback li + li {
+  margin-top: 10px;
 }
 
 .plugin-manual-fallback summary {

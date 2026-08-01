@@ -13,21 +13,31 @@ describe("OWD Sync tester setup guide", () => {
 
     expect(html).toContain('id="owd-sync-installer"');
     expect(html).toContain("Private trial · direct local install");
-    expect(html).toContain("Install OWD Sync 0.1.6");
+    expect(html).toContain("Choose vault and install OWD Sync 0.1.6");
     expect(html.match(/<button/g)).toHaveLength(1);
-    expect(html).toContain("Turn on community plugins");
-    expect(html).toContain("OWD will not bypass it");
-    expect(html).toContain("Close Obsidian, click once");
-    expect(html).toContain("choose the vault folder");
+    expect(html).toContain("Community plugins");
+    expect(html).toContain("OWD cannot bypass it");
+    expect(html).toContain("Quit Obsidian");
+    expect(html).toContain("⌘Q");
+    expect(html).toContain("Closing the Mac window is not enough");
+    expect(html).toContain("vault root containing your notes");
     expect(html).toContain("does not enumerate notes");
     expect(html).toContain("does not");
     expect(html).toContain("retain the folder");
     expect(html).toContain(
-      "Fallback for Safari, Firefox, or a blocked folder picker",
+      "Manual BRAT fallback—only if direct install reports an error",
     );
     expect(html).toContain("obsidian://show-plugin?id=obsidian42-brat");
-    expect(html).toContain("obsidian://brat?plugin=msinclair25/owd-sync");
-    expect(html).toContain("two-stage path is a technical fallback");
+    expect(html).toContain(
+      "obsidian://brat?plugin=msinclair25/owd-sync&amp;version=0.1.6",
+    );
+    expect(html).toContain("This link opens BRAT");
+    expect(html).toContain("it does not finish the install");
+    expect(html).toContain(
+      "BRAT: Plugins: Add a beta plugin for testing (with or without version)",
+    );
+    expect(html).toContain("https://github.com/msinclair25/owd-sync");
+    expect(html).toContain("Use either the direct installer or BRAT, not both");
     expect(html).toContain("releases/tag/0.1.6");
     expect(html).toContain("owd-sync-0.1.6.zip");
     expect(html).toContain("not a normal tester installation path");

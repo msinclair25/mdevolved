@@ -3,6 +3,7 @@ import {
   browserSupportsOwdSyncInstall,
   installOwdSyncIntoVault,
   isOwdSyncInstallCancellation,
+  normalizeOwdSyncInstallerError,
   OWD_SYNC_INSTALLER_BASE_PATH,
   OWD_SYNC_INSTALLER_FORMAT,
   OWD_SYNC_INSTALLER_MANIFEST_URL,
@@ -338,5 +339,32 @@ describe("OWD Sync direct vault installer", () => {
       ),
     ).toBe(true);
     expect(browserSupportsOwdSyncInstall()).toBe(false);
+  });
+
+  it("turns browser folder failures into specific, recoverable Mac guidance", () => {
+    expect(
+      normalizeOwdSyncInstallerError(
+        new DOMException("Permission denied", "NotAllowedError"),
+      ),
+    ).toMatchObject({
+      code: "folder_permission_denied",
+      message: expect.stringContaining("choose Allow"),
+    });
+    expect(
+      normalizeOwdSyncInstallerError(
+        new DOMException("File is busy", "NotReadableError"),
+      ),
+    ).toMatchObject({
+      code: "vault_not_writable",
+      message: expect.stringContaining("⌘Q"),
+    });
+    expect(
+      normalizeOwdSyncInstallerError(
+        new DOMException("Picker blocked", "SecurityError"),
+      ),
+    ).toMatchObject({
+      code: "folder_picker_blocked",
+      message: expect.stringContaining("BRAT fallback"),
+    });
   });
 });

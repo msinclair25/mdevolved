@@ -2,14 +2,14 @@ import { access, readFile } from "node:fs/promises";
 
 const ledger = JSON.parse(await readFile("release-regressions.json", "utf8"));
 const expectedIds = Array.from(
-  { length: 45 },
+  { length: 46 },
   (_, index) => `MTR-${String(index + 1).padStart(3, "0")}`,
 );
 const allowedKinds = new Set(["manual", "static", "test"]);
 
 if (
   ledger.schemaVersion !== 1 ||
-  ledger.findingRange !== "MTR-001..MTR-045" ||
+  ledger.findingRange !== "MTR-001..MTR-046" ||
   !Array.isArray(ledger.findings)
 ) {
   throw new Error("The release regression ledger header is invalid.");
@@ -63,6 +63,9 @@ const [
   qualityGates,
   setupReadinessRoutes,
   onboardingContract,
+  obsidianPluginInstaller,
+  pluginSetupGuide,
+  obsidianPluginLinks,
   vaultPrimaryWriterMigration,
   vaultCoordinator,
   viteConfig,
@@ -83,6 +86,9 @@ const [
     "docs/QUALITY-GATES.md",
     "apps/worker/src/setup-readiness-routes.ts",
     "docs/ONBOARDING-CONTRACT.md",
+    "apps/web/src/ObsidianPluginInstaller.tsx",
+    "apps/web/src/PluginSetupGuide.tsx",
+    "apps/web/src/obsidian-plugin-links.ts",
     "migrations/0026_vault_primary_writer.sql",
     "apps/worker/src/vault-coordinator.ts",
     "apps/web/vite.config.ts",
@@ -108,6 +114,7 @@ const [
 ]);
 const normalizedAgents = agents.replace(/\s+/gu, " ");
 const normalizedOnboardingContract = onboardingContract.replace(/\s+/gu, " ");
+const normalizedPluginSetupGuide = pluginSetupGuide.replace(/\s+/gu, " ");
 const normalizedQualityGates = qualityGates.replace(/\s+/gu, " ");
 const acceptedPluginBaseline = [0, 1, 5];
 
@@ -306,6 +313,20 @@ if (
 ) {
   throw new Error(
     "MTR-044 regression: fresh sessions must resume the durable Project and writer role before reporting access or asking for reconnection.",
+  );
+}
+if (
+  !obsidianPluginInstaller.includes("Obsidian → Quit Obsidian") ||
+  !obsidianPluginInstaller.includes("Closing the Mac window is not enough") ||
+  !obsidianPluginInstaller.includes("No folder selected; nothing changed") ||
+  !obsidianPluginInstaller.includes("Waiting for Chrome’s folder picker") ||
+  !normalizedPluginSetupGuide.includes("it does not finish the install") ||
+  !pluginSetupGuide.includes("BRAT: Plugins: Add a beta plugin for testing") ||
+  !pluginSetupGuide.includes("Use either the direct installer or BRAT") ||
+  !obsidianPluginLinks.includes("&version=${OWD_SYNC_REQUIRED_VERSION}")
+) {
+  throw new Error(
+    "MTR-046 regression: clean-macOS installation must retain explicit quit semantics, truthful picker states, and a pinned deterministic BRAT fallback.",
   );
 }
 

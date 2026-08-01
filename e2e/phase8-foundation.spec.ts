@@ -914,13 +914,21 @@ test("installs the pinned plugin from one primary tester action", async ({
   await expect(
     page.getByRole("heading", { name: "Install OWD Sync in this vault" }),
   ).toBeVisible();
-  await expect(page.getByText(/OWD will not bypass it/u)).toBeVisible();
+  await expect(page.getByText(/OWD cannot bypass it/u)).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Install OWD Sync 0.1.6" }),
+    page.getByRole("button", {
+      name: "Choose vault and install OWD Sync 0.1.6",
+    }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "Install OWD Sync 0.1.6" }).click();
+  await page
+    .getByRole("button", {
+      name: "Choose vault and install OWD Sync 0.1.6",
+    })
+    .click();
   await expect(
-    page.getByText(/installed and queued as enabled in Tester Vault/u),
+    page.getByText(
+      /installed in Tester Vault and added to Obsidian's enabled list/u,
+    ),
   ).toBeVisible();
   const snapshot: unknown = await page.evaluate(() =>
     Reflect.get(window, "__owdInstallerSnapshot"),
@@ -944,19 +952,72 @@ test("installs the pinned plugin from one primary tester action", async ({
     page.getByText(/does not enumerate notes, upload vault data/u),
   ).toBeVisible();
   await page
-    .getByText("Fallback for Safari, Firefox, or a blocked folder picker")
+    .getByText("Manual BRAT fallback—only if direct install reports an error")
     .click();
   await expect(
     page.getByRole("link", { name: "BRAT in Obsidian" }),
   ).toHaveAttribute("href", "obsidian://show-plugin?id=obsidian42-brat");
   await expect(
-    page.getByRole("link", { name: "install OWD Sync 0.1.6" }),
-  ).toHaveAttribute("href", "obsidian://brat?plugin=msinclair25/owd-sync");
+    page.getByRole("link", {
+      name: "Open the prefilled OWD Sync 0.1.6 form",
+    }),
+  ).toHaveAttribute(
+    "href",
+    "obsidian://brat?plugin=msinclair25/owd-sync&version=0.1.6",
+  );
   await expect(
     page.getByText(/not the final Community Plugins experience/u),
   ).toBeVisible();
   await expect(
     page.getByText(/ZIP is not a normal tester installation path/u),
+  ).toBeVisible();
+  await context.close();
+});
+
+test("makes clean-Mac picker cancellation and permission recovery explicit", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    let attempt = 0;
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      value: async () => {
+        attempt += 1;
+        throw new DOMException(
+          attempt === 1 ? "The user cancelled" : "Permission denied",
+          attempt === 1 ? "AbortError" : "NotAllowedError",
+        );
+      },
+    });
+  });
+  await mockFoundation(context);
+  const page = await context.newPage();
+  await page.goto("/");
+
+  await openOperationalRegion(page, "vaults");
+  await page
+    .getByRole("button", {
+      name: "Choose vault and install OWD Sync 0.1.6",
+    })
+    .click();
+  await expect(
+    page.getByText("No folder selected; nothing changed."),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(
+    page.getByText(/Chrome did not receive permission to change that vault/u),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", {
+      name: "Open the prefilled OWD Sync 0.1.6 form",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /This link opens BRAT's form; it does not finish the install/u,
+    ),
   ).toBeVisible();
   await context.close();
 });

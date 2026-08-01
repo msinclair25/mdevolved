@@ -25,14 +25,18 @@ repository, claim the resulting permanent URL, then start at step 2:
 
 1. Open the private invitation and claim the pre-provisioned workspace with a
    passkey.
-2. In **Vaults**, choose **Install OWD Sync 0.1.6**.
-3. Select the exact synthetic vault root in the browser's folder picker, then
-   reopen Obsidian and confirm OWD Sync is enabled.
-4. Return to OWD, create the private pairing request, and approve it from that
+2. In Obsidian, turn on Community plugins, then fully quit the application with
+   **Obsidian → Quit Obsidian** or **⌘Q**. Closing a macOS window is not a
+   quit.
+3. In **Vaults**, choose **Choose vault and install OWD Sync 0.1.6**. Select
+   the exact synthetic vault root containing `.obsidian`, not `.obsidian`
+   itself, and allow Chrome's write request.
+4. Reopen that exact vault and confirm OWD Sync `0.1.6` is enabled.
+5. Return to OWD, create the private pairing request, and approve it from that
    exact open vault.
-5. Keep Obsidian open while OWD automatically publishes the current searchable
+6. Keep Obsidian open while OWD automatically publishes the current searchable
    library.
-6. Connect your existing agent to the workspace's OWD MCP server.
+7. Connect your existing agent to the workspace's OWD MCP server.
 
 OWD Sync is not yet listed in Obsidian Community Plugins, so both modes use the
 version-matched desktop installer during the alpha. The Project workflow below
@@ -51,7 +55,9 @@ Branches, commands, migrations, bindings, Cloudflare resources, MCP endpoint
 construction, JSON, scopes, and internal IDs are not normal managed setup
 choices. Community operators see infrastructure only during deployment and
 maintenance. The direct local plugin installer is a temporary desktop-alpha
-path; BRAT is the unsupported-browser fallback.
+path. BRAT is the unsupported-browser fallback: its deep link opens a
+prefilled form, but the user must still choose **Add Plugin**, wait for BRAT to
+finish, and enable OWD Sync.
 
 ## Set up the Project from the agent
 

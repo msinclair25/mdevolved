@@ -16,16 +16,21 @@ search, encrypted snapshots, and recovery.
 1. Open the private invitation and claim the pre-provisioned OWD cell.
 2. If needed, explicitly choose **Settings → Community plugins → Turn on
    community plugins** in Obsidian.
-3. Close Obsidian and open **Vault connections**.
-4. Choose **Install OWD Sync 0.1.6** and select the intended vault root in
-   Chrome or Edge's native folder picker.
+3. Fully quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q**.
+   Closing the macOS window is not enough.
+4. Open **Vault connections**, choose **Choose vault and install OWD Sync
+   0.1.6**, and select the intended vault root containing `.obsidian` in Chrome
+   or Edge's native folder picker. Do not select `.obsidian` itself; choose
+   **Allow** if the browser asks for write access.
 5. Reopen Obsidian and confirm the selected vault shows OWD Sync `0.1.6`
    enabled. Stop if the version differs.
 
 The dashboard verifies the published release, writes only the OWD Sync files
 and enabled-plugin list, and does not enumerate or upload notes. BRAT remains
 the disclosed two-stage fallback when the browser picker is unsupported or
-blocked. No terminal or hidden vault-folder work is required.
+blocked. A BRAT deep link only opens its prefilled form; choose **Add Plugin**,
+wait for BRAT to finish, and enable OWD Sync afterward. No terminal or hidden
+vault-folder work is required.
 
 The direct installer and BRAT are testing bridges, not the permanent
 distribution plan. OWD Sync will move to Obsidian's official Community Plugin
