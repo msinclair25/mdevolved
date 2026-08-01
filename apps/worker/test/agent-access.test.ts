@@ -11,6 +11,7 @@ import {
   projectInitializationRequestResponseSchema,
   projectInitializationStatusResponseSchema,
   prepareProjectHandoffResponseSchema,
+  transferVaultLocalWriterResponseSchema,
   type ProjectContextPolicy,
 } from "@owd/contracts";
 import { env } from "cloudflare:workers";
@@ -76,6 +77,7 @@ import {
   applyProjectAgentVisibilityMigration,
   applyRestoredContentAuthorizationMigration,
   applyVaultPrimaryWriterMigration,
+  applyVaultPrimaryWriterTransferMigration,
 } from "./migration-fixture";
 
 const ORIGIN = "https://owd.test";
@@ -239,6 +241,7 @@ async function resetState(): Promise<void> {
   await applyAgentGrantContinuityMigration(env.DB);
   await applyProjectAgentVisibilityMigration(env.DB);
   await applyVaultPrimaryWriterMigration(env.DB);
+  await applyVaultPrimaryWriterTransferMigration(env.DB);
   await applyPreparedProjectHandoffsMigration(env.DB);
   await env.DB.exec(`
     DELETE FROM collaboration_submission_receipts;
@@ -254,6 +257,7 @@ async function resetState(): Promise<void> {
     DELETE FROM project_creation_commits;
     DELETE FROM project_creation_reservations;
     DELETE FROM project_initialization_projects;
+    DELETE FROM vault_local_writer_transfers;
     DELETE FROM vault_local_writer_assignments;
     DELETE FROM project_initialization_requests;
     DELETE FROM collaboration_notebook_projections;
@@ -965,6 +969,49 @@ describe("scoped universal agent access", () => {
         repository: "https://github.com/vercel/eve",
       },
     });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "albatross-compatibility-profile",
+        uri: "owd://compatibility-profiles/albatross/v1",
+      }),
+    );
+    const albatrossProfileResponse = await productionFetch("resources/read", {
+      uri: "owd://compatibility-profiles/albatross/v1",
+    });
+    expect(albatrossProfileResponse.status).toBe(200);
+    const albatrossProfile = mcpResourceReadResponseSchema.parse(
+      await albatrossProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(albatrossProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      bridge: {
+        authBootstrapBinary: "mcp-remote-client",
+        clientName: "Albatross via mcp-remote",
+        package: "mcp-remote",
+        temporary: true,
+        transportStrategy: "http-only",
+        version: "0.1.38",
+      },
+      client: {
+        configFile: "agent.config.json",
+        nativeRemoteTransport: false,
+        promptFile: ".albatross/prompt.md",
+        requestTimeoutSeconds: 30,
+        toolPrefix: "mcp__owd__",
+      },
+      format: "owd-client-profile-v1",
+      id: "albatross",
+      projectLifecycle: {
+        entryTool: "mcp__owd__open_project",
+        waitTimeoutSeconds: 20,
+      },
+      source: {
+        commit: "0543226b800ee57659f200c1ef928925868c90c9",
+        repository: "https://github.com/morganlinton/Albatross",
+        version: "2.0.3",
+      },
+    });
     const promptsResponse = await productionFetch("prompts/list");
     expect(promptsResponse.status).toBe(200);
     const prompts = mcpPromptsListResponseSchema.parse(
@@ -975,6 +1022,9 @@ describe("scoped universal agent access", () => {
     );
     expect(prompts.result.prompts).toContainEqual(
       expect.objectContaining({ name: "connect-eve" }),
+    );
+    expect(prompts.result.prompts).toContainEqual(
+      expect.objectContaining({ name: "connect-albatross" }),
     );
     expect(prompts.result.prompts).toContainEqual(
       expect.objectContaining({ name: "resume-owd-project" }),
@@ -1543,7 +1593,7 @@ describe("scoped universal agent access", () => {
       localVaultAccess: {
         basis: "project-creator",
         enforcement: "advisory",
-        handoffRule: "owner-explicit-bounded-task-after-primary-stops",
+        handoffRule: "owner-dashboard-transfer-after-previous-writer-stops",
         humanOwnerRetainsAuthority: true,
         localWriteDefault: "owner-requested-bounded-task-only",
         role: "primary-writer",
@@ -3731,12 +3781,12 @@ describe("scoped universal agent access", () => {
     expect(joining.result.structuredContent).toMatchObject({
       localVaultAccess: {
         enforcement: "advisory",
-        handoffRule: "owner-explicit-bounded-task-after-primary-stops",
+        handoffRule: "owner-dashboard-transfer-after-previous-writer-stops",
         humanOwnerRetainsAuthority: true,
         localWriteDefault: "read-only",
         role: "read-only-collaborator",
         scope: "vault",
-        warning: expect.stringContaining("Another agent"),
+        warning: expect.stringContaining("Another OWD client"),
       },
       ok: true,
       project: { label: "One-command Project" },
@@ -3817,6 +3867,15 @@ describe("scoped universal agent access", () => {
       },
       state: "ready",
     });
+    const firstProjectId = z
+      .string()
+      .uuid()
+      .parse(
+        (
+          firstReady.result.structuredContent.project as
+            { projectId?: unknown } | undefined
+        )?.projectId,
+      );
 
     const secondAgent = await authorize(session, vaultId, [], scopes);
     const secondDraft = emptyVaultProjectDraft("Different second Project");
@@ -3850,12 +3909,177 @@ describe("scoped universal agent access", () => {
         role: "read-only-collaborator",
         scope: "vault",
         warning: expect.stringContaining(
-          "Another agent is the primary writer for this vault",
+          "Another OWD client is the primary writer for this vault",
         ),
       },
       project: { label: secondDraft.project.label },
       state: "ready",
     });
+    const secondProjectId = z
+      .string()
+      .uuid()
+      .parse(
+        (
+          secondReady.result.structuredContent.project as
+            { projectId?: unknown } | undefined
+        )?.projectId,
+      );
+
+    const beforeTransferResponse = await fetchWorker(
+      `${ORIGIN}/api/agent/connections`,
+      { headers: { Cookie: session.cookie } },
+    );
+    const beforeTransfer = agentConnectionListResponseSchema.parse(
+      await beforeTransferResponse.json(),
+    );
+    expect(
+      beforeTransfer.connections.find(
+        (connection) => connection.id === firstAgent.grantId,
+      ),
+    ).toMatchObject({
+      writerAssignmentBasis: "project-creator",
+      writerEligible: true,
+      writerRole: "primary-writer",
+    });
+    expect(
+      beforeTransfer.connections.find(
+        (connection) => connection.id === secondAgent.grantId,
+      ),
+    ).toMatchObject({
+      writerEligible: true,
+      writerRole: "read-only-collaborator",
+    });
+
+    const missingConfirmation = await fetchWorker(
+      `${ORIGIN}/api/agent/connections/${secondAgent.grantId}/make-primary-writer`,
+      {
+        body: JSON.stringify({ confirmedPreviousWriterStopped: false }),
+        headers: {
+          Cookie: session.cookie,
+          "Content-Type": "application/json",
+          Origin: ORIGIN,
+          "X-OWD-CSRF": session.csrf,
+        },
+        method: "POST",
+      },
+    );
+    expect(missingConfirmation.status).toBe(400);
+
+    const transferResponse = await fetchWorker(
+      `${ORIGIN}/api/agent/connections/${secondAgent.grantId}/make-primary-writer`,
+      {
+        body: JSON.stringify({ confirmedPreviousWriterStopped: true }),
+        headers: {
+          Cookie: session.cookie,
+          "Content-Type": "application/json",
+          Origin: ORIGIN,
+          "X-OWD-CSRF": session.csrf,
+        },
+        method: "POST",
+      },
+    );
+    expect(transferResponse.status).toBe(200);
+    expect(
+      transferVaultLocalWriterResponseSchema.parse(
+        await transferResponse.json(),
+      ),
+    ).toMatchObject({
+      connectionId: secondAgent.grantId,
+      vaultId,
+      writerRole: "primary-writer",
+    });
+
+    const firstResumed = await callTool(
+      firstAgent.accessToken,
+      "resume_project",
+      {
+        contextPolicy: firstDraft.contextPolicy,
+        projectId: firstProjectId,
+      },
+    );
+    expect(firstResumed.result.structuredContent).toMatchObject({
+      localVaultAccess: {
+        basis: "owner-transfer",
+        role: "read-only-collaborator",
+      },
+    });
+    const secondResumed = await callTool(
+      secondAgent.accessToken,
+      "resume_project",
+      {
+        contextPolicy: secondDraft.contextPolicy,
+        projectId: secondProjectId,
+      },
+    );
+    expect(secondResumed.result.structuredContent).toMatchObject({
+      localVaultAccess: {
+        basis: "owner-transfer",
+        role: "primary-writer",
+        warning: expect.stringContaining("human owner explicitly moved"),
+      },
+    });
+
+    const afterTransferResponse = await fetchWorker(
+      `${ORIGIN}/api/agent/connections`,
+      { headers: { Cookie: session.cookie } },
+    );
+    const afterTransfer = agentConnectionListResponseSchema.parse(
+      await afterTransferResponse.json(),
+    );
+    expect(
+      afterTransfer.connections.find(
+        (connection) => connection.id === firstAgent.grantId,
+      )?.writerRole,
+    ).toBe("read-only-collaborator");
+    expect(
+      afterTransfer.connections.find(
+        (connection) => connection.id === secondAgent.grantId,
+      ),
+    ).toMatchObject({
+      writerAssignmentBasis: "owner-transfer",
+      writerRole: "primary-writer",
+    });
+
+    const transferLedger = await env.DB.prepare(
+      `SELECT from_oauth_client_id, to_oauth_client_id,
+        target_agent_grant_id
+       FROM vault_local_writer_transfers
+       WHERE vault_id = ?`,
+    )
+      .bind(vaultId)
+      .all<{
+        from_oauth_client_id: string;
+        target_agent_grant_id: string;
+        to_oauth_client_id: string;
+      }>();
+    expect(transferLedger.results).toEqual([
+      {
+        from_oauth_client_id: firstAgent.clientId,
+        target_agent_grant_id: secondAgent.grantId,
+        to_oauth_client_id: secondAgent.clientId,
+      },
+    ]);
+    const transferAudit = await env.DB.prepare(
+      `SELECT COUNT(*) AS count
+       FROM audit_events
+       WHERE event_type = 'vault.primary_writer_transferred'`,
+    ).first<{ count: number }>();
+    expect(transferAudit?.count).toBe(1);
+    const unjoinedAgent = await authorize(session, vaultId, [], scopes);
+    const unjoinedTransfer = await fetchWorker(
+      `${ORIGIN}/api/agent/connections/${unjoinedAgent.grantId}/make-primary-writer`,
+      {
+        body: JSON.stringify({ confirmedPreviousWriterStopped: true }),
+        headers: {
+          Cookie: session.cookie,
+          "Content-Type": "application/json",
+          Origin: ORIGIN,
+          "X-OWD-CSRF": session.csrf,
+        },
+        method: "POST",
+      },
+    );
+    expect(unjoinedTransfer.status).toBe(409);
     const projects = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM collaboration_projects",
     ).first<{ count: number }>();

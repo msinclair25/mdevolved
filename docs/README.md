@@ -43,6 +43,8 @@ you are changing.
   topology, Project mapping, memory boundaries, and force-multiplier workflow
 - [Eve compatibility](EVE-COMPATIBILITY.md) — user-scoped connection,
   qualified tools, identity, sandbox boundaries, and durable continuity
+- [Albatross compatibility](ALBATROSS-COMPATIBILITY.md) — stdio bridge,
+  workspace prompt, reset continuity, participant identity, and setup kit
 
 ## Build and release
 

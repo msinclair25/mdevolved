@@ -51,10 +51,11 @@ role.
 Before local Obsidian CLI, skill, shell, or filesystem mutation, the managed
 `AGENTS.md` block requires the agent to call `resume_project` and obey that
 role. The primary writer still needs an owner-requested bounded task. A
-read-only collaborator warns the owner and hands off changes unless the owner
-explicitly transfers one bounded task after confirming the prior writer
-stopped. This deters accidental writes but is not an operating-system or
-filesystem lock.
+read-only collaborator warns the owner and hands off changes. To replace the
+writer with another active Project client, the owner first stops the prior
+writer and chooses **Make primary** in OWD's Agents section. The role changes
+durably for both clients and is returned on their next `resume_project`. This
+deters accidental writes but is not an operating-system or filesystem lock.
 
 A crash, restart, or fresh agent session does not change the vault-wide writer
 assignment. When `.owdignore` exists, the agent resumes it as its first OWD

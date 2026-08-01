@@ -109,6 +109,22 @@ if (
   );
 }
 if (
+  !normalizedRootReadme.includes(
+    "Albatross: local execution, portable Project continuity",
+  ) ||
+  !normalizedRootReadme.includes("Albatross `2.0.3` is currently stdio-only") ||
+  !normalizedRootReadme.includes("`mcp-remote` `0.1.38` bridge") ||
+  !normalizedRootReadme.includes(
+    "live Albatross acceptance remains explicit rather than assumed",
+  ) ||
+  !releaseCompatibility.includes("| Albatross profile") ||
+  !releaseCompatibility.includes("`0543226b800ee57659f200c1ef928925868c90c9`")
+) {
+  throw new Error(
+    "OWD public copy must keep the source-verified Albatross profile visible, pin its temporary bridge, and avoid claiming completed live acceptance.",
+  );
+}
+if (
   !marketingSite.includes('action="/api/alpha-access"') ||
   !marketingSite.includes("data-alpha-form") ||
   !marketingSite.includes("support@mdevolved.com") ||

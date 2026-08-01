@@ -12,7 +12,7 @@ test("loads one reviewed profile for each supported upstream", async () => {
   const configuration = await loadConfiguration();
   assert.deepEqual(
     configuration.profiles.map((profile) => profile.id),
-    ["obsidian-mind", "eve"],
+    ["obsidian-mind", "eve", "albatross"],
   );
   await validateEvidence(configuration);
 });
@@ -21,6 +21,7 @@ test("matches configured compatibility paths without widening directories", () =
   const patterns = [
     ".claude/scripts/lib/mcp-*.ts",
     "packages/eve/src/runtime/connections/**",
+    "src/mcp.rs",
   ];
   assert.equal(
     matchesCriticalPath(".claude/scripts/lib/mcp-server.ts", patterns),
@@ -37,6 +38,8 @@ test("matches configured compatibility paths without widening directories", () =
     matchesCriticalPath("packages/eve/src/runtime/session.ts", patterns),
     false,
   );
+  assert.equal(matchesCriticalPath("src/mcp.rs", patterns), true);
+  assert.equal(matchesCriticalPath("src/main.rs", patterns), false);
 });
 
 test("renders a single stable review issue with critical source paths", () => {

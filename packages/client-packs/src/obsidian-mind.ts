@@ -139,7 +139,7 @@ export const OBSIDIAN_MIND_COMPATIBILITY_PROFILE = {
   toolPolicy: {
     localReadTools: ["search", "expand", "recall", "reason", "health"],
     localWriteTools: ["record_work", "remember"],
-    rule: "Obsidian Mind write tools are direct vault writes. Only OWD localVaultAccess primary-writer may use them for an owner-requested bounded task; every later agent treats them as unavailable unless the owner completes an explicit bounded handoff. A general memory names why it generalizes, and promotion copies the lesson into brain/ while retaining the memory with its promoted marker.",
+    rule: "Obsidian Mind write tools are direct vault writes. Only OWD localVaultAccess primary-writer may use them for an owner-requested bounded task; every later client treats them as unavailable unless the owner stops the prior writer and selects Make primary in OWD → Agents. A general memory names why it generalizes, and promotion copies the lesson into brain/ while retaining the memory with its promoted marker.",
   },
 } as const satisfies OwdVaultRuntimeCompatibilityProfile;
 
@@ -202,7 +202,7 @@ export const OBSIDIAN_MIND_CONTINUITY_GUIDANCE = `### Obsidian Mind compatibilit
 - Keep both MCP roles: OWD is the remote, owner-approved Project and provenance boundary; Obsidian Mind \`om\` is the local graph and scoped-memory layer. Never replace the existing \`qmd\` or \`om\` server entry when adding OWD.
 - Treat \`memories/\`, notes marked \`private\`, and filenames in \`mcp_never_expose\` as outside ordinary OWD Project context. Use only concrete content roots that exist locally and are relevant to the requested Project.
 - Do not widen a dynamic folder glob such as \`perf/h*-*/\` to its parent. It is omitted from the automatic remote profile; the owner may expose a needed cycle by listing its exact concrete folder—and every other intended root—in \`mcp_exposed_roots\`.
-- Obsidian Mind \`search\`, \`expand\`, \`recall\`, \`reason\`, and \`health\` are read paths. Its \`record_work\` and \`remember\` tools write directly to the vault and therefore obey \`localVaultAccess\`: a read-only collaborator must not call them without an explicit bounded writer handoff.
+- Obsidian Mind \`search\`, \`expand\`, \`recall\`, \`reason\`, and \`health\` are read paths. Its \`record_work\` and \`remember\` tools write directly to the vault and therefore obey \`localVaultAccess\`: a read-only collaborator must not call them. To replace the primary client, the owner stops the prior writer and selects **Make primary** in OWD → Agents.
 - Before implementation commits to an approach, put the relevant Mind consultation result in the OWD Artifact or Handoff: supporting Decisions, contrary evidence, or an explicit statement that nothing applicable was recorded.
 - When \`remember\` uses \`scope: "general"\`, include the optional \`generality\` rationale. When a lesson is promoted into \`brain/\`, copy rather than delete the memory and retain its \`promoted\` marker so cross-repository recall and hygiene remain correct.
 - Prefer Obsidian Mind for local graph discovery and scoped recall; prefer OWD for the current Work Packet, owner Decisions, shared Artifacts, provenance, and multi-agent handoff. Do not duplicate the same durable record in both systems unless the owner asks.`;

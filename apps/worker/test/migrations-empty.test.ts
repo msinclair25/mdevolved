@@ -42,6 +42,7 @@ describe("D1 migration chain from empty", () => {
     expect(actual.has("project_creation_commits")).toBe(true);
     expect(actual.has("agent_grant_replacements")).toBe(true);
     expect(actual.has("vault_local_writer_assignments")).toBe(true);
+    expect(actual.has("vault_local_writer_transfers")).toBe(true);
     expect(actual.has("prepared_project_handoffs")).toBe(true);
     const runtimeProfileColumn = await env.DB.prepare(
       `SELECT name FROM pragma_table_info('vault_sync_states')

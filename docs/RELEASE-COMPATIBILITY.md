@@ -14,6 +14,7 @@ merely because it exists.
 | Project lifecycle     | `open_project`, `wait_for_project_connection`, and `resume_project`                                                                                    | Create, join, rejoin, and resume converge on one exact Project without a client-specific transport.                |
 | Obsidian Mind profile | `8.2.0` at commit `216821bbc030211476e68270e287c915d09b4390`                                                                                           | OWD runs beside `qmd`/`om`, preserves native layout, and never turns local profile data into authority.            |
 | Eve.dev profile       | Eve `0.29.2` at commit `7ec1c93ce43488e136a2a043cc3e6a310cd03841`; `@vercel/connect` `0.6.0`                                                           | Uses Eve's native user-scoped MCP connection. Separate attribution requires a distinct connector identity.         |
+| Albatross profile     | Albatross `2.0.3` at commit `0543226b800ee57659f200c1ef928925868c90c9`; `mcp-remote` `0.1.38`                                                          | Uses a pinned stdio bridge while OWD remains standard remote Streamable HTTP MCP with OAuth.                       |
 | Legacy backup import  | `owd-backup-v1`                                                                                                                                        | Remains readable; unknown or malformed formats fail before staging.                                                |
 | Workspace snapshot    | `owd-snapshot-v2` with `notes-v1`, explicit target mapping, and age-X25519 encrypted objects                                                           | Unknown required capabilities fail before staging. Credentials and live grants never restore.                      |
 | Collaboration records | Knowledge Spaces, Projects, Work Items, Work Packets, Attempts, Artifacts, Handoffs, Reviews, Decisions, provenance, and approved/quarantined recovery | Alpha compatibility does not claim that every third-party client has completed an independent acceptance exercise. |
@@ -60,8 +61,8 @@ skills.
 - Snapshot attachment and `.obsidian` sections disabled
 - OWD Sync Community Plugin listing pending
 - Local writer coordination is advisory, not a filesystem lock
-- Obsidian Mind and Eve.dev are source-verified profiles; neither is a vendor
-  certification
+- Obsidian Mind, Eve.dev, and Albatross are source-verified profiles; none is a
+  vendor certification
 
 Before a Community release or compatibility-pin update, run the
 [public quality gates](QUALITY-GATES.md) with synthetic data.

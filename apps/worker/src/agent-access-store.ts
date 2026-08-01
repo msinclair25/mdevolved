@@ -11,6 +11,10 @@ import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
 import { z } from "zod";
 import { listPreparedProjectHandoffs } from "./prepared-project-handoff-store";
 import { randomToken, sha256Hex } from "./security";
+import {
+  listVaultLocalWriterConnectionStates,
+  type VaultLocalWriterConnectionState,
+} from "./vault-local-writer-store";
 
 const CONSENT_LIFETIME_SECONDS = 10 * 60;
 const OWNER_ID = 1;
@@ -370,6 +374,7 @@ function connectionFromRow(
   row: AgentGrantRow,
   approvedRestoredSources: RestoredSource[],
   preparedProjectHandoff: AgentConnection["preparedProjectHandoff"],
+  writer: VaultLocalWriterConnectionState,
 ): AgentConnection {
   return {
     activatedAt: row.activated_at,
@@ -387,6 +392,11 @@ function connectionFromRow(
     status: row.status,
     vaultId: row.vault_id,
     vaultName: row.vault_name,
+    writerAssignedAt: writer.assignedAt,
+    writerAssignmentBasis: writer.assignmentBasis,
+    writerEligible: writer.eligible,
+    writerRole: writer.role,
+    writerUpdatedAt: writer.updatedAt,
   };
 }
 
@@ -441,11 +451,19 @@ export async function listAgentConnections(
     byGrant.set(source.grant_id, values);
   }
   const preparedProjectHandoffs = await listPreparedProjectHandoffs(db);
+  const writerStates = await listVaultLocalWriterConnectionStates(db);
   return rows.results.map((row) =>
     connectionFromRow(
       row,
       byGrant.get(row.id) ?? [],
       preparedProjectHandoffs.get(row.id) ?? null,
+      writerStates.get(row.id) ?? {
+        assignedAt: null,
+        assignmentBasis: null,
+        eligible: false,
+        role: "unassigned",
+        updatedAt: null,
+      },
     ),
   );
 }

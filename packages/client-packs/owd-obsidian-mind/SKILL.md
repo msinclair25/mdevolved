@@ -77,8 +77,8 @@ calling either, inspect OWD `localVaultAccess`.
 
 - `primary-writer`: perform only the owner-requested bounded write.
 - `read-only-collaborator`: do not call either write tool; propose or hand off.
-- explicit bounded handoff: write only after the prior writer stopped and the
-  owner named the task and paths.
+- replacement client: write only after the owner stopped the prior writer and
+  selected **Make primary** in OWD → Agents.
 
 When `remember` uses `scope: "general"`, include the optional `generality`
 rationale. When promoting a lesson into `brain/`, copy it, retain its memory

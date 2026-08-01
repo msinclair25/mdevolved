@@ -893,6 +893,16 @@ a:focus-visible {
   margin-top: auto;
 }
 
+.agent-client-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.agent-client-actions .agent-client-action {
+  margin-top: 0;
+}
+
 .agent-empty {
   margin-top: 16px;
 }
@@ -917,6 +927,15 @@ a:focus-visible {
 
 .agent-row + .agent-row {
   border-top: 1px solid var(--line);
+}
+
+.agent-writer-guidance {
+  margin-top: 16px;
+}
+
+.agent-row-actions {
+  display: grid;
+  gap: 10px;
 }
 
 .agent-details {

@@ -226,7 +226,10 @@ that role before local mutation.
 
 The primary writer still needs an explicit owner instruction for a bounded
 task. Other agents warn the owner and report or hand off proposed changes. The
-owner may hand off one bounded task after confirming the prior writer stopped.
+same OWD client retains the assignment across session restarts. To replace it
+with a different active Project client, the owner first stops the prior writer,
+then chooses **Make primary** in OWD's Agents section. Both clients receive
+their new role on the next `resume_project`.
 Every local operation names the exact vault and path; Obsidian CLI puts
 `vault=<exact vault name>` first rather than using the most-recently-focused
 vault. No two agents write overlapping paths. This `AGENTS.md` policy
@@ -550,6 +553,15 @@ the protocol boundary:
   connector UID and OAuth registration; a session, channel, or child that
   inherits the same connector remains the same OWD participant. Top-level
   app-principal schedules cannot borrow the user's grant.
+- **Albatross** receives a copy-ready setup kit containing one pre-authorization
+  command, an additive `agent.config.json` fragment, a marked
+  `.albatross/prompt.md` block, and `/mcp trust owd`. Albatross `2.0.3` is
+  stdio-only, so the profile pins the temporary `mcp-remote` `0.1.38` bridge
+  while OWD remains standard remote Streamable HTTP MCP plus OAuth. Tools are
+  qualified as `mcp__owd__<tool>`; Project waits stay below the client's
+  30-second request limit. A distinct non-secret participant header partitions
+  bridge OAuth state for an independently authorized reviewer but never grants
+  server authority.
 - **Orca ADE compatibility profile (planned)** follows
   [Orca's public MCP and skills path](https://www.onorca.dev/docs/cli/skills)
   and receives the public MCP URL, exact **Settings → Integrations → MCP**

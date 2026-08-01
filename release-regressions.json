@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "findingRange": "MTR-001..MTR-044",
+  "findingRange": "MTR-001..MTR-045",
   "findings": [
     {
       "id": "MTR-001",
@@ -490,6 +490,32 @@
         },
         { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
         { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" }
+      ]
+    },
+    {
+      "id": "MTR-045",
+      "title": "Owner-controlled primary-writer transfer for replacement clients",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "migrations/0029_vault_primary_writer_transfer.sql"
+        },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/vault-local-writer-store.ts"
+        },
+        {
+          "kind": "static",
+          "path": "apps/worker/src/agent-access-routes.ts"
+        },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/migrations-vault-primary-writer-transfer-upgrade.test.ts"
+        },
+        { "kind": "test", "path": "apps/worker/test/agent-access.test.ts" },
+        { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        { "kind": "static", "path": "apps/web/src/App.tsx" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
       ]
     }
   ]

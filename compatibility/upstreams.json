@@ -95,6 +95,57 @@
           ]
         }
       ]
+    },
+    {
+      "id": "albatross",
+      "name": "Albatross",
+      "source": {
+        "kind": "github-release",
+        "repository": "morganlinton/Albatross",
+        "releaseTag": "v2.0.3",
+        "commit": "0543226b800ee57659f200c1ef928925868c90c9",
+        "reviewedAt": "2026-07-30"
+      },
+      "dependencies": [
+        {
+          "kind": "npm",
+          "package": "mcp-remote",
+          "version": "0.1.38",
+          "integrity": "sha512-w+JU4U3CfG29TawXR4JLNQ9d1Un5nT8AGI65f/juCaqUdF/V6fS7wE4o7xNPbB8X58o46hRXEJgYglQMAKQs4w=="
+        }
+      ],
+      "criticalPaths": [
+        "Cargo.toml",
+        "src/config.rs",
+        "src/mcp.rs",
+        "src/project_memory.rs",
+        "src/continuation.rs",
+        "src/session_paths.rs",
+        "src/commands/context_cmds.rs",
+        "src/commands/session.rs",
+        "src/hooks.rs",
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "evidence": [
+        {
+          "path": "packages/client-packs/src/albatross.ts",
+          "requiredMarkers": [
+            "commit: \"0543226b800ee57659f200c1ef928925868c90c9\"",
+            "version: \"2.0.3\"",
+            "ALBATROSS_MCP_REMOTE_VERSION = \"0.1.38\"",
+            "reviewedAt: \"2026-07-30\""
+          ]
+        },
+        {
+          "path": "docs/ALBATROSS-COMPATIBILITY.md",
+          "requiredMarkers": [
+            "`2.0.3`",
+            "`0543226b800ee57659f200c1ef928925868c90c9`",
+            "`0.1.38`"
+          ]
+        }
+      ]
     }
   ]
 }

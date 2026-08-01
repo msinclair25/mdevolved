@@ -410,9 +410,11 @@ export function ProjectInitialize() {
                 The first agent that establishes an OWD Project for this vault
                 becomes its primary writer across Projects. Later agents are
                 warned to treat local Obsidian, CLI, shell, and filesystem
-                access as read-only unless you explicitly hand off one bounded
-                task after the prior writer stops. OWD warns compliant agents
-                but does not block local filesystem access.
+                access as read-only. A restarted session using the same OWD
+                client keeps the role. To replace it, stop the prior writer and
+                choose Make primary for another Project-connected client in
+                OWD&apos;s Agents section. OWD warns compliant agents but does
+                not block local filesystem access.
               </span>
             </div>
             <dl className="consent-details">

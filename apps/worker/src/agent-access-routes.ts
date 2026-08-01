@@ -7,6 +7,8 @@ import {
   collaborationScopeSchema,
   prepareProjectHandoffRequestSchema,
   prepareProjectHandoffResponseSchema,
+  transferVaultLocalWriterRequestSchema,
+  transferVaultLocalWriterResponseSchema,
   type AgentConnectionListResponse,
   type AgentConsentContext,
   type AgentVaultScopes,
@@ -46,6 +48,7 @@ import {
   prepareProjectHandoff,
 } from "./prepared-project-handoff-store";
 import type { AppBindings } from "./types";
+import { transferVaultLocalWriter } from "./vault-local-writer-store";
 import { VaultPathError, validateMarkdownVaultPath } from "./vault-path";
 import {
   completeProjectAuthorization,
@@ -826,6 +829,52 @@ export function registerAgentAccessRoutes(app: Hono<AppBindings>): void {
       context.header("Cache-Control", "private, no-store");
       return context.json(
         prepareProjectHandoffResponseSchema.parse({ handoff }),
+      );
+    },
+  );
+
+  app.post(
+    "/api/agent/connections/:grantId/make-primary-writer",
+    async (context) => {
+      await requireOwnerSession(context, { csrf: true });
+      const grantId = context.req.param("grantId");
+      if (!/^[-0-9a-f]{36}$/iu.test(grantId)) {
+        throw new ApiProblem(
+          404,
+          "agent_grant_not_found",
+          "Connection not found.",
+        );
+      }
+      const parsed = transferVaultLocalWriterRequestSchema.safeParse(
+        await parseJsonBody(context),
+      );
+      if (!parsed.success) {
+        throw new ApiProblem(
+          400,
+          "primary_writer_transfer_confirmation_required",
+          "Confirm that the previous primary writer has stopped before moving the role.",
+        );
+      }
+      const transferred = await transferVaultLocalWriter(context.env.DB, {
+        now: nowSeconds(),
+        requestId: context.get("requestId"),
+        targetAgentGrantId: grantId,
+      });
+      if (transferred === null) {
+        throw new ApiProblem(
+          409,
+          "primary_writer_transfer_unavailable",
+          "This connection is already primary, is not an active Project participant, or its vault has no writer assignment yet.",
+        );
+      }
+      context.header("Cache-Control", "private, no-store");
+      return context.json(
+        transferVaultLocalWriterResponseSchema.parse({
+          connectionId: transferred.target_agent_grant_id,
+          transferredAt: transferred.transferred_at,
+          vaultId: transferred.vault_id,
+          writerRole: "primary-writer",
+        }),
       );
     },
   );

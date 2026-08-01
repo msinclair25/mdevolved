@@ -31,6 +31,7 @@
   <a href="https://github.com/msinclair25/owd-sync/releases/tag/owd-sync-v0.1.6"><img alt="OWD Sync 0.1.6" src="https://img.shields.io/badge/OWD%20Sync-0.1.6-90a5ff.svg" /></a>
   <a href="docs/OBSIDIAN-MIND-COMPATIBILITY.md"><img alt="Obsidian Mind 8.2 profile" src="https://img.shields.io/badge/Obsidian%20Mind-8.2%20profile-90a5ff.svg" /></a>
   <a href="docs/EVE-COMPATIBILITY.md"><img alt="Eve.dev 0.29 profile" src="https://img.shields.io/badge/Eve.dev-0.29%20profile-90a5ff.svg" /></a>
+  <a href="docs/ALBATROSS-COMPATIBILITY.md"><img alt="Albatross 2.0 profile" src="https://img.shields.io/badge/Albatross-2.0%20profile-90a5ff.svg" /></a>
   <img alt="Community alpha" src="https://img.shields.io/badge/Community-public%20alpha-f0a23a.svg" />
   <img alt="Managed private alpha" src="https://img.shields.io/badge/Managed-private%20alpha-8250df.svg" />
 </p>
@@ -160,6 +161,10 @@ Claude Code, and Grok Build.
   setup Prompt, and script-free skill. Its sessions and subagents remain native
   to Eve while OWD supplies portable Project continuity and independently
   attributable collaboration identities.
+- **Albatross** receives a source-pinned setup kit, workspace prompt, MCP
+  Resource, setup Prompt, and script-free skill. A pinned temporary bridge
+  connects its stdio-only MCP client to OWD without changing OWD's standard
+  remote endpoint or OAuth authority.
 - **Hermes Agent** uses the universal MCP endpoint and remains an optional
   client, never an OWD runtime dependency.
 - **Orca ADE** can host compatible clients without giving OWD control of Orca
@@ -168,8 +173,9 @@ Claude Code, and Grok Build.
 Compatibility profiles improve setup; they never widen authority. See
 [Agent access](docs/AGENT-ACCESS.md),
 [release compatibility](docs/RELEASE-COMPATIBILITY.md), and the
-[Obsidian Mind](docs/OBSIDIAN-MIND-COMPATIBILITY.md) and
-[Eve](docs/EVE-COMPATIBILITY.md) profiles.
+[Obsidian Mind](docs/OBSIDIAN-MIND-COMPATIBILITY.md),
+[Eve](docs/EVE-COMPATIBILITY.md), and
+[Albatross](docs/ALBATROSS-COMPATIBILITY.md) profiles.
 
 The reviewed upstream versions, source commits, critical paths, and package
 integrities live in
@@ -237,6 +243,29 @@ The profile is source-verified against Eve `0.29.2` and `@vercel/connect`
 `0.6.0`; live Eve acceptance remains explicit rather than assumed. See the
 [complete Eve.dev compatibility guide](docs/EVE-COMPATIBILITY.md).
 
+### Albatross: local execution, portable Project continuity
+
+Albatross is a local coding harness with open-weight model support, operator
+modes, checkpoints, resets, and parallel path exploration. OWD gives those
+runs a cited Project record another independently authorized agent can resume.
+
+- Copy one generated setup kit from the OWD dashboard.
+- Pre-authorize the exact OWD client before Albatross starts, avoiding its
+  30-second MCP initialize limit.
+- Keep Albatross's native `agent.config.json`, tools, approvals, `/reset`, and
+  `/path fork`; add only one MCP entry and one marked workspace-prompt block.
+- Use qualified `mcp__owd__<tool>` names and resume `.owdignore` after every
+  fresh task or reset.
+- Give a genuinely independent writer or reviewer a different participant ID
+  and OAuth authorization, preserving real attribution.
+
+Albatross `2.0.3` is currently stdio-only, so the profile pins the temporary
+`mcp-remote` `0.1.38` bridge. OWD remains ordinary remote Streamable HTTP MCP
+with OAuth; there is no Albatross-only server or custom tool protocol. The
+profile is source-verified, while live Albatross acceptance remains explicit
+rather than assumed. See the
+[complete Albatross compatibility guide](docs/ALBATROSS-COMPATIBILITY.md).
+
 ## Trust by design
 
 - **Single owner, multiple vaults.** Team accounts and shared administration
@@ -251,8 +280,10 @@ The profile is source-verified against Eve `0.29.2` and `@vercel/connect`
   separately identified and excluded until explicitly approved.
 - **One advisory local writer.** The first Project agent becomes the default
   primary writer for owner-requested bounded local tasks. Later agents are
-  warned to remain read-only unless the owner explicitly transfers that role.
-  This guidance is not presented as an operating-system lock.
+  warned to remain read-only. A same-client restart keeps the role after
+  `resume_project`; the owner can move it to another active Project client with
+  **Make primary** in OWD → Agents after the prior writer stops. This guidance
+  is not presented as an operating-system lock.
 - **Recovery excludes authority.** Snapshots omit sessions, OAuth tokens,
   credentials, live grants, and protocol secrets.
 
@@ -329,6 +360,7 @@ or [request managed alpha access](https://mdevolved.com/#alpha-access).
 - [Release compatibility](docs/RELEASE-COMPATIBILITY.md)
 - [Obsidian Mind compatibility](docs/OBSIDIAN-MIND-COMPATIBILITY.md)
 - [Eve compatibility](docs/EVE-COMPATIBILITY.md)
+- [Albatross compatibility](docs/ALBATROSS-COMPATIBILITY.md)
 - [Development contract](docs/DEVELOPMENT.md)
 - [Public quality gates](docs/QUALITY-GATES.md)
 - [Complete documentation index](docs/README.md)

@@ -114,8 +114,8 @@ inspect OWD `localVaultAccess` before a direct write:
 
 - `primary-writer`: perform only the owner-requested bounded write;
 - `read-only-collaborator`: propose or hand off instead of writing; and
-- explicit bounded handoff: write only after the prior writer stopped and the
-  owner named the task and paths.
+- replacement client: write only after the owner stopped the prior writer and
+  selected **Make primary** in OWD → Agents.
 
 The same rule applies to shell, filesystem, Obsidian CLI, and skill-driven
 writes. OWD Project submission tools are append-only collaboration paths; they

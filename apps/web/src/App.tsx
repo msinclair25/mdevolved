@@ -65,6 +65,8 @@ import {
   type WorkspaceSectionId,
 } from "./WorkspaceNavigation";
 import {
+  createAlbatrossAuthorizationCommand,
+  createAlbatrossSetupKit,
   createAntigravityConfig,
   createCursorInstallUrl,
   createEveConnectionSource,
@@ -396,6 +398,13 @@ type ConnectionsState =
 type AgentSetupPrerequisite =
   "checking" | "vault-required" | "library-required" | "ready";
 
+function freshAlbatrossParticipantId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return `agent-${Array.from(bytes, (value) =>
+    value.toString(16).padStart(2, "0"),
+  ).join("")}`;
+}
+
 function AgentConnectionsPanel({
   prerequisite,
 }: {
@@ -403,6 +412,9 @@ function AgentConnectionsPanel({
 }) {
   const [state, setState] = useState<ConnectionsState>({ kind: "loading" });
   const [message, setMessage] = useState<string | null>(null);
+  const [albatrossParticipantId, setAlbatrossParticipantId] = useState(
+    freshAlbatrossParticipantId,
+  );
   const [working, setWorking] = useState(false);
   const settledRef = useRef(false);
   const refreshSequenceRef = useRef(0);
@@ -529,6 +541,22 @@ function AgentConnectionsPanel({
     }
   }
 
+  async function copyAlbatrossSetup(): Promise<void> {
+    if (state.kind !== "ready") return;
+    try {
+      await navigator.clipboard.writeText(
+        createAlbatrossSetupKit(state.mcpUrl, albatrossParticipantId),
+      );
+      setMessage(
+        "Albatross setup kit copied. Authorize first, merge the config and prompt blocks, then run /mcp trust owd.",
+      );
+    } catch {
+      setMessage(
+        "Clipboard access was blocked. Select and copy the Albatross authorization command below.",
+      );
+    }
+  }
+
   async function revoke(connection: AgentConnection): Promise<void> {
     if (
       !window.confirm(
@@ -582,6 +610,38 @@ function AgentConnectionsPanel({
         error instanceof Error
           ? error.message
           : "Agent connections could not be revoked.",
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function makePrimaryWriter(connection: AgentConnection): Promise<void> {
+    if (
+      !window.confirm(
+        `Make ${connection.clientName} the primary writer for ${connection.vaultName}? Continue only after the previous primary writer has stopped. The previous client will become read-only on its next OWD resume.`,
+      )
+    ) {
+      return;
+    }
+    setWorking(true);
+    setMessage(null);
+    try {
+      const csrf = await loadCsrf();
+      await requestJson(
+        `/api/agent/connections/${encodeURIComponent(connection.id)}/make-primary-writer`,
+        csrf,
+        { confirmedPreviousWriterStopped: true },
+      );
+      await refresh();
+      setMessage(
+        `${connection.clientName} is now the primary writer for ${connection.vaultName}. Have that client run OWD resume project; the prior client is now read-only.`,
+      );
+    } catch (error: unknown) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "The primary writer could not be changed.",
       );
     } finally {
       setWorking(false);
@@ -777,6 +837,53 @@ function AgentConnectionsPanel({
                 </article>
 
                 <article className="agent-client-card">
+                  <span className="pairing-label">Albatross 2.0</span>
+                  <h3>Authorize once. Then let Albatross resume.</h3>
+                  <p>
+                    Run this before Albatross starts, then use the copied kit to
+                    merge one MCP entry and one managed workspace-prompt block.
+                    Existing settings stay intact.
+                  </p>
+                  <pre>
+                    <code>
+                      {createAlbatrossAuthorizationCommand(
+                        state.mcpUrl,
+                        albatrossParticipantId,
+                      )}
+                    </code>
+                  </pre>
+                  <div className="agent-client-actions">
+                    <button
+                      className="secondary-action agent-client-action"
+                      type="button"
+                      onClick={() => void copyAlbatrossSetup()}
+                    >
+                      Copy Albatross setup kit
+                    </button>
+                    <button
+                      className="secondary-action agent-client-action"
+                      type="button"
+                      onClick={() => {
+                        const next = freshAlbatrossParticipantId();
+                        setAlbatrossParticipantId(next);
+                        setMessage(
+                          `New Albatross participant ${next} is ready to copy.`,
+                        );
+                      }}
+                    >
+                      New participant ID
+                    </button>
+                  </div>
+                  <small>
+                    The kit pins the temporary bridge, keeps waits below
+                    Albatross&apos;s 30-second MCP limit, and uses{" "}
+                    <code>{albatrossParticipantId}</code> as one OWD
+                    participant. Generate another ID for an independent reviewer
+                    or another workspace.
+                  </small>
+                </article>
+
+                <article className="agent-client-card">
                   <span className="pairing-label">Gemini · local · other</span>
                   <h3>Use any compatible client</h3>
                   <ol>
@@ -928,12 +1035,24 @@ function AgentConnectionsPanel({
                 </article>
               ) : null}
 
+              <div className="client-warning agent-writer-guidance">
+                <strong>Primary follows the OWD client, not the chat.</strong>
+                <span>
+                  A restarted session using the same MCP connection stays
+                  primary after <strong>OWD resume project</strong>. If a
+                  replacement session was authorized as a different client, stop
+                  the previous writer, then choose <strong>Make primary</strong>{" "}
+                  below once. OWD moves the durable role; no Project reconnect
+                  or new approval is required.
+                </span>
+              </div>
+
               <div className="agent-list">
                 {active.map((connection) => (
                   <article className="agent-row" key={connection.id}>
                     <div>
                       <span className="vault-status vault-status--active">
-                        read only
+                        MCP read only
                       </span>
                       <h3>{connection.clientName}</h3>
                       <span className="vault-id">
@@ -967,15 +1086,38 @@ function AgentConnectionsPanel({
                         <dt>Last used</dt>
                         <dd>{formatTimestamp(connection.lastUsedAt)}</dd>
                       </div>
+                      <div>
+                        <dt>Local vault role</dt>
+                        <dd>
+                          {connection.writerRole === "primary-writer"
+                            ? "Primary writer"
+                            : connection.writerRole === "read-only-collaborator"
+                              ? "Read-only collaborator"
+                              : "Assigned after first Project"}
+                        </dd>
+                      </div>
                     </dl>
-                    <button
-                      className="danger-action"
-                      type="button"
-                      disabled={working}
-                      onClick={() => void revoke(connection)}
-                    >
-                      Revoke agent
-                    </button>
+                    <div className="agent-row-actions">
+                      {connection.writerRole === "read-only-collaborator" &&
+                      connection.writerEligible ? (
+                        <button
+                          className="secondary-action"
+                          type="button"
+                          disabled={working}
+                          onClick={() => void makePrimaryWriter(connection)}
+                        >
+                          Make primary
+                        </button>
+                      ) : null}
+                      <button
+                        className="danger-action"
+                        type="button"
+                        disabled={working}
+                        onClick={() => void revoke(connection)}
+                      >
+                        Revoke agent
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>

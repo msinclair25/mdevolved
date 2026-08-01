@@ -9,6 +9,7 @@ import {
   type ProjectContextPolicy,
 } from "@owd/contracts";
 import {
+  ALBATROSS_CONTINUITY_GUIDANCE,
   EVE_CONTINUITY_GUIDANCE,
   OBSIDIAN_MIND_CONTINUITY_GUIDANCE,
 } from "@owd/client-packs";
@@ -34,7 +35,7 @@ export class ProjectContextPolicyProblem extends Error {
 }
 
 export const OWD_LOCAL_VAULT_WRITE_SUMMARY =
-  "OWD MCP vault tools are read-only. The first agent that establishes an OWD Project for a vault becomes that vault's primary writer; the human remains the owner. Every later agent is a read-only collaborator unless the owner explicitly transfers a bounded task after the prior writer stops. A fresh session's writer role is unconfirmed until resume_project returns localVaultAccess; never infer the role from chat history, session identity, or local tool availability. Before any local Obsidian CLI, skill, shell, or filesystem mutation, call resume_project and obey localVaultAccess. Put vault=<exact vault name> first in every Obsidian CLI command and target the exact path; never use the most-recently-focused vault. This is an advisory warning, not a filesystem lock.";
+  "OWD MCP vault tools are read-only. The first OWD client that establishes a Project for a vault becomes its primary writer; the human remains the owner. A restarted session using that same client keeps the role after resume_project. A different client stays read-only unless the owner moves the role in OWD → Agents after the prior writer stops. Never infer the role from chat history, session identity, or local tools: call resume_project and obey localVaultAccess before any local Obsidian CLI, skill, shell, or filesystem mutation. Put vault=<exact vault name> first in every Obsidian CLI command and target the exact path; never use the most-recently-focused vault. This is an advisory warning, not a filesystem lock.";
 
 export const OWD_PROJECT_CONTINUITY_BLOCK = `<!-- owd:project-continuity:v1:start -->
 ## OWD Project continuity
@@ -50,7 +51,7 @@ export const OWD_PROJECT_CONTINUITY_BLOCK = `<!-- owd:project-continuity:v1:star
 - OWD MCP vault tools are read-only. Local Obsidian CLI, skills, shell, or filesystem access is a separate write path and does not inherit authority from an OWD connection.
 - Persisting the exact \`.owdignore\` receipt and replacing only this marked OWD block are the only automatic local maintenance writes authorized by Project connection. They do not authorize other vault-content changes.
 - The human remains the vault owner. The first agent that establishes an OWD Project for this vault is its primary vault writer across Projects; later agents join as read-only collaborators. Before any direct vault-content mutation, call \`resume_project\` and inspect \`localVaultAccess.role\` from the current response; a restarted session does not change the durable assignment.
-- By default, only \`primary-writer\` may perform an owner-requested bounded write task. A \`read-only-collaborator\` must warn the owner and hand off proposed changes. The owner may explicitly transfer one bounded task only after confirming the prior writer stopped; never infer a transfer from tool availability.
+- By default, only \`primary-writer\` may perform an owner-requested bounded write task. A \`read-only-collaborator\` must warn the owner and hand off proposed changes. A restarted session using the same OWD client keeps the durable role. To replace it with a different client, the owner must first stop the prior writer, then choose **Make primary** in OWD → Agents; never infer a transfer from tool availability.
 - Always target the exact vault and path for Obsidian CLI or filesystem operations. Put \`vault=<exact vault name>\` first in every Obsidian CLI command; never rely on its most-recently-focused vault. A request to edit named project files authorizes only those task-scoped files, not unrelated cleanup or vault-wide changes.
 - Before an authorized write, verify that no other agent is writing overlapping paths. Do not modify \`.obsidian/\`, OWD Sync configuration or state, or sync-conflict files unless the owner explicitly names that operation. After a bounded write batch, let OWD Sync publish it and report completion before another writer takes over.
 - \`localVaultAccess\` and this \`AGENTS.md\` block are advisory coordination, not a filesystem lock. If the writer role, task scope, transfer, or overlap is unclear, stop and ask the owner.
@@ -58,6 +59,8 @@ export const OWD_PROJECT_CONTINUITY_BLOCK = `<!-- owd:project-continuity:v1:star
 ${OBSIDIAN_MIND_CONTINUITY_GUIDANCE}
 
 ${EVE_CONTINUITY_GUIDANCE}
+
+${ALBATROSS_CONTINUITY_GUIDANCE}
 <!-- owd:project-continuity:v1:end -->`;
 
 function normalizePrefix(
