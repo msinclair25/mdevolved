@@ -28,7 +28,7 @@ client-side Project authority, or a second OWD endpoint. Do not pin a local
 tool allowlist: OWD's advertised catalog and server-side grant remain
 authoritative.
 
-Eve `0.29` can install integrations from its registry with `eve add` or
+Eve `0.29.4` can install integrations from its registry with `eve add` or
 interactive `/add`. OWD is not represented as registry-installed until Eve's
 upstream registry accepts it. Until then, use the generated
 `agent/connections/owd.ts` module from the OWD dashboard; do not claim that

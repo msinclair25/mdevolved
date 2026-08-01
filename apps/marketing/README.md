@@ -23,7 +23,7 @@ explicit availability label and the public
 [OWD Sync repository](https://github.com/msinclair25/owd-sync). Detailed release
 and installation status belongs in those GitHub READMEs.
 
-The Eve.dev integration section markets the source-verified Eve `0.29.2`
+The Eve.dev integration section markets the source-verified Eve `0.29.4`
 profile without implying live client acceptance has already passed. It keeps
 Eve's execution runtime distinct from OWD's portable Project authority and
 must continue to describe standard MCP plus user-scoped OAuth—not a custom

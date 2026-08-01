@@ -8,10 +8,16 @@ forked Project model.
 
 The reviewed upstream is
 [`breferrari/obsidian-mind`](https://github.com/breferrari/obsidian-mind) version
-`8.2.0` at commit
-`216821bbc030211476e68270e287c915d09b4390`, reviewed 2026-07-30. Upstream is
+`8.3.1` at commit
+`538522e4ea660cdc1265f8ef71ef43966e1d9a96`, reviewed 2026-07-31. Upstream is
 MIT-licensed. OWD copies no upstream executable source; the profile records
 observed public conventions and links to the upstream repository.
+
+Version 8.3.1 is the recommended baseline for this dual-server profile. Its
+local `om` exposure path fixes case-insensitive `mcp_never_expose` matching,
+private frontmatter markers beyond the ordinary head window, and promoted-note
+resolution. These are protections on Mind's local server; OWD's independent
+server-side OAuth and vault boundary remain authoritative.
 
 ## Complementary topology
 
@@ -131,7 +137,7 @@ The MCP transport and authorization requirements remain those in the
 and
 [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
 
-## Obsidian Mind 8.2 memory lifecycle
+## Obsidian Mind 8.3 memory lifecycle
 
 Before implementation commits to an approach, carry the useful result of local
 Mind consultation into the OWD Artifact or Handoff: supporting Decisions,
@@ -141,6 +147,10 @@ private memory store into OWD.
 
 When `remember` declares `scope: "general"`, include the optional `generality`
 rationale introduced in 8.2. Promotion into `brain/` is additive: copy the
-lesson, retain the memory entry, and preserve its `promoted` marker. These are
-Obsidian Mind conventions and remain subject to OWD's advisory
-`localVaultAccess` writer boundary.
+lesson, retain the memory entry, and preserve its `promoted` marker. An exact
+block or heading anchor allows Mind 8.3 recall to serve the corrected promoted
+text. An unanchored, stale, private, never-exposed, or unreadable promotion
+falls back to the original capture with a warning; the promoted note remains
+the correction authority and wins any conflict. These are Obsidian Mind
+conventions and remain subject to OWD's advisory `localVaultAccess` writer
+boundary.

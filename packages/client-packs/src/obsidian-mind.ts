@@ -130,16 +130,16 @@ export const OBSIDIAN_MIND_COMPATIBILITY_PROFILE = {
     ],
   },
   source: {
-    commit: "216821bbc030211476e68270e287c915d09b4390",
+    commit: "538522e4ea660cdc1265f8ef71ef43966e1d9a96",
     license: "MIT",
     repository: "https://github.com/breferrari/obsidian-mind",
-    reviewedAt: "2026-07-30",
-    version: "8.2.0",
+    reviewedAt: "2026-07-31",
+    version: "8.3.1",
   },
   toolPolicy: {
     localReadTools: ["search", "expand", "recall", "reason", "health"],
     localWriteTools: ["record_work", "remember"],
-    rule: "Obsidian Mind write tools are direct vault writes. Only OWD localVaultAccess primary-writer may use them for an owner-requested bounded task; every later client treats them as unavailable unless the owner stops the prior writer and selects Make primary in OWD → Agents. A general memory names why it generalizes, and promotion copies the lesson into brain/ while retaining the memory with its promoted marker.",
+    rule: "Obsidian Mind write tools are direct vault writes. Only OWD localVaultAccess primary-writer may use them for an owner-requested bounded task; every later client treats them as unavailable unless the owner stops the prior writer and selects Make primary in OWD → Agents. A general memory names why it generalizes. Promotion copies the lesson into brain/ while retaining the memory and its promoted marker; only a resolvable, exposed anchored promotion may replace the capture during recall, and any warned fallback must not overrule the promoted note.",
   },
 } as const satisfies OwdVaultRuntimeCompatibilityProfile;
 
@@ -204,7 +204,7 @@ export const OBSIDIAN_MIND_CONTINUITY_GUIDANCE = `### Obsidian Mind compatibilit
 - Do not widen a dynamic folder glob such as \`perf/h*-*/\` to its parent. It is omitted from the automatic remote profile; the owner may expose a needed cycle by listing its exact concrete folder—and every other intended root—in \`mcp_exposed_roots\`.
 - Obsidian Mind \`search\`, \`expand\`, \`recall\`, \`reason\`, and \`health\` are read paths. Its \`record_work\` and \`remember\` tools write directly to the vault and therefore obey \`localVaultAccess\`: a read-only collaborator must not call them. To replace the primary client, the owner stops the prior writer and selects **Make primary** in OWD → Agents.
 - Before implementation commits to an approach, put the relevant Mind consultation result in the OWD Artifact or Handoff: supporting Decisions, contrary evidence, or an explicit statement that nothing applicable was recorded.
-- When \`remember\` uses \`scope: "general"\`, include the optional \`generality\` rationale. When a lesson is promoted into \`brain/\`, copy rather than delete the memory and retain its \`promoted\` marker so cross-repository recall and hygiene remain correct.
+- For general memories, include \`generality\`. Promotion copies the lesson to \`brain/\` and retains the memory and \`promoted\` marker. A resolvable, exposed block or heading anchor lets recall serve the correction; otherwise recall warns and falls back to the capture. The promoted note still wins any conflict.
 - Prefer Obsidian Mind for local graph discovery and scoped recall; prefer OWD for the current Work Packet, owner Decisions, shared Artifacts, provenance, and multi-agent handoff. Do not duplicate the same durable record in both systems unless the owner asks.`;
 
 export const OBSIDIAN_MIND_PROFILE_PROMPT = `Connect this Obsidian Mind workspace to OWD without changing either protocol.
@@ -214,5 +214,5 @@ export const OBSIDIAN_MIND_PROFILE_PROMPT = `Connect this Obsidian Mind workspac
 3. Read AGENTS.md and CLAUDE.md. Read .owdignore when present, then call resume_project with its exact Project UUID and context policy as the first OWD action. Until it returns, the writer role is unconfirmed; never infer it from session identity or Mind tool access. Treat "OWD resume project" as this receipt-based resume, with no reconnect or new approval. If no receipt exists, call open_project with the user's visible Project name.
 4. For a new Project, keep Obsidian Mind's native note locations. Select only relevant concrete roots returned by OWD; never widen a dynamic folder glob. If a needed cycle such as perf/h2-2026 is absent, explain that mcp_exposed_roots replaces the derived list, then ask the owner to list that exact folder plus every other intended root and let OWD Sync refresh the profile. Never include memories/, private notes, mcp_never_expose filenames, or runtime/infrastructure files as ordinary source context.
 5. Use om search/expand/recall/reason for local knowledge work. Before implementation commits to an approach, include the relevant consultation result in the OWD Artifact or Handoff: supporting Decisions, contrary evidence, or an explicit statement that nothing applicable was recorded.
-6. Before any direct vault write—including om record_work or remember—obey the localVaultAccess role returned by OWD. A read-only collaborator proposes or hands off; it does not write. A general memory includes its generality rationale. Promotion copies the lesson into brain/, retains the memory, and records its promoted marker.
+6. Before any direct vault write—including om record_work or remember—obey the localVaultAccess role returned by OWD. A read-only collaborator proposes or hands off; it does not write. A general memory includes its generality rationale. Promotion copies the lesson into brain/, retains the memory, and records its promoted marker. Use an exact block or heading anchor only when that corrected text should be served cross-repository. If recall warns that a promotion is unanchored, stale, private, never-exposed, or unreadable, do not let the raw capture overrule the promoted note.
 7. Persist the OWD continuity receipt and marked AGENTS.md block without replacing any Obsidian Mind instructions.`;

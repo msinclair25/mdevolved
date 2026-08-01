@@ -13,9 +13,9 @@
       "source": {
         "kind": "github-release",
         "repository": "breferrari/obsidian-mind",
-        "releaseTag": "v8.2.0",
-        "commit": "216821bbc030211476e68270e287c915d09b4390",
-        "reviewedAt": "2026-07-30"
+        "releaseTag": "v8.3.1",
+        "commit": "538522e4ea660cdc1265f8ef71ef43966e1d9a96",
+        "reviewedAt": "2026-07-31"
       },
       "criticalPaths": [
         "vault-manifest.json",
@@ -32,16 +32,16 @@
         {
           "path": "packages/client-packs/src/obsidian-mind.ts",
           "requiredMarkers": [
-            "216821bbc030211476e68270e287c915d09b4390",
-            "version: \"8.2.0\"",
-            "reviewedAt: \"2026-07-30\""
+            "538522e4ea660cdc1265f8ef71ef43966e1d9a96",
+            "version: \"8.3.1\"",
+            "reviewedAt: \"2026-07-31\""
           ]
         },
         {
           "path": "docs/OBSIDIAN-MIND-COMPATIBILITY.md",
           "requiredMarkers": [
-            "`8.2.0`",
-            "`216821bbc030211476e68270e287c915d09b4390`"
+            "`8.3.1`",
+            "`538522e4ea660cdc1265f8ef71ef43966e1d9a96`"
           ]
         }
       ]
@@ -52,9 +52,9 @@
       "source": {
         "kind": "github-release",
         "repository": "vercel/eve",
-        "releaseTag": "eve@0.29.2",
-        "commit": "7ec1c93ce43488e136a2a043cc3e6a310cd03841",
-        "reviewedAt": "2026-07-30"
+        "releaseTag": "eve@0.29.4",
+        "commit": "85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d",
+        "reviewedAt": "2026-07-31"
       },
       "dependencies": [
         {
@@ -80,17 +80,17 @@
         {
           "path": "packages/client-packs/src/eve.ts",
           "requiredMarkers": [
-            "commit: \"7ec1c93ce43488e136a2a043cc3e6a310cd03841\"",
+            "commit: \"85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d\"",
             "connectVersion: \"0.6.0\"",
-            "eveVersion: \"0.29.2\"",
-            "reviewedAt: \"2026-07-30\""
+            "eveVersion: \"0.29.4\"",
+            "reviewedAt: \"2026-07-31\""
           ]
         },
         {
           "path": "docs/EVE-COMPATIBILITY.md",
           "requiredMarkers": [
-            "`0.29.2`",
-            "`7ec1c93ce43488e136a2a043cc3e6a310cd03841`",
+            "`0.29.4`",
+            "`85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d`",
             "`0.6.0`"
           ]
         }

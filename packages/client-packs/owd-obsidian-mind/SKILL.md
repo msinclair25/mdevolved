@@ -82,8 +82,11 @@ calling either, inspect OWD `localVaultAccess`.
 
 When `remember` uses `scope: "general"`, include the optional `generality`
 rationale. When promoting a lesson into `brain/`, copy it, retain its memory
-entry, and preserve the `promoted` marker. Promotion does not bypass OWD's
-writer boundary.
+entry, and preserve the `promoted` marker. Use an exact block or heading anchor
+only when the corrected text should be served during cross-repository recall.
+If recall warns that the promotion is unanchored, stale, private,
+never-exposed, or unreadable, do not let the original capture overrule the
+promoted note. Promotion does not bypass OWD's writer boundary.
 
 The same rule applies to Obsidian CLI, skills, shell, and filesystem writes.
 

@@ -29,8 +29,8 @@
   <a href="https://github.com/msinclair25/owd-platform/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/msinclair25/owd-platform/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-d7ff64.svg" /></a>
   <a href="https://github.com/msinclair25/owd-sync/releases/tag/owd-sync-v0.1.6"><img alt="OWD Sync 0.1.6" src="https://img.shields.io/badge/OWD%20Sync-0.1.6-90a5ff.svg" /></a>
-  <a href="docs/OBSIDIAN-MIND-COMPATIBILITY.md"><img alt="Obsidian Mind 8.2 profile" src="https://img.shields.io/badge/Obsidian%20Mind-8.2%20profile-90a5ff.svg" /></a>
-  <a href="docs/EVE-COMPATIBILITY.md"><img alt="Eve.dev 0.29 profile" src="https://img.shields.io/badge/Eve.dev-0.29%20profile-90a5ff.svg" /></a>
+  <a href="docs/OBSIDIAN-MIND-COMPATIBILITY.md"><img alt="Obsidian Mind 8.3.1 profile" src="https://img.shields.io/badge/Obsidian%20Mind-8.3.1%20profile-90a5ff.svg" /></a>
+  <a href="docs/EVE-COMPATIBILITY.md"><img alt="Eve.dev 0.29.4 profile" src="https://img.shields.io/badge/Eve.dev-0.29.4%20profile-90a5ff.svg" /></a>
   <a href="docs/ALBATROSS-COMPATIBILITY.md"><img alt="Albatross 2.0 profile" src="https://img.shields.io/badge/Albatross-2.0%20profile-90a5ff.svg" /></a>
   <img alt="Community alpha" src="https://img.shields.io/badge/Community-public%20alpha-f0a23a.svg" />
   <img alt="Managed private alpha" src="https://img.shields.io/badge/Managed-private%20alpha-8250df.svg" />
@@ -218,8 +218,8 @@ the standard MCP Resource
 `owd://compatibility-profiles/obsidian-mind/v1`, the
 `connect-obsidian-mind` Prompt, and the dashboard's additive setup command.
 The [profile source](packages/client-packs/src/obsidian-mind.ts) is
-source-verified against Obsidian Mind `8.2.0` at upstream commit
-`216821bbc030211476e68270e287c915d09b4390`; live client acceptance remains
+source-verified against Obsidian Mind `8.3.1` at upstream commit
+`538522e4ea660cdc1265f8ef71ef43966e1d9a96`; live client acceptance remains
 explicit rather than assumed. See the
 [complete Obsidian Mind compatibility guide](docs/OBSIDIAN-MIND-COMPATIBILITY.md).
 
@@ -239,7 +239,7 @@ agent.
   preserving real attribution instead of treating a renamed child as another
   participant.
 
-The profile is source-verified against Eve `0.29.2` and `@vercel/connect`
+The profile is source-verified against Eve `0.29.4` and `@vercel/connect`
 `0.6.0`; live Eve acceptance remains explicit rather than assumed. See the
 [complete Eve.dev compatibility guide](docs/EVE-COMPATIBILITY.md).
 

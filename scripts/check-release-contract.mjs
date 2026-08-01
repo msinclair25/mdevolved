@@ -95,7 +95,7 @@ if (
     "Eve.dev: durable agents, portable Project memory",
   ) ||
   !normalizedRootReadme.includes(
-    "source-verified against Eve `0.29.2` and `@vercel/connect`",
+    "source-verified against Eve `0.29.4` and `@vercel/connect`",
   ) ||
   !marketingSite.includes('id="eve"') ||
   !normalizedMarketingSite.includes(
