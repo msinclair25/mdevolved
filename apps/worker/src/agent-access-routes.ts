@@ -7,8 +7,6 @@ import {
   collaborationScopeSchema,
   prepareProjectHandoffRequestSchema,
   prepareProjectHandoffResponseSchema,
-  transferVaultLocalWriterRequestSchema,
-  transferVaultLocalWriterResponseSchema,
   type AgentConnectionListResponse,
   type AgentConsentContext,
   type AgentVaultScopes,
@@ -48,7 +46,6 @@ import {
   prepareProjectHandoff,
 } from "./prepared-project-handoff-store";
 import type { AppBindings } from "./types";
-import { transferVaultLocalWriter } from "./vault-local-writer-store";
 import { VaultPathError, validateMarkdownVaultPath } from "./vault-path";
 import {
   completeProjectAuthorization,
@@ -58,6 +55,18 @@ import {
 } from "./project-initialization-store";
 
 const REQUIRED_SCOPE = "vault.read";
+const VAULT_BOOTSTRAP_SCOPES = [
+  REQUIRED_SCOPE,
+  PROJECT_INITIALIZATION_SCOPE,
+  PROJECT_CONNECTION_SCOPE,
+] as const;
+const ADVERTISED_AUTHORIZATION_SCOPES = [
+  ...VAULT_BOOTSTRAP_SCOPES,
+  "project.read",
+  "collaboration.submit",
+  "review.submit",
+  "proposal.status",
+] as const;
 const COLLABORATION_GRANT_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
 const OWNER_USER_ID = "owner";
 
@@ -178,24 +187,18 @@ export function validateAuthorizationRequest(
 ): RequestedAuthorization {
   const uniqueScopes = [...new Set(request.scope)];
   const vaultScopeSet = new Set(uniqueScopes);
+  const requestedEveryAdvertisedScope =
+    uniqueScopes.length === ADVERTISED_AUTHORIZATION_SCOPES.length &&
+    ADVERTISED_AUTHORIZATION_SCOPES.every((scope) => vaultScopeSet.has(scope));
   const normalizedVaultScopes =
-    vaultScopeSet.has(REQUIRED_SCOPE) &&
-    uniqueScopes.every((scope) =>
-      [
-        REQUIRED_SCOPE,
-        PROJECT_INITIALIZATION_SCOPE,
-        PROJECT_CONNECTION_SCOPE,
-      ].includes(scope),
-    )
-      ? [
-          REQUIRED_SCOPE,
-          ...(vaultScopeSet.has(PROJECT_INITIALIZATION_SCOPE)
-            ? [PROJECT_INITIALIZATION_SCOPE]
-            : []),
-          ...(vaultScopeSet.has(PROJECT_CONNECTION_SCOPE)
-            ? [PROJECT_CONNECTION_SCOPE]
-            : []),
-        ]
+    requestedEveryAdvertisedScope ||
+    (vaultScopeSet.has(REQUIRED_SCOPE) &&
+      uniqueScopes.every((scope) =>
+        VAULT_BOOTSTRAP_SCOPES.some(
+          (supportedScope) => supportedScope === scope,
+        ),
+      ))
+      ? VAULT_BOOTSTRAP_SCOPES.filter((scope) => vaultScopeSet.has(scope))
       : uniqueScopes;
   const vaultRequest = agentVaultScopesSchema.safeParse(normalizedVaultScopes);
   const collaborationScopes = collaborationScopeSchema
@@ -829,52 +832,6 @@ export function registerAgentAccessRoutes(app: Hono<AppBindings>): void {
       context.header("Cache-Control", "private, no-store");
       return context.json(
         prepareProjectHandoffResponseSchema.parse({ handoff }),
-      );
-    },
-  );
-
-  app.post(
-    "/api/agent/connections/:grantId/make-primary-writer",
-    async (context) => {
-      await requireOwnerSession(context, { csrf: true });
-      const grantId = context.req.param("grantId");
-      if (!/^[-0-9a-f]{36}$/iu.test(grantId)) {
-        throw new ApiProblem(
-          404,
-          "agent_grant_not_found",
-          "Connection not found.",
-        );
-      }
-      const parsed = transferVaultLocalWriterRequestSchema.safeParse(
-        await parseJsonBody(context),
-      );
-      if (!parsed.success) {
-        throw new ApiProblem(
-          400,
-          "primary_writer_transfer_confirmation_required",
-          "Confirm that the previous primary writer has stopped before moving the role.",
-        );
-      }
-      const transferred = await transferVaultLocalWriter(context.env.DB, {
-        now: nowSeconds(),
-        requestId: context.get("requestId"),
-        targetAgentGrantId: grantId,
-      });
-      if (transferred === null) {
-        throw new ApiProblem(
-          409,
-          "primary_writer_transfer_unavailable",
-          "This connection is already primary, is not an active Project participant, or its vault has no writer assignment yet.",
-        );
-      }
-      context.header("Cache-Control", "private, no-store");
-      return context.json(
-        transferVaultLocalWriterResponseSchema.parse({
-          connectionId: transferred.target_agent_grant_id,
-          transferredAt: transferred.transferred_at,
-          vaultId: transferred.vault_id,
-          writerRole: "primary-writer",
-        }),
       );
     },
   );

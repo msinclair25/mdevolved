@@ -197,12 +197,13 @@ snapshots never restore it. Application rollback may leave the additive table
 intact, but the prepared row will be ignored and the existing approval flow
 will fail closed.
 
-The vault-primary-writer-transfer migration adds an append-only audit ledger
-for owner-confirmed changes to the advisory vault writer. A transfer succeeds
-only when the target OAuth client has an active Project grant for the same
-vault and the authenticated owner confirms the previous writer has stopped.
-The assignment update and transfer receipt commit atomically. This adds no MCP
-write scope and does not make the selected client the human owner.
+The vault-primary-writer-transfer migration preserves the append-only history
+for deployments that used the former vault-wide writer-transfer action. The
+current Worker reads those rows for provenance but exposes no new global
+transfer action. A same-client session restart keeps continuity through
+`resume_project`; a different authorization remains read-only. Never
+manufacture a transfer row or update the assignment manually. Any future
+responsibility handoff must be explicitly Project-scoped.
 
 Phase 7 bootstrap is additive and retry-safe. Only the public age recipient is
 stored in D1; the recovery identity is never server-held. Backup rows remain in

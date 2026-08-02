@@ -5,6 +5,7 @@ import {
   createAlbatrossMcpMergeConfig,
   createAlbatrossSetupKit,
   createAntigravityConfig,
+  createCodexSetupCommands,
   createCursorInstallUrl,
   createEveConnectionSource,
   createObsidianMindMcpMergeConfig,
@@ -33,6 +34,13 @@ describe("agent client setup helpers", () => {
         },
       },
     });
+  });
+
+  it("creates a complete least-privilege Codex setup", () => {
+    expect(createCodexSetupCommands(MCP_URL)).toBe(
+      "codex mcp add md-evolved --url 'https://private-deployment.example/mcp'\n" +
+        "codex mcp login md-evolved --scopes vault.read,project.initialize.request,project.connect.request",
+    );
   });
 
   it("creates an additive Obsidian Mind project setup", () => {

@@ -494,7 +494,7 @@
     },
     {
       "id": "MTR-045",
-      "title": "Owner-controlled primary-writer transfer for replacement clients",
+      "title": "Compact authorized clients with no global writer promotion",
       "controls": [
         {
           "kind": "static",

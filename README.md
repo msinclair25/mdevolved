@@ -281,9 +281,9 @@ rather than assumed. See the
 - **One advisory local writer.** The first Project agent becomes the default
   primary writer for owner-requested bounded local tasks. Later agents are
   warned to remain read-only. A same-client restart keeps the role after
-  `resume_project`; the owner can move it to another active Project client with
-  **Make primary** in OWD → Agents after the prior writer stops. This guidance
-  is not presented as an operating-system lock.
+  `resume_project`; a different authorization cannot be promoted from the
+  global Agents screen. Any future responsibility handoff must be explicitly
+  Project-scoped. This guidance is not presented as an operating-system lock.
 - **Recovery excludes authority.** Snapshots omit sessions, OAuth tokens,
   credentials, live grants, and protocol secrets.
 

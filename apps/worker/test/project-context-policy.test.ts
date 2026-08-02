@@ -98,7 +98,7 @@ describe("Project context policy", () => {
       "A `read-only-collaborator` must warn the owner",
     );
     expect(receipt.managedInstructionBlock).toContain(
-      "choose **Make primary** in OWD → Agents",
+      "A different client must remain read-only",
     );
     expect(receipt.managedInstructionBlock).toContain(
       "most-recently-focused vault",
@@ -141,11 +141,11 @@ describe("Project context policy", () => {
     );
     expect(receipt.managedInstructionBlock.length).toBeLessThanOrEqual(8_192);
     expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain(
-      "A restarted session using that same client keeps the role",
+      "A restarted session using that same authorized client keeps the role",
     );
     expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain("call resume_project");
     expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain(
-      "moves the role in OWD → Agents",
+      "the global Agents screen never promotes it",
     );
   });
 

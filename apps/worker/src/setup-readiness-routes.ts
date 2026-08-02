@@ -43,13 +43,13 @@ function nextVaultStep(
   if (row.initial_sync_at === null) return "sync-vault";
   if (row.library_count === 0) return "build-library";
   if (row.active_agent_count === 0) return "connect-agent";
+  if (row.prepared_agent_grant_id !== null) {
+    return "create-or-select-project";
+  }
+  if (row.pending_project_request_count > 0) {
+    return "approve-project";
+  }
   if (row.active_project_count === 0 || row.active_project_grant_count === 0) {
-    if (row.prepared_agent_grant_id !== null) {
-      return "create-or-select-project";
-    }
-    if (row.pending_project_request_count > 0) {
-      return "approve-project";
-    }
     return "prepare-project-handoff";
   }
   return "ready";

@@ -927,7 +927,12 @@ test("installs the pinned plugin from one primary tester action", async ({
     .click();
   await expect(
     page.getByText(
-      /installed in Tester Vault and added to Obsidian's enabled list/u,
+      /Installed in Tester Vault\. Installation is complete; pairing is next/u,
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /Wait up to 30 seconds.*switch OWD Sync off and back on once/u,
     ),
   ).toBeVisible();
   const snapshot: unknown = await page.evaluate(() =>
@@ -1095,7 +1100,7 @@ test("shows the transport-neutral collaboration owner surface", async ({
   await openOperationalRegion(page, "collaboration");
   await expect(
     page.getByRole("heading", {
-      name: "Projects, submissions, and owner review",
+      name: "Your Projects",
     }),
   ).toBeVisible();
   await expect(
@@ -1109,7 +1114,9 @@ test("shows the transport-neutral collaboration owner surface", async ({
     ),
   ).toBeVisible();
   await expect(page.getByLabel("Project label")).not.toBeVisible();
-  await page.getByText("Advanced/manual setup and portable exchange").click();
+  await page
+    .getByText("Advanced: manually create a Project or exchange data")
+    .click();
   await expect(page.getByLabel("Project label")).toHaveValue(
     "Research Project",
   );
@@ -1118,10 +1125,16 @@ test("shows the transport-neutral collaboration owner surface", async ({
       name: "Use MCP or the provider-neutral fallback",
     }),
   ).toBeVisible();
+  const totals = page.locator("details.collaboration-technical").filter({
+    hasText: "Workspace totals, participants, and agent access",
+  });
+  await expect(totals).not.toHaveAttribute("open");
+  await expect(page.getByText("0 pending inbox items")).not.toBeVisible();
+  await totals.locator("summary").click();
   await expect(page.getByText("0 pending inbox items")).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Provenance timeline" }),
-  ).toBeVisible();
+  const history = page.locator("details.collaboration-history");
+  await expect(history.locator("summary")).toContainText("Provenance history");
+  await expect(history).not.toHaveAttribute("open");
   await context.close();
 });
 
@@ -1189,6 +1202,7 @@ test("keeps routine Work Packet rotation out of the owner workflow", async ({
   await page.goto("/");
 
   await openOperationalRegion(page, "collaboration");
+  await page.locator(".project-card-details > summary").click();
   await expect(page.getByText("Agent context")).toBeVisible();
   await expect(
     page.getByText("Automatic · refreshed when an agent connects or resumes"),
@@ -1418,7 +1432,7 @@ test("advances onboarding immediately when same-page setup state changes", async
 
 test("keeps library and agent setup adjacent and advances after the first build", async ({
   browser,
-}) => {
+}, testInfo) => {
   const context = await browser.newContext();
   let libraryBuilt = false;
   let readiness: SetupReadiness = {
@@ -1509,11 +1523,31 @@ test("keeps library and agent setup adjacent and advances after the first build"
 
   const agents = operationalRegion(page, "agents");
   await expect(agents.locator(".operational-region-content")).toBeVisible();
-  await expect(
-    agents.getByText(`${e2eOrigin}/mcp`, { exact: true }),
-  ).toBeVisible();
+  await expect(agents.locator(".agent-mcp-endpoint")).toHaveText(
+    `${e2eOrigin}/mcp`,
+  );
   await expect(agents.locator(".operational-region-header")).toBeInViewport();
   await expect(page).toHaveURL(/#agents$/u);
+  if (testInfo.project.name === "chrome-narrow") {
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const heading = document.querySelector<HTMLElement>(
+            "#agents-region-heading",
+          );
+          const navigation =
+            document.querySelector<HTMLElement>(".workspace-sidebar");
+          if (heading === null || navigation === null) {
+            return Number.NEGATIVE_INFINITY;
+          }
+          return (
+            heading.getBoundingClientRect().top -
+            navigation.getBoundingClientRect().bottom
+          );
+        }),
+      )
+      .toBeGreaterThanOrEqual(0);
+  }
 
   await openOperationalRegion(page, "library");
   await library.getByRole("button", { name: "Refresh now" }).click();
@@ -1661,6 +1695,244 @@ test("recovers a pending Project approval without creating a duplicate", async (
   await expect(page).toHaveURL(`/initialize?requestId=${existingProjectId}`);
   await expect(
     page.getByRole("heading", { name: "Create this Project?" }),
+  ).toBeVisible();
+  await context.close();
+});
+
+test("surfaces a later Project approval after the first Project is ready", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  const readyReadiness: SetupReadiness = {
+    activeAgentCount: 1,
+    activeProjectCount: 1,
+    activeProjectGrantCount: 1,
+    activeVaultCount: 1,
+    libraryReady: true,
+    nextStep: "ready",
+    verifiedSnapshot: true,
+    vaults: [
+      setupVaultReadiness({
+        activeAgentCount: 1,
+        activeProjectCount: 1,
+        activeProjectGrantCount: 1,
+        nextStep: "ready",
+        verifiedSnapshot: true,
+      }),
+    ],
+  };
+  const pendingReadiness: SetupReadiness = {
+    ...readyReadiness,
+    nextStep: "approve-project",
+    vaults: [
+      setupVaultReadiness({
+        activeAgentCount: 1,
+        activeProjectCount: 1,
+        activeProjectGrantCount: 1,
+        nextStep: "approve-project",
+        pendingProjectRequestCount: 1,
+        pendingProjectRequests: [
+          {
+            clientName: "Codex",
+            projectLabel: "Project 2",
+            requestKind: "create",
+            reviewUrl: `/initialize?requestId=${existingProjectId}`,
+          },
+        ],
+        pendingProjectReviewUrl: `/initialize?requestId=${existingProjectId}`,
+        verifiedSnapshot: true,
+      }),
+    ],
+  };
+  let readinessChecks = 0;
+  await mockFoundation(context, readyReadiness);
+  await context.route("**/api/setup/readiness", (route) => {
+    readinessChecks += 1;
+    return route.fulfill({
+      body: JSON.stringify(
+        readinessChecks === 1 ? readyReadiness : pendingReadiness,
+      ),
+      contentType: "application/json",
+    });
+  });
+  const page = await context.newPage();
+  await page.goto("/");
+
+  const setup = page.locator(".setup-panel--active");
+  await expect(
+    setup.getByText("An exact Project request needs owner review"),
+  ).toBeVisible();
+  await expect(
+    setup.getByRole("button", { name: "Review and approve Project" }),
+  ).toBeVisible();
+  expect(readinessChecks).toBeGreaterThanOrEqual(2);
+  await context.close();
+});
+
+test("shows one compact agent setup path at a time", async ({ browser }) => {
+  const context = await browser.newContext();
+  await mockFoundation(context);
+  const page = await context.newPage();
+  await page.goto("/");
+  await openOperationalRegion(page, "agents");
+
+  const agents = operationalRegion(page, "agents");
+  await expect(
+    agents.getByRole("heading", { name: "Install and authenticate" }),
+  ).toBeVisible();
+  await expect(agents.locator(".agent-client-guide")).toHaveCount(1);
+  await expect(
+    agents.getByRole("button", { name: "Copy setup" }),
+  ).toBeVisible();
+
+  await agents.getByRole("button", { name: "Antigravity" }).click();
+  await expect(
+    agents.getByRole("heading", { name: "Add one MCP entry" }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("button", { name: "Copy config" }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("heading", { name: "Install and authenticate" }),
+  ).toHaveCount(0);
+  await context.close();
+});
+
+test("offers a repeatable Project 2 and later launcher", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await mockFoundation(context, {
+    activeAgentCount: 1,
+    activeProjectCount: 1,
+    activeProjectGrantCount: 1,
+    activeVaultCount: 1,
+    libraryReady: true,
+    nextStep: "ready",
+    verifiedSnapshot: true,
+    vaults: [
+      setupVaultReadiness({
+        activeAgentCount: 1,
+        activeProjectCount: 1,
+        activeProjectGrantCount: 1,
+        nextStep: "ready",
+        verifiedSnapshot: true,
+      }),
+    ],
+  });
+  await context.route("**/api/agent/connections", (route) =>
+    route.fulfill({
+      body: JSON.stringify({
+        connections: [
+          activeAgentConnection({
+            writerAssignedAt: now - 10,
+            writerAssignmentBasis: "first-project-agent",
+            writerEligible: true,
+            writerRole: "primary-writer",
+            writerUpdatedAt: now - 10,
+          }),
+        ],
+        mcpUrl: `${e2eOrigin}/mcp`,
+      }),
+      contentType: "application/json",
+    }),
+  );
+  const page = await context.newPage();
+  await page.goto("/");
+
+  const setup = page.locator(".setup-panel--active");
+  await setup.getByRole("button", { name: "Start another Project" }).click();
+  const agents = operationalRegion(page, "agents");
+  await expect(
+    agents.getByRole("heading", { name: "Start another Project" }),
+  ).toBeVisible();
+  await agents.getByLabel("Project name").fill("Project 2");
+  await agents
+    .getByLabel("What are you trying to get done? · optional")
+    .fill("Polish the onboarding flow");
+  await expect(agents.locator(".later-project-request code")).toContainText(
+    'Start a new OWD Project named "Project 2"',
+  );
+  await expect(
+    agents.getByRole("button", { name: "Copy request" }),
+  ).toBeEnabled();
+  await expect(page).toHaveURL(/#agents$/u);
+  await context.close();
+});
+
+test("keeps later Projects and unfinished vault onboarding distinct", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await mockFoundation(context, {
+    activeAgentCount: 2,
+    activeProjectCount: 1,
+    activeProjectGrantCount: 1,
+    activeVaultCount: 2,
+    libraryReady: true,
+    nextStep: "ready",
+    verifiedSnapshot: true,
+    vaults: [
+      setupVaultReadiness({
+        activeAgentCount: 1,
+        activeProjectCount: 1,
+        activeProjectGrantCount: 1,
+        nextStep: "ready",
+        verifiedSnapshot: true,
+      }),
+      setupVaultReadiness({
+        activeAgentCount: 1,
+        displayName: "Second vault",
+        id: sourceVaultId,
+        nextStep: "prepare-project-handoff",
+        verifiedSnapshot: true,
+      }),
+    ],
+  });
+  await context.route("**/api/agent/connections", (route) =>
+    route.fulfill({
+      body: JSON.stringify({
+        connections: [
+          activeAgentConnection({
+            writerAssignedAt: now - 10,
+            writerAssignmentBasis: "first-project-agent",
+            writerEligible: true,
+            writerRole: "primary-writer",
+            writerUpdatedAt: now - 10,
+          }),
+          activeAgentConnection({
+            clientName: "Second vault agent",
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            vaultId: sourceVaultId,
+            vaultName: "Second vault",
+          }),
+        ],
+        mcpUrl: `${e2eOrigin}/mcp`,
+      }),
+      contentType: "application/json",
+    }),
+  );
+  const page = await context.newPage();
+  await page.goto("/");
+  await openOperationalRegion(page, "agents");
+
+  const agents = operationalRegion(page, "agents");
+  await expect(
+    agents.getByRole("heading", { name: "Start another Project" }),
+  ).toBeVisible();
+  await expect(
+    agents.locator(".later-project-fields select option"),
+  ).toHaveCount(1);
+  await expect(
+    agents.getByText(
+      "1 connected vault still needs a separate Project 1 setup.",
+    ),
+  ).toBeVisible();
+  await expect(
+    agents.locator(".agent-project-vault-boundaries code"),
+  ).toHaveText(sourceVaultId);
+  await expect(
+    agents.getByRole("button", { name: "Finish Project 1 setup" }),
   ).toBeVisible();
   await context.close();
 });
@@ -1829,11 +2101,11 @@ test("reveals the prepared Project handoff immediately after readiness changes",
   };
   const connectedReadiness: SetupReadiness = {
     ...disconnectedReadiness,
-    activeAgentCount: 1,
+    activeAgentCount: 2,
     nextStep: "create-or-select-project",
     vaults: [
       setupVaultReadiness({
-        activeAgentCount: 1,
+        activeAgentCount: 2,
         nextStep: "create-or-select-project",
         preparedProjectHandoff: preparedSetupHandoff(),
         verifiedSnapshot: true,
@@ -1867,6 +2139,10 @@ test("reveals the prepared Project handoff immediately after readiness changes",
                   projectLabel: "Research Project",
                 },
               }),
+              activeAgentConnection({
+                clientName: "Second working agent",
+                id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+              }),
             ]
           : [],
         mcpUrl: "http://127.0.0.1:4173/mcp",
@@ -1879,10 +2155,10 @@ test("reveals the prepared Project handoff immediately after readiness changes",
   await page.goto("/");
   await openOperationalRegion(page, "agents");
   const agents = operationalRegion(page, "agents");
-  await expect(agents.getByText("No active agent connections.")).toBeVisible();
+  await expect(agents.getByText("No authorized clients.")).toBeVisible();
   await expect(
     agents.getByRole("heading", {
-      name: /say: Connect this project to OWD/u,
+      name: /is prepared/u,
     }),
   ).not.toBeVisible();
 
@@ -1895,20 +2171,23 @@ test("reveals the prepared Project handoff immediately after readiness changes",
 
   await expect(
     agents.getByRole("heading", {
-      name: "In Working agent, say: Connect this project to OWD",
+      name: "Research Project is prepared",
     }),
   ).toBeVisible();
   await expect(
-    agents.getByText(/No prompt to copy, reconnect, daily renewal/u),
+    agents.getByText(/Next: continue in Working agent/u),
   ).toBeVisible();
   await expect(
     agents.getByRole("button", { name: /copy setup instruction/iu }),
+  ).toHaveCount(0);
+  await expect(
+    agents.getByRole("button", { name: "Finish Project 1 setup" }),
   ).toHaveCount(0);
 
   await page.waitForTimeout(100);
   await expect(
     agents.getByRole("heading", {
-      name: "In Working agent, say: Connect this project to OWD",
+      name: "Research Project is prepared",
     }),
   ).toBeVisible();
 
@@ -1931,7 +2210,7 @@ test("reveals the prepared Project handoff immediately after readiness changes",
     setup.getByRole("button", { name: /copy|setup instruction/iu }),
   ).toHaveCount(0);
   await expect(
-    setup.getByRole("button", { name: "View active Projects" }),
+    setup.getByRole("button", { name: "View Projects" }),
   ).not.toBeVisible();
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
   await context.close();
@@ -2314,7 +2593,9 @@ test("keeps a manual Project draft during an independent owner action", async ({
   const page = await context.newPage();
   await page.goto("/");
   await openOperationalRegion(page, "collaboration");
-  await page.getByText("Advanced/manual setup and portable exchange").click();
+  await page
+    .getByText("Advanced: manually create a Project or exchange data")
+    .click();
 
   const projectObjective = page.getByLabel("Project objective");
   await projectObjective.fill("This staged owner input must remain mounted.");
@@ -2351,6 +2632,130 @@ test("keeps a manual Project draft during an independent owner action", async ({
   );
   await expect(operationalRegion(page, "collaboration")).toBeVisible();
   await expect(operationalRegion(page, "vaults")).not.toBeVisible();
+  await context.close();
+});
+
+test("confirms a manually created Project beside the form and clears completed fields", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await mockFoundation(context);
+  const page = await context.newPage();
+  await page.route("**/api/collaboration/projects", (route) =>
+    route.fulfill({
+      body: JSON.stringify({
+        packet: { packetId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee" },
+        projectId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      }),
+      contentType: "application/json",
+      status: 201,
+    }),
+  );
+  await page.goto("/");
+  await openOperationalRegion(page, "collaboration");
+  await page
+    .getByText("Advanced: manually create a Project or exchange data")
+    .click();
+
+  await page
+    .getByLabel("Project objective")
+    .fill("Create a calm, understandable onboarding path.");
+  await page
+    .getByLabel("First Work Item objective")
+    .fill("Remove the dead ends from first setup.");
+  await page
+    .getByLabel("Requested output")
+    .fill("A reviewed onboarding release.");
+  await page.getByLabel("Project label").fill("   ");
+  await page.getByRole("button", { name: "Create Project and packet" }).click();
+  await expect(
+    page.getByText(
+      "Choose a vault and complete every required Project and Work Item field.",
+    ),
+  ).toBeVisible();
+  await expect(page.locator(".project-create-receipt")).not.toBeVisible();
+  await page.getByLabel("Project label").fill("Research Project");
+  await page.getByRole("button", { name: "Create Project and packet" }).click();
+
+  const receipt = page.locator(".project-create-receipt");
+  await expect(receipt).toBeVisible();
+  await expect(receipt).toBeFocused();
+  await expect(receipt).toContainText("Research Project was created.");
+  await expect(receipt).toContainText("The form was cleared");
+  await expect(page.getByLabel("Project label")).toHaveValue("");
+  await expect(page.getByLabel("Project objective")).toHaveValue("");
+  await expect(page.getByLabel("First Work Item objective")).toHaveValue("");
+  await expect(page.getByLabel("Requested output")).toHaveValue("");
+  await context.close();
+});
+
+test("explains how to recover from a stopped agent authorization", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await mockFoundation(context);
+  const page = await context.newPage();
+  await page.route("**/api/agent/oauth/context*", (route) =>
+    route.fulfill({
+      body: JSON.stringify({
+        error: {
+          code: "authorization_request_invalid",
+          message:
+            "The agent requested an unsupported authorization flow or permission.",
+          requestId: "88888888-8888-4888-8888-888888888888",
+        },
+      }),
+      contentType: "application/json",
+      status: 400,
+    }),
+  );
+
+  await page.goto(
+    "/authorize?response_type=code&client_id=stopped-request&state=test",
+  );
+  await expect(
+    page.getByRole("heading", {
+      name: "This authentication request cannot continue.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/No access was granted.*start Authenticate again/u),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Check OWD setup" }),
+  ).toHaveAttribute("href", "/");
+  await context.close();
+});
+
+test("routes the Advanced Project form to vault setup instead of leaving a disabled dead end", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await mockFoundation(context);
+  const page = await context.newPage();
+  await page.route("**/api/vaults", (route) =>
+    route.fulfill({
+      body: JSON.stringify({ vaults: [] }),
+      contentType: "application/json",
+      status: 200,
+    }),
+  );
+  await page.goto("/");
+  await openOperationalRegion(page, "collaboration");
+  await page
+    .getByText("Advanced: manually create a Project or exchange data")
+    .click();
+
+  await expect(
+    page.getByText("Connect and sync a vault before creating a Project."),
+  ).toBeVisible();
+  await expect(page.getByLabel("Source vault")).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Create Project and packet" }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Open vault setup" }).click();
+  await expect(operationalRegion(page, "vaults")).toBeVisible();
+  await expect(page).toHaveURL(/#vaults$/u);
   await context.close();
 });
 
@@ -2564,12 +2969,12 @@ test("allows read-only agent setup without a recovery point", async ({
   const agents = operationalRegion(page, "agents");
   await expect(
     agents.getByRole("heading", {
-      name: "Choose what each agent can access.",
+      name: "Authorized clients and Project access.",
     }),
   ).toBeVisible();
-  await expect(
-    agents.getByText(`${e2eOrigin}/mcp`, { exact: true }),
-  ).toBeVisible();
+  await expect(agents.locator(".agent-mcp-endpoint")).toHaveText(
+    `${e2eOrigin}/mcp`,
+  );
   await expect(
     agents.getByRole("heading", {
       name: "Verify a recovery point before adding a new agent",
@@ -2578,7 +2983,7 @@ test("allows read-only agent setup without a recovery point", async ({
   await context.close();
 });
 
-test("moves the primary writer to an eligible replacement client once", async ({
+test("keeps authorized clients compact without global writer promotion", async ({
   browser,
 }) => {
   const context = await browser.newContext();
@@ -2599,83 +3004,142 @@ test("moves the primary writer to an eligible replacement client once", async ({
       }),
     ],
   };
-  let transferred = false;
+  let additionalClientConnected = false;
+  let allRevoked = false;
   await mockFoundation(context, readiness);
   await context.route("**/api/agent/connections", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
-        connections: [
-          activeAgentConnection({
-            clientName: "Original writer",
-            writerAssignedAt: now - 30,
-            writerAssignmentBasis: "project-creator",
-            writerEligible: true,
-            writerRole: transferred
-              ? "read-only-collaborator"
-              : "primary-writer",
-            writerUpdatedAt: transferred ? now : now - 30,
-          }),
-          activeAgentConnection({
-            clientId: "https://replacement.example/client.json",
-            clientName: "Replacement client",
-            clientOrigin: "https://replacement.example",
-            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-            writerAssignedAt: now - 30,
-            writerAssignmentBasis: transferred
-              ? "owner-transfer"
-              : "project-creator",
-            writerEligible: true,
-            writerRole: transferred
-              ? "primary-writer"
-              : "read-only-collaborator",
-            writerUpdatedAt: transferred ? now : now - 30,
-          }),
-        ],
+        connections: allRevoked
+          ? []
+          : [
+              activeAgentConnection({
+                clientName: "Shared client",
+                writerAssignedAt: now - 30,
+                writerAssignmentBasis: "project-creator",
+                writerEligible: true,
+                writerRole: "primary-writer",
+                writerUpdatedAt: now - 30,
+              }),
+              activeAgentConnection({
+                clientId: "https://replacement.example/client.json",
+                clientName: "Shared client",
+                clientOrigin: "https://replacement.example",
+                id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                writerAssignedAt: now - 30,
+                writerAssignmentBasis: "project-creator",
+                writerEligible: true,
+                writerRole: "read-only-collaborator",
+                writerUpdatedAt: now - 30,
+              }),
+              ...(additionalClientConnected
+                ? [
+                    activeAgentConnection({
+                      clientId: "https://third.example/client.json",
+                      clientName: "Third client",
+                      clientOrigin: "https://third.example",
+                      id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+                      writerEligible: false,
+                      writerRole: "read-only-collaborator",
+                    }),
+                  ]
+                : []),
+            ],
         mcpUrl: `${e2eOrigin}/mcp`,
       }),
       contentType: "application/json",
     });
   });
-  await context.route(
-    "**/api/agent/connections/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/make-primary-writer",
-    async (route) => {
-      expect(route.request().method()).toBe("POST");
-      expect(route.request().postDataJSON()).toEqual({
-        confirmedPreviousWriterStopped: true,
-      });
-      transferred = true;
-      await route.fulfill({
-        body: JSON.stringify({
-          connectionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-          transferredAt: now,
-          vaultId: targetVaultId,
-          writerRole: "primary-writer",
-        }),
-        contentType: "application/json",
-      });
-    },
-  );
-
+  await context.route("**/api/agent/connections/revoke-all", async (route) => {
+    allRevoked = true;
+    await route.fulfill({ status: 204 });
+  });
   const page = await context.newPage();
-  page.on("dialog", (dialog) => void dialog.accept());
   await page.goto("/");
   await openOperationalRegion(page, "agents");
 
   const agents = operationalRegion(page, "agents");
   await expect(
-    agents.getByText("Primary follows the OWD client, not the chat."),
+    agents.getByRole("heading", { name: "2 authorized clients" }),
   ).toBeVisible();
-  await agents.getByRole("button", { name: "Make primary" }).click();
+  await expect(agents.locator(".authorized-client-button")).toHaveCount(2);
+  await expect(agents.locator(".agent-row")).toHaveCount(0);
+  await expect(
+    agents.getByRole("button", { name: "Make primary" }),
+  ).toHaveCount(0);
+  await expect(
+    agents.getByRole("button", {
+      name: "Shared client, Recovery target, authorization 1 of 2",
+    }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("button", {
+      name: "Shared client, Recovery target, authorization 2 of 2",
+    }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("heading", { name: "Choose one setup path." }),
+  ).toHaveCount(0);
+
+  const secondClientButton = agents.getByRole("button", {
+    name: "Shared client, Recovery target, authorization 2 of 2",
+  });
+  await secondClientButton.click();
+  const clientWindow = agents.locator(".authorized-client-popover");
+  await expect(clientWindow).toBeVisible();
+  await expect(
+    clientWindow.getByRole("heading", { name: "Shared client" }),
+  ).toBeVisible();
+  await expect(
+    clientWindow.getByRole("button", { name: "Copy resume instruction" }),
+  ).toBeVisible();
+  await expect(
+    clientWindow.getByText("Read-only authorization", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    clientWindow.getByText(/cannot be promoted from this global screen/u),
+  ).toBeVisible();
+  await expect(clientWindow.getByText("OWD resume project")).toBeVisible();
+  await expect(
+    agents.locator(".later-project-fields select option"),
+  ).toHaveText([
+    "Shared client · Recovery target · access 1",
+    "Shared client · Recovery target · access 2",
+  ]);
+  page.once("dialog", (dialog) => void dialog.dismiss());
+  await clientWindow
+    .getByRole("button", { name: "Revoke authorization" })
+    .click();
+  await expect(clientWindow).toBeVisible();
+  await clientWindow.getByRole("button", { name: "Close" }).click();
+  await expect(clientWindow).toHaveCount(0);
+  await expect(secondClientButton).toBeFocused();
+
+  await agents.getByRole("button", { name: "Connect another" }).click();
+  await expect(
+    agents.getByRole("heading", { name: "Choose one setup path." }),
+  ).toBeVisible();
+  additionalClientConnected = true;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(
+    agents.getByRole("heading", { name: "3 authorized clients" }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("heading", { name: "Choose one setup path." }),
+  ).toHaveCount(0);
+  await agents
+    .getByRole("button", { name: "Third client, Recovery target" })
+    .click();
   await expect(
     agents.getByText(
-      "Replacement client is now the primary writer for Recovery target. Have that client run OWD resume project; the prior client is now read-only.",
+      "No active Project command is available for this authorization.",
     ),
   ).toBeVisible();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await agents.getByRole("button", { name: "Revoke all" }).click();
+  await expect(agents.getByText("No authorized clients.")).toBeVisible();
   await expect(
-    agents
-      .locator(".agent-row", { hasText: "Replacement client" })
-      .getByText("Primary writer"),
-  ).toBeVisible();
-  expect(transferred).toBe(true);
+    agents.getByRole("heading", { name: "Choose one setup path." }),
+  ).toBeFocused();
   await context.close();
 });

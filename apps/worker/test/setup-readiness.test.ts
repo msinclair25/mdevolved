@@ -714,7 +714,7 @@ describe("setup readiness", () => {
     expect(readyWithPending.vaults[0]).toMatchObject({
       activeProjectCount: 1,
       activeProjectGrantCount: 1,
-      nextStep: "ready",
+      nextStep: "approve-project",
       pendingProjectRequestCount: 1,
     });
 

@@ -226,10 +226,10 @@ that role before local mutation.
 
 The primary writer still needs an explicit owner instruction for a bounded
 task. Other agents warn the owner and report or hand off proposed changes. The
-same OWD client retains the assignment across session restarts. To replace it
-with a different active Project client, the owner first stops the prior writer,
-then chooses **Make primary** in OWD's Agents section. Both clients receive
-their new role on the next `resume_project`.
+same authorized OWD client retains the assignment across session restarts. A
+different authorization stays read-only. The global Agents screen never moves
+the vault-wide role between clients; any future handoff must be explicitly
+Project-scoped rather than inferred from a connection card.
 Every local operation names the exact vault and path; Obsidian CLI puts
 `vault=<exact vault name>` first rather than using the most-recently-focused
 vault. No two agents write overlapping paths. This `AGENTS.md` policy

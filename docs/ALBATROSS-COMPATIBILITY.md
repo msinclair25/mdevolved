@@ -262,8 +262,8 @@ Albatross resumes the Project and obeys `localVaultAccess`:
 
 - `primary-writer` may perform only the owner-requested bounded task;
 - `read-only-collaborator` proposes or hands off instead of writing; and
-- a different client takes over only after the owner stops the prior writer and
-  selects **Make primary** in OWD → Agents.
+- a restarted process retains its role only when it resumes through the same
+  authorized OWD client; a different authorization remains read-only.
 
 Albatross tool approval confirms that the local process or call may execute.
 It never replaces OWD OAuth, owner consent, vault scope, Project grants, or

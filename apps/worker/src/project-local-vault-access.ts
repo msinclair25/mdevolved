@@ -2,7 +2,7 @@ export type ProjectLocalVaultAccess = {
   basis:
     "first-project-agent" | "owner-transfer" | "project-creator" | "unassigned";
   enforcement: "advisory";
-  handoffRule: "owner-dashboard-transfer-after-previous-writer-stops";
+  handoffRule: "same-client-resume-only";
   humanOwnerRetainsAuthority: true;
   localWriteDefault: "owner-requested-bounded-task-only" | "read-only";
   role: "primary-writer" | "read-only-collaborator";
@@ -55,7 +55,7 @@ export async function projectLocalVaultAccess(
     return {
       basis: "unassigned",
       enforcement: "advisory",
-      handoffRule: "owner-dashboard-transfer-after-previous-writer-stops",
+      handoffRule: "same-client-resume-only",
       humanOwnerRetainsAuthority: true,
       localWriteDefault: "read-only",
       role: "read-only-collaborator",
@@ -72,7 +72,7 @@ export async function projectLocalVaultAccess(
           ? "owner-transfer"
           : primaryWriter.basis,
       enforcement: "advisory",
-      handoffRule: "owner-dashboard-transfer-after-previous-writer-stops",
+      handoffRule: "same-client-resume-only",
       humanOwnerRetainsAuthority: true,
       localWriteDefault: "owner-requested-bounded-task-only",
       role: "primary-writer",
@@ -88,12 +88,12 @@ export async function projectLocalVaultAccess(
     basis:
       primaryWriter.transferred === 1 ? "owner-transfer" : primaryWriter.basis,
     enforcement: "advisory",
-    handoffRule: "owner-dashboard-transfer-after-previous-writer-stops",
+    handoffRule: "same-client-resume-only",
     humanOwnerRetainsAuthority: true,
     localWriteDefault: "read-only",
     role: "read-only-collaborator",
     scope: "vault",
     warning:
-      "Another OWD client is the primary writer for this vault. Treat local Obsidian, CLI, shell, and filesystem access as read-only. If this client should replace it, ask the human owner to open OWD → Agents and choose Make primary only after the previous writer has stopped.",
+      "Another authorized OWD client holds the vault writer role. Treat local Obsidian, CLI, shell, and filesystem access as read-only and hand proposed changes to the human owner. OWD does not promote a different client from the global Agents screen or infer a transfer from tool availability.",
   };
 }

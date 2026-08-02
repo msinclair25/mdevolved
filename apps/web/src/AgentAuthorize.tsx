@@ -25,7 +25,54 @@ type PageState =
   | { kind: "loading" }
   | { kind: "authenticate"; setup: SetupStatus }
   | { context: AgentConsentContext; kind: "consent" }
-  | { kind: "error"; message: string };
+  | { code: string | null; kind: "error"; message: string };
+
+class AuthorizationContextError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+function authorizationErrorCopy(code: string | null): {
+  guidance: string;
+  title: string;
+} {
+  switch (code) {
+    case "vault_setup_required":
+      return {
+        guidance:
+          "Return to OWD, finish Connect vault, then come back to your agent and choose Authenticate again.",
+        title: "Connect an Obsidian vault first.",
+      };
+    case "vault_protection_required":
+      return {
+        guidance:
+          "Keep Obsidian open until first sync and the searchable library finish, then return to your agent and retry Authenticate.",
+        title: "Finish this vault's first sync first.",
+      };
+    case "project_authorization_required":
+      return {
+        guidance:
+          "Return to OWD and approve the exact pending Project request. Then continue the same authentication from your agent; do not create another Project.",
+        title: "Approve the exact Project request first.",
+      };
+    case "authorization_request_invalid":
+      return {
+        guidance:
+          "No access was granted. Return to your agent and start Authenticate again. If this came from an older open tab, close that tab and use a fresh authentication request.",
+        title: "This authentication request cannot continue.",
+      };
+    default:
+      return {
+        guidance:
+          "No access was granted. Return to OWD to check setup, then retry Authenticate from the same agent connection.",
+        title: "OWD stopped this connection before approval.",
+      };
+  }
+}
 
 function vaultPermission(scopes: readonly string[]): string {
   const canCreate = scopes.includes("project.initialize.request");
@@ -89,11 +136,13 @@ async function consentContext(): Promise<AgentConsentContext> {
   const payload: unknown = await response.json();
   if (!response.ok) {
     const parsed = apiErrorSchema.safeParse(payload);
-    throw new Error(
-      parsed.success
-        ? parsed.data.error.message
-        : "The authorization request is invalid.",
-    );
+    if (parsed.success) {
+      throw new AuthorizationContextError(
+        parsed.data.error.code,
+        parsed.data.error.message,
+      );
+    }
+    throw new Error("The authorization request is invalid.");
   }
   return agentConsentContextSchema.parse(payload);
 }
@@ -123,6 +172,10 @@ export function AgentAuthorize() {
       setPage({ context, kind: "consent" });
     } catch (loadError: unknown) {
       setPage({
+        code:
+          loadError instanceof AuthorizationContextError
+            ? loadError.code
+            : null,
         kind: "error",
         message:
           loadError instanceof Error
@@ -254,6 +307,8 @@ export function AgentAuthorize() {
       : [];
   const selectedVault =
     vaults.find((vault) => vault.id === selectedVaultId) ?? null;
+  const authorizationFailure =
+    page.kind === "error" ? authorizationErrorCopy(page.code) : null;
 
   return (
     <div className="consent-shell">
@@ -273,10 +328,11 @@ export function AgentAuthorize() {
         ) : page.kind === "error" ? (
           <section className="consent-card">
             <span className="section-kicker">Connection stopped</span>
-            <h1>This request cannot be approved.</h1>
+            <h1>{authorizationFailure?.title}</h1>
             <p>{page.message}</p>
+            <p>{authorizationFailure?.guidance}</p>
             <a className="secondary-action consent-link" href="/">
-              Return to OWD
+              Check OWD setup
             </a>
           </section>
         ) : page.kind === "authenticate" ? (

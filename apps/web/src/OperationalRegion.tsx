@@ -65,10 +65,27 @@ export function revealOperationalRegion(id: OperationalRegionId): void {
   openOperationalRegion(id);
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => {
-      document.getElementById(`${id}-region-heading`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      const region = document
+        .getElementById(`${id}-region-heading`)
+        ?.closest<HTMLElement>(".operational-region");
+      if (region === undefined || region === null) return;
+      if (window.matchMedia("(max-width: 980px)").matches) {
+        const navigation =
+          document.querySelector<HTMLElement>(".workspace-sidebar");
+        const navigationBottom =
+          navigation?.getBoundingClientRect().bottom ?? 0;
+        const top =
+          window.scrollY +
+          region.getBoundingClientRect().top -
+          navigationBottom -
+          12;
+        window.scrollTo({ behavior: "smooth", top: Math.max(0, top) });
+      } else {
+        region.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
     });
   });
 }
@@ -141,7 +158,10 @@ export function OperationalRegion({
       ) {
         toggleRef.current?.focus({ preventScroll: true });
       }
-      const beforeTop = headerRef.current?.getBoundingClientRect().top;
+      const beforeTop =
+        (headerRef.current?.getClientRects().length ?? 0) > 0
+          ? headerRef.current?.getBoundingClientRect().top
+          : undefined;
       setOpen(next);
       if (persist) rememberBrowserPreference(id, next);
       window.requestAnimationFrame(() => {

@@ -631,25 +631,6 @@ export type AgentConnectionListResponse = z.infer<
   typeof agentConnectionListResponseSchema
 >;
 
-export const transferVaultLocalWriterRequestSchema = z
-  .object({
-    confirmedPreviousWriterStopped: z.literal(true),
-  })
-  .strict();
-
-export const transferVaultLocalWriterResponseSchema = z
-  .object({
-    connectionId: z.string().uuid(),
-    transferredAt: z.number().int().nonnegative(),
-    vaultId: vaultIdSchema,
-    writerRole: z.literal("primary-writer"),
-  })
-  .strict();
-
-export type TransferVaultLocalWriterResponse = z.infer<
-  typeof transferVaultLocalWriterResponseSchema
->;
-
 export const sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 
 export const MAX_MARKDOWN_NOTE_CHARACTERS = 1024 * 1024;

@@ -103,15 +103,31 @@ export function ObsidianPluginInstaller({
         </p>
       ) : null}
       {state.kind === "success" ? (
-        <p
+        <div
           className="plugin-installer-status plugin-installer-status--success"
           role="status"
+          tabIndex={-1}
         >
-          OWD Sync {OWD_SYNC_REQUIRED_VERSION} is installed in{" "}
-          <strong>{state.vaultName}</strong> and added to Obsidian&apos;s
-          enabled list. Reopen that vault, confirm the plugin is running, then
-          return here to pair it. Do not also install it with BRAT.
-        </p>
+          <strong>
+            Installed in {state.vaultName}. Installation is complete; pairing is
+            next.
+          </strong>
+          <ol>
+            <li>Reopen this exact vault in Obsidian.</li>
+            <li>
+              Open Settings → Community plugins and confirm OWD Sync{" "}
+              {OWD_SYNC_REQUIRED_VERSION} is switched on.
+            </li>
+            <li>
+              A brief Connecting or Disconnected status can appear while the
+              first durable sync starts. Wait up to 30 seconds. If it stays
+              disconnected, switch OWD Sync off and back on once—do not
+              reinstall it.
+            </li>
+            <li>Return here and continue with Pair this vault.</li>
+          </ol>
+          <span>Do not also install OWD Sync with BRAT.</span>
+        </div>
       ) : null}
       {state.kind === "cancelled" ? (
         <div className="plugin-installer-status" role="status">
