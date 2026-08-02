@@ -18,15 +18,6 @@ type ConnectionWriterRow = {
   updated_at: number | null;
 };
 
-type TransferRow = {
-  from_oauth_client_id: string;
-  id: string;
-  target_agent_grant_id: string;
-  to_oauth_client_id: string;
-  transferred_at: number;
-  vault_id: string;
-};
-
 export async function listVaultLocalWriterConnectionStates(
   db: D1Database,
 ): Promise<Map<string, VaultLocalWriterConnectionState>> {
@@ -84,73 +75,4 @@ export async function listVaultLocalWriterConnectionStates(
       ];
     }),
   );
-}
-
-export async function transferVaultLocalWriter(
-  db: D1Database,
-  input: {
-    now: number;
-    requestId: string;
-    targetAgentGrantId: string;
-  },
-): Promise<TransferRow | null> {
-  const transferId = crypto.randomUUID();
-  const results = await db.batch<TransferRow>([
-    db
-      .prepare(
-        `INSERT INTO vault_local_writer_transfers (
-           id, vault_id, from_oauth_client_id, to_oauth_client_id,
-           target_agent_grant_id, request_id, transferred_at
-         )
-         SELECT ?, target.vault_id, assignments.oauth_client_id,
-           target.oauth_client_id, target.id, ?, ?
-         FROM agent_grants target
-         JOIN vaults ON vaults.id = target.vault_id
-           AND vaults.status = 'active'
-         JOIN vault_local_writer_assignments assignments
-           ON assignments.vault_id = target.vault_id
-         WHERE target.id = ? AND target.owner_id = 1
-           AND target.status = 'active'
-           AND assignments.oauth_client_id != target.oauth_client_id
-           AND EXISTS (
-             SELECT 1
-             FROM collaboration_grants project_grants
-             WHERE project_grants.source_agent_grant_id = target.id
-               AND project_grants.oauth_client_id = target.oauth_client_id
-               AND project_grants.status = 'active'
-           )
-         RETURNING id, vault_id, from_oauth_client_id, to_oauth_client_id,
-           target_agent_grant_id, transferred_at`,
-      )
-      .bind(transferId, input.requestId, input.now, input.targetAgentGrantId),
-    db
-      .prepare(
-        `UPDATE vault_local_writer_assignments
-         SET oauth_client_id = (
-           SELECT to_oauth_client_id
-           FROM vault_local_writer_transfers
-           WHERE id = ?
-         ), updated_at = ?
-         WHERE vault_id = (
-           SELECT vault_id FROM vault_local_writer_transfers WHERE id = ?
-         ) AND oauth_client_id = (
-           SELECT from_oauth_client_id
-           FROM vault_local_writer_transfers
-           WHERE id = ?
-         )
-         RETURNING vault_id`,
-      )
-      .bind(transferId, input.now, transferId, transferId),
-    db
-      .prepare(
-        `INSERT INTO audit_events (id, event_type, request_id, created_at)
-         SELECT ?, 'vault.primary_writer_transferred', request_id,
-           transferred_at
-         FROM vault_local_writer_transfers
-         WHERE id = ?`,
-      )
-      .bind(crypto.randomUUID(), transferId),
-  ]);
-
-  return results[0]?.results[0] ?? null;
 }

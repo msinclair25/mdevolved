@@ -223,9 +223,7 @@ if (
   !projectLocalVaultAccess.includes('role: "read-only-collaborator"') ||
   !projectLocalVaultAccess.includes('scope: "vault"') ||
   !projectLocalVaultAccess.includes('"owner-requested-bounded-task-only"') ||
-  !projectLocalVaultAccess.includes(
-    '"owner-dashboard-transfer-after-previous-writer-stops"',
-  ) ||
+  !projectLocalVaultAccess.includes('"same-client-resume-only"') ||
   !projectLocalVaultAccess.includes("collaborationGrantId") ||
   !projectLocalVaultAccess.includes("JOIN agent_grants source")
 ) {
@@ -240,16 +238,20 @@ if (
   !vaultPrimaryWriterTransferMigration.includes(
     "CHECK (from_oauth_client_id != to_oauth_client_id)",
   ) ||
-  !vaultLocalWriterStore.includes("transferVaultLocalWriter") ||
-  !vaultLocalWriterStore.includes("db.batch") ||
-  !vaultLocalWriterStore.includes("project_grants.status = 'active'") ||
-  !agentAccessRoutes.includes("make-primary-writer") ||
-  !app.includes("confirmedPreviousWriterStopped") ||
-  !app.includes("Make primary") ||
-  !app.includes("Primary follows the OWD client, not the chat")
+  !vaultLocalWriterStore.includes("vault_local_writer_transfers") ||
+  vaultLocalWriterStore.includes("transferVaultLocalWriter") ||
+  agentAccessRoutes.includes("make-primary-writer") ||
+  app.includes("confirmedPreviousWriterStopped") ||
+  app.includes("Make primary") ||
+  !app.includes("authorized-client-inventory") ||
+  !app.includes("Chats and processes can disappear") ||
+  !app.includes("Copy resume instruction") ||
+  !projectLocalVaultAccess.includes(
+    "does not promote a different client from the global Agents screen",
+  )
 ) {
   throw new Error(
-    "MTR-045 regression: a replacement Project client needs one owner-confirmed, durable, audited primary-writer transfer.",
+    "MTR-045 regression: authorized clients must stay compact, preserve same-client resume, and expose no global writer promotion.",
   );
 }
 if (

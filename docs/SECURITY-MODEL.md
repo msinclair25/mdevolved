@@ -324,11 +324,10 @@ read-only MCP boundary, so it must never be inferred from Project access. The
 managed `AGENTS.md` block requires each agent to inspect the caller-specific
 `localVaultAccess` role returned by `resume_project`. The first agent that
 establishes a Project for the vault becomes its advisory primary writer; later
-agents remain read-only. A same-client restart keeps that role. The human may
-move it to a different active Project client only through the authenticated
-**Make primary** action after confirming the previous writer stopped; the
-server records the transfer and both clients see the new role on resume. The
-human remains owner, every bounded write still requires owner instruction, all CLI operations put
+agents remain read-only. A same-client restart retains the role; replacing it
+with a different authorization is not allowed from the global Agents screen
+and remains read-only. The human remains owner, every bounded write still
+requires owner instruction, all CLI operations put
 `vault=<exact vault name>` first and name the exact path, and ambiguous or
 overlapping responsibility stops for owner clarification. This warning is
 defense in depth, not an operating-system lock; enforceable OWD-originated note

@@ -96,7 +96,7 @@ const RETIRED_PROJECT_LIFECYCLE_TOOLS = [
   "get_project_access_status",
 ] as const;
 const PROJECT_CONTINUITY_NEXT_ACTION =
-  "Persist continuity.contextFileContent at continuity.contextFilePath and replace only the marked OWD block in continuity.instructionFilePath with continuity.managedInstructionBlock, preserving every other instruction. Before any direct local vault mutation, obey localVaultAccess: only primary-writer may accept an owner-requested bounded write; read-only-collaborator must warn and hand off. A different client takes over only after the owner stops the prior writer and selects Make primary in OWD → Agents. Then continue without asking the user to copy these values.";
+  "Persist continuity.contextFileContent at continuity.contextFilePath and replace only the marked OWD block in continuity.instructionFilePath with continuity.managedInstructionBlock, preserving every other instruction. Before any direct local vault mutation, obey localVaultAccess: only primary-writer may accept an owner-requested bounded write; read-only-collaborator must warn and hand proposed changes to the human owner. A restarted session using the same authorized OWD client may resume its exact Project; a different client must never infer or request a vault-wide promotion from the global Agents screen. Then continue without asking the user to copy these values.";
 
 const readCursorSchema = z
   .object({

@@ -15,8 +15,11 @@ import {
   type CollaborationTimelineItem,
   type VaultSummary,
 } from "@owd/contracts";
-import { useEffect, useMemo, useState } from "react";
-import { OperationalRegion } from "./OperationalRegion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  OperationalRegion,
+  revealOperationalRegion,
+} from "./OperationalRegion";
 
 type Props = {
   activeVaults: VaultSummary[];
@@ -169,6 +172,12 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   const [showArchivedProjects, setShowArchivedProjects] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [createdProject, setCreatedProject] = useState<{
+    label: string;
+    packetId: string;
+    projectId: string;
+  } | null>(null);
+  const createdProjectReceiptRef = useRef<HTMLDivElement>(null);
 
   const projects = dashboard?.projects ?? [];
   const activeProjects = projects.filter(
@@ -324,13 +333,21 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   async function createProject(): Promise<void> {
     if (
       selectedVaultId === "" ||
+      projectLabel.trim() === "" ||
       projectObjective.trim() === "" ||
       workObjective.trim() === "" ||
       requestedOutput.trim() === ""
     ) {
-      setError("Choose a vault and complete the Project and Work Item fields.");
+      setError(
+        "Choose a vault and complete every required Project and Work Item field.",
+      );
       return;
     }
+    let receipt: {
+      label: string;
+      packetId: string;
+      projectId: string;
+    } | null = null;
     await run("Creating the Project and exact Work Packet…", async (csrf) => {
       const folder = pathPrefix(notebookFolder);
       const created = (await apiJson("/api/collaboration/projects", {
@@ -376,8 +393,30 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         csrf,
         method: "POST",
       })) as { packet: { packetId: string }; projectId: string };
+      receipt = {
+        label: projectLabel.trim(),
+        packetId: created.packet.packetId,
+        projectId: created.projectId,
+      };
       return `Project created. Work Packet ${created.packet.packetId.slice(0, 8)} is ready for scoped authorization or portable download.`;
     });
+    if (receipt === null) return;
+    setMessage(null);
+    setCreatedProject(receipt);
+    setProjectLabel("");
+    setProjectObjective("");
+    setWorkObjective("");
+    setRequestedOutput("");
+    setSourcePath("");
+    window.requestAnimationFrame(() =>
+      createdProjectReceiptRef.current?.focus(),
+    );
+  }
+
+  function viewCreatedProject(projectId: string): void {
+    const project = document.getElementById(`project-${projectId}`);
+    project?.focus({ preventScroll: true });
+    project?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function ownerAction(
@@ -667,16 +706,25 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
       <div className="section-heading">
         <div>
           <span className="section-kicker">Agent-connected Projects</span>
-          <h2 id="projects-heading">Projects, submissions, and owner review</h2>
+          <h2 id="projects-heading">Your Projects</h2>
         </div>
-        <button
-          className="text-action"
-          disabled={working !== null}
-          type="button"
-          onClick={() => void refresh()}
-        >
-          Refresh
-        </button>
+        <div className="section-heading-actions">
+          <button
+            className="compact-action"
+            type="button"
+            onClick={() => revealOperationalRegion("agents")}
+          >
+            Start another Project
+          </button>
+          <button
+            className="text-action"
+            disabled={working !== null}
+            type="button"
+            onClick={() => void refresh()}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {repairProject !== null && repairReason !== null ? (
@@ -726,7 +774,9 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
           {activeProjects.map((project) => (
             <article
               className={`project-lifecycle-card project-lifecycle-card--${project.state}`}
+              id={`project-${project.projectId}`}
               key={project.projectId}
+              tabIndex={-1}
             >
               <div className="project-lifecycle-heading">
                 <div>
@@ -748,52 +798,67 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                 </span>
               </div>
               <p>{project.objective}</p>
-              <dl className="project-lifecycle-details">
-                <div>
-                  <dt>Source vault</dt>
-                  <dd>
-                    {project.sourceVaults.length === 0
-                      ? "Unavailable"
-                      : project.sourceVaults
-                          .map((vault) => vault.name)
-                          .join(", ")}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Project ID</dt>
-                  <dd>
-                    <code>{project.projectId}</code>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Durable records</dt>
-                  <dd>{project.recordCount.toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt>Agent grants</dt>
-                  <dd>{project.activeGrantCount.toLocaleString()} active</dd>
-                </div>
-                <div>
-                  <dt>Agent discovery</dt>
-                  <dd>
-                    {project.agentVisibility === "discoverable"
-                      ? "Allowed"
-                      : "Owner-only"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Last activity</dt>
-                  <dd>{timestamp(project.lastActivityAt)}</dd>
-                </div>
-                <div>
-                  <dt>Agent context</dt>
-                  <dd>
-                    {project.currentPacket === null
-                      ? "Unavailable"
-                      : "Automatic · refreshed when an agent connects or resumes"}
-                  </dd>
-                </div>
-              </dl>
+              <details
+                className="project-card-details"
+                open={project.duplicateGroupSize > 1}
+              >
+                <summary>
+                  {project.sourceVaults.map((vault) => vault.name).join(", ") ||
+                    "Source unavailable"}
+                  {" · "}
+                  {project.activeGrantCount.toLocaleString()} active agent
+                  {project.activeGrantCount === 1 ? "" : "s"}
+                </summary>
+                <dl className="project-lifecycle-details">
+                  <div>
+                    <dt>Source vaults</dt>
+                    <dd>
+                      {project.sourceVaults.length === 0
+                        ? "Unavailable"
+                        : project.sourceVaults.map((vault, index) => (
+                            <span key={vault.id}>
+                              {index > 0 ? ", " : null}
+                              {vault.name} (<code>{vault.id}</code>)
+                            </span>
+                          ))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Project ID</dt>
+                    <dd>
+                      <code>{project.projectId}</code>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Durable records</dt>
+                    <dd>{project.recordCount.toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt>Agent grants</dt>
+                    <dd>{project.activeGrantCount.toLocaleString()} active</dd>
+                  </div>
+                  <div>
+                    <dt>Agent discovery</dt>
+                    <dd>
+                      {project.agentVisibility === "discoverable"
+                        ? "Allowed"
+                        : "Owner-only"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Last activity</dt>
+                    <dd>{timestamp(project.lastActivityAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>Agent context</dt>
+                    <dd>
+                      {project.currentPacket === null
+                        ? "Unavailable"
+                        : "Automatic · refreshed when an agent connects or resumes"}
+                    </dd>
+                  </div>
+                </dl>
+              </details>
               {project.duplicateGroupSize > 1 ? (
                 <div className="client-warning" role="alert">
                   <strong>
@@ -970,49 +1035,115 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
       ) : null}
 
       <details className="collaboration-advanced">
-        <summary>Advanced/manual setup and portable exchange</summary>
+        <summary>Advanced: manually create a Project or exchange data</summary>
+        <p className="collaboration-advanced-intro">
+          Most people should create and connect Projects from their agent. Use
+          this manual form only for compatibility or recovery. A Project is the
+          durable goal; its first Work Item is the specific task and handoff you
+          want next.
+        </p>
         <div className="collaboration-grid">
-          <article className="collaboration-card">
+          <form
+            className="collaboration-card collaboration-project-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void createProject();
+            }}
+          >
             <span className="backup-step">Manual compatibility path</span>
-            <h3>Create a Project form</h3>
+            <h3>Create one Project and its first Work Item</h3>
             <label>
-              <span>Project label</span>
+              <span>
+                Project label <b className="required-marker">Required</b>
+              </span>
               <input
+                aria-label="Project label"
                 maxLength={120}
+                placeholder="e.g. Website relaunch"
+                required
                 value={projectLabel}
-                onChange={(event) => setProjectLabel(event.target.value)}
+                onChange={(event) => {
+                  setProjectLabel(event.target.value);
+                  setCreatedProject(null);
+                }}
               />
+              <small>
+                A short name you will recognize in OWD and your agent.
+              </small>
             </label>
             <label>
-              <span>Project objective</span>
+              <span>
+                Project objective <b className="required-marker">Required</b>
+              </span>
               <textarea
+                aria-label="Project objective"
                 maxLength={32_768}
+                placeholder="Why does this Project exist, and what outcome should it reach?"
+                required
                 value={projectObjective}
-                onChange={(event) => setProjectObjective(event.target.value)}
+                onChange={(event) => {
+                  setProjectObjective(event.target.value);
+                  setCreatedProject(null);
+                }}
               />
+              <small>
+                The durable goal shared by every Work Item in this Project.
+              </small>
             </label>
             <label>
-              <span>Work Item objective</span>
+              <span>
+                First Work Item objective{" "}
+                <b className="required-marker">Required</b>
+              </span>
               <textarea
+                aria-label="First Work Item objective"
                 maxLength={32_768}
+                placeholder="What is the next bounded task the agent should complete?"
+                required
                 value={workObjective}
-                onChange={(event) => setWorkObjective(event.target.value)}
+                onChange={(event) => {
+                  setWorkObjective(event.target.value);
+                  setCreatedProject(null);
+                }}
               />
+              <small>
+                The first concrete task inside the broader Project objective.
+              </small>
             </label>
             <label>
-              <span>Requested output</span>
+              <span>
+                Requested output <b className="required-marker">Required</b>
+              </span>
               <input
+                aria-label="Requested output"
                 maxLength={32_768}
+                placeholder="e.g. A reviewed pull request and concise handoff"
+                required
                 value={requestedOutput}
-                onChange={(event) => setRequestedOutput(event.target.value)}
+                onChange={(event) => {
+                  setRequestedOutput(event.target.value);
+                  setCreatedProject(null);
+                }}
               />
+              <small>
+                The exact artifact or handoff you expect when this Work Item is
+                done.
+              </small>
             </label>
             <label>
-              <span>Source vault</span>
+              <span>
+                Source vault <b className="required-marker">Required</b>
+              </span>
               <select
+                aria-label="Source vault"
+                disabled={activeVaults.length === 0}
+                required
                 value={selectedVaultId}
                 onChange={(event) => setSelectedVaultId(event.target.value)}
               >
+                {activeVaults.length === 0 ? (
+                  <option value="">No active vaults yet</option>
+                ) : null}
                 {activeVaults.map((vault) => (
                   <option key={vault.id} value={vault.id}>
                     {vault.displayName ?? vault.id}
@@ -1020,30 +1151,79 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                 ))}
               </select>
             </label>
+            {activeVaults.length === 0 ? (
+              <div className="project-form-prerequisite" role="note">
+                <strong>
+                  Connect and sync a vault before creating a Project.
+                </strong>
+                <span>
+                  OWD needs one active vault boundary for the Project&apos;s
+                  sources. Your form draft will stay here while you finish that
+                  step.
+                </span>
+                <button
+                  className="text-action"
+                  type="button"
+                  onClick={() => revealOperationalRegion("vaults")}
+                >
+                  Open vault setup
+                </button>
+              </div>
+            ) : null}
             <label>
               <span>Exact source note · optional</span>
               <input
+                aria-label="Exact source note"
                 placeholder="Research/Brief.md"
                 value={sourcePath}
                 onChange={(event) => setSourcePath(event.target.value)}
               />
+              <small>
+                Add one starting note, or leave blank to begin from the approved
+                vault boundary.
+              </small>
             </label>
             <label>
               <span>Excluded Project notebook folder</span>
               <input
+                aria-label="Excluded Project notebook folder"
                 value={notebookFolder}
                 onChange={(event) => setNotebookFolder(event.target.value)}
               />
+              <small>
+                OWD keeps its generated Project notebook out of source context
+                to avoid feeding an agent its own output.
+              </small>
             </label>
             <button
               className="primary-action"
               disabled={working !== null || activeVaults.length === 0}
-              type="button"
-              onClick={() => void createProject()}
+              type="submit"
             >
               Create Project and packet
             </button>
-          </article>
+            {createdProject !== null ? (
+              <div
+                className="project-create-receipt"
+                ref={createdProjectReceiptRef}
+                role="status"
+                tabIndex={-1}
+              >
+                <strong>{createdProject.label} was created.</strong>
+                <span>
+                  Work Packet {createdProject.packetId.slice(0, 8)} is ready.
+                  The form was cleared for another Project.
+                </span>
+                <button
+                  className="text-action"
+                  type="button"
+                  onClick={() => viewCreatedProject(createdProject.projectId)}
+                >
+                  View the new Project above
+                </button>
+              </div>
+            ) : null}
+          </form>
 
           <article className="collaboration-card">
             <span className="backup-step">No-executable fallback</span>
@@ -1090,141 +1270,154 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         </div>
       </details>
 
-      <div className="collaboration-summary">
-        <strong>
-          {activeProjects.length.toLocaleString()} active Project
-          {activeProjects.length === 1 ? "" : "s"}
-        </strong>
-        <span>
-          {archivedProjects.length.toLocaleString()} archived ·{" "}
-          {(dashboard?.inbox.length ?? 0).toLocaleString()} pending inbox items
-          · {(dashboard?.timeline.length ?? 0).toLocaleString()} timeline
-          records · {(dashboard?.pendingActions.total ?? 0).toLocaleString()}{" "}
-          owner actions
-        </span>
-      </div>
-
-      {dashboard !== null ? (
-        <div className="collaboration-metrics">
-          <article>
-            <span>Authorized participants</span>
-            <strong>
-              {dashboard.contributionStatistics.authorizationClientCount}
-            </strong>
-          </article>
-          <article>
-            <span>Durable contributions</span>
-            <strong>
-              {dashboard.contributionStatistics.attemptCount +
-                dashboard.contributionStatistics.artifactCount +
-                dashboard.contributionStatistics.handoffCount +
-                dashboard.contributionStatistics.reviewCount}
-            </strong>
-          </article>
-          <article>
-            <span>Owner Decisions</span>
-            <strong>{dashboard.contributionStatistics.decisionCount}</strong>
-          </article>
-          <article>
-            <span>Accepted records</span>
-            <strong>
-              {dashboard.contributionStatistics.acceptedRecordCount}
-            </strong>
-          </article>
+      <details className="collaboration-technical">
+        <summary>
+          Workspace totals, participants, and agent access
+          <small>
+            {activeProjects.length.toLocaleString()} active ·{" "}
+            {(dashboard?.pendingActions.total ?? 0).toLocaleString()} owner
+            actions
+          </small>
+        </summary>
+        <div className="collaboration-summary">
+          <strong>
+            {activeProjects.length.toLocaleString()} active Project
+            {activeProjects.length === 1 ? "" : "s"}
+          </strong>
+          <span>
+            {archivedProjects.length.toLocaleString()} archived ·{" "}
+            {(dashboard?.inbox.length ?? 0).toLocaleString()} pending inbox
+            items · {(dashboard?.timeline.length ?? 0).toLocaleString()}{" "}
+            timeline records ·{" "}
+            {(dashboard?.pendingActions.total ?? 0).toLocaleString()} owner
+            actions
+          </span>
         </div>
-      ) : null}
 
-      {(dashboard?.participants.length ?? 0) > 0 ? (
-        <div className="collaboration-list">
-          <h3>Participants and contribution activity</h3>
-          {dashboard?.participants.map((participant) => {
-            const labels =
-              participantClaims[participant.grantId] ??
-              participant.claimedIdentityLabels;
-            return (
-              <article key={participant.grantId}>
-                <div>
-                  <strong>{participant.authorizationClientName}</strong>
-                  <span>
-                    Authorization-bound client · {participant.status} · last
-                    used {timestamp(participant.lastUsedAt)}
-                  </span>
-                  <span>
-                    {participant.attemptCount} Attempts ·{" "}
-                    {participant.artifactCount} Artifacts ·{" "}
-                    {participant.handoffCount} Handoffs ·{" "}
-                    {participant.reviewCount} Reviews ·{" "}
-                    {participant.pendingOwnerActionCount} pending
-                  </span>
-                  {labels.length > 0 ? (
+        {dashboard !== null ? (
+          <div className="collaboration-metrics">
+            <article>
+              <span>Authorized participants</span>
+              <strong>
+                {dashboard.contributionStatistics.authorizationClientCount}
+              </strong>
+            </article>
+            <article>
+              <span>Durable contributions</span>
+              <strong>
+                {dashboard.contributionStatistics.attemptCount +
+                  dashboard.contributionStatistics.artifactCount +
+                  dashboard.contributionStatistics.handoffCount +
+                  dashboard.contributionStatistics.reviewCount}
+              </strong>
+            </article>
+            <article>
+              <span>Owner Decisions</span>
+              <strong>{dashboard.contributionStatistics.decisionCount}</strong>
+            </article>
+            <article>
+              <span>Accepted records</span>
+              <strong>
+                {dashboard.contributionStatistics.acceptedRecordCount}
+              </strong>
+            </article>
+          </div>
+        ) : null}
+
+        {(dashboard?.participants.length ?? 0) > 0 ? (
+          <div className="collaboration-list">
+            <h3>Participants and contribution activity</h3>
+            {dashboard?.participants.map((participant) => {
+              const labels =
+                participantClaims[participant.grantId] ??
+                participant.claimedIdentityLabels;
+              return (
+                <article key={participant.grantId}>
+                  <div>
+                    <strong>{participant.authorizationClientName}</strong>
                     <span>
-                      Client-claimed labels (not identity): {labels.join(", ")}
+                      Authorization-bound client · {participant.status} · last
+                      used {timestamp(participant.lastUsedAt)}
                     </span>
-                  ) : participantClaims[participant.grantId] !== undefined ? (
-                    <span>No client-claimed labels were recorded.</span>
+                    <span>
+                      {participant.attemptCount} Attempts ·{" "}
+                      {participant.artifactCount} Artifacts ·{" "}
+                      {participant.handoffCount} Handoffs ·{" "}
+                      {participant.reviewCount} Reviews ·{" "}
+                      {participant.pendingOwnerActionCount} pending
+                    </span>
+                    {labels.length > 0 ? (
+                      <span>
+                        Client-claimed labels (not identity):{" "}
+                        {labels.join(", ")}
+                      </span>
+                    ) : participantClaims[participant.grantId] !== undefined ? (
+                      <span>No client-claimed labels were recorded.</span>
+                    ) : null}
+                  </div>
+                  {participantClaims[participant.grantId] === undefined ? (
+                    <button
+                      className="text-action"
+                      disabled={claimsLoadingGrantId !== null}
+                      type="button"
+                      onClick={() =>
+                        void loadParticipantClaims(participant.grantId)
+                      }
+                    >
+                      {claimsLoadingGrantId === participant.grantId
+                        ? "Loading claims…"
+                        : "Show client claims"}
+                    </button>
                   ) : null}
-                </div>
-                {participantClaims[participant.grantId] === undefined ? (
-                  <button
-                    className="text-action"
-                    disabled={claimsLoadingGrantId !== null}
-                    type="button"
-                    onClick={() =>
-                      void loadParticipantClaims(participant.grantId)
-                    }
-                  >
-                    {claimsLoadingGrantId === participant.grantId
-                      ? "Loading claims…"
-                      : "Show client claims"}
-                  </button>
-                ) : null}
-              </article>
-            );
-          })}
-          <p className="claim-note">
-            Counts come from Project grants and durable records—not transcripts,
-            chain-of-thought, token volume, or claimed model identity.
-          </p>
-        </div>
-      ) : null}
+                </article>
+              );
+            })}
+            <p className="claim-note">
+              Counts come from Project grants and durable records—not
+              transcripts, chain-of-thought, token volume, or claimed model
+              identity.
+            </p>
+          </div>
+        ) : null}
 
-      {connections.some((connection) => connection.status === "active") ? (
-        <div className="collaboration-list">
-          <h3>Project-scoped agent access</h3>
-          {connections
-            .filter((connection) => connection.status === "active")
-            .map((connection) => (
-              <article key={connection.grantId}>
-                <div>
-                  <strong>{connection.projectLabel}</strong>
-                  <span>
-                    Active Project connection · maintained automatically ·
-                    revoke anytime
-                  </span>
-                  <details className="collaboration-connection-details">
-                    <summary>Technical details</summary>
+        {connections.some((connection) => connection.status === "active") ? (
+          <div className="collaboration-list">
+            <h3>Project-scoped agent access</h3>
+            {connections
+              .filter((connection) => connection.status === "active")
+              .map((connection) => (
+                <article key={connection.grantId}>
+                  <div>
+                    <strong>{connection.projectLabel}</strong>
                     <span>
-                      OAuth client {connection.oauthClientId.slice(0, 72)}
+                      Active Project connection · maintained automatically ·
+                      revoke anytime
                     </span>
-                    <span>Scopes: {connection.scopes.join(", ")}</span>
-                    <span>
-                      Current sliding authorization window ends{" "}
-                      {timestamp(connection.expiresAt)}
-                    </span>
-                  </details>
-                </div>
-                <button
-                  className="danger-action"
-                  disabled={working !== null}
-                  type="button"
-                  onClick={() => void revokeConnection(connection)}
-                >
-                  Revoke Project access
-                </button>
-              </article>
-            ))}
-        </div>
-      ) : null}
+                    <details className="collaboration-connection-details">
+                      <summary>Technical details</summary>
+                      <span>
+                        OAuth client {connection.oauthClientId.slice(0, 72)}
+                      </span>
+                      <span>Scopes: {connection.scopes.join(", ")}</span>
+                      <span>
+                        Current sliding authorization window ends{" "}
+                        {timestamp(connection.expiresAt)}
+                      </span>
+                    </details>
+                  </div>
+                  <button
+                    className="danger-action"
+                    disabled={working !== null}
+                    type="button"
+                    onClick={() => void revokeConnection(connection)}
+                  >
+                    Revoke Project access
+                  </button>
+                </article>
+              ))}
+          </div>
+        ) : null}
+      </details>
 
       {(dashboard?.inbox.length ?? 0) > 0 ? (
         <div className="collaboration-list">
@@ -1296,52 +1489,59 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         </div>
       ) : null}
 
-      <div className="collaboration-list">
-        <h3>Provenance timeline</h3>
-        {(dashboard?.timeline ?? []).map((item) => (
-          <article key={item.recordId}>
-            <div>
-              <strong>{recordLabel(item)}</strong>
-              <span>
-                {timestamp(item.createdAt)} · Project{" "}
-                {item.projectId.slice(0, 8)} · record{" "}
-                {item.recordId.slice(0, 8)}
-              </span>
-            </div>
-            {item.recordType === "decision" ? (
-              <button
-                className="secondary-action"
-                disabled={working !== null || selectedVaultId === ""}
-                type="button"
-                onClick={() => void projectDecision(item)}
-              >
-                Project immutable Decision note
-              </button>
-            ) : item.recordType === "handoff" &&
-              item.visibility === "shared" &&
-              item.workItemId !== null ? (
-              <button
-                className="secondary-action"
-                disabled={working !== null}
-                type="button"
-                onClick={() => void prepareReviewPacket(item)}
-              >
-                Freeze cited review packet
-              </button>
-            ) : null}
-          </article>
-        ))}
-        {dashboard?.timelineNextCursor != null ? (
-          <button
-            className="secondary-action"
-            disabled={working !== null}
-            type="button"
-            onClick={() => void loadMoreTimeline("timeline")}
-          >
-            Load more history
-          </button>
-        ) : null}
-      </div>
+      <details className="collaboration-technical collaboration-history">
+        <summary>
+          Provenance history
+          <small>
+            {(dashboard?.timeline.length ?? 0).toLocaleString()} records
+          </small>
+        </summary>
+        <div className="collaboration-list">
+          {(dashboard?.timeline ?? []).map((item) => (
+            <article key={item.recordId}>
+              <div>
+                <strong>{recordLabel(item)}</strong>
+                <span>
+                  {timestamp(item.createdAt)} · Project{" "}
+                  {item.projectId.slice(0, 8)} · record{" "}
+                  {item.recordId.slice(0, 8)}
+                </span>
+              </div>
+              {item.recordType === "decision" ? (
+                <button
+                  className="secondary-action"
+                  disabled={working !== null || selectedVaultId === ""}
+                  type="button"
+                  onClick={() => void projectDecision(item)}
+                >
+                  Project immutable Decision note
+                </button>
+              ) : item.recordType === "handoff" &&
+                item.visibility === "shared" &&
+                item.workItemId !== null ? (
+                <button
+                  className="secondary-action"
+                  disabled={working !== null}
+                  type="button"
+                  onClick={() => void prepareReviewPacket(item)}
+                >
+                  Freeze cited review packet
+                </button>
+              ) : null}
+            </article>
+          ))}
+          {dashboard?.timelineNextCursor != null ? (
+            <button
+              className="secondary-action"
+              disabled={working !== null}
+              type="button"
+              onClick={() => void loadMoreTimeline("timeline")}
+            >
+              Load more history
+            </button>
+          ) : null}
+        </div>
+      </details>
 
       {working !== null ? (
         <p className="vault-message" aria-live="polite">

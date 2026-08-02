@@ -216,19 +216,19 @@ block requires an agent to check that role before a local mutation.
 The primary writer may create or organize content only for an owner-requested
 bounded task or paths. Every later client receives
 `read-only-collaborator`, warns the owner before a direct write, and hands off
-proposed changes. A restarted session using the same OWD client keeps its role.
-To replace the writer with another active Project client, the owner first stops
-the prior writer, then uses **Make primary** in OWD → Agents. Agents never infer
-a transfer from having Obsidian or filesystem tools, and they do not need to be
-disconnected to remain read-only.
+proposed changes. A restarted session using the same OWD client retains the
+role after `resume_project`. A different authorization remains read-only; the
+global Agents screen never promotes it. Agents do not infer a transfer from
+having Obsidian or filesystem tools, and they do not need to be disconnected to
+remain read-only.
 
 Never give two agents overlapping write responsibility. The writer targets the
 exact vault and paths, putting `vault=<exact vault name>` first in every
 Obsidian CLI command instead of falling back to whichever vault was most
 recently focused. It then lets OWD Sync publish the bounded batch and reports
-completion before another writer takes over. `localVaultAccess` and `AGENTS.md`
+completion before another bounded task begins. `localVaultAccess` and `AGENTS.md`
 warn and coordinate compliant agents; they are not a filesystem lock. If the
-role, transfer, scope, or overlap is unclear, the agent stops and asks.
+role, scope, or overlap is unclear, the agent stops and asks.
 
 ## Handoff and independent review
 

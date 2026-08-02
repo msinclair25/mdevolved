@@ -40,6 +40,14 @@ export function createAntigravityConfig(mcpUrl: string): string {
   );
 }
 
+export function createCodexSetupCommands(mcpUrl: string): string {
+  const quotedUrl = `'${mcpUrl.replaceAll("'", `'\\''`)}'`;
+  return [
+    `codex mcp add ${AGENT_SERVER_NAME} --url ${quotedUrl}`,
+    `codex mcp login ${AGENT_SERVER_NAME} --scopes vault.read,project.initialize.request,project.connect.request`,
+  ].join("\n");
+}
+
 export function createObsidianMindMcpMergeConfig(mcpUrl: string): string {
   return createProfileMcpMergeConfig(mcpUrl);
 }

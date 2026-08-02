@@ -114,8 +114,9 @@ inspect OWD `localVaultAccess` before a direct write:
 
 - `primary-writer`: perform only the owner-requested bounded write;
 - `read-only-collaborator`: propose or hand off instead of writing; and
-- replacement client: write only after the owner stopped the prior writer and
-  selected **Make primary** in OWD → Agents.
+- restarted process: resume the exact Project through the same authorized OWD
+  client to retain its role; a different authorization remains read-only and
+  hands proposed changes to the human owner.
 
 The same rule applies to shell, filesystem, Obsidian CLI, and skill-driven
 writes. OWD Project submission tools are append-only collaboration paths; they

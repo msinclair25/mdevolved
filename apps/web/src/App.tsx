@@ -44,6 +44,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
 } from "react";
@@ -52,6 +53,7 @@ import {
   type PairingCopyState,
 } from "./PairingCopyControl";
 import { PluginSetupGuide } from "./PluginSetupGuide";
+import { SmartCopyField } from "./SmartCopyField";
 import {
   OPERATIONAL_REGION_OPEN_EVENT,
   openOperationalRegion,
@@ -65,12 +67,11 @@ import {
   type WorkspaceSectionId,
 } from "./WorkspaceNavigation";
 import {
-  createAlbatrossAuthorizationCommand,
   createAlbatrossSetupKit,
   createAntigravityConfig,
+  createCodexSetupCommands,
   createCursorInstallUrl,
   createEveConnectionSource,
-  createObsidianMindMcpMergeConfig,
   createObsidianMindProjectMcpCommand,
 } from "./agent-client-config";
 import {
@@ -405,19 +406,332 @@ function freshAlbatrossParticipantId(): string {
   ).join("")}`;
 }
 
+type AgentClientId =
+  | "albatross"
+  | "antigravity"
+  | "codex"
+  | "cursor"
+  | "eve"
+  | "obsidian-mind"
+  | "other";
+
+const AGENT_CLIENTS: Array<{ id: AgentClientId; label: string }> = [
+  { id: "codex", label: "Codex" },
+  { id: "cursor", label: "Cursor" },
+  { id: "antigravity", label: "Antigravity" },
+  { id: "obsidian-mind", label: "Obsidian Mind" },
+  { id: "eve", label: "Eve" },
+  { id: "albatross", label: "Albatross" },
+  { id: "other", label: "Other" },
+];
+
+function authorizedFolderLabel(connection: AgentConnection): string {
+  return connection.pathPrefixes.length === 0
+    ? "Entire vault"
+    : connection.pathPrefixes.join(", ");
+}
+
+function AuthorizedClientInventory({
+  canConnect,
+  connections,
+  onConnect,
+  onRevoke,
+  onRevokeAll,
+  setupExpanded,
+  working,
+}: {
+  canConnect: boolean;
+  connections: AgentConnection[];
+  onConnect: () => void;
+  onRevoke: (connection: AgentConnection) => Promise<boolean>;
+  onRevokeAll: () => Promise<boolean>;
+  setupExpanded: boolean;
+  working: boolean;
+}) {
+  const [selectedConnectionId, setSelectedConnectionId] = useState<
+    string | null
+  >(null);
+  const connectionButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const connectionLabelCounts = new Map<string, number>();
+  const connectionLabelOrdinals = new Map<string, number>();
+  for (const connection of connections) {
+    const labelKey = `${connection.clientName}\u0000${connection.vaultName}`;
+    const ordinal = (connectionLabelCounts.get(labelKey) ?? 0) + 1;
+    connectionLabelOrdinals.set(connection.id, ordinal);
+    connectionLabelCounts.set(labelKey, ordinal);
+  }
+  const selectedConnection =
+    connections.find((connection) => connection.id === selectedConnectionId) ??
+    null;
+
+  function closeSelectedConnection(): void {
+    const connectionId = selectedConnectionId;
+    setSelectedConnectionId(null);
+    window.requestAnimationFrame(() => {
+      if (connectionId !== null) {
+        connectionButtonRefs.current.get(connectionId)?.focus();
+      }
+    });
+  }
+
+  function focusAfterAuthorizationRemoved(): void {
+    setSelectedConnectionId(null);
+    window.requestAnimationFrame(() => {
+      const nextButton = connectionButtonRefs.current.values().next().value as
+        HTMLButtonElement | undefined;
+      (
+        nextButton ??
+        document.getElementById("agent-setup-heading") ??
+        document.getElementById("authorized-client-heading") ??
+        document.getElementById("agent-heading")
+      )?.focus();
+    });
+  }
+
+  function focusAfterAllAuthorizationsRemoved(attempt = 0): void {
+    window.requestAnimationFrame(() => {
+      const setupHeading = document.getElementById("agent-setup-heading");
+      if (setupHeading !== null) {
+        setupHeading.focus();
+        return;
+      }
+      if (attempt < 4) {
+        focusAfterAllAuthorizationsRemoved(attempt + 1);
+        return;
+      }
+      document.getElementById("agent-heading")?.focus();
+    });
+  }
+
+  return (
+    <section
+      className="authorized-client-inventory"
+      aria-labelledby="authorized-client-heading"
+    >
+      <div className="authorized-client-heading">
+        <div>
+          <span className="pairing-label">Reusable MCP access</span>
+          <h3 id="authorized-client-heading" tabIndex={-1}>
+            {connections.length.toLocaleString()} authorized client
+            {connections.length === 1 ? "" : "s"}
+          </h3>
+          <p>
+            Chats and processes can disappear. These buttons represent the
+            client authorizations they can reuse after a restart.
+          </p>
+        </div>
+        <div className="authorized-client-heading-actions">
+          <button
+            aria-controls={
+              canConnect ? "agent-new-connection-setup" : undefined
+            }
+            aria-expanded={canConnect ? setupExpanded : false}
+            className="compact-action"
+            disabled={!canConnect}
+            type="button"
+            onClick={onConnect}
+          >
+            {canConnect
+              ? setupExpanded
+                ? "Hide setup"
+                : "Connect another"
+              : "Setup unavailable"}
+          </button>
+          <button
+            className="danger-action"
+            type="button"
+            disabled={working}
+            onClick={() => {
+              void onRevokeAll().then((revoked) => {
+                if (!revoked) return;
+                focusAfterAllAuthorizationsRemoved();
+              });
+            }}
+          >
+            Revoke all
+          </button>
+        </div>
+      </div>
+
+      <div
+        className="authorized-client-buttons"
+        aria-label="Authorized clients"
+      >
+        {connections.map((connection) => {
+          const selected = connection.id === selectedConnectionId;
+          const labelCount =
+            connectionLabelCounts.get(
+              `${connection.clientName}\u0000${connection.vaultName}`,
+            ) ?? 1;
+          const labelOrdinal = connectionLabelOrdinals.get(connection.id) ?? 1;
+          const duplicateLabel = labelCount > 1;
+          return (
+            <button
+              aria-controls={
+                selected ? `authorized-client-${connection.id}` : undefined
+              }
+              aria-expanded={selected}
+              aria-label={
+                duplicateLabel
+                  ? `${connection.clientName}, ${connection.vaultName}, authorization ${labelOrdinal} of ${labelCount}`
+                  : `${connection.clientName}, ${connection.vaultName}`
+              }
+              className="authorized-client-button"
+              key={connection.id}
+              ref={(element) => {
+                if (element === null) {
+                  connectionButtonRefs.current.delete(connection.id);
+                } else {
+                  connectionButtonRefs.current.set(connection.id, element);
+                }
+              }}
+              type="button"
+              onClick={() =>
+                setSelectedConnectionId(selected ? null : connection.id)
+              }
+            >
+              <span>{connection.clientName}</span>
+              <small>
+                {connection.vaultName}
+                {duplicateLabel ? ` · ${labelOrdinal}/${labelCount}` : ""}
+              </small>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedConnection !== null ? (
+        <article
+          className="authorized-client-popover"
+          id={`authorized-client-${selectedConnection.id}`}
+        >
+          <div className="authorized-client-popover-heading">
+            <div>
+              <span className="vault-status vault-status--active">
+                Authorized client
+              </span>
+              <h4>{selectedConnection.clientName}</h4>
+            </div>
+            <button
+              className="text-action"
+              type="button"
+              onClick={closeSelectedConnection}
+            >
+              Close
+            </button>
+          </div>
+          <dl className="authorized-client-details">
+            <div>
+              <dt>Vault</dt>
+              <dd>{selectedConnection.vaultName}</dd>
+            </div>
+            <div>
+              <dt>Access</dt>
+              <dd>{authorizedFolderLabel(selectedConnection)}</dd>
+            </div>
+            <div>
+              <dt>Last used</dt>
+              <dd>{formatTimestamp(selectedConnection.lastUsedAt)}</dd>
+            </div>
+          </dl>
+          <div className="authorized-client-continuity" role="note">
+            <strong>
+              {selectedConnection.writerRole === "primary-writer"
+                ? "Primary writer authorization"
+                : selectedConnection.writerRole === "read-only-collaborator"
+                  ? "Read-only authorization"
+                  : "Project not connected yet"}
+            </strong>
+            <span>
+              {selectedConnection.writerRole === "primary-writer"
+                ? "A restarted process can retain continuity only through this same authorization."
+                : selectedConnection.writerRole === "read-only-collaborator"
+                  ? "This authorization remains read-only and cannot be promoted from this global screen."
+                  : "Choose the exact first-Project path before asking this client to resume."}
+            </span>
+          </div>
+          {selectedConnection.writerRole !== "unassigned" &&
+          selectedConnection.writerEligible ? (
+            <div className="authorized-client-resume">
+              <div>
+                <strong>Restarted the client?</strong>
+                <span>Paste this into it to resume the exact Project.</span>
+              </div>
+              <SmartCopyField
+                label="Copy resume instruction"
+                value="OWD resume project"
+              />
+            </div>
+          ) : selectedConnection.writerRole === "unassigned" &&
+            selectedConnection.preparedProjectHandoff !== null ? (
+            <div className="authorized-client-resume">
+              <div>
+                <strong>First Project prepared</strong>
+                <span>Paste this into the same client to continue.</span>
+              </div>
+              <SmartCopyField
+                label="Copy Project instruction"
+                value="Connect this project to OWD"
+              />
+            </div>
+          ) : selectedConnection.writerRole === "unassigned" ? (
+            <button
+              className="compact-action"
+              type="button"
+              onClick={() => revealOperationalRegion("architecture")}
+            >
+              Finish Project 1 setup
+            </button>
+          ) : (
+            <p className="authorized-client-no-project">
+              No active Project command is available for this authorization.
+            </p>
+          )}
+          <details className="authorized-client-technical">
+            <summary>Technical details</summary>
+            <p>
+              Origin <code>{selectedConnection.clientOrigin}</code>
+            </p>
+            <p>
+              Authorization <code>{selectedConnection.id}</code>
+            </p>
+          </details>
+          <button
+            className="danger-action"
+            type="button"
+            disabled={working}
+            onClick={() => {
+              void onRevoke(selectedConnection).then((revoked) => {
+                if (revoked) focusAfterAuthorizationRemoved();
+              });
+            }}
+          >
+            Revoke authorization
+          </button>
+        </article>
+      ) : null}
+    </section>
+  );
+}
+
 function AgentConnectionsPanel({
   prerequisite,
+  readiness,
 }: {
   prerequisite: AgentSetupPrerequisite;
+  readiness: SetupReadiness | null;
 }) {
   const [state, setState] = useState<ConnectionsState>({ kind: "loading" });
   const [message, setMessage] = useState<string | null>(null);
   const [albatrossParticipantId, setAlbatrossParticipantId] = useState(
     freshAlbatrossParticipantId,
   );
+  const [selectedClient, setSelectedClient] = useState<AgentClientId>("codex");
+  const [setupExpanded, setSetupExpanded] = useState(false);
   const [working, setWorking] = useState(false);
   const settledRef = useRef(false);
   const refreshSequenceRef = useRef(0);
+  const activeConnectionIdsRef = useRef<Set<string> | null>(null);
 
   async function refresh(signal?: AbortSignal): Promise<void> {
     const refreshSequence = refreshSequenceRef.current + 1;
@@ -432,6 +746,21 @@ function AgentConnectionsPanel({
       ) {
         return;
       }
+      const activeConnectionIds = new Set(
+        parsed.connections
+          .filter((connection) => connection.status === "active")
+          .map((connection) => connection.id),
+      );
+      const previousActiveConnectionIds = activeConnectionIdsRef.current;
+      if (
+        previousActiveConnectionIds !== null &&
+        [...activeConnectionIds].some(
+          (connectionId) => !previousActiveConnectionIds.has(connectionId),
+        )
+      ) {
+        setSetupExpanded(false);
+      }
+      activeConnectionIdsRef.current = activeConnectionIds;
       setState({
         connections: parsed.connections,
         kind: "ready",
@@ -479,91 +808,13 @@ function AgentConnectionsPanel({
     };
   }, []);
 
-  async function copyMcpUrl(): Promise<void> {
-    if (state.kind !== "ready") return;
-    try {
-      await navigator.clipboard.writeText(state.mcpUrl);
-      setMessage(
-        "MCP URL copied. Add it as a remote HTTP MCP server in your agent.",
-      );
-    } catch {
-      setMessage(
-        "Clipboard access was blocked. Select and copy the MCP URL below.",
-      );
-    }
-  }
-
-  async function copyAntigravityConfig(): Promise<void> {
-    if (state.kind !== "ready") return;
-    try {
-      await navigator.clipboard.writeText(
-        createAntigravityConfig(state.mcpUrl),
-      );
-      setMessage(
-        "Antigravity config copied. Merge the md-evolved entry with any MCP servers you already use.",
-      );
-    } catch {
-      setMessage(
-        "Clipboard access was blocked. Select and copy the Antigravity config below.",
-      );
-    }
-  }
-
-  async function copyObsidianMindSetup(): Promise<void> {
-    if (state.kind !== "ready") return;
-    try {
-      await navigator.clipboard.writeText(
-        createObsidianMindProjectMcpCommand(state.mcpUrl),
-      );
-      setMessage(
-        "Obsidian Mind setup copied. Run it from the vault root; Claude updates .mcp.json without replacing qmd.",
-      );
-    } catch {
-      setMessage(
-        "Clipboard access was blocked. Select and copy the Obsidian Mind setup command below.",
-      );
-    }
-  }
-
-  async function copyEveSetup(): Promise<void> {
-    if (state.kind !== "ready") return;
-    try {
-      await navigator.clipboard.writeText(
-        createEveConnectionSource(state.mcpUrl),
-      );
-      setMessage(
-        "Eve connection copied. Save it as agent/connections/owd.ts; Eve will handle the user-scoped OAuth pause and resume.",
-      );
-    } catch {
-      setMessage(
-        "Clipboard access was blocked. Select and copy the Eve connection module below.",
-      );
-    }
-  }
-
-  async function copyAlbatrossSetup(): Promise<void> {
-    if (state.kind !== "ready") return;
-    try {
-      await navigator.clipboard.writeText(
-        createAlbatrossSetupKit(state.mcpUrl, albatrossParticipantId),
-      );
-      setMessage(
-        "Albatross setup kit copied. Authorize first, merge the config and prompt blocks, then run /mcp trust owd.",
-      );
-    } catch {
-      setMessage(
-        "Clipboard access was blocked. Select and copy the Albatross authorization command below.",
-      );
-    }
-  }
-
-  async function revoke(connection: AgentConnection): Promise<void> {
+  async function revoke(connection: AgentConnection): Promise<boolean> {
     if (
       !window.confirm(
         `Revoke ${connection.clientName}'s read access to ${connection.vaultName}? Its next tool call will be denied.`,
       )
     ) {
-      return;
+      return false;
     }
     setWorking(true);
     setMessage(null);
@@ -578,24 +829,26 @@ function AgentConnectionsPanel({
       setMessage(
         "Agent access revoked. Existing tokens can no longer read vault data.",
       );
+      return true;
     } catch (error: unknown) {
       setMessage(
         error instanceof Error
           ? error.message
           : "The connection could not be revoked.",
       );
+      return false;
     } finally {
       setWorking(false);
     }
   }
 
-  async function revokeAll(): Promise<void> {
+  async function revokeAll(): Promise<boolean> {
     if (
       !window.confirm(
         "Revoke every active agent connection? Their next tool calls will all be denied.",
       )
     ) {
-      return;
+      return false;
     }
     setWorking(true);
     setMessage(null);
@@ -605,44 +858,14 @@ function AgentConnectionsPanel({
       await refresh();
       requestSetupReadinessRefresh();
       setMessage("All agent access has been revoked.");
+      return true;
     } catch (error: unknown) {
       setMessage(
         error instanceof Error
           ? error.message
           : "Agent connections could not be revoked.",
       );
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function makePrimaryWriter(connection: AgentConnection): Promise<void> {
-    if (
-      !window.confirm(
-        `Make ${connection.clientName} the primary writer for ${connection.vaultName}? Continue only after the previous primary writer has stopped. The previous client will become read-only on its next OWD resume.`,
-      )
-    ) {
-      return;
-    }
-    setWorking(true);
-    setMessage(null);
-    try {
-      const csrf = await loadCsrf();
-      await requestJson(
-        `/api/agent/connections/${encodeURIComponent(connection.id)}/make-primary-writer`,
-        csrf,
-        { confirmedPreviousWriterStopped: true },
-      );
-      await refresh();
-      setMessage(
-        `${connection.clientName} is now the primary writer for ${connection.vaultName}. Have that client run OWD resume project; the prior client is now read-only.`,
-      );
-    } catch (error: unknown) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "The primary writer could not be changed.",
-      );
+      return false;
     } finally {
       setWorking(false);
     }
@@ -652,9 +875,40 @@ function AgentConnectionsPanel({
     state.kind === "ready"
       ? state.connections.filter((connection) => connection.status === "active")
       : [];
-  const preparedConnection = active.find(
+  const preparedConnections = active.filter(
     (connection) => connection.preparedProjectHandoff !== null,
   );
+  const preparedVaultIds = new Set(
+    preparedConnections.map((connection) => connection.vaultId),
+  );
+  const readinessByVault = new Map(
+    (readiness?.vaults ?? []).map((vault) => [vault.id, vault]),
+  );
+  const establishedConnections = active.filter(
+    (connection) =>
+      connection.writerRole !== "unassigned" ||
+      (readinessByVault.get(connection.vaultId)?.activeProjectCount ?? 0) > 0,
+  );
+  const firstProjectVaults = [
+    ...new Map(
+      active
+        .filter((connection) => {
+          const vaultReadiness = readinessByVault.get(connection.vaultId);
+          return (
+            connection.writerRole === "unassigned" &&
+            !preparedVaultIds.has(connection.vaultId) &&
+            (vaultReadiness === undefined ||
+              (vaultReadiness.preparedProjectHandoff === null &&
+                vaultReadiness.activeProjectCount === 0))
+          );
+        })
+        .map((connection) => [
+          connection.vaultId,
+          { id: connection.vaultId, name: connection.vaultName },
+        ]),
+    ).values(),
+  ];
+  const hasEstablishedProject = establishedConnections.length > 0;
   const connectionSummary =
     state.kind === "loading"
       ? "Checking agent access…"
@@ -667,8 +921,8 @@ function AgentConnectionsPanel({
             : prerequisite === "library-required"
               ? "OWD is preparing the vault for agents"
               : active.length === 0
-                ? "No active agent connections"
-                : `${active.length.toLocaleString()} active agent connection${
+                ? "No authorized clients"
+                : `${active.length.toLocaleString()} authorized client${
                     active.length === 1 ? "" : "s"
                   }`;
 
@@ -677,18 +931,10 @@ function AgentConnectionsPanel({
       <div className="section-heading">
         <div>
           <span className="section-kicker">AI agent access</span>
-          <h2 id="agent-heading">Choose what each agent can access.</h2>
+          <h2 id="agent-heading" tabIndex={-1}>
+            Authorized clients and Project access.
+          </h2>
         </div>
-        {active.length > 0 ? (
-          <button
-            className="danger-action"
-            type="button"
-            disabled={working}
-            onClick={() => void revokeAll()}
-          >
-            Revoke all agents
-          </button>
-        ) : null}
       </div>
 
       {state.kind === "loading" ? (
@@ -699,218 +945,248 @@ function AgentConnectionsPanel({
         </p>
       ) : (
         <>
-          {prerequisite === "ready" ? (
+          {active.length > 0 ? (
+            <AuthorizedClientInventory
+              canConnect={prerequisite === "ready"}
+              connections={active}
+              onConnect={() => {
+                setSetupExpanded((current) => !current);
+              }}
+              onRevoke={revoke}
+              onRevokeAll={revokeAll}
+              setupExpanded={setupExpanded}
+              working={working}
+            />
+          ) : null}
+
+          {prerequisite === "ready" &&
+          (active.length === 0 || setupExpanded) ? (
             <>
-              <div className="agent-connect-card">
-                <div>
-                  <span className="pairing-label">OAuth · passkey consent</span>
-                  <h3>
-                    Connect Codex, Claude, Grok, Hoplon, or another MCP client
-                  </h3>
-                  <p>
-                    Add this as a remote HTTP MCP server. Your agent opens OWD,
-                    where you approve one selected vault and any folder limits
-                    you choose. To use another vault, authorize a separate
-                    connection for it. A separately named request-only
-                    capability can ask for Project initialization; it cannot
-                    create or join a Project by itself.
-                  </p>
-                  <p>
-                    Connect the agent you want coordinating vault edits first,
-                    then use that agent to establish this vault&apos;s first OWD
-                    Project. You remain the owner; that agent becomes the
-                    advisory primary writer, and later agents are warned to stay
-                    read-only.
-                  </p>
-                  <code>{state.mcpUrl}</code>
-                </div>
-                <button
-                  className="primary-action"
-                  type="button"
-                  onClick={() => void copyMcpUrl()}
-                >
-                  Copy MCP URL
-                </button>
-              </div>
-
-              <div className="agent-client-grid">
-                <article className="agent-client-card">
-                  <span className="pairing-label">Cursor</span>
-                  <h3>Install with one click</h3>
-                  <p>
-                    Open Cursor&apos;s MCP installer with this deployment
-                    already filled in. OWD still requires your passkey and exact
-                    vault approval before any note can be read.
-                  </p>
-                  <a
-                    className="primary-action agent-client-action"
-                    href={createCursorInstallUrl(state.mcpUrl)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Add to Cursor ↗
-                  </a>
-                  <small>
-                    Sends only this deployment&apos;s public MCP URL to Cursor
-                    when clicked—never a token or vault credential.
-                  </small>
-                </article>
-
-                <article className="agent-client-card">
-                  <span className="pairing-label">Antigravity</span>
-                  <h3>Copy the current config</h3>
-                  <p>
-                    Open Antigravity Settings → Customizations → MCP Servers,
-                    then merge this entry into your existing configuration and
-                    choose Authenticate.
-                  </p>
-                  <pre>
-                    <code>{createAntigravityConfig(state.mcpUrl)}</code>
-                  </pre>
-                  <button
-                    className="secondary-action agent-client-action"
-                    type="button"
-                    onClick={() => void copyAntigravityConfig()}
-                  >
-                    Copy Antigravity config
-                  </button>
-                  <small>
-                    Merge the entry if you already use MCP servers; do not
-                    replace them.
-                  </small>
-                </article>
-
-                <article className="agent-client-card">
-                  <span className="pairing-label">Obsidian Mind 8.x</span>
-                  <h3>Keep the local brain. Add OWD beside it.</h3>
-                  <p>
-                    From the Obsidian Mind vault root, run this once. Claude
-                    merges OWD into the project&apos;s existing{" "}
-                    <code>.mcp.json</code>, preserving <code>qmd</code>.
-                  </p>
-                  <pre>
-                    <code>
-                      {createObsidianMindProjectMcpCommand(state.mcpUrl)}
-                    </code>
-                  </pre>
-                  <button
-                    className="secondary-action agent-client-action"
-                    type="button"
-                    onClick={() => void copyObsidianMindSetup()}
-                  >
-                    Copy one-command setup
-                  </button>
-                  <small>
-                    Other clients can merge{" "}
-                    <code>
-                      {createObsidianMindMcpMergeConfig(state.mcpUrl)}
-                    </code>
-                    . OWD handles Projects and provenance; Mind keeps local
-                    graph search and scoped memory.
-                  </small>
-                </article>
-
-                <article className="agent-client-card">
-                  <span className="pairing-label">Eve 0.29</span>
-                  <h3>Drop in one user-scoped connection</h3>
-                  <p>
-                    Save this complete module as{" "}
-                    <code>agent/connections/owd.ts</code>. Eve pauses the tool
-                    call for OAuth, returns you here for the exact vault
-                    approval, then resumes automatically.
-                  </p>
-                  <pre>
-                    <code>{createEveConnectionSource(state.mcpUrl)}</code>
-                  </pre>
-                  <button
-                    className="secondary-action agent-client-action"
-                    type="button"
-                    onClick={() => void copyEveSetup()}
-                  >
-                    Copy Eve connection
-                  </button>
-                  <small>
-                    This uses user-scoped OAuth—never a static token. Give a
-                    genuinely independent Eve reviewer its own connector UID,
-                    such as <code>oauth/owd-reviewer</code>.
-                  </small>
-                </article>
-
-                <article className="agent-client-card">
-                  <span className="pairing-label">Albatross 2.0</span>
-                  <h3>Authorize once. Then let Albatross resume.</h3>
-                  <p>
-                    Run this before Albatross starts, then use the copied kit to
-                    merge one MCP entry and one managed workspace-prompt block.
-                    Existing settings stay intact.
-                  </p>
-                  <pre>
-                    <code>
-                      {createAlbatrossAuthorizationCommand(
-                        state.mcpUrl,
-                        albatrossParticipantId,
-                      )}
-                    </code>
-                  </pre>
-                  <div className="agent-client-actions">
-                    <button
-                      className="secondary-action agent-client-action"
-                      type="button"
-                      onClick={() => void copyAlbatrossSetup()}
-                    >
-                      Copy Albatross setup kit
-                    </button>
-                    <button
-                      className="secondary-action agent-client-action"
-                      type="button"
-                      onClick={() => {
-                        const next = freshAlbatrossParticipantId();
-                        setAlbatrossParticipantId(next);
-                        setMessage(
-                          `New Albatross participant ${next} is ready to copy.`,
-                        );
-                      }}
-                    >
-                      New participant ID
-                    </button>
+              <section
+                className="agent-setup-flow"
+                aria-labelledby="agent-setup-heading"
+                id="agent-new-connection-setup"
+              >
+                <div className="agent-setup-heading">
+                  <div>
+                    <span className="pairing-label">
+                      {active.length === 0
+                        ? "Connect a client"
+                        : "Connect another client"}
+                    </span>
+                    <h3 id="agent-setup-heading" tabIndex={-1}>
+                      Choose one setup path.
+                    </h3>
+                    <code className="agent-mcp-endpoint">{state.mcpUrl}</code>
                   </div>
-                  <small>
-                    The kit pins the temporary bridge, keeps waits below
-                    Albatross&apos;s 30-second MCP limit, and uses{" "}
-                    <code>{albatrossParticipantId}</code> as one OWD
-                    participant. Generate another ID for an independent reviewer
-                    or another workspace.
-                  </small>
-                </article>
-
-                <article className="agent-client-card">
-                  <span className="pairing-label">Gemini · local · other</span>
-                  <h3>Use any compatible client</h3>
-                  <ol>
-                    <li>
-                      Add the URL above as a remote Streamable HTTP MCP server.
-                    </li>
-                    <li>
-                      Start authentication and return to this OWD dashboard.
-                    </li>
-                    <li>
-                      Approve exactly one vault and any folder restrictions.
-                    </li>
-                    <li>Revoke the connection here whenever you are done.</li>
-                  </ol>
-                  <button
-                    className="secondary-action agent-client-action"
-                    type="button"
-                    onClick={() => void copyMcpUrl()}
+                  <ol
+                    className="agent-setup-steps"
+                    aria-label="Agent setup steps"
                   >
-                    Copy universal MCP URL
-                  </button>
-                  <small>
-                    Works with clients that support remote MCP plus OAuth
-                    dynamic registration or client metadata documents.
-                  </small>
+                    <li>
+                      <span>1</span> Choose
+                    </li>
+                    <li>
+                      <span>2</span> Install
+                    </li>
+                    <li>
+                      <span>3</span> Approve vault
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="agent-client-picker" aria-label="Agent clients">
+                  {AGENT_CLIENTS.map((client) => (
+                    <button
+                      aria-pressed={selectedClient === client.id}
+                      className="agent-client-choice"
+                      key={client.id}
+                      type="button"
+                      onClick={() => setSelectedClient(client.id)}
+                    >
+                      {client.label}
+                    </button>
+                  ))}
+                </div>
+
+                <article className="agent-client-guide">
+                  {selectedClient === "codex" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Codex</span>
+                          <h3>Install and authenticate</h3>
+                        </div>
+                        <span className="client-path">
+                          Terminal → browser approval → <code>/mcp</code>
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy setup"
+                        value={createCodexSetupCommands(state.mcpUrl)}
+                      />
+                      <p>
+                        Run both lines. Approve the exact vault in the page that
+                        opens, restart Codex, then use <code>/mcp</code> to
+                        verify.
+                      </p>
+                      <details className="agent-client-help">
+                        <summary>Use Codex Settings instead</summary>
+                        <p>
+                          Settings → MCP servers → Add server → Streamable HTTP.
+                          Paste the MCP URL, save, restart, then choose
+                          Authenticate.
+                        </p>
+                        <SmartCopyField
+                          label="Copy MCP URL"
+                          value={state.mcpUrl}
+                        />
+                      </details>
+                    </>
+                  ) : selectedClient === "cursor" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Cursor</span>
+                          <h3>Install with one click</h3>
+                        </div>
+                        <span className="client-path">
+                          Cursor → browser approval
+                        </span>
+                      </div>
+                      <a
+                        className="compact-action"
+                        href={createCursorInstallUrl(state.mcpUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Add OWD to Cursor ↗
+                      </a>
+                      <p>
+                        Cursor receives only this public MCP URL. OWD still asks
+                        you to approve the exact vault.
+                      </p>
+                    </>
+                  ) : selectedClient === "antigravity" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Antigravity</span>
+                          <h3>Add one MCP entry</h3>
+                        </div>
+                        <span className="client-path">
+                          Settings → Customizations → MCP Servers
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy config"
+                        value={createAntigravityConfig(state.mcpUrl)}
+                      />
+                      <p>
+                        Merge this entry with your existing servers, then choose
+                        Authenticate.
+                      </p>
+                    </>
+                  ) : selectedClient === "obsidian-mind" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">
+                            Obsidian Mind 8.x
+                          </span>
+                          <h3>Add OWD beside qmd</h3>
+                        </div>
+                        <span className="client-path">
+                          Vault root → terminal
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy setup"
+                        value={createObsidianMindProjectMcpCommand(
+                          state.mcpUrl,
+                        )}
+                      />
+                      <p>
+                        Run once from the vault root. Claude merges OWD into{" "}
+                        <code>.mcp.json</code> without replacing qmd.
+                      </p>
+                    </>
+                  ) : selectedClient === "eve" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Eve 0.29</span>
+                          <h3>Add a user-scoped connection</h3>
+                        </div>
+                        <span className="client-path">
+                          <code>agent/connections/owd.ts</code>
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy module"
+                        value={createEveConnectionSource(state.mcpUrl)}
+                      />
+                      <p>
+                        Save the complete module at the path above. Eve pauses
+                        for your vault approval, then resumes.
+                      </p>
+                    </>
+                  ) : selectedClient === "albatross" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Albatross 2.0</span>
+                          <h3>Authorize one participant</h3>
+                        </div>
+                        <button
+                          className="text-action"
+                          type="button"
+                          onClick={() =>
+                            setAlbatrossParticipantId(
+                              freshAlbatrossParticipantId(),
+                            )
+                          }
+                        >
+                          New participant ID
+                        </button>
+                      </div>
+                      <SmartCopyField
+                        label="Copy setup kit"
+                        value={createAlbatrossSetupKit(
+                          state.mcpUrl,
+                          albatrossParticipantId,
+                        )}
+                      />
+                      <p>
+                        Authorize first, merge the included MCP and prompt
+                        blocks, then run <code>/mcp trust owd</code>.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">
+                            Any compatible client
+                          </span>
+                          <h3>Add a remote HTTP MCP server</h3>
+                        </div>
+                        <span className="client-path">
+                          Streamable HTTP + OAuth
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy MCP URL"
+                        value={state.mcpUrl}
+                      />
+                      <p>
+                        Add the URL, start authentication, then approve one
+                        vault and its folder boundary in OWD.
+                      </p>
+                    </>
+                  )}
                 </article>
-              </div>
+              </section>
             </>
           ) : prerequisite === "library-required" ? (
             <article className="agent-connect-card agent-setup-blocked">
@@ -956,7 +1232,7 @@ function AgentConnectionsPanel({
 
           {active.length === 0 ? (
             <div className="empty-vaults agent-empty">
-              <h3>No active agent connections.</h3>
+              <h3>No authorized clients.</h3>
               <p>
                 Nothing can read a vault through MCP until you complete the
                 passkey approval screen from an agent client.
@@ -966,161 +1242,112 @@ function AgentConnectionsPanel({
             <>
               {prerequisite === "ready" ? (
                 <article
-                  className="agent-connect-card agent-project-handoff"
+                  className="agent-project-launcher"
                   aria-labelledby="agent-project-handoff-heading"
                 >
-                  <div>
-                    <span className="pairing-label">
-                      {preparedConnection === undefined
-                        ? "Agent connected · finish onboarding"
-                        : "First Project prepared · final step"}
-                    </span>
-                    <h3 id="agent-project-handoff-heading">
-                      {preparedConnection === undefined
-                        ? "Prepare the first Project in How OWD works"
-                        : `In ${preparedConnection.clientName}, say: Connect this project to OWD`}
-                    </h3>
-                    {preparedConnection === undefined ? (
-                      <>
-                        <p>
-                          Choose the Project name, folder, and primary agent
-                          once in the guided onboarding. Then return to that
-                          agent and use one sentence—there is no second website
-                          approval for the matching first Project.
-                        </p>
-                        <button
-                          className="primary-action"
-                          type="button"
-                          onClick={() =>
-                            revealOperationalRegion("architecture")
-                          }
-                        >
-                          Finish onboarding
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p>
-                          OWD will use the owner-prepared Project{" "}
-                          <strong>
-                            {
-                              preparedConnection.preparedProjectHandoff
-                                ?.projectLabel
-                            }
-                          </strong>{" "}
-                          in{" "}
-                          <strong>
-                            {preparedConnection.preparedProjectHandoff
-                              ?.folderBoundary || "the entire approved vault"}
-                          </strong>
-                          . The matching first request completes on this same
-                          MCP connection.
-                        </p>
-                        <p>
-                          No prompt to copy, reconnect, daily renewal, or return
-                          to OWD is required. A different Project name or folder
-                          still stops for exact owner review.
-                        </p>
-                        <details className="project-handoff-advanced">
-                          <summary>Change the prepared first Project</summary>
-                          <ProjectHandoffSetup
-                            onPrepared={refresh}
-                            vaultId={preparedConnection.vaultId}
-                            vaultName={preparedConnection.vaultName}
-                          />
-                        </details>
-                      </>
-                    )}
-                  </div>
-                </article>
-              ) : null}
-
-              <div className="client-warning agent-writer-guidance">
-                <strong>Primary follows the OWD client, not the chat.</strong>
-                <span>
-                  A restarted session using the same MCP connection stays
-                  primary after <strong>OWD resume project</strong>. If a
-                  replacement session was authorized as a different client, stop
-                  the previous writer, then choose <strong>Make primary</strong>{" "}
-                  below once. OWD moves the durable role; no Project reconnect
-                  or new approval is required.
-                </span>
-              </div>
-
-              <div className="agent-list">
-                {active.map((connection) => (
-                  <article className="agent-row" key={connection.id}>
+                  <div className="agent-project-launcher-heading">
                     <div>
-                      <span className="vault-status vault-status--active">
-                        MCP read only
+                      <span className="pairing-label">
+                        {hasEstablishedProject
+                          ? "Projects · repeat anytime"
+                          : preparedConnections.length > 0
+                            ? "Project 1 ready for your agent"
+                            : "Project 1"}
                       </span>
-                      <h3>{connection.clientName}</h3>
-                      <span className="vault-id">
-                        {connection.clientOrigin}
-                      </span>
+                      <h3 id="agent-project-handoff-heading">
+                        {hasEstablishedProject
+                          ? "Start another Project"
+                          : preparedConnections.length === 1
+                            ? `${preparedConnections[0]?.preparedProjectHandoff?.projectLabel} is prepared`
+                            : preparedConnections.length > 1
+                              ? `${preparedConnections.length} first Projects are prepared`
+                              : "Finish Project 1 setup"}
+                      </h3>
                     </div>
-                    <dl className="agent-details">
-                      <div>
-                        <dt>Vault</dt>
-                        <dd>{connection.vaultName}</dd>
+                  </div>
+                  {hasEstablishedProject ? (
+                    <LaterProjectLauncher
+                      connections={establishedConnections}
+                    />
+                  ) : null}
+                  {preparedConnections.map((connection) => (
+                    <section
+                      className="prepared-project-by-vault"
+                      key={connection.id}
+                    >
+                      {hasEstablishedProject ? (
+                        <div className="prepared-project-by-vault-heading">
+                          <h4>
+                            {connection.preparedProjectHandoff?.projectLabel} is
+                            prepared
+                          </h4>
+                          <span className="client-path">
+                            Next: continue in {connection.clientName}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="client-path">
+                          Next: continue in {connection.clientName}
+                        </span>
+                      )}
+                      <div className="prepared-project-summary">
+                        <span>
+                          <b>Agent</b>
+                          {connection.clientName}
+                        </span>
+                        <span>
+                          <b>Vault</b>
+                          {connection.vaultName}
+                        </span>
+                        <span>
+                          <b>Folder</b>
+                          {connection.preparedProjectHandoff?.folderBoundary ||
+                            "Entire approved vault"}
+                        </span>
                       </div>
-                      <div>
-                        <dt>Folders</dt>
-                        <dd>
-                          {connection.pathPrefixes.length === 0
-                            ? "Entire vault"
-                            : connection.pathPrefixes.join(", ")}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Restored sources</dt>
-                        <dd>
-                          {connection.approvedRestoredSources.length === 0
-                            ? "None"
-                            : connection.approvedRestoredSources
-                                .map((source) => source.sourceVaultName)
-                                .join(", ")}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Last used</dt>
-                        <dd>{formatTimestamp(connection.lastUsedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Local vault role</dt>
-                        <dd>
-                          {connection.writerRole === "primary-writer"
-                            ? "Primary writer"
-                            : connection.writerRole === "read-only-collaborator"
-                              ? "Read-only collaborator"
-                              : "Assigned after first Project"}
-                        </dd>
-                      </div>
-                    </dl>
-                    <div className="agent-row-actions">
-                      {connection.writerRole === "read-only-collaborator" &&
-                      connection.writerEligible ? (
-                        <button
-                          className="secondary-action"
-                          type="button"
-                          disabled={working}
-                          onClick={() => void makePrimaryWriter(connection)}
-                        >
-                          Make primary
-                        </button>
+                      <p className="agent-project-next-step">
+                        Ask that agent to start or connect this Project. The
+                        exact matching request completes on the same connection.
+                      </p>
+                      <details className="project-handoff-advanced">
+                        <summary>Change the prepared first Project</summary>
+                        <ProjectHandoffSetup
+                          buttonLabel="Update first Project"
+                          onPrepared={refresh}
+                          vaultId={connection.vaultId}
+                          vaultName={connection.vaultName}
+                        />
+                      </details>
+                    </section>
+                  ))}
+                  {firstProjectVaults.length > 0 ? (
+                    <div className="agent-project-first-step">
+                      <p>
+                        {hasEstablishedProject
+                          ? `${firstProjectVaults.length.toLocaleString()} connected vault${firstProjectVaults.length === 1 ? "" : "s"} still ${firstProjectVaults.length === 1 ? "needs" : "need"} a separate Project 1 setup.`
+                          : "Choose the first Project's agent, name, and folder in the guided setup. After that, this card becomes the repeatable Project 2, 3, and later launcher."}
+                      </p>
+                      {hasEstablishedProject ? (
+                        <ul className="agent-project-vault-boundaries">
+                          {firstProjectVaults.map((vault) => (
+                            <li key={vault.id}>
+                              <span>{vault.name}</span>
+                              <code>{vault.id}</code>
+                            </li>
+                          ))}
+                        </ul>
                       ) : null}
                       <button
-                        className="danger-action"
+                        className="compact-action"
                         type="button"
-                        disabled={working}
-                        onClick={() => void revoke(connection)}
+                        onClick={() => revealOperationalRegion("architecture")}
                       >
-                        Revoke agent
+                        Finish Project 1 setup
                       </button>
                     </div>
-                  </article>
-                ))}
-              </div>
+                  ) : null}
+                </article>
+              ) : null}
             </>
           )}
           {message !== null ? (
@@ -1147,20 +1374,118 @@ function AgentConnectionsPanel({
   );
 }
 
+function LaterProjectLauncher({
+  connections,
+}: {
+  connections: AgentConnection[];
+}) {
+  const eligible = connections.filter(
+    (connection) =>
+      connection.scopes.some(
+        (scope) => scope === "project.initialize.request",
+      ) &&
+      connection.scopes.some((scope) => scope === "project.connect.request"),
+  );
+  const [selectedAgentId, setSelectedAgentId] = useState(eligible[0]?.id ?? "");
+  const [projectName, setProjectName] = useState("");
+  const [goal, setGoal] = useState("");
+
+  useEffect(() => {
+    if (!eligible.some((connection) => connection.id === selectedAgentId)) {
+      setSelectedAgentId(eligible[0]?.id ?? "");
+    }
+  }, [eligible, selectedAgentId]);
+
+  const selectedConnection =
+    eligible.find((connection) => connection.id === selectedAgentId) ?? null;
+  const trimmedName = projectName.trim();
+  const trimmedGoal = goal.trim();
+  const request =
+    selectedConnection === null || trimmedName === ""
+      ? "Name the Project to build the request."
+      : `Start a new OWD Project named ${JSON.stringify(trimmedName)} for this vault.${
+          trimmedGoal === "" ? "" : ` Goal: ${trimmedGoal}`
+        } Use OWD and keep this connection open while I approve the exact request.`;
+
+  if (eligible.length === 0) {
+    return (
+      <p className="action-error" role="alert">
+        No connected agent has both Project permissions. Reconnect one above,
+        then return here.
+      </p>
+    );
+  }
+
+  return (
+    <div className="later-project-flow">
+      <div className="later-project-fields">
+        <label>
+          <span>Agent and vault</span>
+          <select
+            value={selectedAgentId}
+            onChange={(event) => setSelectedAgentId(event.target.value)}
+          >
+            {eligible.map((connection, index) => (
+              <option key={connection.id} value={connection.id}>
+                {connection.clientName} · {connection.vaultName} · access{" "}
+                {index + 1}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Project name</span>
+          <input
+            maxLength={120}
+            placeholder="e.g. Website relaunch"
+            value={projectName}
+            onChange={(event) => setProjectName(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>What are you trying to get done? · optional</span>
+          <input
+            maxLength={500}
+            placeholder="Plain language is fine"
+            value={goal}
+            onChange={(event) => setGoal(event.target.value)}
+          />
+        </label>
+      </div>
+      <div className="later-project-request">
+        <span className="pairing-label">Next action</span>
+        <SmartCopyField
+          disabled={selectedConnection === null || trimmedName === ""}
+          label="Copy request"
+          value={request}
+        />
+        <small>
+          Paste this into {selectedConnection?.clientName ?? "the agent"}. OWD
+          will return one exact approval here, then the agent continues on the
+          same connection.
+        </small>
+      </div>
+    </div>
+  );
+}
+
 type ProjectHandoffSetupState =
   | { kind: "loading" }
   | { connections: AgentConnection[]; kind: "ready" }
   | { kind: "error"; message: string };
 
 function ProjectHandoffSetup({
+  buttonLabel = "Prepare Project",
   onPrepared,
   vaultId,
   vaultName,
 }: {
+  buttonLabel?: string;
   onPrepared: () => Promise<void>;
   vaultId: string;
   vaultName: string;
 }) {
+  const instanceId = useId();
   const [state, setState] = useState<ProjectHandoffSetupState>({
     kind: "loading",
   });
@@ -1214,10 +1539,6 @@ function ProjectHandoffSetup({
     return () => controller.abort();
   }, [vaultId, vaultName]);
 
-  useEffect(() => {
-    setProjectLabel(vaultName);
-  }, [vaultId, vaultName]);
-
   const selectedConnection =
     state.kind === "ready"
       ? (state.connections.find(
@@ -1225,7 +1546,7 @@ function ProjectHandoffSetup({
         ) ?? null)
       : null;
   const approvedFolderRoots = selectedConnection?.pathPrefixes ?? [];
-  const folderSuggestionsId = `project-folders-${vaultId}`;
+  const folderSuggestionsId = `project-folders-${vaultId}-${instanceId}`;
 
   async function prepare(): Promise<void> {
     if (selectedConnection === null || projectLabel.trim() === "") return;
@@ -1254,7 +1575,7 @@ function ProjectHandoffSetup({
       setMessage(
         error instanceof Error
           ? error.message
-          : "The first Project could not be prepared.",
+          : "The Project could not be prepared.",
       );
     } finally {
       setWorking(false);
@@ -1274,8 +1595,8 @@ function ProjectHandoffSetup({
   if (state.connections.length === 0) {
     return (
       <p className="action-error" role="alert">
-        No active agent for this vault has both Project permissions. Reconnect
-        one agent from the Agent access section.
+        No active agent for this vault has both Project permissions. Connect one
+        above, then return here.
       </p>
     );
   }
@@ -1289,7 +1610,7 @@ function ProjectHandoffSetup({
       }}
     >
       <label>
-        <span>Primary Project agent</span>
+        <span>Agent and vault</span>
         <select
           value={selectedAgentId}
           onChange={(event) => {
@@ -1310,16 +1631,13 @@ function ProjectHandoffSetup({
             setMessage(null);
           }}
         >
-          {state.connections.map((connection) => (
+          {state.connections.map((connection, index) => (
             <option key={connection.id} value={connection.id}>
-              {connection.clientName} · {connection.vaultName}
+              {connection.clientName} · {connection.vaultName} · access{" "}
+              {index + 1}
             </option>
           ))}
         </select>
-        <small>
-          Use the agent you want coordinating the first Project. You remain the
-          owner; later agents are warned before writing directly to the vault.
-        </small>
       </label>
       <label>
         <span>Project name</span>
@@ -1332,10 +1650,6 @@ function ProjectHandoffSetup({
             setMessage(null);
           }}
         />
-        <small>
-          OWD matches this exact name so the agent cannot silently choose
-          another Project.
-        </small>
       </label>
       <label>
         <span>Project folder</span>
@@ -1367,11 +1681,11 @@ function ProjectHandoffSetup({
         </small>
       </label>
       <button
-        className="primary-action"
+        className="compact-action"
         disabled={working || projectLabel.trim() === ""}
         type="submit"
       >
-        {working ? "Preparing…" : "Prepare first Project"}
+        {working ? "Preparing…" : buttonLabel}
       </button>
       {message !== null ? (
         <small className="setup-receipt" aria-live="polite">
@@ -1405,7 +1719,7 @@ function setupGuidance(
     case "sync-vault":
       return {
         actionLabel: "Open vault connection help",
-        description: `${vaultName} has a credential, but OWD has not yet received a durable reconciled first sync. Keep that vault open in Obsidian with OWD Sync enabled. The plugin confirms sync and starts the first library automatically.`,
+        description: `${vaultName} is paired, but its first durable sync is still finishing. Keep that exact vault open with OWD Sync enabled; this page updates automatically. A brief Disconnected status can appear during startup. Wait 30 seconds, then switch OWD Sync off and back on once if it has not connected—do not reinstall it.`,
         title: `Finish ${vaultName}'s first sync`,
       };
     case "build-library":
@@ -1497,22 +1811,32 @@ function StateAwareSetup({
   async function refresh(): Promise<void> {
     const refreshSequence = refreshSequenceRef.current + 1;
     refreshSequenceRef.current = refreshSequence;
-    const response = await fetch("/api/setup/readiness", {
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) throw new Error("Setup readiness is unavailable.");
-    const parsed = setupReadinessSchema.parse(await response.json());
-    if (refreshSequence !== refreshSequenceRef.current) return;
-    setReadiness(parsed);
-    onReadinessChange(parsed);
+    try {
+      const response = await fetch("/api/setup/readiness", {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) throw new Error("Setup readiness is unavailable.");
+      const parsed = setupReadinessSchema.parse(await response.json());
+      if (refreshSequence !== refreshSequenceRef.current) return;
+      setMessage(null);
+      setReadiness(parsed);
+      onReadinessChange(parsed);
+    } catch (error) {
+      if (refreshSequence !== refreshSequenceRef.current) return;
+      throw error;
+    }
+  }
+
+  function refreshWithMessage(): void {
+    void refresh().catch(() => setMessage("Setup readiness is unavailable."));
   }
 
   useEffect(() => {
-    void refresh().catch(() => setMessage("Setup readiness is unavailable."));
-    const onFocus = () => void refresh();
-    const onStateChange = () => void refresh();
+    refreshWithMessage();
+    const onFocus = refreshWithMessage;
+    const onStateChange = refreshWithMessage;
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible") refreshWithMessage();
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -1545,14 +1869,27 @@ function StateAwareSetup({
       : null);
 
   useEffect(() => {
-    if (selectedStep !== "create-or-select-project") return;
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        void refresh().catch(() =>
-          setMessage("Setup readiness is unavailable."),
-        );
-      }
-    }, 2_000);
+    if (
+      selectedStep !== "sync-vault" &&
+      selectedStep !== "build-library" &&
+      selectedStep !== "create-or-select-project" &&
+      selectedStep !== "approve-project" &&
+      selectedStep !== "ready"
+    ) {
+      return;
+    }
+    const interval = window.setInterval(
+      () => {
+        if (document.visibilityState === "visible") {
+          void refresh().catch(() =>
+            setMessage("Setup readiness is unavailable."),
+          );
+        }
+      },
+      selectedStep === "ready" || selectedStep === "approve-project"
+        ? 5_000
+        : 2_000,
+    );
     return () => window.clearInterval(interval);
   }, [selectedStep]);
 
@@ -1694,6 +2031,7 @@ function StateAwareSetup({
           {selectedStep === "prepare-project-handoff" &&
           selectedVault !== null ? (
             <ProjectHandoffSetup
+              buttonLabel="Prepare first Project"
               key={selectedVault.id}
               onPrepared={refresh}
               vaultId={selectedVault.id}
@@ -1703,27 +2041,38 @@ function StateAwareSetup({
           {selectedStep === "create-or-select-project" &&
           selectedVault?.preparedProjectHandoff !== null &&
           selectedVault?.preparedProjectHandoff !== undefined ? (
-            <dl className="prepared-project-receipt">
-              <div>
-                <dt>Agent</dt>
-                <dd>{selectedVault.preparedProjectHandoff.clientName}</dd>
-              </div>
-              <div>
-                <dt>Project</dt>
-                <dd>{selectedVault.preparedProjectHandoff.projectLabel}</dd>
-              </div>
-              <div>
-                <dt>Folder</dt>
-                <dd>
-                  {selectedVault.preparedProjectHandoff.folderBoundary ||
-                    "Entire approved vault"}
-                </dd>
-              </div>
-              <div>
-                <dt>Say this</dt>
-                <dd>Connect this project to OWD</dd>
-              </div>
-            </dl>
+            <>
+              <dl className="prepared-project-receipt">
+                <div>
+                  <dt>Agent</dt>
+                  <dd>{selectedVault.preparedProjectHandoff.clientName}</dd>
+                </div>
+                <div>
+                  <dt>Project</dt>
+                  <dd>{selectedVault.preparedProjectHandoff.projectLabel}</dd>
+                </div>
+                <div>
+                  <dt>Folder</dt>
+                  <dd>
+                    {selectedVault.preparedProjectHandoff.folderBoundary ||
+                      "Entire approved vault"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Say this</dt>
+                  <dd>Connect this project to OWD</dd>
+                </div>
+              </dl>
+              <details className="project-handoff-advanced">
+                <summary>Change the prepared first Project</summary>
+                <ProjectHandoffSetup
+                  buttonLabel="Update first Project"
+                  onPrepared={refresh}
+                  vaultId={selectedVault.id}
+                  vaultName={selectedVault.displayName}
+                />
+              </details>
+            </>
           ) : null}
           {selectedStep === "approve-project" &&
           pendingProjectRequests.length > 1 ? (
@@ -1759,13 +2108,22 @@ function StateAwareSetup({
             </button>
           ) : null}
           {selectedStep === "ready" ? (
-            <button
-              className="text-action setup-projects-action"
-              type="button"
-              onClick={() => revealOperationalRegion("collaboration")}
-            >
-              View active Projects
-            </button>
+            <div className="setup-ready-actions">
+              <button
+                className="compact-action"
+                type="button"
+                onClick={() => revealOperationalRegion("agents")}
+              >
+                Start another Project
+              </button>
+              <button
+                className="text-action setup-projects-action"
+                type="button"
+                onClick={() => revealOperationalRegion("collaboration")}
+              >
+                View Projects
+              </button>
+            </div>
           ) : null}
           {message !== null ? (
             <small className="setup-receipt" aria-live="polite">
@@ -3814,7 +4172,10 @@ function Dashboard() {
         ) : null}
 
         {setup?.authenticated === true ? (
-          <AgentConnectionsPanel prerequisite={agentSetupPrerequisite} />
+          <AgentConnectionsPanel
+            prerequisite={agentSetupPrerequisite}
+            readiness={onboardingReadiness}
+          />
         ) : null}
 
         {setup?.authenticated === true &&

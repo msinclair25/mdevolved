@@ -77,8 +77,9 @@ calling either, inspect OWD `localVaultAccess`.
 
 - `primary-writer`: perform only the owner-requested bounded write.
 - `read-only-collaborator`: do not call either write tool; propose or hand off.
-- replacement client: write only after the owner stopped the prior writer and
-  selected **Make primary** in OWD → Agents.
+- restarted process: resume the exact Project through the same authorized OWD
+  client to retain its role; a different authorization remains read-only and
+  hands proposed changes to the human owner.
 
 When `remember` uses `scope: "general"`, include the optional `generality`
 rationale. When promoting a lesson into `brain/`, copy it, retain its memory

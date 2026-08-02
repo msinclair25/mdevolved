@@ -96,9 +96,10 @@ Use Mind for fast local cognition and OWD for durable collaboration:
 Mind's `record_work` and `remember` are direct filesystem writes even though
 they arrive through MCP. They therefore obey OWD's single-writer coordination:
 the `primary-writer` may perform an owner-requested bounded write; a
-`read-only-collaborator` must propose or hand off. A different Mind client can
-take over only after the owner stops the prior writer and selects **Make
-primary** in OWD → Agents.
+`read-only-collaborator` must propose or hand off. A restarted process retains
+its role only through the same authorized OWD client; a different Mind
+authorization remains read-only and the global Agents screen never promotes
+it.
 
 ## Distribution surfaces
 

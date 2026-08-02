@@ -172,8 +172,8 @@ direct shell, filesystem, Obsidian CLI, or skill-driven edits must obey the
 
 - `primary-writer` may perform only the owner-requested bounded write;
 - `read-only-collaborator` warns and proposes or hands off instead; and
-- a different client takes over only after the owner stops the prior writer and
-  selects **Make primary** in OWD → Agents.
+- a restarted process retains its role only when it resumes through the same
+  authorized OWD client; a different authorization remains read-only.
 
 OWD submission tools append collaboration records. They never grant local
 filesystem authority.
