@@ -8,11 +8,17 @@ import {
   collaborationTimelinePageResponseSchema,
   csrfResponseSchema,
   decisionSchema,
+  elasticOperationOverviewSchema,
+  leadOperationOverviewSchema,
+  operationalOverviewSchema,
   ownerEventSchema,
   type CollaborationConnection,
   type CollaborationDashboardResponse,
   type CollaborationProjectSummary,
   type CollaborationTimelineItem,
+  type ElasticOperationOverview,
+  type LeadOperationOverview,
+  type OperationalOverview,
   type VaultSummary,
 } from "@owd/contracts";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -109,6 +115,153 @@ function timestamp(value: number | null): string {
   }).format(new Date(value * 1_000));
 }
 
+export function LeadOperationStatus({
+  operation,
+  onResolve,
+  resolvingExceptionId = null,
+  disabled = false,
+}: {
+  operation: LeadOperationOverview["projects"][number];
+  onResolve?: (exceptionId: string) => void;
+  resolvingExceptionId?: string | null;
+  disabled?: boolean;
+}) {
+  const blocking = operation.blockingExceptionCount > 0;
+  return (
+    <article className="client-warning" role={blocking ? "alert" : "note"}>
+      <strong>
+        {blocking
+          ? `${operation.blockingExceptionCount.toLocaleString()} blocking Run exception${operation.blockingExceptionCount === 1 ? "" : "s"}`
+          : `${operation.activeRunCount.toLocaleString()} active hands-off Run${operation.activeRunCount === 1 ? "" : "s"}`}
+      </strong>
+      <span>
+        {blocking
+          ? "OWD stopped the exceptional request; it did not expand authority, execute a destructive action, enter a protected path, exceed the budget, or choose between conflicting evidence."
+          : `${operation.activeActorCount.toLocaleString()} claimed actor${operation.activeActorCount === 1 ? " is" : "s are"} operating inside the bounded Run without routine owner action.`}
+      </span>
+      {operation.recentExceptions.map((exception) => (
+        <span key={exception.exceptionId}>
+          {exception.kind}: {exception.summary}{" "}
+          {onResolve === undefined ? null : (
+            <button
+              disabled={disabled || resolvingExceptionId !== null}
+              type="button"
+              onClick={() => onResolve(exception.exceptionId)}
+            >
+              {resolvingExceptionId === exception.exceptionId
+                ? "Resolving exception…"
+                : "Resolve exception as owner"}
+            </button>
+          )}
+        </span>
+      ))}
+    </article>
+  );
+}
+
+export function ElasticOperationStatus({
+  run,
+}: {
+  run: ElasticOperationOverview["runs"][number];
+}) {
+  return (
+    <article className="client-warning" role="note">
+      <strong>
+        Elastic Run · {run.activeActorCount.toLocaleString()} active /{" "}
+        {run.actorRecordCount.toLocaleString()} actor records
+      </strong>
+      <span>
+        {run.acceptedBundleCount.toLocaleString()} bundles ·{" "}
+        {run.logicalUnitsUsed.toLocaleString()} /{" "}
+        {run.logicalUnitLimit.toLocaleString()} logical units ·{" "}
+        {run.costMicrounitsUsed.toLocaleString()} /{" "}
+        {run.costMicrounitLimit.toLocaleString()} cost microunits
+      </span>
+      <span>
+        {run.ownerActionCount === null
+          ? "No aggregate measurement reported."
+          : `${run.ownerActionCount.toLocaleString()} owner actions reported; p95 ${run.p95LatencyMs?.toLocaleString() ?? "unknown"} ms.`}
+      </span>
+    </article>
+  );
+}
+
+export function PolicyContinuityStatus({
+  operation,
+  onActivate,
+  activating = false,
+  disabled = false,
+}: {
+  operation: OperationalOverview["projects"][number];
+  onActivate?: () => void;
+  activating?: boolean;
+  disabled?: boolean;
+}) {
+  const active = operation.policyBinding !== null;
+  const latestDecision = operation.latestDecision;
+  const receipt = operation.latestReceipt;
+  const needsAttention =
+    operation.integrityStatus === "degraded" ||
+    latestDecision?.outcome === "exception";
+  const continuityAge =
+    operation.continuityAgeSeconds === null
+      ? "unknown"
+      : `${operation.continuityAgeSeconds.toLocaleString()} seconds`;
+  return (
+    <article
+      className="client-warning policy-continuity-status"
+      role={needsAttention ? "alert" : "note"}
+    >
+      <strong>
+        {active
+          ? `Standing policy active${latestDecision === null ? "" : ` · latest Decision ${latestDecision.outcome}`}`
+          : "Standing policy not active"}
+      </strong>
+      <span>
+        {active
+          ? latestDecision === null
+            ? "No Decision has been evaluated yet."
+            : `Latest Decision ${latestDecision.decisionId.slice(0, 8)}… · ${latestDecision.purpose} · ${latestDecision.outcome} · evaluated ${timestamp(latestDecision.evaluatedAt)}.`
+          : "Activate the fixed standing policy once to keep continuity checks on this Project; routine requests do not need owner approval."}
+      </span>
+      <span>
+        {operation.pendingRequestCount.toLocaleString()} pending request
+        {operation.pendingRequestCount === 1 ? "" : "s"} · continuity age{" "}
+        {continuityAge} · integrity {operation.integrityStatus}.
+      </span>
+      {receipt === null ? (
+        <span>No continuity receipt has been emitted yet.</span>
+      ) : (
+        <span>
+          Receipt {receipt.receiptId.slice(0, 8)}… · RPO {receipt.rpoSeconds}s ·
+          RTO {receipt.rtoSeconds}s · continuity age{" "}
+          {receipt.continuityAgeSeconds}s · recovery quality{" "}
+          {receipt.recoveryQualityBps} bps ·{" "}
+          {receipt.runtimeIndependent
+            ? "runtime-independent"
+            : "runtime-linked"}{" "}
+          · emitted {timestamp(receipt.emittedAt)}.
+        </span>
+      )}
+      <span>
+        Execution remains external to OWD; the Community remains independent.
+      </span>
+      {!active ? (
+        <button
+          className="primary-action"
+          disabled={activating || disabled}
+          type="button"
+          onClick={onActivate}
+        >
+          {activating
+            ? "Activating standing policy…"
+            : "Activate fixed standing policy"}
+        </button>
+      ) : null}
+    </article>
+  );
+}
+
 const PROJECT_REPAIR_REASONS = new Set([
   "folder-scope-mismatch",
   "integrity-invalid",
@@ -153,6 +306,12 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   const [dashboard, setDashboard] =
     useState<CollaborationDashboardResponse | null>(null);
   const [connections, setConnections] = useState<CollaborationConnection[]>([]);
+  const [leadOperations, setLeadOperations] =
+    useState<LeadOperationOverview | null>(null);
+  const [elasticOperations, setElasticOperations] =
+    useState<ElasticOperationOverview | null>(null);
+  const [operationalOverview, setOperationalOverview] =
+    useState<OperationalOverview | null>(null);
   const [participantClaims, setParticipantClaims] = useState<
     Record<string, string[]>
   >({});
@@ -169,6 +328,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   const [importText, setImportText] = useState("");
   const [artifactBody, setArtifactBody] = useState("");
   const [working, setWorking] = useState<string | null>(null);
+  const refreshGeneration = useRef(0);
   const [showArchivedProjects, setShowArchivedProjects] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -185,6 +345,33 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   );
   const archivedProjects = projects.filter(
     (project) => project.status === "archived",
+  );
+  const leadOperationsByProject = useMemo(
+    () =>
+      new Map(
+        (leadOperations?.projects ?? []).map((project) => [
+          project.projectId,
+          project,
+        ]),
+      ),
+    [leadOperations],
+  );
+  const elasticOperationsByProject = useMemo(() => {
+    const values = new Map<string, ElasticOperationOverview["runs"]>();
+    for (const run of elasticOperations?.runs ?? []) {
+      values.set(run.projectId, [...(values.get(run.projectId) ?? []), run]);
+    }
+    return values;
+  }, [elasticOperations]);
+  const operationalOverviewByProject = useMemo(
+    () =>
+      new Map(
+        (operationalOverview?.projects ?? []).map((project) => [
+          project.projectId,
+          project,
+        ]),
+      ),
+    [operationalOverview],
   );
   const repairParameters = new URLSearchParams(window.location.search);
   const repairProjectId = repairParameters.get("repairProject");
@@ -222,14 +409,42 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   }, [activeVaults, selectedVaultId]);
 
   async function refresh(): Promise<void> {
-    const [dashboardResponse, connectionsResponse] = await Promise.all([
-      apiJson("/api/collaboration/dashboard"),
-      apiJson("/api/collaboration/connections"),
-    ]);
+    const generation = refreshGeneration.current + 1;
+    refreshGeneration.current = generation;
+    let responses: [unknown, unknown, unknown, unknown, unknown];
+    try {
+      responses = await Promise.all([
+        apiJson("/api/collaboration/dashboard"),
+        apiJson("/api/collaboration/connections"),
+        apiJson("/api/collaboration/lead-operations"),
+        apiJson("/api/collaboration/elastic-operations"),
+        apiJson("/api/collaboration/policy-operations"),
+      ]);
+    } catch (reason) {
+      if (generation !== refreshGeneration.current) return;
+      throw reason;
+    }
+    if (generation !== refreshGeneration.current) return;
+    const [
+      dashboardResponse,
+      connectionsResponse,
+      leadOperationsResponse,
+      elasticOperationsResponse,
+      operationalOverviewResponse,
+    ] = responses;
     setDashboard(collaborationDashboardResponseSchema.parse(dashboardResponse));
     setConnections(
       collaborationConnectionListResponseSchema.parse(connectionsResponse)
         .connections,
+    );
+    setLeadOperations(
+      leadOperationOverviewSchema.parse(leadOperationsResponse),
+    );
+    setElasticOperations(
+      elasticOperationOverviewSchema.parse(elasticOperationsResponse),
+    );
+    setOperationalOverview(
+      operationalOverviewSchema.parse(operationalOverviewResponse),
     );
   }
 
@@ -241,6 +456,9 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
           : "The Project timeline could not be loaded.",
       ),
     );
+    return () => {
+      refreshGeneration.current += 1;
+    };
   }, []);
 
   async function run(
@@ -692,6 +910,38 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
     );
   }
 
+  async function activateStandingPolicy(
+    project: CollaborationProjectSummary,
+  ): Promise<void> {
+    await run(
+      `Activating ${project.label}'s standing policy…`,
+      async (csrf) => {
+        await apiNoContent(
+          `/api/collaboration/projects/${encodeURIComponent(project.projectId)}/policy-bindings`,
+          csrf,
+          {
+            checkpointIntervalSeconds: 3600,
+            drillIntervalSeconds: 604800,
+          },
+        );
+        return "Standing policy activated. Routine requests continue without owner approval; execution remains external and the Community remains independent.";
+      },
+    );
+  }
+
+  async function resolveException(
+    project: CollaborationProjectSummary,
+    exceptionId: string,
+  ): Promise<void> {
+    await run(`Resolving exception ${exceptionId}…`, async (csrf) => {
+      await apiNoContent(
+        `/api/collaboration/projects/${encodeURIComponent(project.projectId)}/exceptions/${encodeURIComponent(exceptionId)}/resolve`,
+        csrf,
+      );
+      return "The owner resolved the explicit exception. No authority was expanded and no exceptional action was executed.";
+    });
+  }
+
   const pendingActions = dashboard?.pendingActions.total ?? 0;
   const collaborationSummary =
     dashboard === null
@@ -798,6 +1048,42 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                 </span>
               </div>
               <p>{project.objective}</p>
+              {leadOperationsByProject.get(project.projectId) ===
+              undefined ? null : (
+                <LeadOperationStatus
+                  disabled={working !== null}
+                  onResolve={(exceptionId) =>
+                    void resolveException(project, exceptionId)
+                  }
+                  operation={leadOperationsByProject.get(project.projectId)!}
+                  resolvingExceptionId={
+                    working?.startsWith("Resolving exception ") === true
+                      ? working.slice(
+                          "Resolving exception ".length,
+                          -"…".length,
+                        )
+                      : null
+                  }
+                />
+              )}
+              {(elasticOperationsByProject.get(project.projectId) ?? []).map(
+                (run) => (
+                  <ElasticOperationStatus key={run.runId} run={run} />
+                ),
+              )}
+              {operationalOverviewByProject.get(project.projectId) ===
+              undefined ? null : (
+                <PolicyContinuityStatus
+                  activating={
+                    working === `Activating ${project.label}'s standing policy…`
+                  }
+                  disabled={working !== null}
+                  onActivate={() => void activateStandingPolicy(project)}
+                  operation={operationalOverviewByProject.get(
+                    project.projectId,
+                  )!}
+                />
+              )}
               <details
                 className="project-card-details"
                 open={project.duplicateGroupSize > 1}

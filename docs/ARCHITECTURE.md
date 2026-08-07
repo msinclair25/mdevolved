@@ -50,6 +50,12 @@ query projections, Project-specific grants, append-only owner/provenance state,
 restore jobs, and audit events. It does not store canonical live document
 state or collaboration content bodies.
 
+Project lead leases are a dedicated D1 projection keyed by Project. Atomic
+claim/takeover increments a monotonically increasing fencing token. Continuity
+Point identities, chain parents, dependency edges, and checkpoint receipts are
+stored separately from the legacy collaboration ledger so strict existing
+clients remain compatible.
+
 ### R2
 
 R2 stores immutable library objects, attachment objects, content-addressed
@@ -57,6 +63,11 @@ collaboration records/evidence, owner-key-encrypted snapshot objects, legacy
 backup bundles, and authenticated integrity manifests. Snapshot payload
 objects are content addressed within one owner cell and recipient boundary but
 use no vault name or note path in their object keys.
+
+Canonical Continuity Point bodies use the same immutable content-addressed R2
+boundary. Their portable body contains historical lead identity and fence
+provenance, but no grant ID, lease ID, credential, conversation, or runtime
+state.
 
 ### Companion plugin
 
@@ -287,6 +298,30 @@ D1/R2 ledger remains authoritative; the projection is content-hashed,
 rebuildable, and may not silently overwrite owner edits. Projection failure
 cannot revoke an owner Decision or publish a partial Project view.
 
+### Lead substitution continuity
+
+`project.lead` is additive to existing Project scopes. `claim_project_lead`
+atomically acquires an absent, expired, revoked, or invalid-holder lease;
+`renew_project_lead` preserves its fence; takeover always increments the fence.
+Every checkpoint reauthorizes the exact client and Project, then one
+constraint-guarded database insert rechecks the live lease ID, fencing token,
+grant, client, Project, open Work Item, and chain parent in the same D1 batch
+that inserts the point and its idempotency receipt.
+
+`checkpoint_project` freezes the active Project/Work Item versions and Work
+Packet plus explicitly selected accepted Decisions, visible Artifacts, exact
+packet evidence, completed/open work, blockers, rejected approaches, risks,
+and next action. It creates operational `checkpointed` state; it does not
+accept any record. `resume_project` adds the latest verified point when one
+exists. A separate capability resource advertises this extension without
+changing `owd-collaboration-capabilities-v1`.
+
+The owner may download a two-file provider-neutral bundle containing a README
+and canonical Continuity Point JSON. Encrypted Approved Intelligence includes
+the same point and dependency closure. Restore writes null source lease/client
+columns and creates no grant, lease, or checkpoint receipt; replacement work
+starts only after fresh authorization and a new live claim.
+
 ### External client federation
 
 An external application such as Hoplon is an ordinary OAuth/MCP client. It gets
@@ -402,6 +437,28 @@ classification and quarantine semantics fails before staging.
   owner events.
 - Accepted intelligence: immutable, versioned owner data with source and review
   provenance; session context and unaccepted proposals are not shared truth.
+- Project lead lease: one D1-serialized holder per Project with a monotonically
+  increasing takeover fence; expiration or revocation invalidates later writes.
+- Continuity Point: immutable acknowledged operational state in one linear
+  predecessor chain; recovery preserves the body and provenance but no live
+  authority.
+- Standing lead-operation policy: one conservative immutable policy per active
+  Project version; it only narrows existing owner-approved authority.
+- Run: exact Project, Work Item, Work Packet, and policy identity with bounded
+  actor/bundle/byte projections. The execution harness still owns scheduling,
+  supervision, tools, worktrees, and retries.
+- Actor: a short-lived claimed Run identity whose scopes are checked on each
+  contextual read or bundle submission; it is never a restored or independently
+  bearer-authorized principal.
+- EventBundle: immutable `run-shared-unvetted` evidence visible only through
+  the exact authorized Run context. Independent review routing and claim
+  conflicts are durable projections, not provider runtime state.
+- R2 mutation receipt: atomic with both the requested state transition and a
+  commit-time check of the exact current Project grant, source grant, vault,
+  lead holder, lease expiry, and fencing token.
+- R4 PolicyDecision and drill receipt: immutable bodies bound to the exact
+  owner-authored policy/evidence inputs, active Project version, scheduled
+  request, source Continuity Point, replacement lease, and commit-time fence.
 
 The UI always shows which layer and generation it is displaying.
 
@@ -427,3 +484,97 @@ The UI always shows which layer and generation it is displaying.
   hosted-service trust boundary, not zero-knowledge storage.
 - Cell to cell: mutually untrusted deployments with distinct D1, R2, Durable
   Object, KV, hostname, and secret boundaries.
+
+### R3 elastic Run plane
+
+R3 is an additive vertical slice over the R2 operation ledger. An opt-in Run
+advertises `owd-elastic-run-plane-v1` and keeps the same Project, Work Item,
+Work Packet, lead lease, exact grant, and fence checks. It permits at most 32
+active actors and 64 actor records in one Run. Registration is bounded to 16
+actors per call and bundle submission to 8 bundles per call. The harness still
+owns scheduling, supervision, retries, worktrees, branches, and process
+concurrency; OWD stores only bounded identity, evidence, continuity, budget,
+exception, recovery, and observation metadata.
+
+`get_run_context` remains compatible with R2 clients and returns the existing
+snapshot envelope when `mode` is omitted. R3 clients may request `mode: delta`
+with an opaque grant/Project/Run-bound cursor and a limit of at most 100. Delta
+records are ordered by one monotonically increasing Run sequence, then stable
+record identity; a cursor is returned whenever more records remain. A cursor
+cannot be reused for another Project or Run and expires rather than widening
+authority. A snapshot followed by deltas is therefore deterministic and does
+not leak adjacent Runs.
+
+Mutation idempotency is keyed by the caller-supplied operation key and a hash of
+the complete canonical request. An exact retry returns the original receipt;
+the same key with different payload is an explicit `idempotency_conflict` and
+never appends a second record. Capacity limits return bounded backpressure with
+stable retry metadata; OWD does not enqueue work or choose a retry schedule for
+the execution harness. Batch operations are all-or-nothing at the durable
+record boundary, and a replayed batch reports its prior receipt.
+
+Legacy R2 mutation tools continue to operate on R2 Runs but are rejected on an
+opt-in elastic Run so they cannot bypass R3 slots, deltas, or accounting. The
+unchanged snapshot read and generic completion path remain compatible.
+
+Expired or abandoned actors are represented by an immutable
+`owd-actor-recovery-v1` record. A replacement actor is newly issued inside the
+same Run with a subset of the predecessor scopes. The predecessor is never
+revived, and recovery cannot create a Project grant, vault access, lease, or
+protected-path authority. Recovery and replacement are visible through Run
+deltas and are safe to retry by idempotency key.
+
+The harness reports logical units and cost microunits through
+`owd-run-budget-v1` and `owd-budget-entry-v1`. OWD validates monotonic bounded
+accounting through immutable version rows and records a blocking
+`budget-exhausted` Exception when a limit is met; it does not estimate provider
+spend or schedule execution. Observations
+(`owd-run-observation-v1`) contain only aggregate counts, retry/rejection
+counts, bounded latency percentiles, and timestamps. They exclude transcripts,
+hidden reasoning, terminal history, credentials, OAuth state, provider runtime,
+and production/customer logs.
+
+Run, actor, bundle, delta, recovery, budget, observation, and Orca projection
+metadata use hot/warm/cold/quarantine retention tiers. Each volume-cleanup pass
+selects at most 64 expired delta, budget-entry, observation, Orca, or
+quarantined records. It waits for a closed Run and refuses records referenced
+by a pending/ready snapshot, staged restore, or open/blocking Exception. Plane,
+account, budget, recovery, actor, bundle, and Continuity Point records are not
+volume-cleanup candidates.
+
+The inert `owd-orca-projection-v1` adapter accepts optional worktree, branch,
+commit, pull-request, and session references and maps them to generic Run or
+Actor evidence. Values are bounded, provider-labelled metadata only. Orca is
+not called, launched, scheduled, or trusted as an identity source; loss or
+unavailability of Orca state leaves the generic Run ledger usable and permits
+a separately authorized non-Orca lead to resume. The adapter cannot grant,
+restore, or widen authority and is omitted from recovery authority rows. A
+supplied Actor reference must identify an active, unexpired Actor in the exact
+Run.
+
+### R4 policy and continuity plane
+
+R4 adds five immutable operational record kinds: policy binding, deterministic
+Decision, operational schedule, operational evidence, and continuity receipt.
+Migration 0033 keeps canonical bodies in content-addressed R2 and minimal
+query/fence projections in D1. A binding names the exact active Project version
+and owner-authored policy/evidence hashes. Evaluation revalidates those bodies,
+then records a fixed research or coding truth table. Completion rechecks the
+Decision, evidence count, Continuity Point, grant, source grant, vault, lease,
+and fence in the commit transaction.
+
+The Worker scheduled handler is a bounded trigger, not a supervisor. It
+examines at most eight due schedules, coalesces missed windows, and creates an
+idempotent Continuity Point or disposable-drill request. The external execution
+harness owns planning, agents, tools, retries, worktrees, inference, and
+provider state. Drill completion is accepted only for the exact pending request
+and source Continuity Point under a distinct replacement lead fence.
+
+Integrity pages are bounded and partial coverage is degraded. Retention
+protects active dependencies, the latest report, and the last complete
+known-good report. Portable export carries the closed dependency graph and
+content-addressed referenced bodies. Snapshot restore verifies canonical bytes
+and creates quarantined base records only; it never restores policy, scheduler,
+grant, lease, actor, credential, OAuth, or provider authority. Managed-cell
+health is aggregate evidence, while the Community data and recovery path stays
+independent of any control plane.

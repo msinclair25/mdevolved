@@ -1193,6 +1193,7 @@ async function buildWorkspaceSnapshotManifest(
           section: entry.section,
         })),
       snapshotVaultId: vault.snapshot_vault_id,
+      sourceVaultId: vault.source_vault_id,
       sourceGeneration:
         vault.generation_id === null ||
         vault.source_state_vector_sha256 === null ||

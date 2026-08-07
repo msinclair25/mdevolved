@@ -1,0 +1,65 @@
+{
+  "acceptedBundleCount": 4,
+  "authority": {
+    "liveAuthorityIncluded": false,
+    "restoredAuthorityAllowed": false
+  },
+  "checks": [
+    {
+      "evidenceRefs": ["75000000-0000-4000-8000-000000000001"],
+      "key": "owner-authored-policy",
+      "passed": true
+    },
+    { "evidenceRefs": [], "key": "run-identity", "passed": true },
+    {
+      "evidenceRefs": ["76000000-0000-4000-8000-000000000001"],
+      "key": "purpose-evidence",
+      "passed": true
+    },
+    {
+      "evidenceRefs": ["76000000-0000-4000-8000-000000000002"],
+      "key": "independent-review",
+      "passed": true
+    },
+    {
+      "evidenceRefs": ["76000000-0000-4000-8000-000000000003"],
+      "key": "continuity-point",
+      "passed": true
+    },
+    { "evidenceRefs": [], "key": "no-blocking-exception", "passed": true },
+    { "evidenceRefs": [], "key": "no-evidence-conflict", "passed": true },
+    { "evidenceRefs": [], "key": "budget-within-policy", "passed": true },
+    {
+      "evidenceRefs": ["76000000-0000-4000-8000-000000000001"],
+      "key": "integrity-valid",
+      "passed": true
+    },
+    { "evidenceRefs": [], "key": "no-owner-only-action", "passed": true }
+  ],
+  "continuityPointId": "76000000-0000-4000-8000-000000000003",
+  "decisionId": "75000000-0000-4000-8000-000000000002",
+  "evaluatedAt": 1786000300,
+  "evaluator": "authorization-bound-lead",
+  "evidenceFingerprint": "3333333333333333333333333333333333333333333333333333333333333333",
+  "evidenceRefs": [
+    {
+      "contentSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "id": "75000000-0000-4000-8000-000000000001",
+      "kind": "policy-binding"
+    }
+  ],
+  "exceptionReason": null,
+  "format": "owd-policy-decision-v1",
+  "gateProfile": "owd-research-completion-gate-v1",
+  "outcome": "allow",
+  "policyBindingId": "75000000-0000-4000-8000-000000000001",
+  "policyId": "72000000-0000-4000-8000-000000000001",
+  "projectId": "71000000-0000-4000-8000-000000000001",
+  "projectVersionId": "71000000-0000-4000-8000-000000000002",
+  "purpose": "research",
+  "requestedOwnerActions": [],
+  "runId": "72000000-0000-4000-8000-000000000002",
+  "schemaVersion": 1,
+  "workItemId": "74000000-0000-4000-8000-000000000001",
+  "workPacketId": "74000000-0000-4000-8000-000000000002"
+}

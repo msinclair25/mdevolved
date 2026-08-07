@@ -73,6 +73,18 @@ export fixtures, and isolated restore coverage. Future durable Knowledge,
 Skills, and Evaluations remain gated. Harness conversations, credentials, and
 live grants remain excluded permanently.
 
+Acknowledged `owd-continuity-point-v1` records are Approved operational
+checkpoints. Their exact dependency closure is encrypted with the snapshot,
+but their disposition remains `checkpointed`, not accepted truth. Lead leases,
+checkpoint receipts, OAuth/grant rows, and producer authority are never
+inventoried or restored.
+
+The R1 cross-client acceptance procedure in
+[`HERMES-CONTINUITY.md`](HERMES-CONTINUITY.md) exercises this boundary against
+a fresh disposable cell: the exact Continuity Point must survive, while the
+first post-restore lead claim must begin with a fresh fencing token and a new
+authorization.
+
 Snapshot creation selects **Approved Intelligence** by default and offers
 **Unvetted Intelligence** as a nested, off-by-default selection. Unvetted
 cannot be selected alone. Approved closure
@@ -156,6 +168,16 @@ manifests and encrypted objects, not retained search indexes.
    in-memory value cannot substitute for the owner's durable key file.
 3. Map every snapshot-scoped source vault to an explicit, distinct active
    target. Targets begin blank; there is no implicit "current vault" choice.
+   The same owner-approved map translates vault references in restored active
+   Knowledge Space versions and Work Packets to the fresh target identities.
+   New snapshots carry the source-vault identity needed for this translation;
+   an older single-vault snapshot may recover it from its verified Knowledge
+   Space record, while an ambiguous older multi-vault snapshot fails closed.
+   The restore service independently rejects partial mappings, unreferenced
+   source mappings, inactive targets, and target reuse before writing Project
+   state; UI validation is not the trust boundary.
+   Historical Continuity Points remain byte-for-byte unchanged, and their
+   embedded authority flags remain inert.
 4. A second authenticated pass stages every Markdown note into the existing
    isolated restore namespace. OWD refreshes each exact target and presents
    added, changed, unchanged, and zero-deleted counts for every mapping. The
@@ -224,6 +246,55 @@ row identity, R2 key, or personal content.
 | Future isolated SaaS cell   | Same required capabilities and snapshot-scoped IDs  | No source-cell authority required                               |
 | Local downloaded file       | One streamed `.owdsnapshot`                         | Browser-local validation and restore without source service     |
 | Legacy `owd-backup-v1`      | Existing `.age` manifest and Markdown stream        | Remains downloadable, importable, and restorable under Advanced |
+
+## R3 continuity-record recovery and retention
+
+R3 adds bounded Run continuity records to the existing encrypted snapshot and
+portable export boundary. The records include the elastic profile, actor
+registration and recovery metadata, Run deltas, harness-reported budget
+entries, aggregate observations, and inert Orca projections. They are selected
+as operational Unvetted metadata unless a future reviewed capability explicitly
+classifies a record as Approved evidence; no R3 record is an owner Decision by
+itself.
+
+Each record carries a retention tier (`hot`, `warm`, `cold`, or `quarantine`)
+and a bounded retention deadline. Cleanup is delayed, bounded, idempotent, and
+reference-aware. Each pass selects at most 64 expired delta, budget-entry,
+observation, Orca, or quarantined records. Live records remain while their Run
+is open, an Exception is open or blocking, a pending/ready snapshot item
+references the body, or a staged restore references its hash. Eligible D1
+projections and base rows are deleted in one batch; their immutable bodies then
+enter the existing grace-window object cleanup queue. Plane, account, budget,
+recovery, and Continuity Point records are not volume-cleanup candidates.
+
+Portable export includes the canonical R3 descriptors and required integrity
+metadata without D1 row IDs, R2 keys, hostnames, provider credentials, or
+runtime state. The legacy two-file Continuity Point bundle is unchanged when a
+Project has no elastic records; an R3 Project adds `elastic-records.json` with
+the bounded canonical records and hashes. Snapshot and restore verify every
+descriptor, dependency, byte bound, and capability before staging. Restored R3 records are owner-visible
+quarantine with `restoredAuthorityAllowed: false` and
+`liveAuthorityIncluded: false`; they never recreate actors, Run leases,
+Project grants, lead fences, receipts, credentials, OAuth state, or execution
+authority. A restored Run is evidence for a fresh, ordinarily authorized Run,
+not a resumable scheduler state.
+
+Actor replacement remains historical: an abandoned/expired predecessor stays
+expired or revoked, and a replacement can only be issued under fresh live
+authorization with a subset of scopes. Budget and observation records retain
+aggregate accounting only; no transcript, hidden reasoning, terminal history,
+provider runtime, customer log, or secret is exported or restored.
+
+Orca projections preserve only bounded worktree, branch, commit, pull-request,
+and session references as non-authoritative evidence. If Orca state is lost,
+the generic Run snapshot/delta remains the recovery source and a non-Orca lead
+must claim fresh authority. No Orca session, token, worktree, branch, PR, or
+schedule is restored.
+
+The local automated build validates round-trip fixtures, reference-aware
+cleanup, quarantine-only restore, and zero restored authority. A live
+disposable R3 exercise is human-authorized and outside this local build until
+run; this document does not claim that live gate has passed.
 
 ## Legacy V1 recovery workflow
 
@@ -321,8 +392,8 @@ applying it outside local or disposable bindings:
 6. exercise immutable Decision projection only into a disposable vault folder
    that is excluded from the Knowledge Space.
 
-Migrations `0010`, `0011`, and `0012` are never discovered or applied from an
-HTTP, OAuth, or MCP request. A missing release schema is a failed prerequisite,
+Migrations `0010` through `0031` are never discovered or applied from an HTTP,
+OAuth, or MCP request. A missing release schema is a failed prerequisite,
 not an invitation for the Worker to issue DDL. CI applies the full ledger to an
 empty D1 database and separately exercises populated upgrade fixtures before
 the candidate can merge.
@@ -341,6 +412,77 @@ confirmation phrase applies only owner-visible records. A collision, missing
 dependency, bad hash, unknown capability, or attempted authority restoration
 fails closed. Successful apply reconstructs query projections but never OAuth
 protocol state, credentials, live grants, sharing, or producer authority.
+
+Migration `0030_continuity_r1.sql` adds the lead lease projection, immutable
+Continuity Point chain/dependencies, receipts, and database fencing
+constraints.
+Before a non-local rollout, use a disposable Project to prove concurrent claim
+serialization, stale-fence denial, one encrypted checkpoint round trip, zero
+restored authority rows, and a fresh replacement claim within five minutes.
+Rollback redeploys the prior application while leaving additive D1 tables and
+content-addressed R2 bodies intact; never drop the tables or delete the bodies
+as application rollback.
+
+Migration `0031_hands_off_lead_r2.sql` adds the immutable operation-record
+catalog and live policy, Run, Actor, EventBundle, claim, Exception, and receipt
+projections. It is forward-only. The matching Worker must be present before
+accepting R2 records; application rollback leaves every table and
+content-addressed body intact for a forward fix.
+
+R2 operation bodies are eligible only for the optional Unvetted intelligence
+section. Snapshot capture labels them owner-only/pending and
+`restore-quarantined`. Apply verifies canonical bytes and portable identity,
+then restores only the base `project_operation_records` row. It must not insert
+into `project_operation_policies`, `project_runs`, `project_actors`,
+`project_event_bundles`, `project_exceptions`, or
+`project_operation_receipts`. It also never restores the source lead lease,
+collaboration grant, OAuth state, credential, actor scope, scheduler, or
+provider runtime.
+
+The R3 schema change is additive and forward-only. It must introduce the
+elastic Run profile, ordered delta/recovery/budget/observation projections,
+batch/retry receipts, and inert Orca metadata only after a matching Worker and
+portable-format capability are available. A prior Worker may ignore these
+tables and bodies during application rollback; it must not down-migrate, drop
+rows, rewrite sequence history, or delete referenced R2 objects. A fresh
+forward fix is required when a reader cannot validate a required R3 capability.
+Before any non-local rollout, export a synthetic R3 Run, restore it into an
+isolated compatible installation, and prove every actor/bundle/delta/recovery/
+budget/observation/Orca row is quarantine-only and all live authority tables
+remain empty.
+
+Migration `0033_policy_autopilot_r4.sql` is additive, forward-only, STRICT,
+and trigger-free. It adds immutable policy-binding, Decision, schedule,
+operational-evidence, and continuity-receipt records with minimal live
+projections and exact dependencies. Application rollback may redeploy an older
+Worker that ignores those additive tables; it must not run a down-migration,
+drop rows, rewrite provenance, or delete referenced R2 bodies. Upgrade and
+rollback evidence is immutable, and rollback is never automatic.
+
+R4 portable export is bounded and dependency-complete. It carries all five R4
+record kinds, their exact dependency edges, and the content-addressed referenced
+R1–R3 and R2 evidence bodies required to validate them. Snapshot capture and
+fresh-install restore verify canonical bytes, hashes, sizes, record identity,
+Project identity, portable identity, and dependency closure. Apply creates
+quarantined `project_operational_records` only. It never creates a policy
+binding, Decision, schedule, request, integrity or receipt projection, grant,
+lease, actor, credential, OAuth state, policy authority, scheduler authority,
+or provider runtime.
+
+Integrity scans are bounded. A partial page is degraded rather than healthy,
+and retention protects both the latest report and the last complete known-good
+report. The disposable local drill restores into a fresh isolated Community
+installation, proves a distinct replacement lead and zero authority, measures
+RPO, RTO, continuity age, recovery quality, and runtime independence, emits a
+structurally redacted receipt, and removes its temporary objects exactly. This
+synthetic local proof does not authorize a production restore or live rollout.
+
+Before any non-local rollout, use a disposable synthetic Project to capture at
+least one policy, Run, actor, bundle, and Exception; verify all five occur only
+in Unvetted; restore into an isolated compatible installation; assert every
+base row is quarantined and every live projection/authority table remains
+empty; then claim fresh ordinary Project authority. Do not down-migrate or
+delete R2 objects to roll back.
 
 First-slice contract ceilings are 5,000 records, 5,000 evidence objects, 128
 MiB logical intelligence, 1 MiB per record/evidence object, and 1 MiB per

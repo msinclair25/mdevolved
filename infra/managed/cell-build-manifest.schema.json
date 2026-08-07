@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owd.dev/schemas/managed-cell-build-manifest-v1.json",
+  "title": "OWD managed cell build manifest v1",
+  "description": "Exact non-secret inventory required to provision and later deprovision one isolated OWD cell.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "cellRef",
+    "purpose",
+    "release",
+    "provisionedAt",
+    "expiresAt",
+    "cloudflare",
+    "deprovision"
+  ],
+  "properties": {
+    "format": { "const": "owd-managed-cell-build-manifest-v1" },
+    "schemaVersion": { "const": 1 },
+    "cellRef": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{7,63}$"
+    },
+    "purpose": { "const": "disposable-test" },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "communityVersion",
+        "gitCommit",
+        "compatibilityDate",
+        "migrationLedgerSha256",
+        "appliedMigrations"
+      ],
+      "properties": {
+        "communityVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+-alpha\\.[0-9]+$"
+        },
+        "gitCommit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "compatibilityDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "migrationLedgerSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "appliedMigrations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{4}_[a-z0-9_]+\\.sql$"
+          }
+        }
+      }
+    },
+    "provisionedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "cloudflare": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accountId",
+        "worker",
+        "d1",
+        "r2",
+        "kv",
+        "durableObject",
+        "rateLimits",
+        "secretNames"
+      ],
+      "properties": {
+        "accountId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "worker": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "deploymentId",
+            "versionId",
+            "workersDevEnabled",
+            "cronTriggers",
+            "customDomains",
+            "routes"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63,
+              "pattern": "^[a-z0-9][a-z0-9-]+$"
+            },
+            "deploymentId": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "versionId": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "workersDevEnabled": { "type": "boolean" },
+            "cronTriggers": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+            },
+            "customDomains": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "hostname",
+                  "zoneId",
+                  "domainId",
+                  "deprovisionMode"
+                ],
+                "properties": {
+                  "hostname": {
+                    "type": "string",
+                    "minLength": 4,
+                    "maxLength": 253,
+                    "pattern": "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$"
+                  },
+                  "zoneId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+                  "domainId": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+                  "deprovisionMode": { "const": "delete-domain-and-verify-dns" }
+                }
+              }
+            },
+            "routes": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["pattern", "zoneId", "routeId", "deprovisionMode"],
+                "properties": {
+                  "pattern": {
+                    "type": "string",
+                    "minLength": 4,
+                    "maxLength": 253
+                  },
+                  "zoneId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+                  "routeId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  "deprovisionMode": { "const": "explicit-delete" }
+                }
+              }
+            }
+          }
+        },
+        "d1": { "$ref": "#/$defs/d1" },
+        "r2": { "$ref": "#/$defs/r2" },
+        "kv": { "$ref": "#/$defs/kv" },
+        "durableObject": { "$ref": "#/$defs/durableObject" },
+        "rateLimits": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/rateLimit" }
+        },
+        "secretNames": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          }
+        }
+      }
+    },
+    "deprovision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deleteAfter",
+        "requireExplicitDisposition",
+        "requireZeroAuthorityPrecheck",
+        "requirePostDeleteInventory"
+      ],
+      "properties": {
+        "deleteAfter": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+        },
+        "requireExplicitDisposition": { "const": true },
+        "requireZeroAuthorityPrecheck": { "const": true },
+        "requirePostDeleteInventory": { "const": true },
+        "authorizedDisposition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "authorizedAt",
+            "authorizationReceiptSha256",
+            "predeleteEvidenceReceiptSha256"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "discard-after-zero-authority-precheck",
+                "retain-portable-export-before-delete"
+              ]
+            },
+            "authorizedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+            },
+            "authorizationReceiptSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "predeleteEvidenceReceiptSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "d1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "name", "id"],
+      "properties": {
+        "binding": { "const": "DB" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 63 },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    "r2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "bucket"],
+      "properties": {
+        "binding": { "const": "VAULT_STORAGE" },
+        "bucket": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 63,
+          "pattern": "^[a-z0-9][a-z0-9-]+$"
+        }
+      }
+    },
+    "kv": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "namespaceName", "id"],
+      "properties": {
+        "binding": { "const": "OAUTH_KV" },
+        "namespaceName": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "id": { "type": "string", "pattern": "^[0-9a-f]{32}$" }
+      }
+    },
+    "durableObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "className", "namespaceId", "deprovisionMode"],
+      "properties": {
+        "binding": { "const": "VAULTS" },
+        "className": { "const": "VaultCoordinator" },
+        "namespaceId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "deprovisionMode": { "const": "worker-delete-and-verify" }
+      }
+    },
+    "rateLimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "namespaceId"],
+      "properties": {
+        "binding": {
+          "enum": [
+            "OAUTH_REGISTRATION_ROUTE_LIMITER",
+            "OAUTH_REGISTRATION_CLIENT_LIMITER",
+            "OAUTH_TOKEN_CLIENT_LIMITER"
+          ]
+        },
+        "namespaceId": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,8}$"
+        }
+      }
+    }
+  }
+}

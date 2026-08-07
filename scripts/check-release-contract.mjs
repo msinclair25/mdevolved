@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { unstable_splitSqlQuery } from "wrangler";
 
-const CORE_VERSION = "1.0.0-alpha.3";
+const CORE_VERSION = "1.0.0-alpha.4";
 const corePackages = [
   "package.json",
   "apps/web/package.json",

@@ -14,6 +14,13 @@ not private deployment schedules or service commitments.
 - Agent-first Project creation, connection, rejoin, and resume
 - Durable Work Packets, Artifacts, Handoffs, Reviews, owner Decisions, and
   provenance
+- Fenced Project-lead substitution, bounded hands-off Runs, and an opt-in
+  elastic actor plane with privacy-safe budgets and observations
+- Owner-authored deterministic completion policy, exception-only escalation,
+  bounded operational triggers, integrity monitoring, and measured disposable
+  Community recovery drills
+- Forward-only R1–R4 Community upgrade and bounded scheduled continuity on the
+  persistent alpha test deployment
 - Encrypted owner-key-controlled snapshots with staged restore
 - Source-pinned Obsidian Mind and Eve.dev compatibility profiles
 - A direct desktop installer for OWD Sync while Community Plugin review is
@@ -21,11 +28,13 @@ not private deployment schedules or service commitments.
 
 ## Harden next
 
-- Complete repeated, unassisted two-agent durability exercises with disposable
-  data across more compliant MCP clients
-- Simplify Community deployment, upgrade, rollback, and health verification
+- Complete separately authorized live disposable durability exercises across
+  more compliant MCP clients and Cloudflare cells
+- Observe the alpha.4 Community deployment and exercise separately authorized
+  application rollback evidence without destructive down-migrations
 - Submit OWD Sync to Obsidian Community Plugins and validate its updater path
-- Expand portable Project export/import and recovery fixtures
+- Expand recovery scale and performance envelopes beyond the bounded R4
+  dependency-complete portable fixture
 - Add source-pinned profiles only where they improve a client without changing
   OWD's universal MCP contract
 - Publish clearer performance envelopes for larger vaults and longer-lived

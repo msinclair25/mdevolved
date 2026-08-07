@@ -171,6 +171,7 @@ export type CollaborationProblemCode =
   | "authorization_context_invalid"
   | "collaboration_grant_revoked"
   | "collaboration_scope_required"
+  | "continuity_point_conflict"
   | "context_policy_invalid"
   | "context_policy_mismatch"
   | "content_policy_denied"
@@ -179,6 +180,8 @@ export type CollaborationProblemCode =
   | "idempotency_conflict"
   | "integrity_mismatch"
   | "knowledge_space_version_mismatch"
+  | "lead_lease_conflict"
+  | "lead_lease_invalid"
   | "owner_authority_required"
   | "portable_identity_collision"
   | "projection_origin_loop"
@@ -1375,7 +1378,7 @@ export async function createCollaborationProject(
   return { packet, projectId, workItemId };
 }
 
-async function authorizeCollaboration(
+export async function authorizeCollaboration(
   db: D1Database,
   storage: R2Bucket,
   authorization: CollaborationAuthorizationContext,

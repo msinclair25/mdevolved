@@ -1,0 +1,27 @@
+{
+  "format": "owd-elastic-run-plane-v1",
+  "schemaVersion": 1,
+  "projectId": "71000000-0000-4000-8000-000000000002",
+  "runId": "72000000-0000-4000-8000-000000000002",
+  "createdAt": 1784820500,
+  "profile": {
+    "profile": "owd-elastic-run-plane-v1",
+    "maxActiveActors": 32,
+    "maxActorRecords": 64,
+    "maxRegisterBatch": 16,
+    "maxBundleBatch": 8,
+    "maxDeltaPage": 100,
+    "authority": {
+      "restoredAuthorityAllowed": false,
+      "liveAuthorityIncluded": false
+    }
+  },
+  "retention": {
+    "retentionTier": "hot",
+    "retainUntil": 1784824100
+  },
+  "authority": {
+    "restoredAuthorityAllowed": false,
+    "liveAuthorityIncluded": false
+  }
+}

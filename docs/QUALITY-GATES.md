@@ -64,6 +64,10 @@ use an immutable Community commit and must additionally prove:
 
 - one isolated Worker, database, object store, OAuth namespace, Durable Object
   namespace, secrets set, and hostname per owner;
+- one validated private cell-build manifest that records every provisioned
+  resource, release/migration provenance, expiry, and post-delete check;
+- one atomically maintained account registry proving that no active cell
+  shares any rate-limit namespace ID;
 - no cross-cell data, logs, grants, diagnostics, or recovery objects;
 - versioned rollout, rollback, export, suspension, retention, and deletion;
 - redacted diagnostics with no names, paths, note content, credentials, or

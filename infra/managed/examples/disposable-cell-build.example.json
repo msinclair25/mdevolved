@@ -1,0 +1,110 @@
+{
+  "format": "owd-managed-cell-build-manifest-v1",
+  "schemaVersion": 1,
+  "cellRef": "synthetic-cell-01",
+  "purpose": "disposable-test",
+  "release": {
+    "communityVersion": "1.0.0-alpha.4",
+    "gitCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "compatibilityDate": "2026-07-26",
+    "migrationLedgerSha256": "6f0db703672f9c8b17304b423adbc5d900a9b408f5dad24179d6d87753c5fbef",
+    "appliedMigrations": [
+      "0001_platform_metadata.sql",
+      "0002_owner_authentication.sql",
+      "0003_vault_pairing.sql",
+      "0004_pairing_origin.sql",
+      "0005_materialized_generations.sql",
+      "0006_agent_access.sql",
+      "0007_encrypted_backups.sql",
+      "0008_snapshot_recovery.sql",
+      "0009_snapshot_archiving.sql",
+      "0010_phase9a_collaboration.sql",
+      "0011_phase9b_agent_first.sql",
+      "0012_beta_hardening.sql",
+      "0018_invited_owner_claim.sql",
+      "0019_restored_content_authorization.sql",
+      "0020_onboarding_lifecycle.sql",
+      "0021_project_connection_hardening.sql",
+      "0022_project_creation_identity.sql",
+      "0023_project_creation_commit.sql",
+      "0024_agent_grant_continuity.sql",
+      "0025_project_agent_visibility.sql",
+      "0026_vault_primary_writer.sql",
+      "0027_vault_runtime_profiles.sql",
+      "0028_prepared_project_handoffs.sql",
+      "0029_vault_primary_writer_transfer.sql",
+      "0030_continuity_r1.sql",
+      "0031_hands_off_lead_r2.sql",
+      "0032_elastic_actor_plane_r3.sql",
+      "0033_policy_autopilot_r4.sql"
+    ]
+  },
+  "provisionedAt": "2026-08-06T00:00:00.000Z",
+  "expiresAt": "2026-08-13T00:00:00.000Z",
+  "cloudflare": {
+    "accountId": "00000000000000000000000000000000",
+    "worker": {
+      "name": "owd-cell-synthetic01",
+      "deploymentId": "00000000-0000-4000-8000-000000000001",
+      "versionId": "00000000-0000-4000-8000-000000000002",
+      "workersDevEnabled": false,
+      "cronTriggers": ["17 * * * *"],
+      "customDomains": [
+        {
+          "hostname": "synthetic-cell-01.example.invalid",
+          "zoneId": "11111111111111111111111111111111",
+          "domainId": "2222222222222222222222222222222222222222",
+          "deprovisionMode": "delete-domain-and-verify-dns"
+        }
+      ],
+      "routes": []
+    },
+    "d1": {
+      "binding": "DB",
+      "name": "owd-cell-synthetic01-db",
+      "id": "00000000-0000-4000-8000-000000000003"
+    },
+    "r2": {
+      "binding": "VAULT_STORAGE",
+      "bucket": "owd-cell-synthetic01-vaults"
+    },
+    "kv": {
+      "binding": "OAUTH_KV",
+      "namespaceName": "owd-cell-synthetic01-oauth-kv",
+      "id": "44444444444444444444444444444444"
+    },
+    "durableObject": {
+      "binding": "VAULTS",
+      "className": "VaultCoordinator",
+      "namespaceId": "55555555555555555555555555555555",
+      "deprovisionMode": "worker-delete-and-verify"
+    },
+    "rateLimits": [
+      {
+        "binding": "OAUTH_REGISTRATION_ROUTE_LIMITER",
+        "namespaceId": "710001"
+      },
+      {
+        "binding": "OAUTH_REGISTRATION_CLIENT_LIMITER",
+        "namespaceId": "710002"
+      },
+      {
+        "binding": "OAUTH_TOKEN_CLIENT_LIMITER",
+        "namespaceId": "710003"
+      }
+    ],
+    "secretNames": ["OWD_RUNTIME_SIGNING_KEY"]
+  },
+  "deprovision": {
+    "deleteAfter": "2026-08-13T00:00:00.000Z",
+    "requireExplicitDisposition": true,
+    "requireZeroAuthorityPrecheck": true,
+    "requirePostDeleteInventory": true,
+    "authorizedDisposition": {
+      "mode": "discard-after-zero-authority-precheck",
+      "authorizedAt": "2026-08-06T00:00:00.000Z",
+      "authorizationReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "predeleteEvidenceReceiptSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+    }
+  }
+}

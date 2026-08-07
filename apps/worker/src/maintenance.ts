@@ -1,10 +1,15 @@
 import { expireInitializations } from "./project-initialization-store";
-import { runCollaborationGarbageCollection } from "./collaboration-retention";
+import {
+  runCollaborationGarbageCollection,
+  runElasticRetention,
+  runOperationalRetention,
+} from "./collaboration-retention";
 import {
   queueObsoleteMaterializations,
   runMaterializationGarbageCollection,
 } from "./materialization-retention";
 import { cleanupExpiredRestores } from "./restore-store";
+import { runScheduledPolicyOperations } from "./policy-operation-service";
 import {
   queueFailedSnapshotCleanup,
   runSnapshotGarbageCollection,
@@ -17,7 +22,13 @@ export async function runScheduledMaintenance(
   const results = await Promise.allSettled([
     cleanupExpiredRestores(env.DB, env.VAULT_STORAGE, now),
     expireInitializations(env.DB, now),
-    runCollaborationGarbageCollection(env.DB, env.VAULT_STORAGE, now),
+    runScheduledPolicyOperations(env.DB, env.VAULT_STORAGE, now),
+    Promise.all([
+      runElasticRetention(env.DB, now),
+      runOperationalRetention(env.DB, now),
+    ]).then(() =>
+      runCollaborationGarbageCollection(env.DB, env.VAULT_STORAGE, now),
+    ),
     queueObsoleteMaterializations(env.DB, now).then(() =>
       runMaterializationGarbageCollection(env.DB, env.VAULT_STORAGE, now),
     ),
@@ -36,6 +47,7 @@ export async function runScheduledMaintenance(
           event: [
             "restore.cleanup.failed",
             "project.initialization_cleanup.failed",
+            "policy_operation.scheduled_trigger.failed",
             "collaboration.cleanup.failed",
             "materialization.cleanup.failed",
             "snapshot.cleanup.failed",

@@ -9,6 +9,8 @@
 - Deployment identifiers and operational metadata that could expose vault habits.
 - Project briefs, Work Packets, agent submissions, Reviews, Decisions, durable
   Knowledge, Skills, evaluation cases/results, and their provenance.
+- Project lead leases, fencing tokens, Continuity Points, checkpoint receipts,
+  and their provider-neutral recovery closure.
 
 ## Assumed adversaries
 
@@ -24,6 +26,8 @@
 - Poisoned memory or skill proposals and stale agent write proposals.
 - A malicious client replaying, replacing, backdating, or cross-linking another
   client's Project submission.
+- Two clients racing to act as Project lead, or a stale/expired/revoked holder
+  attempting a checkpoint after takeover.
 - Visibility confusion that presents a shared but unaccepted Handoff as owner
   truth, or leaks a private submission to another Project participant.
 - False harness/model identity claims used to overstate who produced or
@@ -164,6 +168,19 @@ Compromise of the owner's Cloudflare account or local device is outside the prim
     silent Knowledge Space mutation or cross-vault metadata disclosure. It
     returns one owner-only repair page that shows the mismatch and requires an
     explicit boundary decision.
+47. At most one live Project lead lease exists per Project. Takeover is one
+    atomic D1 write and strictly increments its fencing token.
+48. A live checkpoint is accepted only when the database can re-prove the exact
+    lease, fence, authorization-bound client, active source/project grants,
+    active Project, open Work Item, and current chain parent in its insert
+    transaction. Same-key different-payload replay fails.
+49. Continuity Points are acknowledged operational state, never owner-accepted
+    truth. Cross-Project Decisions/Artifacts, missing evidence, stale packets,
+    malformed bodies, and forked predecessors fail before durable insertion.
+50. Snapshot/import may preserve a Continuity Point and historical lead/fence
+    provenance, but can never recreate a lead lease, checkpoint receipt, grant,
+    credential, producer authority, or permission to resume without fresh
+    authorization.
 
 ## Browser hardening
 
@@ -302,6 +319,12 @@ the explicit Project ID on every call. Each submission additionally checks
 packet identity, record visibility, parent Artifact access, payload bounds,
 idempotency, and whether the client is attempting to reference a private or
 cross-Project record.
+
+The additive `project.lead` scope permits only lead claim/renew and checkpoint
+operations for that exact Project. It does not grant vault reads, record
+acceptance, owner Decisions, grant management, or note writes. Each tool call
+first rechecks ordinary Project authorization; D1 lease and checkpoint writes
+then enforce the current fencing token independently of the adapter.
 
 Every Project collaboration call also reloads the pinned Knowledge Space,
 verifies its selector, and requires all member vaults to remain active.
@@ -523,7 +546,123 @@ Rate-limit MCP initialization and every tool per client and grant. Bound
 results, pages, bytes, execution time, and concurrent requests; reject
 unbounded vault dumps and record repeated denials as redacted audit events.
 
+## R3 elastic Run security and privacy
+
+The elastic profile is opt-in and remains below the exact Project, Work Item,
+Work Packet, Knowledge Space, source-grant, lead-lease, and fencing-token
+boundaries already enforced for R2. It permits 32 active and 64 total actor
+records per Run, 16 actor registrations per batch, 8 bundle submissions per
+batch, and 100 records per delta page. These are hard contract ceilings, not
+deployment-wide authority. Solo clients use the unchanged R2 snapshot path;
+there is no swarm-only ceremony or implicit capability upgrade.
+
+Batch mutations are atomic at the durable record boundary and carry an
+idempotency key plus canonical request hash. An exact replay returns its prior
+receipt. A key reused with a different payload is `idempotency_conflict`, never
+a second append. Capacity exhaustion is explicit bounded backpressure with
+retry metadata; OWD does not accept a client-supplied schedule, execute retries,
+or supervise provider processes. Cursor deltas are opaque, expiring, and bound
+to the exact grant, Project, Run, query, and sequence; cross-Run or altered
+cursors fail closed.
+
+Actor recovery records an expired or abandoned predecessor and a newly issued
+replacement with a strict subset of scopes. The predecessor remains expired or
+revoked. Recovery does not restore a grant, lease, actor bearer token,
+credential, vault/folder scope, or protected-path authority. Revocation and
+fence checks occur again at commit time, including when a batch races a lead
+takeover.
+
+Logical-unit and cost-microunit budgets are harness-reported durable evidence.
+An exhausted limit creates a blocking `budget-exhausted` Exception; OWD never
+estimates provider charges or treats a claimed cost as billing truth. Aggregate
+observations contain counts, retry/rejection totals, bounded p50/p95 latency,
+and timestamps only. They must not contain raw transcripts, hidden reasoning,
+terminal history, credentials, OAuth state, provider runtime, or
+production/customer logs. Structured logs remain pseudonymous and redact
+worktree paths, branch names, commit metadata, session identifiers, and all
+content by default.
+
+The Orca adapter accepts only bounded, inert worktree/branch/commit/PR/session
+references attached to a generic Run or Actor. Orca state is not an identity,
+authorization, scheduler, runtime, or recovery source. OWD does not invoke
+Orca, import its conversations or terminal history, or inherit its permission
+settings. If Orca disappears, a non-Orca lead must use the generic Run
+snapshot/delta with fresh authorization; no Orca authority is reconstructed.
+
+R3 records have hot/warm/cold/quarantine retention metadata. Cleanup is
+delayed, bounded, idempotent, and reference-aware; it protects retained
+snapshots/exports, open Run/Exception dependencies, and the last known-good
+recovery point. Portable restore keeps R3 rows owner-only/quarantined with
+both authority flags false and inserts no live policy, actor, bundle, budget,
+lease, receipt, credential, OAuth, or grant rows.
+
+## R4 policy-autopilot and continuity security
+
+Only an owner session with CSRF protection can activate the immutable binding
+or resolve an explicitly permitted Exception. The binding names the exact
+active Project version and exact owner-authored policy/evidence hashes; the lead
+cannot author, approve, or edit the policy that judges its work. Every
+evaluation revalidates those canonical bodies and consumes only bounded
+accepted evidence, Decisions, and Continuity Points. Model confidence, hidden
+reasoning, transcripts, terminal history, credentials, provider runtime, and
+customer or production logs are not gate inputs.
+
+Authority expansion, policy editing, self-approval, destructive action,
+protected paths, conflicting or missing evidence, budget exhaustion, integrity
+failure, and unsupported upgrade or rollback fail closed as Exceptions or
+owner-only actions. An allow is committed only after rechecking the exact
+Project, Run, bundle count, Continuity Point, grant, source grant, vault, lease,
+expiry, and fence. Scheduled events emit bounded idempotent requests only; they
+do not supervise agents or invoke providers. Drill completion requires the
+exact scheduled request and source Continuity Point under a distinct current
+replacement lead fence.
+
+Partial integrity coverage is degraded. Retention protects the latest and last
+complete known-good integrity reports plus referenced operational bodies.
+Portable export is bounded and dependency-complete. Restore inserts only
+quarantined operational base records and no grant, lease, actor, credential,
+OAuth, policy, scheduler, receipt projection, or other live authority. Receipt
+redaction structurally excludes filenames, hostnames, raw bodies, credentials,
+OAuth state, transcripts, hidden reasoning, terminal history, provider runtime,
+customer data, and production logs.
+
 ## Required security tests
+
+Lead-continuity coverage includes simultaneous claims, expiry and revocation
+takeover, stale fencing tokens, checkpoint idempotency conflicts, cross-Project
+Decision/Artifact references, stale packets, missing evidence, malformed and
+oversize bodies, legacy-client compatibility, encrypted restore with zero
+authority rows, and a fresh replacement claim after restore.
+
+Hands-off lead coverage additionally requires exact Project/Run/Work Item
+matching; commit-time grant, source-grant, vault, lease-holder, expiry, and
+fence checks; actor scope and expiry denial; replay versus payload-conflict
+separation; Run-shared visibility isolation; malformed and byte-oversize bundle
+denial; same-Run independent review routing; actor and byte budget Exceptions;
+protected-root normalization; explicit non-execution of authority expansion
+and destructive requests; conflicting-claim preservation; checkpoint-before-
+completion; and snapshot restore with quarantined bodies but zero live policy,
+Run, Actor, bundle, Exception, receipt, grant, or lease projections.
+
+R3 coverage additionally requires allowed and denied cases for 20-plus actors
+and solo parity, actor/bundle batch ceilings, stable cursor ordering and
+cross-Run denial, exact replay versus payload conflict, bounded backpressure
+and retry metadata, logical/cost budget exhaustion, expired/abandoned actor
+replacement, revocation/fence races, retention reference safety, malformed or
+oversize metadata, aggregate-observation redaction, Orca metadata boundaries,
+Orca-state loss with non-Orca resume, old-client R2 compatibility, and
+restored-authority denial. A local synthetic pass does not close the human
+authorized live disposable exercise.
+
+R4 coverage additionally requires research and coding allow/deny truth tables;
+self-approval and policy-edit denial; cross-Project and cross-Run isolation;
+revocation/fence races; malformed, oversized, missing, conflicting, or tampered
+evidence; exception-only resolution; scheduled replay, overlap, and
+backpressure; exact RPO/RTO/age/quality calculations; receipt redaction; lead
+replacement; fresh Community restore with zero authority; partial-integrity
+failure; last-known-good retention; dependency-complete export; forward-only
+upgrade/application-only rollback evidence; old-client compatibility; and an
+exact-request drill completion under the replacement fence.
 
 - Claim race and post-claim rejection.
 - WebAuthn challenge replay and origin/RP mismatch.

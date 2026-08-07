@@ -66,6 +66,8 @@ import { ensureSnapshotSchema } from "../src/snapshot-store";
 import type { MaterializedSnapshot } from "../src/materialization-snapshot";
 import {
   applyAgentGrantContinuityMigration,
+  applyContinuityR1Migration,
+  applyHandsOffLeadR2Migration,
   applyOnboardingLifecycleMigration,
   applyPhase9aCollaborationMigration,
   applyPhase9bAgentFirstMigration,
@@ -243,10 +245,16 @@ async function resetState(): Promise<void> {
   await applyVaultPrimaryWriterMigration(env.DB);
   await applyVaultPrimaryWriterTransferMigration(env.DB);
   await applyPreparedProjectHandoffsMigration(env.DB);
+  await applyContinuityR1Migration(env.DB);
+  await applyHandsOffLeadR2Migration(env.DB);
   await env.DB.exec(`
     DELETE FROM collaboration_submission_receipts;
     DELETE FROM collaboration_gc_objects;
     DELETE FROM collaboration_packet_rotations;
+    DELETE FROM continuity_checkpoint_receipts;
+    DELETE FROM continuity_point_dependencies;
+    DELETE FROM project_continuity_points;
+    DELETE FROM project_lead_leases;
     DELETE FROM collaboration_grant_clients;
     DELETE FROM collaboration_grants;
     DELETE FROM oauth_consent_flows;
@@ -820,6 +828,7 @@ describe("scoped universal agent access", () => {
         "project.initialize.request",
         "project.connect.request",
         "project.read",
+        "project.lead",
         "collaboration.submit",
         "review.submit",
         "proposal.status",
@@ -878,6 +887,26 @@ describe("scoped universal agent access", () => {
         "open_project",
         "wait_for_project_connection",
         "resume_project",
+        "claim_project_lead",
+        "renew_project_lead",
+        "checkpoint_project",
+        "create_work_item",
+        "start_run",
+        "register_actor",
+        "register_actors_batch",
+        "get_run_context",
+        "get_run_delta",
+        "submit_bundle",
+        "submit_bundles_batch",
+        "recover_actor",
+        "submit_budget_entry",
+        "submit_observation",
+        "project_orca_metadata",
+        "evaluate_run_policy",
+        "get_policy_operations",
+        "complete_continuity_drill",
+        "complete_work_item",
+        "list_project_exceptions",
       ]),
     );
     for (const legacyTool of [
@@ -916,6 +945,155 @@ describe("scoped universal agent access", () => {
     expect(resourcesResponse.status).toBe(200);
     const resources = mcpResourcesListResponseSchema.parse(
       await resourcesResponse.json(),
+    );
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "lead-continuity-capabilities",
+        uri: "owd://collaboration/lead-continuity-capabilities/v1",
+      }),
+    );
+    const continuityProfileResponse = await productionFetch("resources/read", {
+      uri: "owd://collaboration/lead-continuity-capabilities/v1",
+    });
+    expect(continuityProfileResponse.status).toBe(200);
+    const continuityProfile = mcpResourceReadResponseSchema.parse(
+      await continuityProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(continuityProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      continuityPointFormats: ["owd-continuity-point-v1"],
+      mcpProtocolRevision: "2025-11-25",
+      requiredScope: "project.lead",
+    });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "lead-operation-capabilities",
+        uri: "owd://collaboration/lead-operation-capabilities/v1",
+      }),
+    );
+    const leadOperationProfileResponse = await productionFetch(
+      "resources/read",
+      { uri: "owd://collaboration/lead-operation-capabilities/v1" },
+    );
+    expect(leadOperationProfileResponse.status).toBe(200);
+    const leadOperationProfile = mcpResourceReadResponseSchema.parse(
+      await leadOperationProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(leadOperationProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      format: "owd-lead-operation-capabilities-v1",
+      mcpTools: [
+        "create_work_item",
+        "start_run",
+        "register_actor",
+        "get_run_context",
+        "submit_bundle",
+        "complete_work_item",
+        "list_project_exceptions",
+      ],
+      requiredScope: "project.lead",
+    });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "hermes-hands-off-adapter",
+        uri: "owd://adapters/hermes/hands-off/v1",
+      }),
+    );
+    const hermesAdapterResponse = await productionFetch("resources/read", {
+      uri: "owd://adapters/hermes/hands-off/v1",
+    });
+    expect(hermesAdapterResponse.status).toBe(200);
+    const hermesAdapter = mcpResourceReadResponseSchema.parse(
+      await hermesAdapterResponse.json(),
+    );
+    expect(hermesAdapter.result.contents[0]?.text).toContain(
+      "inert, script-free guidance",
+    );
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "elastic-lead-operation-capabilities",
+        uri: "owd://collaboration/lead-operation-capabilities/v2",
+      }),
+    );
+    const elasticProfileResponse = await productionFetch("resources/read", {
+      uri: "owd://collaboration/lead-operation-capabilities/v2",
+    });
+    expect(elasticProfileResponse.status).toBe(200);
+    const elasticProfile = mcpResourceReadResponseSchema.parse(
+      await elasticProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(elasticProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      format: "owd-lead-operation-capabilities-v2",
+      mcpTools: expect.arrayContaining([
+        "register_actors_batch",
+        "get_run_delta",
+        "submit_bundles_batch",
+        "recover_actor",
+        "submit_budget_entry",
+        "submit_observation",
+        "project_orca_metadata",
+      ]),
+      requiredScope: "project.lead",
+    });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "orca-continuity-adapter",
+        uri: "owd://adapters/orca/continuity/v1",
+      }),
+    );
+    const orcaAdapterResponse = await productionFetch("resources/read", {
+      uri: "owd://adapters/orca/continuity/v1",
+    });
+    expect(orcaAdapterResponse.status).toBe(200);
+    const orcaAdapter = mcpResourceReadResponseSchema.parse(
+      await orcaAdapterResponse.json(),
+    );
+    expect(orcaAdapter.result.contents[0]?.text).toContain(
+      "inert, script-free, and provider-neutral",
+    );
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "policy-autopilot-capabilities",
+        uri: "owd://collaboration/lead-operation-capabilities/v3",
+      }),
+    );
+    const policyProfileResponse = await productionFetch("resources/read", {
+      uri: "owd://collaboration/lead-operation-capabilities/v3",
+    });
+    expect(policyProfileResponse.status).toBe(200);
+    const policyProfile = mcpResourceReadResponseSchema.parse(
+      await policyProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(policyProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      format: "owd-lead-operation-capabilities-v3",
+      mcpTools: [
+        "evaluate_run_policy",
+        "get_policy_operations",
+        "complete_continuity_drill",
+      ],
+      requiredScope: "project.lead",
+    });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "policy-continuity-adapter",
+        uri: "owd://adapters/policy-continuity/v1",
+      }),
+    );
+    const policyAdapterResponse = await productionFetch("resources/read", {
+      uri: "owd://adapters/policy-continuity/v1",
+    });
+    expect(policyAdapterResponse.status).toBe(200);
+    const policyAdapter = mcpResourceReadResponseSchema.parse(
+      await policyAdapterResponse.json(),
+    );
+    expect(policyAdapter.result.contents[0]?.text).toContain(
+      "inert, script-free, and provider-neutral",
     );
     expect(resources.result.resources).toContainEqual(
       expect.objectContaining({
@@ -1047,7 +1225,45 @@ describe("scoped universal agent access", () => {
     const connection = mcpResponseSchema.parse(await connectionResponse.json());
     expect(connection.result.structuredContent).toMatchObject({
       projectLifecycle: {
+        continuityCapabilitiesResource:
+          "owd://collaboration/lead-continuity-capabilities/v1",
+        continuityTools: [
+          "claim_project_lead",
+          "renew_project_lead",
+          "checkpoint_project",
+          "resume_project",
+        ],
         entryTool: "open_project",
+        hermesHandsOffAdapterResource: "owd://adapters/hermes/hands-off/v1",
+        elasticLeadOperationCapabilitiesResource:
+          "owd://collaboration/lead-operation-capabilities/v2",
+        elasticLeadOperationTools: expect.arrayContaining([
+          "register_actors_batch",
+          "get_run_delta",
+          "submit_bundles_batch",
+          "recover_actor",
+          "project_orca_metadata",
+        ]),
+        leadOperationCapabilitiesResource:
+          "owd://collaboration/lead-operation-capabilities/v1",
+        leadOperationTools: [
+          "create_work_item",
+          "start_run",
+          "register_actor",
+          "get_run_context",
+          "submit_bundle",
+          "complete_work_item",
+          "list_project_exceptions",
+        ],
+        policyAutopilotCapabilitiesResource:
+          "owd://collaboration/lead-operation-capabilities/v3",
+        policyAutopilotTools: [
+          "evaluate_run_policy",
+          "get_policy_operations",
+          "complete_continuity_drill",
+        ],
+        policyContinuityAdapterResource: "owd://adapters/policy-continuity/v1",
+        orcaContinuityAdapterResource: "owd://adapters/orca/continuity/v1",
         liveTools: [
           "open_project",
           "wait_for_project_connection",
@@ -1316,6 +1532,7 @@ describe("scoped universal agent access", () => {
     );
     const requestedScopes = [
       "project.read",
+      "project.lead",
       "collaboration.submit",
       "review.submit",
     ];
@@ -1722,6 +1939,82 @@ describe("scoped universal agent access", () => {
       packet: {
         packetId: status.packetId,
         projectId: status.projectId,
+      },
+    });
+
+    const currentPacket = z
+      .object({
+        packetId: z.string().uuid(),
+        projectId: z.string().uuid(),
+        workItemId: z.string().uuid(),
+      })
+      .parse(packet.result.structuredContent.packet);
+    const claimedLead = await callTool(
+      projectAccessToken,
+      "claim_project_lead",
+      {
+        idempotencyKey: `mcp-lead-${crypto.randomUUID()}`,
+        leadIdentity: {
+          claimedHarness: null,
+          claimedModel: null,
+          displayName: "Synthetic MCP lead",
+        },
+        leaseExpiresInSeconds: 300,
+        projectId: currentPacket.projectId,
+      },
+    );
+    expect(claimedLead.result.isError).not.toBe(true);
+    const lease = z
+      .object({
+        fencingToken: z.number().int().positive(),
+        leaseId: z.string().uuid(),
+      })
+      .parse(claimedLead.result.structuredContent.lease);
+    const checkpoint = await callTool(
+      projectAccessToken,
+      "checkpoint_project",
+      {
+        acceptedDecisionIds: [],
+        artifactIds: [],
+        blockers: [],
+        citationIds: [],
+        completedWork: ["Exercised the generic MCP continuity tools."],
+        fencingToken: lease.fencingToken,
+        idempotencyKey: `mcp-checkpoint-${crypto.randomUUID()}`,
+        knownRejectedApproaches: ["Restoring the current lease from backup."],
+        leaseId: lease.leaseId,
+        nextAction: "Resume from the acknowledged Continuity Point.",
+        openWork: ["Complete the next bounded Project step."],
+        packetId: currentPacket.packetId,
+        previousContinuityPointId: null,
+        projectId: currentPacket.projectId,
+        risks: ["The Work Packet remains expiring context."],
+        workItemId: currentPacket.workItemId,
+      },
+    );
+    expect(checkpoint.result.isError).not.toBe(true);
+    const continuityPointId = z
+      .string()
+      .uuid()
+      .parse(
+        (
+          checkpoint.result.structuredContent.continuityPoint as {
+            continuityPointId: unknown;
+          }
+        ).continuityPointId,
+      );
+    const resumedWithContinuity = await callTool(
+      projectAccessToken,
+      "resume_project",
+      {
+        contextPolicy: request.draft.contextPolicy,
+        projectId: currentPacket.projectId,
+      },
+    );
+    expect(resumedWithContinuity.result.structuredContent).toMatchObject({
+      ok: true,
+      resume: {
+        latestContinuityPoint: { continuityPointId },
       },
     });
 
@@ -4563,6 +4856,75 @@ describe("scoped universal agent access", () => {
       project: { projectId: existing.projectId },
       state: "ready",
     });
+  }, 15_000);
+
+  it("requires fresh owner consent when a new lead scope follows a legacy pending request", async () => {
+    const session = await createOwnerSession();
+    const vaultId = await createVault("Lead scope consent vault");
+    await materialize(vaultId, []);
+    const existing = await createCatalogProject(vaultId, {
+      label: "Lead scope consent Project",
+      now: Math.floor(Date.now() / 1_000),
+      path: "",
+    });
+    const agent = await authorize(
+      session,
+      vaultId,
+      [],
+      ["vault.read", "project.initialize.request", "project.connect.request"],
+    );
+    const legacyScopes = [
+      "project.read",
+      "collaboration.submit",
+      "review.submit",
+      "proposal.status",
+    ] as const;
+    const legacy = await callTool(agent.accessToken, "request_project_access", {
+      clientCapabilities: { urlElicitation: true },
+      documentationPlan: NO_ROOT_MARKDOWN,
+      idempotencyKey:
+        "legacy-before-lead-scope-abcdefghijklmnopqrstuvwxyz-0123456789",
+      projectId: existing.projectId,
+      requestedScopes: legacyScopes,
+    });
+    const legacyRequest = projectAccessRequestResponseSchema.parse(
+      legacy.result.structuredContent.access,
+    );
+
+    const leadOpen = await callTool(agent.accessToken, "open_project", {
+      documentationPlan: NO_ROOT_MARKDOWN,
+      projectId: existing.projectId,
+    });
+    const leadRequest = projectAccessRequestResponseSchema.parse(
+      leadOpen.result.structuredContent.access,
+    );
+    expect(leadOpen.result.structuredContent).toMatchObject({
+      ok: true,
+      state: "owner_approval_required",
+    });
+    expect(leadRequest.accessRequestId).not.toBe(legacyRequest.accessRequestId);
+
+    const leadContext = projectInitializationConsentContextSchema.parse(
+      await (
+        await fetchWorker(
+          `${ORIGIN}/api/project-initializations/context?requestId=${leadRequest.accessRequestId}`,
+          { headers: { Cookie: session.cookie } },
+        )
+      ).json(),
+    );
+    expect(leadContext.requestedScopes).toEqual([
+      "project.read",
+      "project.lead",
+      "collaboration.submit",
+      "review.submit",
+      "proposal.status",
+    ]);
+    const legacyRow = await env.DB.prepare(
+      `SELECT status FROM project_initialization_requests WHERE id = ?`,
+    )
+      .bind(legacyRequest.accessRequestId)
+      .first<{ status: string }>();
+    expect(legacyRow?.status).toBe("expired");
   }, 15_000);
 
   it("keeps a pending existing-Project join terminal after explicit source revocation", async () => {

@@ -92,6 +92,11 @@ Project discovery cannot return operator-only metadata. This delivery contract
 does not by itself claim that the public OWD Cloud service or a particular
 trial cell has passed its release gate.
 
+Provisioning is incomplete until the private per-cell build record satisfies
+the versioned [managed cell lifecycle manifest](CELL-LIFECYCLE.md). That record
+captures every created resource and the exact later deletion inventory without
+storing secret values or vault metadata.
+
 ## Trust disclosure
 
 Community users trust their own Cloudflare account and the reviewed OWD release.

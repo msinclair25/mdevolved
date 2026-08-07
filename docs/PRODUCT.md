@@ -92,6 +92,10 @@ evaluation; it does not become OWD's control plane or vault source of truth.
   complete source and review provenance.
 - Recover approved Project, Handoff, Review, and Decision records through the
   same encrypted, provider-neutral snapshot boundary as their source notes.
+- Let one explicitly authorized Project lead acknowledge a bounded Continuity
+  Point, then let a separately authorized replacement resume from its exact
+  objective, accepted Decisions, Artifacts, evidence, open work, risks, and
+  next action without restoring the prior lead's authority.
 - Optionally include Unvetted Intelligence in a snapshot and restore it as
   owner-only quarantine without reactivating sharing, proposals, clients, or
   experimental Skills.
@@ -111,8 +115,71 @@ evaluation; it does not become OWD's control plane or vault source of truth.
   Items, frozen cited Work Packets, and append-only agent submissions.
 - Separate private/shared/accepted states, owner Decisions, complete
   provenance, and encrypted recovery for accepted Project records.
+- Additive `project.lead` leases with fencing tokens, immutable Continuity
+  Points, generic MCP resume/checkpoint tools, and a no-executable portable
+  continuity bundle.
 - A no-executable Markdown/JSON packet and submission fallback plus an
   explicitly consented Obsidian Markdown Project-notebook projection.
+
+## R3 elastic Run outcome
+
+R3 extends the hands-off R2 protocol for an opt-in elastic Run. One lead can
+register and submit bounded batches for up to 32 active actors and 64 actor
+records while a solo client keeps the same R2 API and ceremony. Cursor deltas
+provide stable, Run-bound progress; exact retries are idempotent and payload
+conflicts are explicit. Capacity pressure returns actionable retry metadata,
+while the execution harness retains scheduling, supervision, worktrees,
+branches, retries, and concurrency.
+
+Expired or abandoned actors can be replaced with fresh, narrower scopes; the
+predecessor is never revived. Harness-reported logical units and cost
+microunits produce durable accounting and blocking budget Exceptions. OWD
+exposes only aggregate privacy-safe observations and never raw transcript,
+hidden-reasoning, terminal, credential, OAuth, provider-runtime, or
+production/customer log data.
+
+The inert Orca adapter maps optional worktree, branch, commit, pull-request,
+and session references into generic Run/Actor evidence. Orca is optional and
+non-authoritative: if its state is unavailable, a provider-neutral lead with
+fresh authorization resumes from OWD's Run snapshot/delta. No Orca scheduling,
+session, worktree, branch, pull request, or credential is imported or restored.
+
+Every R3 record participates in encrypted portable export, snapshot, quarantine
+restore, and hot/warm/cold/quarantine retention with reference-aware cleanup.
+Restore never recreates authority, grants, leases, actors, credentials, OAuth
+state, or live execution state.
+
+R3 local acceptance is synthetic and automated where possible. The human-
+authorized live disposable exercise remains outside this build until run; this
+product definition does not claim that live gate has passed.
+
+## R4 policy autopilot and operational continuity outcome
+
+R4 adds an owner-authored immutable policy binding and deterministic research
+and coding completion Decisions. The fixed gates use exact accepted evidence,
+reviews, Continuity Points, budgets, Exceptions, Project versions, leases, and
+fences. They do not use model confidence, hidden reasoning, raw transcripts,
+terminal history, provider state, or production logs. A lead cannot author or
+approve the policy that judges its work. Self-approval, policy editing,
+authority expansion, destructive action, protected paths, conflicting or
+missing evidence, budget exhaustion, integrity failure, and unsupported
+upgrade or rollback remain explicit Exceptions or owner-only actions.
+
+The existing Worker scheduled event is only a bounded, idempotent trigger for
+Continuity Point and disposable drill requests. External provider-neutral
+harnesses still own agents, planning, retries, tools, worktrees, inference, and
+scheduling. A fenced replacement lead may complete only the exact scheduled
+drill request and source Continuity Point, producing an immutable redacted
+receipt with measured RPO, RTO, continuity age, recovery quality, and runtime
+independence.
+
+All five R4 durable record kinds participate in dependency-complete portable
+export, encrypted snapshot inventory, reference-aware retention, integrity
+monitoring, and quarantine-only fresh Community restore. Recovery recreates no
+grant, lease, actor, credential, OAuth state, policy authority, scheduler
+authority, or other live authority. R4 local evidence is synthetic and incurs
+no provider or remote-infrastructure cost; live deployment and provider drills
+remain separate human-authorized gates.
 
 ## Explicit exclusions
 
@@ -130,6 +197,8 @@ evaluation; it does not become OWD's control plane or vault source of truth.
 - A fixed planner, builder, reviewer, or vendor-specific agent sequence.
 - Automatic agent routing, subscription control, conversation scraping, or
   server-side possession of model-provider credentials.
+- An embedded scheduler or agent supervisor remains excluded. R4 emits only
+  bounded provider-neutral operational requests and receipts.
 
 ## Product principles
 
@@ -186,6 +255,9 @@ evaluation; it does not become OWD's control plane or vault source of truth.
 - OWD reduces repeated explanation through frozen Work Packets and accepted
   Project history; it does not require agents to expose their complete hidden
   conversations.
+- A Continuity Point is acknowledged operational state, not a new owner
+  Decision or accepted truth. It carries provenance but never a live grant,
+  lease, credential, transcript, hidden reasoning, or runtime state.
 - Adding a vault or folder to a future knowledge space never silently broadens
   an existing client grant; new content requires new consent.
 - Open-source Community deployments never depend on billing or a hosted
@@ -218,3 +290,16 @@ evaluation; it does not become OWD's control plane or vault source of truth.
   without ingesting hidden conversations or presenting a quality leaderboard.
 - Every accepted Decision identifies its producing packet, sources, artifacts,
   reviews, and owner action, and appears in a compatible later packet.
+- In a disposable replacement drill, a newly authorized lead can regain the
+  latest bounded Project context in under five minutes while stale fencing
+  tokens and restored authority remain unusable.
+- After one owner instruction to use OWD, an authorized lead can create a Work
+  Item, start a bounded Run, delegate to at least three claimed actors, share a
+  provisional result, route an independent review, checkpoint, and close the
+  Work Item without routine dashboard action. Privileged requests, exhausted
+  budgets, and conflicting evidence stop as explicit visible Exceptions.
+- In the R3 synthetic gate, a solo client and a 20-plus-actor Run use the same
+  generic services; all Run deltas are stable and Run-scoped; retries produce
+  no duplicate records; and owner action remains exception-driven rather than
+  proportional to actor count. The live disposable exercise is human-
+  authorized and not yet a local automated result.

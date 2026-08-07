@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owd.dev/schemas/managed-rate-limit-registry-v1.json",
+  "title": "OWD managed rate-limit registry v1",
+  "description": "Private account-scoped reservations that prevent rate-limit namespace reuse across isolated OWD cells.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "accountId",
+    "updatedAt",
+    "reservations"
+  ],
+  "properties": {
+    "format": { "const": "owd-managed-rate-limit-registry-v1" },
+    "schemaVersion": { "const": 1 },
+    "accountId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "reservations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cellRef",
+          "workerName",
+          "manifestSha256",
+          "namespaceIds",
+          "status"
+        ],
+        "properties": {
+          "cellRef": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{7,63}$"
+          },
+          "workerName": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,62}$"
+          },
+          "manifestSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "namespaceIds": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,8}$"
+            }
+          },
+          "status": {
+            "enum": ["reserved", "active", "deprovisioning"]
+          }
+        }
+      }
+    }
+  }
+}

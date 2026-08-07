@@ -13,11 +13,17 @@ export type IntelligenceSelection =
   "approved" | "approved-and-unvetted" | "none";
 
 type RecordInventoryRow = {
+  actor_id?: string | null;
   body_object_key: string;
   byte_length: number;
   content_sha256: string;
   disposition:
-    "accepted" | "pending" | "quarantined" | "rejected" | "superseded";
+    | "accepted"
+    | "checkpointed"
+    | "pending"
+    | "quarantined"
+    | "rejected"
+    | "superseded";
   id: string;
   portable_object_id: string;
   project_id: string | null;
@@ -25,6 +31,7 @@ type RecordInventoryRow = {
     typeof snapshotIntelligenceRecordSchema.parse
   >["recordType"];
   schema_version: 1;
+  run_id?: string | null;
   visibility: "owner-only" | "private" | "shared";
   work_item_id: string | null;
 };
@@ -55,7 +62,10 @@ type IntelligencePlan = {
 
 export class CollaborationSnapshotError extends Error {
   constructor(
-    readonly code: "snapshot_dependency_missing" | "snapshot_selection_invalid",
+    readonly code:
+      | "snapshot_dependency_missing"
+      | "snapshot_selection_invalid"
+      | "snapshot_identity_collision",
   ) {
     super(code);
     this.name = "CollaborationSnapshotError";
@@ -85,6 +95,61 @@ async function buildPlan(
        JOIN collaboration_record_states s ON s.record_id = r.id`,
     )
     .all<RecordInventoryRow>();
+  const operationalRows = await db
+    .prepare(
+      `SELECT operational_record_id AS id, record_type, 1 AS schema_version,
+        project_id, NULL AS work_item_id, run_id, portable_object_id,
+        body_object_key, content_sha256, byte_length, 'owner-only' AS visibility,
+        CASE WHEN restore_state = 'live' THEN 'accepted'
+          ELSE 'quarantined' END AS disposition
+       FROM project_operational_records`,
+    )
+    .all<RecordInventoryRow>();
+  const continuityRows = await db
+    .prepare(
+      `SELECT continuity_point_id AS id, 'continuity-point' AS record_type,
+        1 AS schema_version, project_id, work_item_id, portable_object_id,
+        body_object_key, content_sha256, byte_length,
+        'owner-only' AS visibility, 'checkpointed' AS disposition
+       FROM project_continuity_points`,
+    )
+    .all<RecordInventoryRow>();
+  const operationRows = await db
+    .prepare(
+      `SELECT operation_record_id AS id, record_type, 1 AS schema_version,
+        project_id, work_item_id, portable_object_id, body_object_key,
+        content_sha256, byte_length, 'owner-only' AS visibility,
+        'pending' AS disposition
+       FROM project_operation_records`,
+    )
+    .all<RecordInventoryRow>();
+  const elasticRows = await db
+    .prepare(
+      `SELECT elastic_record_id AS id,
+        CASE record_type
+          WHEN 'plane' THEN 'elastic-plane'
+          WHEN 'account' THEN 'elastic-account'
+          WHEN 'recovery' THEN 'actor-recovery'
+          WHEN 'delta' THEN 'run-delta'
+          WHEN 'budget' THEN 'run-budget'
+          WHEN 'budget-entry' THEN 'budget-entry'
+          WHEN 'observation' THEN 'run-observation'
+          WHEN 'orca' THEN 'orca-projection'
+        END AS record_type,
+        1 AS schema_version, project_id, NULL AS work_item_id, run_id,
+        actor_id, portable_object_id, body_object_key, content_sha256,
+        byte_length, 'owner-only' AS visibility,
+        'pending' AS disposition
+       FROM project_elastic_records`,
+    )
+    .all<RecordInventoryRow>();
+  const allRecordRows = [
+    ...recordRows.results,
+    ...continuityRows.results,
+    ...operationRows.results,
+    ...elasticRows.results,
+    ...operationalRows.results,
+  ];
   const evidenceRows = await db
     .prepare(
       `SELECT id, portable_object_id, object_key, content_sha256, byte_length
@@ -97,16 +162,53 @@ async function buildPlan(
        FROM collaboration_dependencies ORDER BY record_id, dependency_id`,
     )
     .all<{ dependency_id: string; record_id: string }>();
+  const continuityDependencyRows = await db
+    .prepare(
+      `SELECT continuity_point_id AS record_id, dependency_id
+       FROM continuity_point_dependencies
+       ORDER BY continuity_point_id, dependency_id`,
+    )
+    .all<{ dependency_id: string; record_id: string }>();
+  const operationalDependencyRows = await db
+    .prepare(
+      `SELECT operational_record_id AS record_id, dependency_id
+       FROM project_operational_dependencies
+       ORDER BY operational_record_id, dependency_id`,
+    )
+    .all<{ dependency_id: string; record_id: string }>();
   const provenanceRows = await db
     .prepare(
       `SELECT edge_id, subject_id
        FROM collaboration_provenance_edges ORDER BY subject_id, edge_id`,
     )
     .all<{ edge_id: string; subject_id: string }>();
-  const records = new Map(recordRows.results.map((row) => [row.id, row]));
-  const evidence = new Map(evidenceRows.results.map((row) => [row.id, row]));
+  const records = new Map<string, RecordInventoryRow>();
+  const portableObjectIds = new Set<string>();
+  for (const row of allRecordRows) {
+    if (records.has(row.id) || portableObjectIds.has(row.portable_object_id)) {
+      throw new CollaborationSnapshotError("snapshot_identity_collision");
+    }
+    records.set(row.id, row);
+    portableObjectIds.add(row.portable_object_id);
+  }
+  const evidence = new Map<string, EvidenceInventoryRow>();
+  for (const row of evidenceRows.results) {
+    if (
+      evidence.has(row.id) ||
+      records.has(row.id) ||
+      portableObjectIds.has(row.portable_object_id)
+    ) {
+      throw new CollaborationSnapshotError("snapshot_identity_collision");
+    }
+    evidence.set(row.id, row);
+    portableObjectIds.add(row.portable_object_id);
+  }
   const dependencies = new Map<string, string[]>();
-  for (const row of dependencyRows.results) {
+  for (const row of [
+    ...dependencyRows.results,
+    ...continuityDependencyRows.results,
+    ...operationalDependencyRows.results,
+  ]) {
     const values = dependencies.get(row.record_id) ?? [];
     values.push(row.dependency_id);
     dependencies.set(row.record_id, values);
@@ -116,12 +218,46 @@ async function buildPlan(
     if (!values.includes(row.edge_id)) values.push(row.edge_id);
     dependencies.set(row.subject_id, values);
   }
+  for (const row of operationRows.results) {
+    const values = dependencies.get(row.id) ?? [];
+    for (const dependencyId of [row.project_id, row.work_item_id]) {
+      if (
+        dependencyId !== null &&
+        records.has(dependencyId) &&
+        !values.includes(dependencyId)
+      ) {
+        values.push(dependencyId);
+      }
+    }
+    dependencies.set(row.id, values.sort());
+  }
+  for (const row of elasticRows.results) {
+    const values = dependencies.get(row.id) ?? [];
+    for (const dependencyId of [
+      row.project_id,
+      row.work_item_id,
+      row.run_id,
+      row.actor_id,
+    ]) {
+      if (
+        dependencyId !== null &&
+        dependencyId !== undefined &&
+        records.has(dependencyId) &&
+        !values.includes(dependencyId)
+      ) {
+        values.push(dependencyId);
+      }
+    }
+    dependencies.set(row.id, values.sort());
+  }
 
   const approvedRootIds = new Set(
-    recordRows.results
+    allRecordRows
       .filter(
         (row) =>
-          row.disposition === "accepted" &&
+          (row.disposition === "accepted" ||
+            (row.record_type === "continuity-point" &&
+              row.disposition === "checkpointed")) &&
           row.record_type !== "provenance-edge",
       )
       .map((row) => row.id),
@@ -178,8 +314,11 @@ async function buildPlan(
       ...approvedRecordIds,
       ...approvedEvidenceIds,
     ]);
-    for (const row of recordRows.results) {
-      if (row.disposition !== "accepted") {
+    for (const row of allRecordRows) {
+      if (
+        row.disposition !== "accepted" &&
+        row.record_type !== "continuity-point"
+      ) {
         includeClosure(
           row.id,
           unvettedRecordIds,
@@ -196,6 +335,12 @@ async function buildPlan(
   ): PlannedItem => {
     const evidenceOnly =
       classification === "approved" && !approvedRootIds.has(row.id);
+    const quarantineOnlyRecord =
+      row.record_type === "policy-binding" ||
+      row.record_type === "policy-decision" ||
+      row.record_type === "schedule" ||
+      row.record_type === "evidence" ||
+      row.record_type === "continuity-receipt";
     return {
       classification,
       descriptor: snapshotIntelligenceRecordSchema.parse({
@@ -213,7 +358,7 @@ async function buildPlan(
         recordId: row.id,
         recordType: row.record_type,
         restoreDisposition:
-          classification === "unvetted"
+          classification === "unvetted" || quarantineOnlyRecord
             ? "restore-quarantined"
             : evidenceOnly
               ? "restore-evidence-only"

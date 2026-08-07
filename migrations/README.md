@@ -47,11 +47,25 @@ operational visibility.
 
 The collaboration and managed-release ledger from
 `0010_phase9a_collaboration.sql` through
-`0029_vault_primary_writer_transfer.sql` is different: these migrations are release
+`0033_policy_autopilot_r4.sql` is different: these migrations are release
 prerequisites and are never imported or applied by production request handlers.
 Apply the reviewed ledger before deploying the matching Worker. CI runs
 `pnpm test:migrations` against the full empty ledger and populated
 prior-release fixtures.
+
+`0030_continuity_r1.sql` is additive and forward-only. Its live checkpoint
+insert computes database-enforced fence, context, and predecessor validity in
+the insert transaction. Its restore shape requires null live-authority fields.
+Application rollback leaves the tables, constraints, and immutable Continuity
+Point R2 bodies intact; use a forward fix rather than a destructive
+down-migration.
+
+`0031_hands_off_lead_r2.sql`, `0032_elastic_actor_plane_r3.sql`, and
+`0033_policy_autopilot_r4.sql` remain additive, forward-only, and trigger-free.
+They retain immutable Run, actor, evidence, PolicyDecision, schedule,
+integrity, and continuity-receipt provenance while application rollback simply
+stops reading newer projections. No release provides or invokes a destructive
+down-migration, and restored R1–R4 records recreate no live authority.
 
 Local SQLite execution is not sufficient evidence that Wrangler will transport
 a migration to remote D1 correctly. The first managed-cell rehearsal found
@@ -253,3 +267,31 @@ hostname and an unexpired invitation digest. Managed owner creation rechecks
 and consumes that invitation inside the same transactional D1 batch as owner
 and session creation. Application rollback leaves these tables intact; reissue
 a fresh digest rather than reviving an expired or consumed invitation.
+
+The R2 hands-off lead migration adds a provider-neutral operation ledger and
+projections for policies, Runs, Actors, Event Bundles, claims, Exceptions, and
+idempotent operation receipts. It does not alter the existing collaboration
+record CHECK constraints. Operation bodies remain immutable and content
+addressed; restored rows are quarantined, carry no live authority, and must not
+be copied into active actor projections. Application rollback may leave these
+tables in place, but a forward migration is required before accepting R2
+records. Each Run pins the exact Work Packet used at start. Every live mutation
+receipt stores its source lease/fence and a database-enforced commit-time proof
+of the exact active Project grant, source grant, vault, lease holder, expiry,
+and fencing token; projection guards alone are never treated as success.
+
+The R3 elastic actor-plane migration is additive and forward-only. It keeps
+R2 actor and Run count columns unchanged, storing bounded elastic counts in
+`project_elastic_planes` and `project_elastic_accounts`. Transport-safe unique
+actor slots and immutable budget-version rows plus budget-entry foreign keys
+enforce concurrent admission without `CREATE TRIGGER`, whose terminator
+Wrangler's remote D1 splitter does not preserve. Every new record has
+content-addressed body metadata, an explicit retention tier and deadline, and
+database-enforced false authority flags. `project_run_deltas.delta_sequence`
+is an append-only AUTOINCREMENT ordering key; the `(run_id, record_type,
+record_id)` uniqueness fence prevents duplicate durable deltas. Actor recovery
+rows preserve the abandoned identity and require a distinct replacement actor;
+they never restore grants, leases, credentials, or live authority. Budget,
+observation, and inert Orca projection rows contain only bounded logical or
+metadata evidence. Rollback leaves all R3 tables and immutable bodies intact;
+repair forward and quarantine any restored row rather than deleting history.

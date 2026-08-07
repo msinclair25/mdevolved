@@ -1,0 +1,58 @@
+{
+  "authority": {
+    "actorAuthorityIncluded": false,
+    "credentialAuthorityIncluded": false,
+    "grantAuthorityIncluded": false,
+    "leaseAuthorityIncluded": false,
+    "liveAuthorityIncluded": false,
+    "oauthAuthorityIncluded": false,
+    "policyAuthorityIncluded": false,
+    "restoredAuthorityAllowed": false,
+    "schedulerAuthorityIncluded": false
+  },
+  "cleanup": {
+    "completed": true,
+    "remainingAuthorityCount": 0,
+    "temporaryObjectsRemoved": 9
+  },
+  "disposable": true,
+  "drillId": "77000000-0000-4000-8000-000000000001",
+  "emittedAt": 1786000160,
+  "format": "owd-continuity-receipt-v1",
+  "freshCommunityInstall": true,
+  "leadReplaced": true,
+  "metrics": {
+    "continuityAgeSeconds": 60,
+    "recoveryChecksPassed": 8,
+    "recoveryChecksTotal": 8,
+    "recoveryQualityBps": 10000,
+    "rpoSeconds": 10,
+    "rtoSeconds": 40,
+    "runtimeIndependent": true
+  },
+  "outcome": "pass",
+  "projectId": "71000000-0000-4000-8000-000000000001",
+  "receiptId": "77000000-0000-4000-8000-000000000002",
+  "redaction": {
+    "credentialsIncluded": false,
+    "customerDataIncluded": false,
+    "filenamesIncluded": false,
+    "hiddenReasoningIncluded": false,
+    "hostnamesIncluded": false,
+    "oauthStateIncluded": false,
+    "productionLogsIncluded": false,
+    "providerRuntimeIncluded": false,
+    "rawBodiesIncluded": false,
+    "terminalHistoryIncluded": false,
+    "transcriptsIncluded": false
+  },
+  "restoredContinuityPointId": "76000000-0000-4000-8000-000000000003",
+  "schemaVersion": 1,
+  "sourceTimes": {
+    "latestAcknowledgedPointAt": 1786000100,
+    "receiptEmittedAt": 1786000160,
+    "replacementProductiveAt": 1786000150,
+    "restoredPointAcknowledgedAt": 1786000100,
+    "simulatedLeadLossAt": 1786000110
+  }
+}

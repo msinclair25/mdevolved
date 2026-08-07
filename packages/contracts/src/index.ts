@@ -15,6 +15,8 @@ export * from "./vault-path";
 export * from "./collaboration";
 export * from "./diagnostics";
 export * from "./project-initialization";
+export * from "./lead-operation";
+export * from "./policy-operation";
 
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
@@ -528,7 +530,7 @@ export const agentConsentContextSchema = z.discriminatedUnion(
         scopes: z
           .array(collaborationScopeSchema)
           .min(1)
-          .max(4)
+          .max(5)
           .refine((values) => new Set(values).size === values.length),
       })
       .strict(),
@@ -999,6 +1001,7 @@ export const snapshotVaultManifestSchema = z
   .object({
     entries: z.array(snapshotEntryManifestSchema).max(MAX_SNAPSHOT_ITEMS),
     snapshotVaultId: z.string().uuid(),
+    sourceVaultId: z.string().uuid().nullable().optional(),
     sourceGeneration: snapshotSourceGenerationSchema.nullable(),
     vaultName: vaultDisplayNameSchema,
   })

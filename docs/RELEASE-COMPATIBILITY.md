@@ -1,7 +1,7 @@
 # Release compatibility
 
 This page records the explicit compatibility boundary for OWD Platform
-`1.0.0-alpha.3` and OWD Sync `0.1.6`. A newer upstream release is not supported
+`1.0.0-alpha.4` and OWD Sync `0.1.6`. A newer upstream release is not supported
 merely because it exists.
 
 ## Supported contracts
@@ -18,6 +18,7 @@ merely because it exists.
 | Legacy backup import  | `owd-backup-v1`                                                                                                                                        | Remains readable; unknown or malformed formats fail before staging.                                                |
 | Workspace snapshot    | `owd-snapshot-v2` with `notes-v1`, explicit target mapping, and age-X25519 encrypted objects                                                           | Unknown required capabilities fail before staging. Credentials and live grants never restore.                      |
 | Collaboration records | Knowledge Spaces, Projects, Work Items, Work Packets, Attempts, Artifacts, Handoffs, Reviews, Decisions, provenance, and approved/quarantined recovery | Alpha compatibility does not claim that every third-party client has completed an independent acceptance exercise. |
+| Lead operations       | Additive MCP capability resources v1 (R2), v2 (R3), and v3 (R4); policy, Decision, schedule, evidence, and continuity-receipt contracts                | Older clients keep their original profiles. R4 is opt-in, generic, and cannot restore or widen authority.          |
 
 The machine-readable upstream pins live in
 [`compatibility/upstreams.json`](../compatibility/upstreams.json). A daily
@@ -49,6 +50,9 @@ skills.
   rotation.
 - Restored note sources remain excluded until the owner approves their named
   lineage.
+- Restored R1–R4 operational records remain quarantined evidence. Restore does
+  not recreate grants, leases, actors, credentials, OAuth state, policy or
+  scheduler authority, or live operation projections.
 - Snapshots remain independently decryptable with the owner's recovery
   identity; restore never recreates sessions, credentials, OAuth clients, or
   grants.

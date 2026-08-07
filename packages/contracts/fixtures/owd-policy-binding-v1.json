@@ -1,0 +1,39 @@
+{
+  "activatedAt": 1786000000,
+  "authority": {
+    "liveAuthorityIncluded": false,
+    "restoredAuthorityAllowed": false
+  },
+  "bindingId": "75000000-0000-4000-8000-000000000001",
+  "checkpointIntervalSeconds": 3600,
+  "drillIntervalSeconds": 604800,
+  "exceptionOnlyActions": [
+    "authority-expansion",
+    "policy-editing",
+    "self-approval",
+    "destructive-action",
+    "protected-path-access",
+    "conflicting-evidence",
+    "budget-exhaustion",
+    "integrity-failure",
+    "unsupported-upgrade",
+    "unsupported-rollback"
+  ],
+  "format": "owd-policy-binding-v1",
+  "gateProfiles": {
+    "coding": "owd-coding-completion-gate-v1",
+    "research": "owd-research-completion-gate-v1"
+  },
+  "ownerAuthored": true,
+  "ownerAuthorization": "owner-session",
+  "ownerPolicyInput": {
+    "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "recordId": "71000000-0000-4000-8000-000000000002",
+    "recordType": "project-version"
+  },
+  "policyId": "72000000-0000-4000-8000-000000000001",
+  "policySha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "projectId": "71000000-0000-4000-8000-000000000001",
+  "projectVersionId": "71000000-0000-4000-8000-000000000002",
+  "schemaVersion": 1
+}

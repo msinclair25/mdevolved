@@ -366,7 +366,7 @@ async function mockFoundationWithSnapshots(
         releaseId: "e2e-release-id",
         releaseTag: "e2e-release",
         service: "owd-platform",
-        version: "1.0.0-alpha.3",
+        version: "1.0.0-alpha.4",
       });
     } else if (url.pathname === "/api/setup/status") {
       await json({
@@ -1040,7 +1040,7 @@ test("captures a managed invitation fragment into the fast claim screen", async 
         releaseId: "managed-e2e-release-id",
         releaseTag: "managed-e2e-release",
         service: "owd-platform",
-        version: "1.0.0-alpha.3",
+        version: "1.0.0-alpha.4",
       }),
       contentType: "application/json",
     }),

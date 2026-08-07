@@ -60,9 +60,17 @@ const VAULT_BOOTSTRAP_SCOPES = [
   PROJECT_INITIALIZATION_SCOPE,
   PROJECT_CONNECTION_SCOPE,
 ] as const;
+const LEGACY_ADVERTISED_AUTHORIZATION_SCOPES = [
+  ...VAULT_BOOTSTRAP_SCOPES,
+  "project.read",
+  "collaboration.submit",
+  "review.submit",
+  "proposal.status",
+] as const;
 const ADVERTISED_AUTHORIZATION_SCOPES = [
   ...VAULT_BOOTSTRAP_SCOPES,
   "project.read",
+  "project.lead",
   "collaboration.submit",
   "review.submit",
   "proposal.status",
@@ -188,8 +196,14 @@ export function validateAuthorizationRequest(
   const uniqueScopes = [...new Set(request.scope)];
   const vaultScopeSet = new Set(uniqueScopes);
   const requestedEveryAdvertisedScope =
-    uniqueScopes.length === ADVERTISED_AUTHORIZATION_SCOPES.length &&
-    ADVERTISED_AUTHORIZATION_SCOPES.every((scope) => vaultScopeSet.has(scope));
+    (uniqueScopes.length === ADVERTISED_AUTHORIZATION_SCOPES.length &&
+      ADVERTISED_AUTHORIZATION_SCOPES.every((scope) =>
+        vaultScopeSet.has(scope),
+      )) ||
+    (uniqueScopes.length === LEGACY_ADVERTISED_AUTHORIZATION_SCOPES.length &&
+      LEGACY_ADVERTISED_AUTHORIZATION_SCOPES.every((scope) =>
+        vaultScopeSet.has(scope),
+      ));
   const normalizedVaultScopes =
     requestedEveryAdvertisedScope ||
     (vaultScopeSet.has(REQUIRED_SCOPE) &&
@@ -204,7 +218,7 @@ export function validateAuthorizationRequest(
   const collaborationScopes = collaborationScopeSchema
     .array()
     .min(1)
-    .max(4)
+    .max(5)
     .safeParse(uniqueScopes);
   if (
     request.responseType !== "code" ||

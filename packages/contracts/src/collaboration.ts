@@ -9,6 +9,11 @@ export const OWD_COLLABORATION_CAPABILITIES_FORMAT =
   "owd-collaboration-capabilities-v1" as const;
 export const OWD_SNAPSHOT_INTELLIGENCE_FORMAT =
   "owd-snapshot-intelligence-v1" as const;
+export const OWD_CONTINUITY_POINT_FORMAT = "owd-continuity-point-v1" as const;
+export const OWD_LEAD_CONTINUITY_CAPABILITIES_FORMAT =
+  "owd-lead-continuity-capabilities-v1" as const;
+export const OWD_PORTABLE_CONTINUITY_BUNDLE_FORMAT =
+  "owd-portable-continuity-bundle-v1" as const;
 
 export const APPROVED_INTELLIGENCE_CAPABILITY =
   "owd.snapshot.approved-intelligence-v1" as const;
@@ -30,6 +35,10 @@ export const MAX_ATTEMPT_ARTIFACTS = 16;
 export const MAX_INTELLIGENCE_RECORDS = 5_000;
 export const MAX_INTELLIGENCE_EVIDENCE_OBJECTS = 5_000;
 export const MAX_INTELLIGENCE_LOGICAL_BYTES = 128 * 1024 * 1024;
+export const MAX_CONTINUITY_REFERENCES = 64;
+export const MAX_CONTINUITY_STATE_ITEMS = 64;
+export const MIN_PROJECT_LEAD_LEASE_SECONDS = 60;
+export const MAX_PROJECT_LEAD_LEASE_SECONDS = 15 * 60;
 
 const portableIdSchema = z.string().uuid();
 const sha256HexSchema = z.string().regex(/^[0-9a-f]{64}$/u);
@@ -138,6 +147,7 @@ export type CollaborationRecordType = z.infer<
 
 export const collaborationScopeSchema = z.enum([
   "project.read",
+  "project.lead",
   "collaboration.submit",
   "review.submit",
   "proposal.status",
@@ -155,7 +165,7 @@ export const collaborationGrantSchema = z
     oauthClientId: z.string().min(1).max(2_048),
     projectId: portableIdSchema,
     revokedAt: unixSecondsSchema.nullable(),
-    scopes: z.array(collaborationScopeSchema).min(1).max(4),
+    scopes: z.array(collaborationScopeSchema).min(1).max(5),
     status: z.enum(["active", "revoked"]),
   })
   .strict()
@@ -411,6 +421,16 @@ const claimedSoftwareIdentitySchema = z
     verification: z.literal("claimed"),
   })
   .strict();
+
+export const projectLeadIdentitySchema = z
+  .object({
+    claimedHarness: claimedSoftwareIdentitySchema.nullable(),
+    claimedModel: claimedSoftwareIdentitySchema.nullable(),
+    displayName: shortLabelSchema,
+  })
+  .strict();
+
+export type ProjectLeadIdentity = z.infer<typeof projectLeadIdentitySchema>;
 
 export const participantRefSchema = z
   .object({
@@ -946,6 +966,282 @@ export const decisionSchema = z
       });
     }
   });
+
+const continuityStateListSchema = z
+  .array(boundedListItemSchema)
+  .max(MAX_CONTINUITY_STATE_ITEMS);
+
+const continuityDecisionSchema = z
+  .object({
+    decision: decisionSchema,
+    recordSha256: sha256HexSchema,
+  })
+  .strict();
+
+const continuityArtifactSchema = z
+  .object({
+    artifact: artifactSchema,
+    disposition: z.enum([
+      "pending",
+      "accepted",
+      "rejected",
+      "quarantined",
+      "superseded",
+    ]),
+    recordSha256: sha256HexSchema,
+    visibility: z.enum(["private", "shared", "owner-only"]),
+  })
+  .strict();
+
+const continuityEvidenceSchema = z
+  .object({
+    citation: packetSourceCitationSchema,
+    evidence: packetEvidenceObjectSchema,
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (
+      value.citation.evidenceObjectId !== value.evidence.evidenceObjectId ||
+      value.evidence.byteLength !==
+        value.citation.excerptByteRange.endExclusive -
+          value.citation.excerptByteRange.start
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Continuity evidence must match its exact packet citation.",
+        path: ["evidence"],
+      });
+    }
+  });
+
+export const continuityPointSchema = z
+  .object({
+    acceptedDecisions: z
+      .array(continuityDecisionSchema)
+      .max(MAX_CONTINUITY_REFERENCES),
+    artifacts: z.array(continuityArtifactSchema).max(MAX_CONTINUITY_REFERENCES),
+    authority: z
+      .object({
+        liveAuthorityIncluded: z.literal(false),
+        restoredAuthorityAllowed: z.literal(false),
+      })
+      .strict(),
+    blockers: continuityStateListSchema,
+    citedEvidence: z
+      .array(continuityEvidenceSchema)
+      .max(MAX_CONTINUITY_REFERENCES),
+    completedWork: continuityStateListSchema,
+    continuityPointId: portableIdSchema,
+    context: z
+      .object({
+        createdAt: unixSecondsSchema,
+        expiresAt: unixSecondsSchema,
+        knowledgeSpaceVersionId: portableIdSchema,
+        workPacketId: portableIdSchema,
+        workPacketSha256: sha256HexSchema,
+      })
+      .strict(),
+    format: z.literal(OWD_CONTINUITY_POINT_FORMAT),
+    integrity: canonicalIntegritySchema,
+    knownRejectedApproaches: continuityStateListSchema,
+    nextAction: boundedListItemSchema,
+    objective: z
+      .object({
+        project: proseSchema,
+        workItem: workItemBriefSchema,
+      })
+      .strict(),
+    openWork: continuityStateListSchema,
+    previousContinuityPointId: portableIdSchema.nullable(),
+    project: z
+      .object({
+        projectId: portableIdSchema,
+        projectVersionId: portableIdSchema,
+        projectVersionSha256: sha256HexSchema,
+      })
+      .strict(),
+    provenance: z
+      .object({
+        acknowledgedAt: unixSecondsSchema,
+        leadFencingToken: z.number().int().positive(),
+        leadIdentity: projectLeadIdentitySchema,
+        producerVerification: z.literal("authorization-bound-client"),
+      })
+      .strict(),
+    recordType: z.literal("continuity-point"),
+    risks: continuityStateListSchema,
+    schemaVersion: z.literal(1),
+    workItem: z
+      .object({
+        status: z.enum(["open", "closed", "quarantined"]),
+        workItemId: portableIdSchema,
+        workItemVersionId: portableIdSchema,
+        workItemVersionSha256: sha256HexSchema,
+      })
+      .strict(),
+  })
+  .strict()
+  .superRefine((point, context) => {
+    if (point.previousContinuityPointId === point.continuityPointId) {
+      context.addIssue({
+        code: "custom",
+        message: "A Continuity Point cannot be its own predecessor.",
+        path: ["previousContinuityPointId"],
+      });
+    }
+    if (point.context.expiresAt <= point.context.createdAt) {
+      context.addIssue({
+        code: "custom",
+        message: "The checkpoint context must preserve a valid packet window.",
+        path: ["context", "expiresAt"],
+      });
+    }
+    const uniqueIds = (
+      values: string[],
+      path: "acceptedDecisions" | "artifacts" | "citedEvidence",
+    ) => {
+      if (new Set(values).size !== values.length) {
+        context.addIssue({
+          code: "custom",
+          message: "Continuity references must be unique.",
+          path: [path],
+        });
+      }
+    };
+    uniqueIds(
+      point.acceptedDecisions.map((value) => value.decision.decisionId),
+      "acceptedDecisions",
+    );
+    uniqueIds(
+      point.artifacts.map((value) => value.artifact.artifactId),
+      "artifacts",
+    );
+    uniqueIds(
+      point.citedEvidence.map((value) => value.citation.citationId),
+      "citedEvidence",
+    );
+    for (const [index, value] of point.acceptedDecisions.entries()) {
+      if (
+        value.decision.projectId !== point.project.projectId ||
+        value.decision.workItemId !== point.workItem.workItemId
+      ) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "A Continuity Point cannot include a cross-Project Decision.",
+          path: ["acceptedDecisions", index],
+        });
+      }
+    }
+    for (const [index, value] of point.artifacts.entries()) {
+      if (
+        value.artifact.projectId !== point.project.projectId ||
+        value.artifact.workItemId !== point.workItem.workItemId
+      ) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "A Continuity Point cannot include a cross-Project Artifact.",
+          path: ["artifacts", index],
+        });
+      }
+    }
+  });
+
+const continuityIdempotencyKeySchema = z
+  .string()
+  .min(16)
+  .max(128)
+  .regex(/^[A-Za-z0-9._~-]+$/u);
+
+export const projectLeadClaimRequestSchema = z
+  .object({
+    idempotencyKey: continuityIdempotencyKeySchema,
+    leadIdentity: projectLeadIdentitySchema,
+    leaseExpiresInSeconds: z
+      .number()
+      .int()
+      .min(MIN_PROJECT_LEAD_LEASE_SECONDS)
+      .max(MAX_PROJECT_LEAD_LEASE_SECONDS),
+    projectId: portableIdSchema,
+  })
+  .strict();
+
+export const projectLeadRenewRequestSchema = z
+  .object({
+    fencingToken: z.number().int().positive(),
+    leaseExpiresInSeconds: z
+      .number()
+      .int()
+      .min(MIN_PROJECT_LEAD_LEASE_SECONDS)
+      .max(MAX_PROJECT_LEAD_LEASE_SECONDS),
+    leaseId: portableIdSchema,
+    projectId: portableIdSchema,
+  })
+  .strict();
+
+export const projectLeadLeaseSchema = z
+  .object({
+    claimedAt: unixSecondsSchema,
+    expiresAt: unixSecondsSchema,
+    fencingToken: z.number().int().positive(),
+    leadIdentity: projectLeadIdentitySchema,
+    leaseId: portableIdSchema,
+    projectId: portableIdSchema,
+    renewedAt: unixSecondsSchema,
+    revokedAt: unixSecondsSchema.nullable(),
+    status: z.enum(["active", "expired", "revoked"]),
+  })
+  .strict();
+
+export const projectCheckpointRequestSchema = z
+  .object({
+    acceptedDecisionIds: z
+      .array(portableIdSchema)
+      .max(MAX_CONTINUITY_REFERENCES),
+    artifactIds: z.array(portableIdSchema).max(MAX_CONTINUITY_REFERENCES),
+    blockers: continuityStateListSchema,
+    citationIds: z.array(portableIdSchema).max(MAX_CONTINUITY_REFERENCES),
+    completedWork: continuityStateListSchema,
+    fencingToken: z.number().int().positive(),
+    idempotencyKey: continuityIdempotencyKeySchema,
+    knownRejectedApproaches: continuityStateListSchema,
+    leaseId: portableIdSchema,
+    nextAction: boundedListItemSchema,
+    openWork: continuityStateListSchema,
+    packetId: portableIdSchema,
+    previousContinuityPointId: portableIdSchema.nullable(),
+    projectId: portableIdSchema,
+    risks: continuityStateListSchema,
+    workItemId: portableIdSchema,
+  })
+  .strict()
+  .superRefine((request, context) => {
+    for (const field of [
+      "acceptedDecisionIds",
+      "artifactIds",
+      "citationIds",
+    ] as const) {
+      if (new Set(request[field]).size !== request[field].length) {
+        context.addIssue({
+          code: "custom",
+          message: "Checkpoint references must be unique.",
+          path: [field],
+        });
+      }
+    }
+  });
+
+export const continuityCheckpointReceiptSchema = z
+  .object({
+    acknowledgedAt: unixSecondsSchema,
+    contentSha256: sha256HexSchema,
+    continuityPointId: portableIdSchema,
+    idempotencyKeySha256: sha256HexSchema,
+    previousContinuityPointId: portableIdSchema.nullable(),
+    projectId: portableIdSchema,
+  })
+  .strict();
 
 const ownerEventBase = z.object({
   createdAt: unixSecondsSchema,
@@ -1953,6 +2249,7 @@ export const collaborationRecordStateSchema = z
   .object({
     disposition: z.enum([
       "pending",
+      "checkpointed",
       "accepted",
       "rejected",
       "quarantined",
@@ -1979,7 +2276,28 @@ export const snapshotIntelligenceRecordSchema = z
     portableObjectId: portableIdSchema,
     projectId: portableIdSchema.nullable(),
     recordId: portableIdSchema,
-    recordType: collaborationRecordTypeSchema,
+    recordType: z.union([
+      collaborationRecordTypeSchema,
+      z.literal("continuity-point"),
+      z.literal("policy"),
+      z.literal("run"),
+      z.literal("actor"),
+      z.literal("event-bundle"),
+      z.literal("exception"),
+      z.literal("elastic-plane"),
+      z.literal("elastic-account"),
+      z.literal("actor-recovery"),
+      z.literal("run-delta"),
+      z.literal("run-budget"),
+      z.literal("budget-entry"),
+      z.literal("run-observation"),
+      z.literal("orca-projection"),
+      z.literal("policy-binding"),
+      z.literal("policy-decision"),
+      z.literal("schedule"),
+      z.literal("evidence"),
+      z.literal("continuity-receipt"),
+    ]),
     restoreDisposition: snapshotRestoreDispositionSchema,
     schemaVersion: z.literal(1),
     workItemId: portableIdSchema.nullable(),
@@ -2062,9 +2380,19 @@ export const snapshotIntelligenceSectionSchema = z
       const expectedDisposition =
         section.classification === "unvetted"
           ? "restore-quarantined"
-          : record.evidenceOnly
-            ? "restore-evidence-only"
-            : "restore-approved";
+          : [
+                "policy-binding",
+                "policy-decision",
+                "schedule",
+                "evidence",
+                "continuity-receipt",
+              ].includes(record.recordType)
+            ? "restore-quarantined"
+            : record.recordType === "continuity-point"
+              ? "restore-approved"
+              : record.evidenceOnly
+                ? "restore-evidence-only"
+                : "restore-approved";
       if (
         record.classification !== section.classification ||
         record.restoreDisposition !== expectedDisposition
@@ -2079,7 +2407,11 @@ export const snapshotIntelligenceSectionSchema = z
       if (
         section.classification === "approved" &&
         !record.evidenceOnly &&
-        record.originalState.disposition !== "accepted"
+        record.originalState.disposition !== "accepted" &&
+        !(
+          record.recordType === "continuity-point" &&
+          record.originalState.disposition === "checkpointed"
+        )
       ) {
         context.addIssue({
           code: "custom",
@@ -2090,7 +2422,9 @@ export const snapshotIntelligenceSectionSchema = z
       }
       if (
         section.classification === "unvetted" &&
-        (record.evidenceOnly || record.originalState.disposition === "accepted")
+        (record.evidenceOnly ||
+          record.originalState.disposition === "accepted" ||
+          record.recordType === "continuity-point")
       ) {
         context.addIssue({
           code: "custom",
@@ -2308,6 +2642,25 @@ export const collaborationCapabilityProfileSchema = z
       z.literal(OWD_COLLABORATION_SUBMISSION_FORMAT),
     ]),
     workPacketFormats: z.tuple([z.literal(OWD_WORK_PACKET_FORMAT)]),
+  })
+  .strict();
+
+export const leadContinuityCapabilityProfileSchema = z
+  .object({
+    continuityPointFormats: z.tuple([z.literal(OWD_CONTINUITY_POINT_FORMAT)]),
+    format: z.literal(OWD_LEAD_CONTINUITY_CAPABILITIES_FORMAT),
+    mcpProtocolRevision: z.literal("2025-11-25"),
+    mcpTools: z.tuple([
+      z.literal("claim_project_lead"),
+      z.literal("renew_project_lead"),
+      z.literal("checkpoint_project"),
+      z.literal("resume_project"),
+    ]),
+    portableBundleFormats: z.tuple([
+      z.literal(OWD_PORTABLE_CONTINUITY_BUNDLE_FORMAT),
+    ]),
+    requiredScope: z.literal("project.lead"),
+    schemaVersion: z.literal(1),
   })
   .strict();
 
@@ -2565,7 +2918,7 @@ export const collaborationConnectionSchema = z
     projectId: portableIdSchema,
     projectLabel: shortLabelSchema,
     revokedAt: unixSecondsSchema.nullable(),
-    scopes: z.array(collaborationScopeSchema).min(1).max(4),
+    scopes: z.array(collaborationScopeSchema).min(1).max(5),
     status: z.enum(["active", "revoked"]),
   })
   .strict();
@@ -2674,6 +3027,40 @@ export type PortableWorkPacketBundle = z.infer<
   typeof portableWorkPacketBundleSchema
 >;
 
+export const portableContinuityBundleSchema = z
+  .object({
+    continuityPointId: portableIdSchema,
+    files: z.array(portableExchangeFileSchema).min(2).max(3),
+    format: z.literal(OWD_PORTABLE_CONTINUITY_BUNDLE_FORMAT),
+    projectId: portableIdSchema,
+    schemaVersion: z.literal(1),
+  })
+  .strict()
+  .superRefine((bundle, context) => {
+    const paths = bundle.files.map((file) => file.path);
+    if (
+      new Set(paths).size !== paths.length ||
+      !paths.includes("README.md") ||
+      !paths.includes("continuity-point.json") ||
+      paths.some(
+        (path) =>
+          path !== "README.md" &&
+          path !== "continuity-point.json" &&
+          path !== "elastic-records.json",
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "The portable continuity bundle is incomplete.",
+        path: ["files"],
+      });
+    }
+  });
+
+export type PortableContinuityBundle = z.infer<
+  typeof portableContinuityBundleSchema
+>;
+
 export const collaborationSubmissionImportSchema = z
   .object({
     artifactBody: z.string().max(MAX_SUBMISSION_BYTES).nullable(),
@@ -2681,11 +3068,46 @@ export const collaborationSubmissionImportSchema = z
   })
   .strict();
 
+export const collaborationRestoreVaultMappingSchema = z
+  .object({
+    sourceVaultId: portableIdSchema,
+    targetVaultId: portableIdSchema,
+  })
+  .strict();
+
 export const collaborationRestoreCreateRequestSchema = z
-  .object({ manifest: snapshotIntelligenceManifestSchema })
+  .object({
+    manifest: snapshotIntelligenceManifestSchema,
+    vaultMappings: z
+      .array(collaborationRestoreVaultMappingSchema)
+      .max(MAX_KNOWLEDGE_SPACE_VAULTS)
+      .default([]),
+  })
   .strict()
   .refine((value) => value.manifest.selection !== "none", {
     message: "A vault-only snapshot has no collaboration state to restore.",
+  })
+  .superRefine((value, context) => {
+    const sourceIds = value.vaultMappings.map(
+      (mapping) => mapping.sourceVaultId,
+    );
+    const targetIds = value.vaultMappings.map(
+      (mapping) => mapping.targetVaultId,
+    );
+    if (new Set(sourceIds).size !== sourceIds.length) {
+      context.addIssue({
+        code: "custom",
+        message: "A restore may map each source vault only once.",
+        path: ["vaultMappings"],
+      });
+    }
+    if (new Set(targetIds).size !== targetIds.length) {
+      context.addIssue({
+        code: "custom",
+        message: "A restore may use each target vault only once.",
+        path: ["vaultMappings"],
+      });
+    }
   });
 
 export const collaborationRestoreItemRequestSchema = z
@@ -2822,6 +3244,25 @@ export const snapshotIntelligenceJsonSchema = {
   }),
 };
 
+export const continuityPointJsonSchema = {
+  $id: "urn:owd:schema:continuity-point:v1",
+  ...z.toJSONSchema(continuityPointSchema, { target: "draft-2020-12" }),
+};
+
+export const projectLeadClaimRequestJsonSchema = {
+  $id: "urn:owd:schema:project-lead-claim-request:v1",
+  ...z.toJSONSchema(projectLeadClaimRequestSchema, {
+    target: "draft-2020-12",
+  }),
+};
+
+export const projectCheckpointRequestJsonSchema = {
+  $id: "urn:owd:schema:project-checkpoint-request:v1",
+  ...z.toJSONSchema(projectCheckpointRequestSchema, {
+    target: "draft-2020-12",
+  }),
+};
+
 export type CollaborationGrant = z.infer<typeof collaborationGrantSchema>;
 export type CollaborationDecisionCreateRequest = z.infer<
   typeof collaborationDecisionCreateRequestSchema
@@ -2847,4 +3288,21 @@ export type CollaborationSubmission = z.infer<
 export type CollaborationLedger = z.infer<typeof collaborationLedgerSchema>;
 export type SnapshotIntelligenceManifest = z.infer<
   typeof snapshotIntelligenceManifestSchema
+>;
+export type CollaborationRestoreVaultMapping = z.infer<
+  typeof collaborationRestoreVaultMappingSchema
+>;
+export type ContinuityPoint = z.infer<typeof continuityPointSchema>;
+export type ProjectLeadLease = z.infer<typeof projectLeadLeaseSchema>;
+export type ProjectLeadClaimRequest = z.infer<
+  typeof projectLeadClaimRequestSchema
+>;
+export type ProjectLeadRenewRequest = z.infer<
+  typeof projectLeadRenewRequestSchema
+>;
+export type ProjectCheckpointRequest = z.infer<
+  typeof projectCheckpointRequestSchema
+>;
+export type ContinuityCheckpointReceipt = z.infer<
+  typeof continuityCheckpointReceiptSchema
 >;

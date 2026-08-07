@@ -1,0 +1,15 @@
+{
+  "format": "owd-managed-rate-limit-registry-v1",
+  "schemaVersion": 1,
+  "accountId": "00000000000000000000000000000000",
+  "updatedAt": "2026-08-06T00:00:00.000Z",
+  "reservations": [
+    {
+      "cellRef": "synthetic-cell-01",
+      "workerName": "owd-cell-synthetic01",
+      "manifestSha256": "9d7456fc68f2e0a896f9eba1e7fb85d15b594836b247fa80eae39201caa7008b",
+      "namespaceIds": ["710001", "710002", "710003"],
+      "status": "reserved"
+    }
+  ]
+}

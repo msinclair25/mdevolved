@@ -482,6 +482,71 @@ integrity, retention, and staged-restore guarantees as vault materializations.
 Unvetted records receive the same cryptographic and integrity guarantees but
 not trusted status. Ephemeral agent conversations are not OWD backup content.
 
+## R3 elastic Run access and Orca compatibility
+
+R3 capability negotiation is additive at
+`owd-lead-operation-capabilities-v2`. A client that does not advertise it
+continues to use the R2 seven-tool profile and `get_run_context` snapshot
+response. An opt-in elastic Run is limited to 32 active actors and 64 actor
+records, with actor registration batches of 16, bundle batches of 8, and delta
+pages of 100.
+
+The two batch calls require one exact Project/Run/Work Item and the current
+lead lease/fence. Exact retries return the same durable receipt; a different
+payload under the same key returns `idempotency_conflict`. Capacity pressure
+is bounded backpressure with retry metadata, not server-side scheduling.
+`get_run_context` delta mode uses an opaque, expiring cursor bound to grant,
+Project, Run, query, and monotonic Run sequence. Cursor pages are stable and
+cross-Run use fails closed. Solo clients can omit elastic negotiation and keep
+the same API path without actor-count ceremony.
+
+An expired or abandoned actor can be replaced only by a fresh actor with a
+subset of the old scopes. The old actor is never revived, and recovery cannot
+restore authority or expand Project, Knowledge Space, vault, folder, or
+protected-path boundaries. Harnesses report logical units and cost microunits;
+OWD records a blocking budget Exception at exhaustion and does not own provider
+meters, scheduling, or retries.
+
+Observability is aggregate and privacy-safe: counts, retries, rejections,
+bounded latency percentiles, and measurement timestamps. Do not send or log
+raw transcripts, hidden reasoning, terminal history, credentials, OAuth state,
+provider runtime, or production/customer logs. R3 records carry retention
+tiers and are included in portable export/snapshot/quarantine restore without
+recreating actors, grants, leases, receipts, credentials, OAuth state, or live
+authority.
+
+The Orca adapter is inert and provider-neutral. It maps optional worktree,
+branch, commit, pull-request, and session references into generic Run/Actor
+evidence with authority flags false. OWD does not invoke Orca, control its
+agents, import terminal/session state, or trust its metadata as identity. If
+Orca state is unavailable, a non-Orca lead resumes from the generic Run
+snapshot/delta with fresh authorization.
+
+## R4 deterministic policy and continuity access
+
+R4 negotiation is additive at `owd-lead-operation-capabilities-v3`. R2 and R3
+clients retain their v1 and v2 profiles. An R4 lead may use
+`evaluate_run_policy` and `get_policy_operations` under the exact current
+Project lead grant, lease, and fence. The fixed research/coding gates revalidate
+the owner-authored policy and evidence bodies and never consume model
+confidence, raw transcripts, hidden reasoning, terminal history, provider
+credentials, or runtime state.
+
+The v3 `complete_continuity_drill` tool is narrowly fenced: it accepts only the
+exact pending scheduled drill request, exact non-restored source Continuity
+Point, a distinct current replacement lead lease, and the matching Project.
+The receipt and request completion commit atomically and exact replay is
+idempotent. The tool cannot create or restore a grant, lease, actor, credential,
+OAuth state, policy authority, scheduler authority, or provider state.
+
+Policy activation and permitted Exception resolution remain owner-only web
+operations with owner session and CSRF protection. A lead may surface an
+Exception but cannot resolve it, edit policy, approve itself, expand authority,
+perform destructive work, or bypass evidence, budget, integrity, protected-path,
+upgrade, or rollback failures. The inert policy-continuity adapter describes
+external harness sequencing without executable code or provider behavior; the
+harness still owns agents, scheduling, retries, tools, worktrees, and inference.
+
 ## Performance and abuse budgets
 
 The implementation is designed around these acceptance targets, measured as

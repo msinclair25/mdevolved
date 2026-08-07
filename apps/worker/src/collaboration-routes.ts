@@ -13,6 +13,7 @@ import {
   collaborationTimelinePageResponseSchema,
   collaborationWorkItemReopenRequestSchema,
   portableWorkPacketBundleSchema,
+  portableContinuityBundleSchema,
 } from "@owd/contracts";
 import { z } from "zod";
 import type { Context, Hono } from "hono";
@@ -35,6 +36,16 @@ import {
   readArtifactBody,
   submitCollaborationRecord,
 } from "./collaboration-service";
+import { buildPortableContinuityBundle } from "./continuity-service";
+import { getElasticOperationOverview } from "./elastic-operation-service";
+import { getLeadOperationOverview } from "./lead-operation-service";
+import {
+  PolicyOperationProblem,
+  activateProjectPolicyBinding,
+  buildPortableOperationalExport,
+  getOperationalOverview,
+  resolveProjectException,
+} from "./policy-operation-service";
 import {
   listCollaborationConnections,
   readCollaborationParticipantClaims,
@@ -115,7 +126,136 @@ export function throwCollaborationProblem(error: unknown): never {
   );
 }
 
+function throwPolicyOperationProblem(error: unknown): never {
+  if (!(error instanceof PolicyOperationProblem)) throw error;
+  const status =
+    error.code === "submission_invalid"
+      ? 400
+      : error.code === "project_invalid"
+        ? 404
+        : 409;
+  throw new ApiProblem(
+    status,
+    error.code,
+    status === 400
+      ? "The policy operation request is invalid."
+      : status === 404
+        ? "The Project was not found."
+        : "The policy operation fails closed against the current durable state.",
+  );
+}
+
 export function registerCollaborationRoutes(app: Hono<AppBindings>): void {
+  app.get("/api/collaboration/policy-operations", async (context) => {
+    await requireOwnerSession(context, { csrf: false });
+    const response = await getOperationalOverview(context.env.DB);
+    context.header("Cache-Control", "private, no-store");
+    return context.json(response);
+  });
+
+  app.post(
+    "/api/collaboration/projects/:projectId/policy-bindings",
+    async (context) => {
+      await requireOwnerSession(context, { csrf: true });
+      const projectId = idParameter(
+        context,
+        "projectId",
+        "project_reference_invalid",
+      );
+      try {
+        const body = await parseJsonBody(context, 4_096);
+        await activateProjectPolicyBinding(
+          context.env.DB,
+          context.env.VAULT_STORAGE,
+          typeof body === "object" && body !== null
+            ? { ...body, projectId }
+            : { projectId },
+          nowSeconds(),
+        );
+        context.header("Cache-Control", "private, no-store");
+        return context.body(null, 204);
+      } catch (error) {
+        return throwPolicyOperationProblem(error);
+      }
+    },
+  );
+
+  app.get(
+    "/api/collaboration/projects/:projectId/policy-operations/portable",
+    async (context) => {
+      await requireOwnerSession(context, { csrf: false });
+      const projectId = idParameter(
+        context,
+        "projectId",
+        "project_reference_invalid",
+      );
+      try {
+        const response = await buildPortableOperationalExport(
+          context.env.DB,
+          context.env.VAULT_STORAGE,
+          projectId,
+        );
+        context.header("Cache-Control", "private, no-store");
+        context.header(
+          "Content-Disposition",
+          `attachment; filename="owd-policy-operations-${projectId}.json"`,
+        );
+        return context.json(response);
+      } catch (error) {
+        return throwPolicyOperationProblem(error);
+      }
+    },
+  );
+
+  app.post(
+    "/api/collaboration/projects/:projectId/exceptions/:exceptionId/resolve",
+    async (context) => {
+      await requireOwnerSession(context, { csrf: true });
+      const projectId = idParameter(
+        context,
+        "projectId",
+        "project_reference_invalid",
+      );
+      const exceptionId = idParameter(
+        context,
+        "exceptionId",
+        "project_reference_invalid",
+      );
+      const resolved = await resolveProjectException(
+        context.env.DB,
+        projectId,
+        exceptionId,
+        nowSeconds(),
+      );
+      if (!resolved) {
+        throw new ApiProblem(
+          404,
+          "project_reference_invalid",
+          "The open Project exception was not found.",
+        );
+      }
+      context.header("Cache-Control", "private, no-store");
+      return context.body(null, 204);
+    },
+  );
+
+  app.get("/api/collaboration/elastic-operations", async (context) => {
+    await requireOwnerSession(context, { csrf: false });
+    const response = await getElasticOperationOverview(context.env.DB);
+    context.header("Cache-Control", "private, no-store");
+    return context.json(response);
+  });
+
+  app.get("/api/collaboration/lead-operations", async (context) => {
+    await requireOwnerSession(context, { csrf: false });
+    const response = await getLeadOperationOverview(
+      context.env.DB,
+      context.env.VAULT_STORAGE,
+    );
+    context.header("Cache-Control", "private, no-store");
+    return context.json(response);
+  });
+
   app.get("/api/collaboration/dashboard", async (context) => {
     await requireOwnerSession(context, { csrf: false });
     const response = await getCollaborationDashboard(
@@ -468,6 +608,30 @@ export function registerCollaborationRoutes(app: Hono<AppBindings>): void {
         context.header(
           "Content-Disposition",
           `attachment; filename="owd-work-packet-${bundle.packetId}.json"`,
+        );
+        return context.json(bundle);
+      } catch (error) {
+        return throwCollaborationProblem(error);
+      }
+    },
+  );
+
+  app.get(
+    "/api/collaboration/projects/:projectId/continuity/portable",
+    async (context) => {
+      await requireOwnerSession(context, { csrf: false });
+      try {
+        const bundle = portableContinuityBundleSchema.parse(
+          await buildPortableContinuityBundle(
+            context.env.DB,
+            context.env.VAULT_STORAGE,
+            idParameter(context, "projectId", "project_reference_invalid"),
+          ),
+        );
+        context.header("Cache-Control", "private, no-store");
+        context.header(
+          "Content-Disposition",
+          `attachment; filename="owd-continuity-${bundle.continuityPointId}.json"`,
         );
         return context.json(bundle);
       } catch (error) {

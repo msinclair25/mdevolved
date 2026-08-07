@@ -10,6 +10,7 @@ import {
   projectInitializationRequestResponseSchema,
   projectInitializationRequestSchema,
   type CollaborationProjectCreateRequest,
+  type CollaborationScope,
   type JoinableProject,
   type JoinableProjectListResponse,
   type KnowledgeSpaceVersion,
@@ -1357,7 +1358,7 @@ export async function requestProjectInitialization(
   });
 }
 
-function joinConsentBoundary(draft: StoredProjectSetupDraft): unknown {
+function joinConsentBoundary(draft: StoredProjectSetupDraft) {
   if (draft.requestKind !== "join") return null;
   return {
     contextPolicy: draft.contextPolicy,
@@ -1380,16 +1381,48 @@ function joinConsentBoundary(draft: StoredProjectSetupDraft): unknown {
   };
 }
 
+function storedScopesSatisfyLegacyAlias(
+  stored: CollaborationScope[],
+  requested: CollaborationScope[],
+): boolean {
+  const key = (scopes: CollaborationScope[]) =>
+    JSON.stringify([...scopes].sort());
+  if (key(stored) === key(requested)) return true;
+  return (
+    stored.includes("project.lead") &&
+    !requested.includes("project.lead") &&
+    key(stored.filter((scope) => scope !== "project.lead")) === key(requested)
+  );
+}
+
 async function isSafePendingJoinSuccessor(
   db: D1Database,
   previous: StoredProjectInitialization,
   currentDraft: StoredProjectSetupDraft,
 ): Promise<boolean> {
+  const previousBoundary = joinConsentBoundary(previous.draft);
+  const currentBoundary = joinConsentBoundary(currentDraft);
+  if (
+    previous.draft.requestKind !== "join" ||
+    currentDraft.requestKind !== "join" ||
+    previousBoundary === null ||
+    currentBoundary === null ||
+    !storedScopesSatisfyLegacyAlias(
+      previous.draft.requestedScopes,
+      currentDraft.requestedScopes,
+    )
+  ) {
+    return false;
+  }
   return (
-    previous.draft.requestKind === "join" &&
-    currentDraft.requestKind === "join" &&
-    canonicalizeCollaborationJson(joinConsentBoundary(previous.draft)) ===
-      canonicalizeCollaborationJson(joinConsentBoundary(currentDraft)) &&
+    canonicalizeCollaborationJson({
+      ...previousBoundary,
+      requestedScopes: [],
+    }) ===
+      canonicalizeCollaborationJson({
+        ...currentBoundary,
+        requestedScopes: [],
+      }) &&
     (await isSameOrSuccessorPacket(
       db,
       previous.draft.target.packetId,

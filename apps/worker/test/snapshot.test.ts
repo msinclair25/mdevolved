@@ -36,6 +36,10 @@ import {
 } from "../src/snapshot-retention";
 import { ensureSnapshotSchema } from "../src/snapshot-store";
 import {
+  applyContinuityR1Migration,
+  applyElasticActorPlaneR3Migration,
+  applyHandsOffLeadR2Migration,
+  applyPolicyAutopilotR4Migration,
   applyPhase9aCollaborationMigration,
   applyRestoredContentAuthorizationMigration,
 } from "./migration-fixture";
@@ -125,6 +129,10 @@ async function resetStorage(): Promise<void> {
   await ensureSnapshotSchema(env.DB);
   await applyPhase9aCollaborationMigration(env.DB);
   await applyRestoredContentAuthorizationMigration(env.DB);
+  await applyContinuityR1Migration(env.DB);
+  await applyHandsOffLeadR2Migration(env.DB);
+  await applyElasticActorPlaneR3Migration(env.DB);
+  await applyPolicyAutopilotR4Migration(env.DB);
   await env.DB.batch([
     env.DB.prepare("DELETE FROM snapshot_intelligence_items"),
     env.DB.prepare("DELETE FROM snapshot_intelligence_selections"),
@@ -787,6 +795,9 @@ describe("workspace snapshots", () => {
     expect(inspected.vaults).toHaveLength(2);
     expect(inspected.snapshotId).not.toBe(first.snapshotId);
     for (const portableVault of inspected.vaults) {
+      expect(portableVault.sourceVaultId).toBe(
+        portableVault.vaultName === "First vault" ? firstVault : secondVault,
+      );
       expect(portableVault.sourceGeneration?.generationId).toBe(
         portableVault.snapshotVaultId,
       );
