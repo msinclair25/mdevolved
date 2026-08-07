@@ -2,6 +2,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  APPROVED_INTELLIGENCE_CAPABILITY,
+  snapshotIntelligenceManifestSchema,
+  type SnapshotManifest,
+} from "@owd/contracts";
+import {
+  collaborationRestoreVaultMappings,
   revealRestoreCompletion,
   snapshotArchiveFilename,
   snapshotArchiveSelectionMessage,
@@ -76,5 +82,100 @@ describe("snapshot restore panel UI", () => {
 
     expect(focusCalls).toEqual([{ preventScroll: true }]);
     expect(scrollCalls).toEqual([{ block: "center" }]);
+  });
+
+  it("recovers the exact source vault identity from an older single-vault Project snapshot", () => {
+    const sourceVaultId = "10000000-0000-4000-8000-000000000001";
+    const targetVaultId = "20000000-0000-4000-8000-000000000002";
+    const snapshotVaultId = "30000000-0000-4000-8000-000000000003";
+    const portableObjectId = "40000000-0000-4000-8000-000000000004";
+    const recordId = "50000000-0000-4000-8000-000000000005";
+    const record = {
+      createdAt: 1,
+      knowledgeSpaceId: "60000000-0000-4000-8000-000000000006",
+      knowledgeSpaceVersionId: recordId,
+      members: [
+        {
+          exclusions: [],
+          pathPrefixes: [{ path: "", pathKey: "" }],
+          vaultId: sourceVaultId,
+        },
+      ],
+      previousVersionId: null,
+      recordType: "knowledge-space-version" as const,
+      schemaVersion: 1 as const,
+      selectorSha256: "a".repeat(64),
+      version: 1,
+    };
+    const bytes = new TextEncoder().encode(JSON.stringify(record));
+    const intelligence = snapshotIntelligenceManifestSchema.parse({
+      approved: {
+        classification: "approved",
+        evidenceObjectCount: 0,
+        evidenceObjects: [],
+        logicalBytes: bytes.byteLength,
+        newlyStoredBytes: bytes.byteLength,
+        recordCount: 1,
+        records: [
+          {
+            byteLength: bytes.byteLength,
+            classification: "approved",
+            contentSha256: "b".repeat(64),
+            dependencies: [],
+            evidenceOnly: false,
+            originalState: {
+              disposition: "accepted",
+              visibility: "owner-only",
+            },
+            portableObjectId,
+            projectId: "70000000-0000-4000-8000-000000000007",
+            recordId,
+            recordType: "knowledge-space-version",
+            restoreDisposition: "restore-approved",
+            schemaVersion: 1,
+            workItemId: null,
+          },
+        ],
+      },
+      excludedAuthority: [
+        "oauth-access-tokens",
+        "oauth-refresh-tokens",
+        "oauth-authorization-codes",
+        "oauth-protocol-storage",
+        "sessions",
+        "passkeys",
+        "pairing-secrets",
+        "vault-credentials",
+        "live-agent-grants",
+        "recovery-private-keys",
+        "harness-context",
+        "provider-credentials",
+        "runtime-caches",
+      ],
+      format: "owd-snapshot-intelligence-v1",
+      requiredCapabilities: [APPROVED_INTELLIGENCE_CAPABILITY],
+      schemaVersion: 1,
+      selection: "approved",
+      unvetted: null,
+    });
+    const manifest = {
+      intelligence,
+      vaults: [
+        {
+          entries: [],
+          snapshotVaultId,
+          sourceGeneration: null,
+          vaultName: "Source vault",
+        },
+      ],
+    } satisfies Pick<SnapshotManifest, "intelligence" | "vaults">;
+
+    expect(
+      collaborationRestoreVaultMappings(
+        manifest,
+        new Map([[portableObjectId, bytes]]),
+        { [snapshotVaultId]: targetVaultId },
+      ),
+    ).toEqual([{ sourceVaultId, targetVaultId }]);
   });
 });

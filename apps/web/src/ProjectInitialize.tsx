@@ -104,6 +104,8 @@ function projectScopeLabel(
   switch (scope) {
     case "project.read":
       return "read this Project";
+    case "project.lead":
+      return "claim and checkpoint Project lead continuity";
     case "collaboration.submit":
       return "add contributions";
     case "review.submit":

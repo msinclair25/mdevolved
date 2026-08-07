@@ -55,6 +55,7 @@ const oauthProvider = new OAuthProvider<Env>({
     "project.initialize.request",
     "project.connect.request",
     "project.read",
+    "project.lead",
     "collaboration.submit",
     "review.submit",
     "proposal.status",
@@ -91,10 +92,15 @@ export default {
     );
   },
   scheduled(
-    _controller: ScheduledController,
+    controller: ScheduledController,
     env: Env,
     context: ExecutionContext,
   ): void {
-    context.waitUntil(runScheduledMaintenance(env));
+    context.waitUntil(
+      runScheduledMaintenance(
+        env,
+        Math.floor(controller.scheduledTime / 1_000),
+      ),
+    );
   },
 } satisfies ExportedHandler<Env>;

@@ -17,10 +17,13 @@
       "packages/obsidian-plugin/package.json",
       "packages/yaos-core/package.json",
       "docs/ALPHA-STATUS.md",
+      "docs/CELL-LIFECYCLE.md",
       "docs/QUALITY-GATES.md",
       "docs/ROADMAP.md",
       "compatibility/upstreams.json",
       "migrations/README.md",
+      "infra/managed/cell-build-manifest.schema.json",
+      "infra/managed/cell-rate-limit-registry.schema.json",
       "wrangler.jsonc"
     ],
     "packageManifests": [

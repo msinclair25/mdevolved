@@ -2,6 +2,7 @@ import {
   OWD_BACKUP_FORMAT,
   apiErrorSchema,
   backupArchiveManifestSchema,
+  collaborationDurableRecordSchema,
   collaborationRestoreJobSchema,
   collaborationRestoreResultSchema,
   csrfResponseSchema,
@@ -9,6 +10,7 @@ import {
   restoreJobSchema,
   type BackupArchiveManifest,
   type CollaborationRestoreJob,
+  type CollaborationRestoreVaultMapping,
   type RestoreJob,
   type SnapshotManifest,
   type SnapshotSummary,
@@ -201,6 +203,77 @@ function targetName(
 ): string {
   const targetId = mappings[snapshotVaultId];
   return activeVaults.find((vault) => vault.id === targetId)?.displayName ?? "";
+}
+
+export function collaborationRestoreVaultMappings(
+  manifest: Pick<SnapshotManifest, "intelligence" | "vaults">,
+  intelligenceObjects: ReadonlyMap<string, Uint8Array>,
+  targets: Record<string, string>,
+): CollaborationRestoreVaultMapping[] {
+  const targetIdFor = (snapshotVaultId: string): string => {
+    const targetVaultId = targets[snapshotVaultId];
+    if (targetVaultId === undefined || targetVaultId === "") {
+      throw new Error("Every source vault needs an approved destination.");
+    }
+    return targetVaultId;
+  };
+  const identified = manifest.vaults.filter(
+    (vault) =>
+      vault.sourceVaultId !== null && vault.sourceVaultId !== undefined,
+  );
+  if (identified.length === manifest.vaults.length) {
+    return manifest.vaults.map((vault) => ({
+      sourceVaultId: vault.sourceVaultId!,
+      targetVaultId: targetIdFor(vault.snapshotVaultId),
+    }));
+  }
+  if (identified.length > 0) {
+    throw new Error(
+      "The encrypted snapshot has an incomplete source-vault identity map.",
+    );
+  }
+  const intelligence = manifest.intelligence;
+  if (intelligence === undefined || intelligence.selection === "none")
+    return [];
+  const sourceVaultIds = new Set<string>();
+  const descriptors = [
+    ...(intelligence.approved?.records ?? []),
+    ...(intelligence.unvetted?.records ?? []),
+  ].filter((descriptor) => descriptor.recordType === "knowledge-space-version");
+  for (const descriptor of descriptors) {
+    const bytes = intelligenceObjects.get(descriptor.portableObjectId);
+    if (bytes === undefined) {
+      throw new Error("The verified Project context object is missing.");
+    }
+    let value: unknown;
+    try {
+      value = JSON.parse(decoder.decode(bytes)) as unknown;
+    } catch {
+      throw new Error("The verified Project context object is invalid.");
+    }
+    const record = collaborationDurableRecordSchema.safeParse(value);
+    if (
+      !record.success ||
+      record.data.recordType !== "knowledge-space-version"
+    ) {
+      throw new Error("The verified Project context object is invalid.");
+    }
+    for (const member of record.data.members) {
+      sourceVaultIds.add(member.vaultId);
+    }
+  }
+  if (sourceVaultIds.size === 0) return [];
+  if (manifest.vaults.length !== 1 || sourceVaultIds.size !== 1) {
+    throw new Error(
+      "This older multi-vault snapshot cannot prove an exact Project vault mapping.",
+    );
+  }
+  return [
+    {
+      sourceVaultId: [...sourceVaultIds][0]!,
+      targetVaultId: targetIdFor(manifest.vaults[0]!.snapshotVaultId),
+    },
+  ];
 }
 
 export function SnapshotRestorePanel({
@@ -427,7 +500,14 @@ export function SnapshotRestorePanel({
           intelligenceJob ??
           collaborationRestoreJobSchema.parse(
             await apiJson("/api/collaboration/restores", {
-              body: { manifest: intelligence },
+              body: {
+                manifest: intelligence,
+                vaultMappings: collaborationRestoreVaultMappings(
+                  prepared.manifest,
+                  prepared.intelligenceObjects,
+                  mappings,
+                ),
+              },
               csrf,
             }),
           );

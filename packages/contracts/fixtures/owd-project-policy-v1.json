@@ -1,0 +1,23 @@
+{
+  "format": "owd-project-policy-v1",
+  "schemaVersion": 1,
+  "policyId": "71000000-0000-4000-8000-000000000001",
+  "projectId": "71000000-0000-4000-8000-000000000002",
+  "projectVersionId": "71000000-0000-4000-8000-000000000003",
+  "createdAt": 1784820500,
+  "maxActorsPerRun": 8,
+  "maxBundlesPerRun": 64,
+  "maxEventsPerBundle": 16,
+  "maxBundleBytes": 262144,
+  "maxRunLogicalBytes": 4194304,
+  "independentReviewRequired": true,
+  "protectedPaths": [".git", ".owdignore", ".obsidian"],
+  "exceptionOnlyActions": [
+    "authority-expansion",
+    "destructive-action",
+    "protected-path-access"
+  ],
+  "source": "project-version-bound-default",
+  "liveAuthorityIncluded": false,
+  "restoredAuthorityAllowed": false
+}

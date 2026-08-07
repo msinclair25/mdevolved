@@ -160,7 +160,7 @@ export type ProjectContextPolicy = z.infer<typeof projectContextPolicySchema>;
 const requestedProjectScopesSchema = z
   .array(collaborationScopeSchema)
   .min(1)
-  .max(4)
+  .max(5)
   .refine((values) => new Set(values).size === values.length)
   .refine((values) => values.includes("project.read"));
 
@@ -392,7 +392,7 @@ export const projectInitializationStatusResponseSchema = z
     objective: z.string().min(1).max(2_000),
     packetId: z.string().uuid().nullable(),
     projectId: z.string().uuid().nullable(),
-    requestedScopes: z.array(collaborationScopeSchema).min(1).max(4),
+    requestedScopes: z.array(collaborationScopeSchema).min(1).max(5),
     requestKind: z.enum(["create", "join"]),
     status: projectInitializationStateSchema,
     vaultName: z.string().min(1).max(120),
@@ -441,7 +441,7 @@ export const projectInitializationConsentContextSchema = z
     projectId: z.string().uuid().nullable(),
     projectLabel: z.string().min(1).max(120),
     requestKind: z.enum(["create", "join"]),
-    requestedScopes: z.array(collaborationScopeSchema).min(1).max(4),
+    requestedScopes: z.array(collaborationScopeSchema).min(1).max(5),
     sourceNotePaths: z.array(z.string().min(1).max(1_024)).max(64),
     vault: z
       .object({

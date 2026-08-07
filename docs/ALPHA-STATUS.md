@@ -1,7 +1,7 @@
 # OWD alpha status
 
-**Updated:** July 30, 2026<br />
-**OWD Platform:** `1.0.0-alpha.3`<br />
+**Updated:** August 6, 2026<br />
+**OWD Platform:** `1.0.0-alpha.4`<br />
 **OWD Sync:** `0.1.6`
 
 OWD Platform is now available as an Apache-2.0 Community alpha. The optional
@@ -37,6 +37,10 @@ does not place multiple owners in one vault database.
 - Prepared first-Project consent during guided onboarding
 - Work Packets, Attempts, Artifacts, Handoffs, Reviews, owner Decisions, and
   provenance
+- Provider-neutral lead continuity, bounded elastic Runs, deterministic
+  research/coding evidence gates, and exception-only policy autopilot
+- Scheduled continuity points and disposable recovery drills with measured
+  RPO, RTO, continuity age, recovery quality, and runtime independence
 - Encrypted owner-key-controlled snapshots and staged restore
 - Source-pinned Obsidian Mind and Eve.dev compatibility profiles
 - Daily upstream compatibility monitoring that requires human review before a

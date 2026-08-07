@@ -1,0 +1,14 @@
+{
+  "continuityPointFormats": ["owd-continuity-point-v1"],
+  "format": "owd-lead-continuity-capabilities-v1",
+  "mcpProtocolRevision": "2025-11-25",
+  "mcpTools": [
+    "claim_project_lead",
+    "renew_project_lead",
+    "checkpoint_project",
+    "resume_project"
+  ],
+  "portableBundleFormats": ["owd-portable-continuity-bundle-v1"],
+  "requiredScope": "project.lead",
+  "schemaVersion": 1
+}

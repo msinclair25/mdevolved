@@ -1,6 +1,8 @@
 import {
   canonicalizeCollaborationJson,
+  canonicalizeIntegrityPayload,
   collaborationDurableRecordSchema,
+  continuityPointSchema,
   collaborationRestoreCreateRequestSchema,
   collaborationRestoreItemRequestSchema,
   collaborationRestoreJobSchema,
@@ -10,9 +12,22 @@ import {
   snapshotIntelligenceManifestSchema,
   type CollaborationRestoreJob,
   type CollaborationRestoreResult,
+  type CollaborationRestoreVaultMapping,
+  type ElasticOperationRecord,
+  type LeadOperationRecord,
+  type PolicyOperationalRecord,
   type SnapshotIntelligenceManifest,
+  type ContinuityPoint,
+  leadOperationRecordSchema,
+  elasticOperationRecordSchema,
+  policyOperationalRecordSchema,
 } from "@owd/contracts";
 import { CollaborationProblem } from "./collaboration-service";
+import {
+  insertQuarantinedElasticOperationRecordStatement,
+  prepareElasticOperationRecord,
+  type PreparedElasticOperationRecord,
+} from "./elastic-operation-store";
 import {
   insertContentObjectStatement,
   insertRecordStatement,
@@ -23,8 +38,26 @@ import {
   type StoredCollaborationRecord,
   type StoredContentObject,
 } from "./collaboration-store";
+import {
+  insertContinuityDependencyStatement,
+  insertContinuityPointStatement,
+  prepareContinuityPoint,
+  type PreparedContinuityPoint,
+} from "./continuity-store";
+import {
+  insertQuarantinedLeadOperationRecordStatement,
+  prepareLeadOperationRecord,
+  type PreparedLeadOperationRecord,
+} from "./lead-operation-store";
+import {
+  insertQuarantinedPolicyOperationalRecordStatement,
+  insertOperationalDependencyStatement,
+  preparePolicyOperationalRecord,
+  type PreparedPolicyOperationalRecord,
+} from "./policy-operation-store";
+import { projectContextSelectorSha256 } from "./project-context-policy";
 import { projectCreationLabelKey } from "./project-initialization-store";
-import { decodeBase64Url, sha256HexBytes } from "./security";
+import { decodeBase64Url, sha256Hex, sha256HexBytes } from "./security";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const encoder = new TextEncoder();
@@ -38,6 +71,11 @@ type RestoreRow = {
   status: CollaborationRestoreJob["status"];
 };
 
+type CollaborationRestorePayload = {
+  manifest: SnapshotIntelligenceManifest;
+  vaultMappings: CollaborationRestoreVaultMapping[];
+};
+
 function manifestItems(manifest: SnapshotIntelligenceManifest) {
   return [
     ...(manifest.approved?.records ?? []),
@@ -47,10 +85,24 @@ function manifestItems(manifest: SnapshotIntelligenceManifest) {
   ];
 }
 
+function payloadFromRow(row: RestoreRow): CollaborationRestorePayload {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(row.manifest_json) as unknown;
+  } catch {
+    throw new CollaborationProblem("submission_invalid");
+  }
+  const payload = collaborationRestoreCreateRequestSchema.safeParse(raw);
+  if (payload.success) return payload.data;
+  const legacyManifest = snapshotIntelligenceManifestSchema.safeParse(raw);
+  if (!legacyManifest.success || legacyManifest.data.selection === "none") {
+    throw new CollaborationProblem("submission_invalid");
+  }
+  return { manifest: legacyManifest.data, vaultMappings: [] };
+}
+
 function jobFromRow(row: RestoreRow): CollaborationRestoreJob {
-  const manifest = snapshotIntelligenceManifestSchema.parse(
-    JSON.parse(row.manifest_json) as unknown,
-  );
+  const { manifest } = payloadFromRow(row);
   if (manifest.selection === "none") {
     throw new CollaborationProblem("submission_invalid");
   }
@@ -83,7 +135,7 @@ export async function createCollaborationRestore(
 ): Promise<CollaborationRestoreJob> {
   const parsed = collaborationRestoreCreateRequestSchema.safeParse(rawRequest);
   if (!parsed.success) throw new CollaborationProblem("submission_invalid");
-  const manifestJson = JSON.stringify(parsed.data.manifest);
+  const manifestJson = JSON.stringify(parsed.data);
   if (
     encoder.encode(manifestJson).byteLength >
     MAX_COLLABORATION_RESTORE_MANIFEST_BYTES
@@ -117,9 +169,7 @@ export async function stageCollaborationRestoreItem(
   if (row === null || !["staging", "preview"].includes(row.status)) {
     throw new CollaborationProblem("project_reference_invalid");
   }
-  const manifest = snapshotIntelligenceManifestSchema.parse(
-    JSON.parse(row.manifest_json) as unknown,
-  );
+  const { manifest } = payloadFromRow(row);
   const descriptor = manifestItems(manifest).find(
     (item) => item.portableObjectId === parsed.data.portableObjectId,
   );
@@ -202,12 +252,273 @@ export async function stageCollaborationRestoreItem(
 function parseRecord(
   recordType: string,
   value: unknown,
-): StoredCollaborationRecord {
+):
+  | StoredCollaborationRecord
+  | ContinuityPoint
+  | LeadOperationRecord
+  | ElasticOperationRecord
+  | PolicyOperationalRecord {
+  if (recordType === "continuity-point") {
+    return continuityPointSchema.parse(value);
+  }
+  if (
+    recordType === "policy" ||
+    recordType === "run" ||
+    recordType === "actor" ||
+    recordType === "event-bundle" ||
+    recordType === "exception"
+  ) {
+    return leadOperationRecordSchema.parse(value);
+  }
+  if (
+    recordType === "elastic-plane" ||
+    recordType === "elastic-account" ||
+    recordType === "actor-recovery" ||
+    recordType === "run-delta" ||
+    recordType === "run-budget" ||
+    recordType === "budget-entry" ||
+    recordType === "run-observation" ||
+    recordType === "orca-projection"
+  ) {
+    return elasticOperationRecordSchema.parse(value);
+  }
+  if (
+    recordType === "policy-binding" ||
+    recordType === "policy-decision" ||
+    recordType === "schedule" ||
+    recordType === "evidence" ||
+    recordType === "continuity-receipt"
+  ) {
+    return policyOperationalRecordSchema.parse(value);
+  }
   if (recordType === "owner-event") return ownerEventSchema.parse(value);
   if (recordType === "provenance-edge") {
     return provenanceEdgeSchema.parse(value);
   }
   return collaborationDurableRecordSchema.parse(value);
+}
+
+function isLeadOperationRecord(
+  record:
+    | StoredCollaborationRecord
+    | ContinuityPoint
+    | LeadOperationRecord
+    | ElasticOperationRecord
+    | PolicyOperationalRecord,
+): record is LeadOperationRecord {
+  return leadOperationRecordSchema.safeParse(record).success;
+}
+
+function isElasticOperationRecord(
+  record:
+    | StoredCollaborationRecord
+    | ContinuityPoint
+    | LeadOperationRecord
+    | ElasticOperationRecord
+    | PolicyOperationalRecord,
+): record is ElasticOperationRecord {
+  return elasticOperationRecordSchema.safeParse(record).success;
+}
+
+function isPolicyOperationalRecord(
+  record:
+    | StoredCollaborationRecord
+    | ContinuityPoint
+    | LeadOperationRecord
+    | ElasticOperationRecord
+    | PolicyOperationalRecord,
+): record is PolicyOperationalRecord {
+  return policyOperationalRecordSchema.safeParse(record).success;
+}
+
+function recordProjectId(
+  record:
+    | StoredCollaborationRecord
+    | ContinuityPoint
+    | LeadOperationRecord
+    | ElasticOperationRecord
+    | PolicyOperationalRecord,
+): string | null {
+  if ("recordType" in record) {
+    if (record.recordType === "continuity-point") {
+      return record.project.projectId;
+    }
+    return "projectId" in record && typeof record.projectId === "string"
+      ? record.projectId
+      : null;
+  }
+  return record.projectId;
+}
+
+async function activeVaultMappings(
+  db: D1Database,
+  mappings: CollaborationRestoreVaultMapping[],
+): Promise<Map<string, string>> {
+  if (mappings.length === 0) return new Map();
+  const targetIds = mappings.map((mapping) => mapping.targetVaultId);
+  const active = await db
+    .prepare(
+      `SELECT id FROM vaults
+       WHERE status = 'active'
+         AND id IN (SELECT value FROM json_each(?) WHERE type = 'text')`,
+    )
+    .bind(JSON.stringify(targetIds))
+    .all<{ id: string }>();
+  if (active.results.length !== targetIds.length) {
+    throw new CollaborationProblem("project_reference_invalid");
+  }
+  return new Map(
+    mappings.map((mapping) => [mapping.sourceVaultId, mapping.targetVaultId]),
+  );
+}
+
+function requireCompleteVaultMappingCoverage(
+  records: Array<
+    | StoredCollaborationRecord
+    | ContinuityPoint
+    | LeadOperationRecord
+    | ElasticOperationRecord
+    | PolicyOperationalRecord
+  >,
+  mappings: Map<string, string>,
+): void {
+  if (mappings.size === 0) return;
+  const referencedSourceVaultIds = new Set<string>();
+  for (const record of records) {
+    if (
+      isLeadOperationRecord(record) ||
+      isElasticOperationRecord(record) ||
+      isPolicyOperationalRecord(record)
+    )
+      continue;
+    if (record.recordType === "knowledge-space-version") {
+      for (const member of record.members) {
+        referencedSourceVaultIds.add(member.vaultId);
+      }
+    } else if (record.recordType === "work-packet") {
+      for (const citation of record.sourceCitations) {
+        referencedSourceVaultIds.add(citation.vaultId);
+      }
+    }
+  }
+  if (
+    mappings.size !== referencedSourceVaultIds.size ||
+    [...referencedSourceVaultIds].some(
+      (sourceVaultId) => !mappings.has(sourceVaultId),
+    )
+  ) {
+    throw new CollaborationProblem("project_reference_invalid");
+  }
+}
+
+async function remapActiveProjectVaultReferences(
+  record:
+    | StoredCollaborationRecord
+    | ContinuityPoint
+    | LeadOperationRecord
+    | ElasticOperationRecord
+    | PolicyOperationalRecord,
+  mappings: Map<string, string>,
+): Promise<
+  | StoredCollaborationRecord
+  | ContinuityPoint
+  | LeadOperationRecord
+  | ElasticOperationRecord
+  | PolicyOperationalRecord
+> {
+  if (
+    mappings.size === 0 ||
+    isLeadOperationRecord(record) ||
+    isElasticOperationRecord(record) ||
+    isPolicyOperationalRecord(record) ||
+    record.recordType === "continuity-point"
+  ) {
+    return record;
+  }
+  if (record.recordType === "knowledge-space-version") {
+    const members = record.members.map((member) => ({
+      ...member,
+      vaultId: mappings.get(member.vaultId) ?? member.vaultId,
+    }));
+    if (
+      members.every(
+        (member, index) => member.vaultId === record.members[index]?.vaultId,
+      )
+    ) {
+      return record;
+    }
+    return collaborationDurableRecordSchema.parse({
+      ...record,
+      members,
+      selectorSha256: await projectContextSelectorSha256(members),
+    });
+  }
+  if (record.recordType === "work-packet") {
+    const sourceCitations = record.sourceCitations.map((citation) => ({
+      ...citation,
+      vaultId: mappings.get(citation.vaultId) ?? citation.vaultId,
+    }));
+    if (
+      sourceCitations.every(
+        (citation, index) =>
+          citation.vaultId === record.sourceCitations[index]?.vaultId,
+      )
+    ) {
+      return record;
+    }
+    const pending = {
+      ...record,
+      integrity: { ...record.integrity, digest: "0".repeat(64) },
+      sourceCitations,
+    };
+    return collaborationDurableRecordSchema.parse({
+      ...pending,
+      integrity: {
+        ...pending.integrity,
+        digest: await sha256Hex(
+          canonicalizeIntegrityPayload(
+            pending as typeof pending & Record<string, unknown>,
+          ),
+        ),
+      },
+    });
+  }
+  return record;
+}
+
+function orderContinuityPoints(
+  records: PreparedContinuityPoint[],
+): PreparedContinuityPoint[] {
+  const pending = new Map(
+    records.map((record) => [record.point.continuityPointId, record]),
+  );
+  for (const record of pending.values()) {
+    const previousId = record.point.previousContinuityPointId;
+    if (previousId === null) continue;
+    const previous = pending.get(previousId);
+    if (
+      previous === undefined ||
+      previous.point.project.projectId !== record.point.project.projectId
+    ) {
+      throw new CollaborationProblem("snapshot_dependency_missing");
+    }
+  }
+  const ordered: PreparedContinuityPoint[] = [];
+  const restored = new Set<string>();
+  while (pending.size > 0) {
+    const next = [...pending.values()].find(
+      (record) =>
+        record.point.previousContinuityPointId === null ||
+        restored.has(record.point.previousContinuityPointId),
+    );
+    if (next === undefined) {
+      throw new CollaborationProblem("snapshot_dependency_missing");
+    }
+    pending.delete(next.point.continuityPointId);
+    restored.add(next.point.continuityPointId);
+    ordered.push(next);
+  }
+  return ordered;
 }
 
 function dependencyStatement(
@@ -477,9 +788,7 @@ export async function applyCollaborationRestore(
   ) {
     throw new CollaborationProblem("project_reference_invalid");
   }
-  const manifest = snapshotIntelligenceManifestSchema.parse(
-    JSON.parse(row.manifest_json) as unknown,
-  );
+  const { manifest, vaultMappings } = payloadFromRow(row);
   const stagedRows = await db
     .prepare(
       `SELECT item_id, portable_object_id, object_key, content_sha256,
@@ -506,8 +815,23 @@ export async function applyCollaborationRestore(
     ...(manifest.unvetted?.evidenceObjects ?? []),
   ];
   const preparedRecords: PreparedCollaborationRecord[] = [];
+  const preparedContinuityPoints: PreparedContinuityPoint[] = [];
+  const preparedLeadOperationRecords: PreparedLeadOperationRecord[] = [];
+  const preparedElasticOperationRecords: PreparedElasticOperationRecord[] = [];
+  const preparedPolicyOperationalRecords: PreparedPolicyOperationalRecord[] =
+    [];
   const preparedContent: StoredContentObject[] = [];
   try {
+    const resolvedVaultMappings = await activeVaultMappings(db, vaultMappings);
+    const sourceRecords: Array<{
+      descriptor: (typeof recordDescriptors)[number];
+      record:
+        | StoredCollaborationRecord
+        | ContinuityPoint
+        | LeadOperationRecord
+        | ElasticOperationRecord
+        | PolicyOperationalRecord;
+    }> = [];
     for (const descriptor of recordDescriptors) {
       const item = staged.get(descriptor.portableObjectId);
       const object =
@@ -522,29 +846,143 @@ export async function applyCollaborationRestore(
       ) {
         throw new CollaborationProblem("integrity_mismatch");
       }
-      const value = JSON.parse(decoder.decode(bytes)) as unknown;
-      const record = parseRecord(descriptor.recordType, value);
-      if (canonicalizeCollaborationJson(record) !== decoder.decode(bytes)) {
+      const text = decoder.decode(bytes);
+      const value = JSON.parse(text) as unknown;
+      const sourceRecord = parseRecord(descriptor.recordType, value);
+      if (isPolicyOperationalRecord(sourceRecord)) {
+        const sourceRecordId =
+          sourceRecord.format === "owd-policy-binding-v1"
+            ? sourceRecord.bindingId
+            : sourceRecord.format === "owd-policy-decision-v1"
+              ? sourceRecord.decisionId
+              : sourceRecord.format === "owd-operational-schedule-v1"
+                ? sourceRecord.scheduleId
+                : sourceRecord.format === "owd-operational-evidence-v1"
+                  ? sourceRecord.evidenceId
+                  : sourceRecord.receiptId;
+        if (
+          sourceRecordId !== descriptor.recordId ||
+          sourceRecord.projectId !== descriptor.projectId
+        ) {
+          throw new CollaborationProblem("portable_identity_collision");
+        }
+      }
+      if (canonicalizeCollaborationJson(sourceRecord) !== text) {
         throw new CollaborationProblem("integrity_mismatch");
       }
+      sourceRecords.push({ descriptor, record: sourceRecord });
+    }
+    const sourceRecordById = new Map(
+      sourceRecords.map(({ descriptor, record }) => [
+        descriptor.recordId,
+        record,
+      ]),
+    );
+    for (const { descriptor, record } of sourceRecords) {
+      for (const dependencyId of descriptor.dependencies) {
+        const dependency = sourceRecordById.get(dependencyId);
+        const projectId = recordProjectId(record);
+        const dependencyProjectId =
+          dependency === undefined ? null : recordProjectId(dependency);
+        if (
+          projectId !== null &&
+          dependencyProjectId !== null &&
+          dependencyProjectId !== projectId
+        ) {
+          throw new CollaborationProblem("project_reference_invalid");
+        }
+      }
+    }
+    requireCompleteVaultMappingCoverage(
+      sourceRecords.map(({ record }) => record),
+      resolvedVaultMappings,
+    );
+    for (const { descriptor, record: sourceRecord } of sourceRecords) {
+      const record = await remapActiveProjectVaultReferences(
+        sourceRecord,
+        resolvedVaultMappings,
+      );
       const existing = await db
         .prepare(
           `SELECT id FROM collaboration_records
-           WHERE id = ? OR portable_object_id = ? LIMIT 1`,
+           WHERE id = ? OR portable_object_id = ?
+           UNION ALL
+           SELECT continuity_point_id AS id FROM project_continuity_points
+           WHERE continuity_point_id = ? OR portable_object_id = ?
+           UNION ALL
+           SELECT operation_record_id AS id FROM project_operation_records
+           WHERE operation_record_id = ? OR portable_object_id = ?
+           UNION ALL
+           SELECT elastic_record_id AS id FROM project_elastic_records
+           WHERE elastic_record_id = ? OR portable_object_id = ?
+           UNION ALL
+           SELECT operational_record_id AS id FROM project_operational_records
+           WHERE operational_record_id = ? OR portable_object_id = ?
+           LIMIT 1`,
         )
-        .bind(descriptor.recordId, descriptor.portableObjectId)
+        .bind(
+          descriptor.recordId,
+          descriptor.portableObjectId,
+          descriptor.recordId,
+          descriptor.portableObjectId,
+          descriptor.recordId,
+          descriptor.portableObjectId,
+          descriptor.recordId,
+          descriptor.portableObjectId,
+          descriptor.recordId,
+          descriptor.portableObjectId,
+        )
         .first<{ id: string }>();
       if (existing !== null) {
         throw new CollaborationProblem("portable_identity_collision");
       }
-      preparedRecords.push(
-        await prepareCollaborationRecord(storage, {
-          now,
-          portableObjectId: descriptor.portableObjectId,
-          record,
-          restoredAt: now,
-        }),
-      );
+      if (isLeadOperationRecord(record)) {
+        preparedLeadOperationRecords.push(
+          await prepareLeadOperationRecord(storage, {
+            now,
+            portableObjectId: descriptor.portableObjectId,
+            record,
+            restoredAt: now,
+          }),
+        );
+      } else if (isElasticOperationRecord(record)) {
+        preparedElasticOperationRecords.push(
+          await prepareElasticOperationRecord(storage, {
+            elasticRecordId: descriptor.recordId,
+            now,
+            portableObjectId: descriptor.portableObjectId,
+            record,
+            restoredAt: now,
+          }),
+        );
+      } else if (isPolicyOperationalRecord(record)) {
+        preparedPolicyOperationalRecords.push(
+          await preparePolicyOperationalRecord(storage, {
+            now,
+            operationalRecordId: descriptor.recordId,
+            portableObjectId: descriptor.portableObjectId,
+            record,
+            restoredAt: now,
+          }),
+        );
+      } else if (record.recordType === "continuity-point") {
+        preparedContinuityPoints.push(
+          await prepareContinuityPoint(
+            storage,
+            record,
+            descriptor.portableObjectId,
+          ),
+        );
+      } else {
+        preparedRecords.push(
+          await prepareCollaborationRecord(storage, {
+            now,
+            portableObjectId: descriptor.portableObjectId,
+            record,
+            restoredAt: now,
+          }),
+        );
+      }
     }
     const packetEvidenceIds = new Set(
       recordDescriptors
@@ -648,20 +1086,97 @@ export async function applyCollaborationRestore(
     }
     const projections = projectionStatements(db, preparedRecords);
     statements.push(...projections.statements);
+    for (const record of preparedLeadOperationRecords) {
+      statements.push(
+        insertQuarantinedLeadOperationRecordStatement(db, record),
+      );
+    }
+    for (const record of preparedElasticOperationRecords) {
+      statements.push(
+        insertQuarantinedElasticOperationRecordStatement(db, record),
+      );
+    }
+    for (const record of preparedPolicyOperationalRecords) {
+      statements.push(
+        insertQuarantinedPolicyOperationalRecordStatement(db, record),
+      );
+    }
+    for (const point of orderContinuityPoints(preparedContinuityPoints)) {
+      statements.push(
+        insertContinuityPointStatement(db, point, {
+          producerClientId: null,
+          restoredAt: now,
+          sourceLeaseId: null,
+        }),
+      );
+    }
+    const operationalRecordIds = new Set(
+      recordDescriptors
+        .filter((descriptor) =>
+          [
+            "policy-binding",
+            "policy-decision",
+            "schedule",
+            "evidence",
+            "continuity-receipt",
+          ].includes(descriptor.recordType),
+        )
+        .map((descriptor) => descriptor.recordId),
+    );
     for (const descriptor of recordDescriptors) {
+      if (
+        descriptor.recordType === "policy" ||
+        descriptor.recordType === "run" ||
+        descriptor.recordType === "actor" ||
+        descriptor.recordType === "event-bundle" ||
+        descriptor.recordType === "exception" ||
+        descriptor.recordType === "elastic-plane" ||
+        descriptor.recordType === "elastic-account" ||
+        descriptor.recordType === "actor-recovery" ||
+        descriptor.recordType === "run-delta" ||
+        descriptor.recordType === "run-budget" ||
+        descriptor.recordType === "budget-entry" ||
+        descriptor.recordType === "run-observation" ||
+        descriptor.recordType === "orca-projection"
+      ) {
+        continue;
+      }
+      const operationalDescriptor = operationalRecordIds.has(
+        descriptor.recordId,
+      );
       for (const dependencyId of descriptor.dependencies) {
-        statements.push(
-          dependencyStatement(
-            db,
-            descriptor.recordId,
-            dependencyId,
-            evidenceIds.has(dependencyId) ? "evidence" : "record",
-          ),
-        );
-        if (evidenceIds.has(dependencyId)) {
+        const kind = evidenceIds.has(dependencyId) ? "evidence" : "record";
+        if (operationalDescriptor) {
           statements.push(
-            recordContentStatement(db, descriptor.recordId, dependencyId),
+            insertOperationalDependencyStatement(db, {
+              dependencyId,
+              dependencyKind: evidenceIds.has(dependencyId)
+                ? "evidence"
+                : operationalRecordIds.has(dependencyId)
+                  ? "operational"
+                  : "record",
+              operationalRecordId: descriptor.recordId,
+            }),
           );
+          continue;
+        }
+        if (descriptor.recordType === "continuity-point") {
+          statements.push(
+            insertContinuityDependencyStatement(db, {
+              continuityPointId: descriptor.recordId,
+              dependencyId,
+              dependencyKind: kind,
+            }),
+          );
+        } else {
+          statements.push(
+            dependencyStatement(db, descriptor.recordId, dependencyId, kind),
+          );
+          if (kind === "evidence") {
+            statements.push(
+              recordContentStatement(db, descriptor.recordId, dependencyId),
+            );
+          }
         }
       }
     }

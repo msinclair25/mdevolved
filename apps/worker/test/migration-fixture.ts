@@ -22,6 +22,10 @@ import vaultPrimaryWriterMigration from "../../../migrations/0026_vault_primary_
 import vaultRuntimeProfilesMigration from "../../../migrations/0027_vault_runtime_profiles.sql";
 import preparedProjectHandoffsMigration from "../../../migrations/0028_prepared_project_handoffs.sql";
 import vaultPrimaryWriterTransferMigration from "../../../migrations/0029_vault_primary_writer_transfer.sql";
+import continuityR1Migration from "../../../migrations/0030_continuity_r1.sql";
+import handsOffLeadR2Migration from "../../../migrations/0031_hands_off_lead_r2.sql";
+import elasticActorPlaneR3Migration from "../../../migrations/0032_elastic_actor_plane_r3.sql";
+import policyAutopilotR4Migration from "../../../migrations/0033_policy_autopilot_r4.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -93,6 +97,16 @@ export const migrations = [
     file: "0029_vault_primary_writer_transfer.sql",
     source: vaultPrimaryWriterTransferMigration,
   },
+  { file: "0030_continuity_r1.sql", source: continuityR1Migration },
+  { file: "0031_hands_off_lead_r2.sql", source: handsOffLeadR2Migration },
+  {
+    file: "0032_elastic_actor_plane_r3.sql",
+    source: elasticActorPlaneR3Migration,
+  },
+  {
+    file: "0033_policy_autopilot_r4.sql",
+    source: policyAutopilotR4Migration,
+  },
 ] as const;
 
 export const priorReleaseMigrations = migrations.slice(0, 10);
@@ -112,6 +126,10 @@ export const vaultPrimaryWriterMigrationEntry = migrations[20]!;
 export const vaultRuntimeProfilesMigrationEntry = migrations[21]!;
 export const preparedProjectHandoffsMigrationEntry = migrations[22]!;
 export const vaultPrimaryWriterTransferMigrationEntry = migrations[23]!;
+export const continuityR1MigrationEntry = migrations[24]!;
+export const handsOffLeadR2MigrationEntry = migrations[25]!;
+export const elasticActorPlaneR3MigrationEntry = migrations[26]!;
+export const policyAutopilotR4MigrationEntry = migrations[27]!;
 
 export function executableMigration(source: string): string {
   return source
@@ -137,6 +155,14 @@ export function declaredTables(source: string): string[] {
   return [
     ...source.matchAll(
       /CREATE\s+(?:VIRTUAL\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z0-9_]+)/giu,
+    ),
+  ].flatMap((match) => (match[1] === undefined ? [] : [match[1]]));
+}
+
+export function declaredIndexes(source: string): string[] {
+  return [
+    ...source.matchAll(
+      /CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z0-9_]+)/giu,
     ),
   ].flatMap((match) => (match[1] === undefined ? [] : [match[1]]));
 }
@@ -326,5 +352,65 @@ export async function applyPreparedProjectHandoffsMigration(
     .first<{ count: number }>();
   if (table?.count !== 1) {
     await applyMigrations(db, [preparedProjectHandoffsMigrationEntry]);
+  }
+}
+
+export async function applyContinuityR1Migration(
+  db: D1Database,
+): Promise<void> {
+  const table = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM sqlite_master
+       WHERE type = 'table' AND name = 'project_continuity_points'`,
+    )
+    .first<{ count: number }>();
+  if (table?.count !== 1) {
+    await applyMigrations(db, [continuityR1MigrationEntry]);
+  }
+}
+
+export async function applyHandsOffLeadR2Migration(
+  db: D1Database,
+): Promise<void> {
+  const table = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM sqlite_master
+       WHERE type = 'table' AND name = 'project_operation_records'`,
+    )
+    .first<{ count: number }>();
+  if (table?.count !== 1) {
+    await applyMigrations(db, [handsOffLeadR2MigrationEntry]);
+  }
+}
+
+export async function applyElasticActorPlaneR3Migration(
+  db: D1Database,
+): Promise<void> {
+  const table = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM sqlite_master
+       WHERE type = 'table' AND name = 'project_elastic_records'`,
+    )
+    .first<{ count: number }>();
+  if (table?.count !== 1) {
+    await applyMigrations(db, [elasticActorPlaneR3MigrationEntry]);
+  }
+}
+
+export async function applyPolicyAutopilotR4Migration(
+  db: D1Database,
+): Promise<void> {
+  const table = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM sqlite_master
+       WHERE type = 'table' AND name = 'project_operational_records'`,
+    )
+    .first<{ count: number }>();
+  if (table?.count !== 1) {
+    await applyMigrations(db, [policyAutopilotR4MigrationEntry]);
   }
 }

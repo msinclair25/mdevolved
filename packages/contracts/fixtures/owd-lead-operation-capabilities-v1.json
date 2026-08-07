@@ -1,0 +1,23 @@
+{
+  "format": "owd-lead-operation-capabilities-v1",
+  "schemaVersion": 1,
+  "mcpTools": [
+    "create_work_item",
+    "start_run",
+    "register_actor",
+    "get_run_context",
+    "submit_bundle",
+    "complete_work_item",
+    "list_project_exceptions"
+  ],
+  "formats": [
+    "owd-project-policy-v1",
+    "owd-run-v1",
+    "owd-actor-v1",
+    "owd-event-bundle-v1",
+    "owd-project-exception-v1",
+    "owd-run-context-v1"
+  ],
+  "mcpProtocolRevision": "2025-11-25",
+  "requiredScope": "project.lead"
+}

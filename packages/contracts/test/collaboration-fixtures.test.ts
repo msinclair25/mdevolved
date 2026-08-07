@@ -7,9 +7,15 @@ import {
   collaborationCapabilityProfileSchema,
   collaborationLedgerJsonSchema,
   collaborationLedgerSchema,
+  collaborationRestoreCreateRequestSchema,
   collaborationSubmissionJsonSchema,
   collaborationSubmissionSchema,
+  continuityPointJsonSchema,
+  continuityPointSchema,
+  leadContinuityCapabilityProfileSchema,
   provenanceEdgeSchema,
+  projectCheckpointRequestJsonSchema,
+  projectLeadClaimRequestJsonSchema,
   snapshotIntelligenceJsonSchema,
   snapshotIntelligenceManifestSchema,
   workPacketJsonSchema,
@@ -17,6 +23,8 @@ import {
 } from "@owd/contracts";
 import { describe, expect, it } from "vitest";
 import capabilityFixture from "../fixtures/owd-collaboration-capabilities-v1.json";
+import continuityFixture from "../fixtures/owd-continuity-point-v1.json";
+import leadCapabilityFixture from "../fixtures/owd-lead-continuity-capabilities-v1.json";
 import ledgerFixture from "../fixtures/owd-collaboration-ledger-v1.json";
 import submissionFixture from "../fixtures/owd-collaboration-submission-v1.json";
 import approvedUnvettedFixture from "../fixtures/owd-snapshot-intelligence-approved-unvetted-v1.json";
@@ -56,12 +64,38 @@ function fixtureUuid(namespace: number, index: number): string {
 }
 
 describe("Phase 9A collaboration contract fixtures", () => {
+  it("requires one-to-one restore vault mappings while accepting legacy snapshots", () => {
+    expect(
+      collaborationRestoreCreateRequestSchema.parse({
+        manifest: approvedFixture,
+      }).vaultMappings,
+    ).toEqual([]);
+    expect(
+      collaborationRestoreCreateRequestSchema.safeParse({
+        manifest: approvedFixture,
+        vaultMappings: [
+          {
+            sourceVaultId: fixtureUuid(90, 1),
+            targetVaultId: fixtureUuid(90, 3),
+          },
+          {
+            sourceVaultId: fixtureUuid(90, 2),
+            targetVaultId: fixtureUuid(90, 3),
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
   it("publishes JSON Schema 2020-12 shapes for every portable envelope", () => {
     for (const schema of [
       workPacketJsonSchema,
       collaborationSubmissionJsonSchema,
       collaborationLedgerJsonSchema,
       snapshotIntelligenceJsonSchema,
+      continuityPointJsonSchema,
+      projectLeadClaimRequestJsonSchema,
+      projectCheckpointRequestJsonSchema,
     ]) {
       expect(schema.$schema).toBe(
         "https://json-schema.org/draft/2020-12/schema",
@@ -454,5 +488,51 @@ describe("Phase 9A collaboration contract fixtures", () => {
       collaborationCapabilityProfileSchema.parse(capabilityFixture);
     expect(profile.mcpProtocolRevision).toBe("2025-11-25");
     expect(JSON.stringify(profile)).not.toMatch(/mcp-task|a2a-task/iu);
+  });
+
+  it("round-trips a provider-neutral Continuity Point with accepted truth, artifacts, and exact evidence", () => {
+    const point = continuityPointSchema.parse(continuityFixture);
+    expect(integrityDigest(point)).toBe(point.integrity.digest);
+    expect(point.acceptedDecisions).toHaveLength(1);
+    expect(point.artifacts).toHaveLength(1);
+    expect(point.citedEvidence).toHaveLength(1);
+    expect(JSON.stringify(point)).not.toMatch(
+      /access_token|refresh_token|leaseId|grantId|workers\.dev|cloudflare|object_key/iu,
+    );
+    expect(
+      continuityPointSchema.parse(JSON.parse(JSON.stringify(point))),
+    ).toEqual(point);
+  });
+
+  it("rejects cross-Project continuity references and any attempt to restore authority", () => {
+    const crossProject = structuredClone(continuityFixture);
+    crossProject.acceptedDecisions[0]!.decision.projectId =
+      "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    expect(continuityPointSchema.safeParse(crossProject).success).toBe(false);
+
+    const restoredAuthority = structuredClone(continuityFixture) as {
+      authority: {
+        liveAuthorityIncluded: boolean;
+        restoredAuthorityAllowed: boolean;
+      };
+    };
+    restoredAuthority.authority.liveAuthorityIncluded = true;
+    restoredAuthority.authority.restoredAuthorityAllowed = true;
+    expect(continuityPointSchema.safeParse(restoredAuthority).success).toBe(
+      false,
+    );
+  });
+
+  it("negotiates lead continuity separately from the legacy collaboration profile", () => {
+    const leadProfile = leadContinuityCapabilityProfileSchema.parse(
+      leadCapabilityFixture,
+    );
+    expect(leadProfile.mcpTools).toEqual([
+      "claim_project_lead",
+      "renew_project_lead",
+      "checkpoint_project",
+      "resume_project",
+    ]);
+    expect(capabilityFixture).not.toHaveProperty("continuityPointFormats");
   });
 });

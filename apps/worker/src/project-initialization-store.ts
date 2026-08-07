@@ -206,7 +206,7 @@ function fromRow(row: InitializationRow): StoredProjectInitialization {
     requestedScopes: collaborationScopeSchema
       .array()
       .min(1)
-      .max(4)
+      .max(5)
       .parse(JSON.parse(row.requested_scopes_json) as unknown),
     resultCollaborationGrantId: row.result_collaboration_grant_id,
     resultPacketId: row.result_packet_id,
@@ -235,7 +235,7 @@ function projectAuthorizationFromRow(
     scopes: collaborationScopeSchema
       .array()
       .min(1)
-      .max(4)
+      .max(5)
       .parse(JSON.parse(row.scopes_json) as unknown),
     sourceAgentGrantId: row.source_agent_grant_id,
   };
@@ -1992,7 +1992,7 @@ export async function readLatestApprovedProjectScopes(
     : collaborationScopeSchema
         .array()
         .min(1)
-        .max(4)
+        .max(5)
         .parse(JSON.parse(row.requested_scopes_json) as unknown);
 }
 
@@ -2002,6 +2002,21 @@ export type PendingProjectAuthorization = {
   requestedScopes: CollaborationScope[];
   sourceAgentGrantId: string;
 };
+
+function projectAuthorizationScopesMatch(
+  stored: CollaborationScope[],
+  requested: CollaborationScope[],
+): boolean {
+  const key = (scopes: CollaborationScope[]) =>
+    JSON.stringify([...scopes].sort());
+  if (key(stored) === key(requested)) return true;
+  if (!stored.includes("project.lead") || requested.includes("project.lead")) {
+    return false;
+  }
+  return (
+    key(stored.filter((scope) => scope !== "project.lead")) === key(requested)
+  );
+}
 
 export async function readPendingProjectAuthorization(
   db: D1Database,
@@ -2039,14 +2054,13 @@ export async function readPendingProjectAuthorization(
       requested_scopes_json: string;
       result_project_id: string;
     }>();
-  const expected = JSON.stringify([...input.requestedScopes].sort());
   const matching = rows.results.filter((row) => {
     const scopes = collaborationScopeSchema
       .array()
       .min(1)
-      .max(4)
+      .max(5)
       .parse(JSON.parse(row.requested_scopes_json) as unknown);
-    return JSON.stringify([...scopes].sort()) === expected;
+    return projectAuthorizationScopesMatch(scopes, input.requestedScopes);
   });
   if (matching.length === 0) return null;
   if (matching.length > 1) return "ambiguous";
@@ -2058,7 +2072,7 @@ export async function readPendingProjectAuthorization(
     requestedScopes: collaborationScopeSchema
       .array()
       .min(1)
-      .max(4)
+      .max(5)
       .parse(JSON.parse(row.requested_scopes_json) as unknown),
     sourceAgentGrantId: row.bootstrap_agent_grant_id,
   };
@@ -2109,12 +2123,9 @@ export async function readBoundProjectAuthorization(
   const scopes = collaborationScopeSchema
     .array()
     .min(1)
-    .max(4)
+    .max(5)
     .parse(JSON.parse(row.requested_scopes_json) as unknown);
-  if (
-    JSON.stringify([...scopes].sort()) !==
-    JSON.stringify([...input.requestedScopes].sort())
-  ) {
+  if (!projectAuthorizationScopesMatch(scopes, input.requestedScopes)) {
     return null;
   }
   return {
@@ -2727,7 +2738,7 @@ export async function resolveApprovedProjectAuthorization(
     const parsedScopes = collaborationScopeSchema
       .array()
       .min(1)
-      .max(4)
+      .max(5)
       .safeParse(JSON.parse(candidate.requested_scopes_json) as unknown);
     if (!parsedScopes.success) continue;
     const value = await readInitializationById(db, candidate.id);

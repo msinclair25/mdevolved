@@ -30,13 +30,16 @@ The approved gate extends rather than replaces the proven foundation:
 
 ## Contract registry
 
-| Contract                        | Version marker                      | Purpose                                                                          |
-| ------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------- |
-| Work Packet                     | `owd-work-packet-v1`                | Frozen bounded input for one attempted contribution                              |
-| Submission                      | `owd-collaboration-submission-v1`   | One append-only agent record plus idempotency and claimed producer metadata      |
-| Ledger                          | `owd-collaboration-ledger-v1`       | Provider-neutral immutable records, owner events, and provenance                 |
-| Capability profile              | `owd-collaboration-capabilities-v1` | Supported record, packet, submission, MCP, and snapshot versions                 |
-| Snapshot intelligence extension | `owd-snapshot-intelligence-v1`      | Explicit Approved/Unvetted selection, closure inventory, and restore disposition |
+| Contract                        | Version marker                        | Purpose                                                                          |
+| ------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| Work Packet                     | `owd-work-packet-v1`                  | Frozen bounded input for one attempted contribution                              |
+| Submission                      | `owd-collaboration-submission-v1`     | One append-only agent record plus idempotency and claimed producer metadata      |
+| Ledger                          | `owd-collaboration-ledger-v1`         | Provider-neutral immutable records, owner events, and provenance                 |
+| Capability profile              | `owd-collaboration-capabilities-v1`   | Supported record, packet, submission, MCP, and snapshot versions                 |
+| Snapshot intelligence extension | `owd-snapshot-intelligence-v1`        | Explicit Approved/Unvetted selection, closure inventory, and restore disposition |
+| Continuity Point                | `owd-continuity-point-v1`             | Acknowledged bounded Project state for lead substitution                         |
+| Lead continuity capabilities    | `owd-lead-continuity-capabilities-v1` | Additive MCP tools, scope, point, and portable-bundle negotiation                |
+| Portable continuity bundle      | `owd-portable-continuity-bundle-v1`   | Provider-neutral README plus canonical latest Continuity Point                   |
 
 All structural schemas target
 [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12). The shared
@@ -205,10 +208,10 @@ multiple durable records inside one ambiguous submission.
 
 Visibility and disposition are independent projections over immutable records:
 
-| Dimension   | Values                                                         | Authority                                                     |
-| ----------- | -------------------------------------------------------------- | ------------------------------------------------------------- |
-| Visibility  | `private`, `shared`, `owner-only`                              | Owner event only; new agent submissions start `private`       |
-| Disposition | `pending`, `accepted`, `rejected`, `quarantined`, `superseded` | Owner event only; Decisions are owner-authored accepted roots |
+| Dimension   | Values                                                                         | Authority                                                                   |
+| ----------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Visibility  | `private`, `shared`, `owner-only`                                              | Owner event only; new agent submissions start `private`                     |
+| Disposition | `pending`, `accepted`, `rejected`, `quarantined`, `superseded`, `checkpointed` | Owner events govern truth; `checkpointed` is acknowledged operational state |
 
 - `private` is readable by the owner and the submitting OAuth client under the
   same Project grant. No other participant can infer its existence.
@@ -222,6 +225,8 @@ Visibility and disposition are independent projections over immutable records:
   verdict cannot create a Decision.
 - `superseded` requires an identified replacement. Both versions remain
   addressable to the owner and in provenance/recovery history.
+- `checkpointed` applies only to a Continuity Point. It does not accept its
+  referenced Artifacts or elevate its operational summary to owner truth.
 
 ## Authorization matrix
 
@@ -260,6 +265,16 @@ Scopes are necessary but never sufficient. Every call must check, in order:
 No external application's organization, role, task, context, or session claim
 enters this decision.
 
+Lead-continuity authorization is deliberately narrower:
+
+| Operation                                         | Owner browser | `project.read` |                  `project.lead` |        Restored point |
+| ------------------------------------------------- | ------------: | -------------: | ------------------------------: | --------------------: |
+| Read latest Continuity Point                      |             A |              A |           A with `project.read` | N without a new grant |
+| Claim or renew Project lead                       |             O |              N | A with live exact Project grant |                     N |
+| Append one fenced checkpoint                      |             O |              N |         A with live lease/fence |                     N |
+| Revoke lead lease                                 |             O |              N |                               N |                     N |
+| Accept referenced records or change Project truth |             O |              N |                               N |                     N |
+
 ## Normative collaboration invariants
 
 | ID  | Invariant                                                                                                                                      |
@@ -297,40 +312,50 @@ enters this decision.
 | C30 | `.owdignore` binds resume to one explicit durable Project ID and the complete approved selector.                                               |
 | C31 | Routine source, packet, token, and active-grant refresh is automatic; explicit revocation remains final.                                       |
 | C32 | Legacy approval self-healing requires the same active source grant and exact approved Project/context; it can never restore revoked authority. |
+| C33 | One Project has at most one live lead lease; every takeover increments a monotonically increasing fencing token.                               |
+| C34 | A checkpoint names the exact current Project, Work Item, Work Packet, lease fence, predecessor, and idempotency payload.                       |
+| C35 | Continuity Points are operational checkpoints, not accepted truth, and cannot include cross-Project references.                                |
+| C36 | The legacy capability profile remains strict and unchanged; lead continuity is negotiated through a separate versioned profile.                |
+| C37 | Portable and encrypted recovery preserve Continuity Point bodies and dependencies but restore no lease, receipt, grant, or producer authority. |
+| C38 | A replacement lead resumes only after independent authorization and a new live claim; historical fence provenance is never reusable authority. |
 
 ## Threat and negative-case catalog
 
 These cases are contract fixtures now where structurally possible and required
 runtime/integration tests after implementation.
 
-| ID  | Attack or failure                                                                  | Required result                                       | Stable domain error                                     |
-| --- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| T01 | Cross-Project parent, input, packet inclusion, or provenance edge                  | Reject before append                                  | `project_reference_invalid`                             |
-| T02 | Grant and packet pin different Knowledge Space versions                            | Reject before content read or append                  | `knowledge_space_version_mismatch`                      |
-| T03 | Submission uses expired, invalidated, closed, or replaced packet                   | Retain packet historically; deny append               | `work_packet_stale`                                     |
-| T04 | Revoked or expired grant with otherwise valid token                                | Deny next call                                        | `collaboration_grant_revoked`                           |
-| T05 | Missing named scope                                                                | Deny without revealing record existence               | `collaboration_scope_required`                          |
-| T06 | Another participant reads a private submission                                     | Not-found-equivalent denial                           | `record_not_visible`                                    |
-| T07 | Review names a private or cross-Project Artifact                                   | Reject Review                                         | `artifact_not_visible`                                  |
-| T08 | Same idempotency key and same payload retry                                        | Return original receipt                               | none                                                    |
-| T09 | Same idempotency key with different payload                                        | Reject; preserve first record                         | `idempotency_conflict`                                  |
-| T10 | Replay envelope under another client/grant                                         | Reauthorize independently; never adopt first identity | `submission_replay_denied`                              |
-| T11 | Oversize count/body, unsupported media type, malformed JSON, or unknown field      | Reject before R2/D1 mutation                          | `submission_invalid` or `submission_too_large`          |
-| T12 | Client submits Decision, OwnerEvent, sharing, acceptance, or grant change          | Schema/authorization denial                           | `owner_authority_required`                              |
-| T13 | Producer labels model/harness as verified                                          | Schema denial or forced `claimed` display             | `producer_identity_invalid`                             |
-| T14 | Producer replaces another client's record or changes history                       | Reject; require own same-type supersession            | `supersession_not_allowed`                              |
-| T15 | Altered packet/submission digest                                                   | Reject before use                                     | `integrity_mismatch`                                    |
-| T16 | Citation has missing object, mismatched byte range/hash, or historical object loss | Reject packet/restore; do not weaken citation         | `evidence_unavailable`                                  |
-| T17 | Prompt injection in evidence, filename, frontmatter, Artifact, or Handoff          | Preserve as inert data; no authority/tool expansion   | `content_policy_denied` when bounds are crossed         |
-| T18 | Submitted external URI targets file, localhost, metadata, or unsafe scheme         | Schema denial; never fetch even valid HTTPS           | `external_reference_invalid`                            |
-| T19 | Projection is re-ingested as independent source or target changed since preview    | Exclude loop; fail stale write                        | `projection_origin_loop` or `projection_target_changed` |
-| T20 | `approved` section depends on missing or Unvetted object                           | Fail before snapshot publication/import               | `snapshot_dependency_missing`                           |
-| T21 | Attempted Unvetted-only snapshot                                                   | Reject selection                                      | `snapshot_selection_invalid`                            |
-| T22 | Older reader lacks approved/quarantine capability                                  | Fail before staging; name capability                  | `snapshot_capability_unsupported`                       |
-| T23 | Restore tries to share, resume proposal, activate Skill, or recreate grant         | Force quarantine/disabled state or fail               | `restore_authority_forbidden`                           |
-| T24 | Duplicate portable ID with non-identical restored bytes                            | Fail collision review; never merge                    | `portable_identity_collision`                           |
-| T25 | Token passthrough, wrong audience, or external app role claim                      | Reject before application authorization               | `authorization_context_invalid`                         |
-| T26 | Rate, cursor, or pagination abuse                                                  | Bounded response and redacted denial                  | `rate_limited` or `cursor_invalid`                      |
+| ID  | Attack or failure                                                                  | Required result                                       | Stable domain error                                                            |
+| --- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
+| T01 | Cross-Project parent, input, packet inclusion, or provenance edge                  | Reject before append                                  | `project_reference_invalid`                                                    |
+| T02 | Grant and packet pin different Knowledge Space versions                            | Reject before content read or append                  | `knowledge_space_version_mismatch`                                             |
+| T03 | Submission uses expired, invalidated, closed, or replaced packet                   | Retain packet historically; deny append               | `work_packet_stale`                                                            |
+| T04 | Revoked or expired grant with otherwise valid token                                | Deny next call                                        | `collaboration_grant_revoked`                                                  |
+| T05 | Missing named scope                                                                | Deny without revealing record existence               | `collaboration_scope_required`                                                 |
+| T06 | Another participant reads a private submission                                     | Not-found-equivalent denial                           | `record_not_visible`                                                           |
+| T07 | Review names a private or cross-Project Artifact                                   | Reject Review                                         | `artifact_not_visible`                                                         |
+| T08 | Same idempotency key and same payload retry                                        | Return original receipt                               | none                                                                           |
+| T09 | Same idempotency key with different payload                                        | Reject; preserve first record                         | `idempotency_conflict`                                                         |
+| T10 | Replay envelope under another client/grant                                         | Reauthorize independently; never adopt first identity | `submission_replay_denied`                                                     |
+| T11 | Oversize count/body, unsupported media type, malformed JSON, or unknown field      | Reject before R2/D1 mutation                          | `submission_invalid` or `submission_too_large`                                 |
+| T12 | Client submits Decision, OwnerEvent, sharing, acceptance, or grant change          | Schema/authorization denial                           | `owner_authority_required`                                                     |
+| T13 | Producer labels model/harness as verified                                          | Schema denial or forced `claimed` display             | `producer_identity_invalid`                                                    |
+| T14 | Producer replaces another client's record or changes history                       | Reject; require own same-type supersession            | `supersession_not_allowed`                                                     |
+| T15 | Altered packet/submission digest                                                   | Reject before use                                     | `integrity_mismatch`                                                           |
+| T16 | Citation has missing object, mismatched byte range/hash, or historical object loss | Reject packet/restore; do not weaken citation         | `evidence_unavailable`                                                         |
+| T17 | Prompt injection in evidence, filename, frontmatter, Artifact, or Handoff          | Preserve as inert data; no authority/tool expansion   | `content_policy_denied` when bounds are crossed                                |
+| T18 | Submitted external URI targets file, localhost, metadata, or unsafe scheme         | Schema denial; never fetch even valid HTTPS           | `external_reference_invalid`                                                   |
+| T19 | Projection is re-ingested as independent source or target changed since preview    | Exclude loop; fail stale write                        | `projection_origin_loop` or `projection_target_changed`                        |
+| T20 | `approved` section depends on missing or Unvetted object                           | Fail before snapshot publication/import               | `snapshot_dependency_missing`                                                  |
+| T21 | Attempted Unvetted-only snapshot                                                   | Reject selection                                      | `snapshot_selection_invalid`                                                   |
+| T22 | Older reader lacks approved/quarantine capability                                  | Fail before staging; name capability                  | `snapshot_capability_unsupported`                                              |
+| T23 | Restore tries to share, resume proposal, activate Skill, or recreate grant         | Force quarantine/disabled state or fail               | `restore_authority_forbidden`                                                  |
+| T24 | Simultaneous Project lead claims                                                   | Exactly one holder; loser receives a stable conflict  | `lead_lease_conflict`                                                          |
+| T25 | Expired, revoked, or stale-fence lead checkpoints                                  | Deny before insert                                    | `lead_lease_invalid`                                                           |
+| T26 | Checkpoint forks the current predecessor                                           | Preserve the winner and linear chain                  | `continuity_point_conflict`                                                    |
+| T27 | Checkpoint names cross-Project Decision/Artifact or missing citation               | Deny without partial point/receipt                    | `project_reference_invalid`, `artifact_not_visible`, or `evidence_unavailable` |
+| T24 | Duplicate portable ID with non-identical restored bytes                            | Fail collision review; never merge                    | `portable_identity_collision`                                                  |
+| T25 | Token passthrough, wrong audience, or external app role claim                      | Reject before application authorization               | `authorization_context_invalid`                                                |
+| T26 | Rate, cursor, or pagination abuse                                                  | Bounded response and redacted denial                  | `rate_limited` or `cursor_invalid`                                             |
 
 ## Provenance contract and W3C PROV mapping
 
@@ -364,6 +389,9 @@ bundle metadata without changing stored edge semantics.
 - MCP authorization remains audience-bound OAuth with Protected Resource
   Metadata, exact per-client consent, short-lived access, and authoritative D1
   policy checks. Token passthrough is forbidden.
+- Lead-continuity clients discover
+  `owd://collaboration/lead-continuity-capabilities/v1`; clients that do not
+  understand it continue using the unchanged legacy profile and tools.
 
 ### A2A 1.0
 
@@ -417,7 +445,8 @@ count, evidence-object count, logical bytes, and newly stored bytes.
 
 ### Approved closure
 
-1. Start from selected accepted Decisions, accepted Handoffs/Reviews, active and
+1. Start from selected accepted Decisions, accepted Handoffs/Reviews,
+   acknowledged Continuity Points, active and
    historical Project/Work Item versions needed to interpret them, and their
    authoritative owner events.
 2. Traverse packet, participant, attempt, artifact, citation, evidence,
@@ -458,10 +487,164 @@ protocol storage, sessions, passkeys, pairing secrets, vault credentials, live
 agent grants, recovery private keys, harness conversations/context, provider
 credentials, and runtime caches. ParticipantRefs and historical grant IDs may
 remain inert provenance; they are never reconstructed as authorization rows.
+Lead leases and checkpoint receipts are likewise permanently excluded.
+Continuity Point bodies retain only historical claimed lead identity and fence
+provenance with both authority flags fixed to false.
+
+## R2 hands-off lead operation
+
+R2 is an additive operation ledger alongside the existing collaboration
+ledger. It does not change an existing record discriminator or grant a harness
+new authority.
+
+| Format                     | Durable meaning                                                                                                                               |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `owd-project-policy-v1`    | Conservative Project-version policy ceiling: eight actors, 64 bundles, 16 events per bundle, 256 KiB per bundle, and 4 MiB per Run            |
+| `owd-run-v1`               | One research or coding execution boundary pinned to an exact Work Item, Work Packet, and standing policy                                      |
+| `owd-actor-v1`             | A short-lived claimed identity inside one Run; it is not an OAuth client, grant, credential, lease, or verified provider identity             |
+| `owd-event-bundle-v1`      | Bounded `run-shared-unvetted` provisional result, review request, or review result                                                            |
+| `owd-project-exception-v1` | Explicit blocking evidence for privileged requests, exhausted budgets, evidence conflicts, actor-scope denial, or review-independence failure |
+| `owd-run-context-v1`       | Provider-neutral portable view of one exact Run, with both authority flags fixed to false                                                     |
+
+The generic MCP surface is `create_work_item`, `start_run`, `register_actor`,
+`get_run_context`, `submit_bundle`, `complete_work_item`, and
+`list_project_exceptions`. Every call still requires the exact authorized
+Project lead. Mutations additionally require the current lead lease ID and
+fencing token. The D1 receipt carries a commit-time proof that the exact grant,
+source grant, vault, Project, lease holder, expiry, and fence remain live; a
+zero-row guarded projection cannot commit a success receipt.
+
+Actor scopes only narrow work inside that authority: `run.context.read`,
+`run.bundle.submit`, and `run.review.submit`. They never widen the Project,
+Knowledge Space, vault, folder, protected-path, or owner boundary. Review must
+be explicitly routed to a different active actor, and only that routed actor
+may submit the result. Completion requires at least three claimed actors, a
+routed independent passing review, a fresh live Continuity Point for the Work
+Item against the Run's exact pinned Work Packet, and no blocking Exception. A
+newer packet does not silently retarget an active Run. `start_run` only selects
+an accepted, non-restored packet; quarantined or restored packet bodies can
+never seed live Run authority.
+
+Requests for authority expansion, destructive action, or access below the
+exact `.git`, `.owdignore`, or `.obsidian` protected roots are recorded and not
+executed. Conflicting claim hashes are preserved and block completion; OWD does
+not choose a winner. No EventBundle contains a raw transcript, hidden
+reasoning, terminal history, credential, OAuth state, retry loop, or harness
+runtime state.
+
+All five durable R2 record formats are optional Unvetted snapshot records.
+They are never Approved roots. Restore verifies their canonical immutable
+bodies and inserts only `project_operation_records` rows with
+`restore_state = 'quarantined'`; it creates no policy, Run, Actor, bundle,
+Exception, receipt, grant, lease, credential, or OAuth projection. A later
+live operation therefore requires fresh ordinary authorization and can never
+resume restored actor authority.
+
+Capability discovery is additive at
+`owd://collaboration/lead-operation-capabilities/v1`. The existing
+`owd-collaboration-capabilities-v1` and lead-continuity resource are unchanged,
+so current R1 and older clients continue using their existing tools. The
+Hermes resource at `owd://adapters/hermes/hands-off/v1` is inert, script-free
+sequencing guidance over the same generic services.
+
+## R3 elastic Run and Orca contracts
+
+R3 is negotiated additively through
+`owd-lead-operation-capabilities-v2` (schema version 2). Clients that only
+advertise `owd-lead-operation-capabilities-v1` retain the R2 seven-tool
+surface and R2 limits. A client must opt into the elastic profile; an R2 Run
+never silently changes capacity or response shape.
+
+The frozen elastic profile is:
+
+| Bound                             |  R3 ceiling |
+| --------------------------------- | ----------: |
+| Active actors per Run             |          32 |
+| Actor records per Run             |          64 |
+| Actor registrations per batch     |          16 |
+| EventBundle submissions per batch |           8 |
+| Delta records per page            |         100 |
+| Actor metadata                    | 8 KiB UTF-8 |
+| Aggregate observation             | 4 KiB UTF-8 |
+
+`register_actors_batch` and `submit_bundles_batch` require one exact Project,
+Run, Work Item, lead lease, fencing token, and idempotency envelope. Duplicate
+IDs inside a batch are invalid. An exact retry returns the original receipt
+with `replayed: true`; reusing the same idempotency key with a different
+canonical payload fails with `idempotency_conflict`. Capacity exhaustion is a
+bounded `backpressure`/`retryable` response with a stable error code and
+retry-after metadata. Scheduling, supervision, retry timing, and concurrency
+remain execution-harness responsibilities.
+
+`get_run_context` accepts the existing `snapshot` mode (or no mode) for old
+clients. R3 `delta` mode requires a cursor-bound request and an optional limit
+up to 100. Each `owd-run-delta-v1` record carries one positive, monotonically
+increasing Run sequence, exact Project/Run IDs, record type, record ID, and
+retention metadata. Pages are stable in sequence order; a non-null cursor is
+required while more records remain. Cursors are opaque, bounded, expiring,
+and reject cross-Project, cross-Run, altered, or replayed scope.
+
+The R2 `register_actor` and `submit_bundle` mutations remain unchanged for R2
+Runs but fail closed on an opt-in elastic Run. This prevents an old mutation
+path from bypassing R3 actor slots, delta evidence, or budget accounting; R3
+clients use the bounded batch tools. The legacy snapshot read and generic
+completion path remain available for the same Run.
+
+`owd-actor-recovery-v1` records abandoned or expired actors and a distinct
+replacement. Replacement scopes are a subset of the predecessor scopes and
+the old actor remains expired/revoked. No recovery path revives a predecessor,
+restores a grant or lease, or changes the Project/vault/folder boundary.
+
+`owd-run-budget-v1` and `owd-budget-entry-v1` store harness-reported logical
+units and cost microunits. OWD records accepted entries durably and raises a
+blocking `budget-exhausted` Project Exception at either limit; it does not
+price provider usage, run a meter, or own scheduling. Immutable budget-version
+rows prove each conditional accounting advance without making an older entry
+reference a mutable parent key. `owd-run-observation-v1`
+is aggregate and privacy-safe: actor counts, bundle/delta counts, retries,
+rejections, bounded p50/p95 latency, and measurement time only. Raw
+transcripts, hidden reasoning, terminal history, credentials, OAuth state,
+provider runtime, and production/customer logs are forbidden.
+
+Every new R3 record is append-only, content-addressed where a body exists, and
+carries `retentionTier` (`hot`, `warm`, `cold`, or `quarantine`) plus a bounded
+`retainUntil`. Cleanup is delayed, limited to 64 records per pass, and
+reference-aware. Volume cleanup applies only to expired deltas, budget entries,
+observations, Orca projections, and quarantined records after the Run closes;
+it refuses records referenced by a pending/ready snapshot, staged restore, or
+open/blocking Exception. Snapshot/export and quarantine restore include these
+records as inert metadata; no actor, grant, lease, credential, OAuth state,
+receipt, or live authority is restored.
+
+The existing provider-neutral Continuity Point export remains two files for
+R1/R2 Projects. When R3 records exist it additively includes
+`elastic-records.json`, a bounded canonical descriptor/body manifest with
+content hashes and portable IDs but no D1 row keys, R2 object keys, grants,
+leases, credentials, or runtime state.
+
+The `owd-orca-projection-v1` contract is an inert adapter. It accepts only
+bounded optional `worktreeRef`, `branchRef`, `commitSha`, `pullRequestRef`,
+`sessionRef`, and the literal provider label `orca`, all with authority flags
+false. These values are evidence attached to a generic Run/Actor, never OWD
+identity or authorization. OWD neither invokes Orca nor imports its terminal,
+conversation, scheduling, worktree, branch, PR, or session state. If Orca is
+unavailable, a provider-neutral lead with fresh authorization resumes from the
+Run snapshot/delta and durable exceptions.
+
+### R3 contract gate and acceptance scope
+
+The local gate must exercise solo parity and synthetic 20-plus-actor load,
+batch bounds, stable cursor pagination, exact replay versus payload conflict,
+backpressure/retry metadata, budget exhaustion, abandoned/expired replacement,
+cross-Run/Project leakage, revocation/fence races, malformed/oversize metadata,
+restored-authority denial, and old-client compatibility. It must also prove
+that losing Orca state does not prevent non-Orca resumption. A live disposable
+exercise is human-authorized and remains outside the local automated build
+until explicitly run; this document makes no live acceptance claim.
 
 ## Cloudflare storage implications
 
-Official platform documentation was reviewed on 2026-07-23. The relevant
+Official platform documentation was reviewed on 2026-08-05. The relevant
 current constraints are D1's two-MB row/string/BLOB limit, 100 bound parameters
 per query, single-database serialization, Worker CPU/memory limits, and R2's
 large immutable-object capacity with 1,024-byte keys and 8,192-byte custom
@@ -482,15 +665,20 @@ Consequences for the collaboration implementation:
 
 ## Compatibility fixtures and validation
 
-| Fixture                                               | Proves                                                                                             |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `owd-work-packet-v1.json`                             | Exact source/evidence linkage, bounds, JSON round trip, RFC 8785/SHA-256 integrity                 |
-| `owd-collaboration-submission-v1.json`                | One-record append envelope, authorization-bound identity, idempotency, integrity                   |
-| `owd-collaboration-ledger-v1.json`                    | Two independent participants, shared Handoff, Review, owner Decision, Project-local W3C PROV graph |
-| `owd-collaboration-capabilities-v1.json`              | Exact record/format/MCP/snapshot version discovery                                                 |
-| `owd-snapshot-intelligence-none-v1.json`              | Vault-only selection with no intelligence capability                                               |
-| `owd-snapshot-intelligence-approved-v1.json`          | Approved root plus unaccepted evidence-only closure                                                |
-| `owd-snapshot-intelligence-approved-unvetted-v1.json` | Approved baseline plus quarantined Unvetted record and evidence                                    |
+| Fixture                                               | Proves                                                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `owd-work-packet-v1.json`                             | Exact source/evidence linkage, bounds, JSON round trip, RFC 8785/SHA-256 integrity                  |
+| `owd-collaboration-submission-v1.json`                | One-record append envelope, authorization-bound identity, idempotency, integrity                    |
+| `owd-collaboration-ledger-v1.json`                    | Two independent participants, shared Handoff, Review, owner Decision, Project-local W3C PROV graph  |
+| `owd-collaboration-capabilities-v1.json`              | Exact record/format/MCP/snapshot version discovery                                                  |
+| `owd-continuity-point-v1.json`                        | Accepted Decisions, Artifacts, exact evidence, bounded state, integrity, and no live authority      |
+| `owd-lead-continuity-capabilities-v1.json`            | Separate additive MCP/scope/portable-format negotiation without breaking legacy clients             |
+| `owd-project-policy-v1.json`                          | Exact standing policy ceilings, protected roots, exception-only actions, and no restored authority  |
+| `owd-event-bundle-v1.json`                            | Bounded Run-shared provisional claims with exact Run/Actor identity                                 |
+| `owd-lead-operation-capabilities-v1.json`             | Additive R2 formats and seven generic MCP tools without changing current-client capability profiles |
+| `owd-snapshot-intelligence-none-v1.json`              | Vault-only selection with no intelligence capability                                                |
+| `owd-snapshot-intelligence-approved-v1.json`          | Approved root plus unaccepted evidence-only closure                                                 |
+| `owd-snapshot-intelligence-approved-unvetted-v1.json` | Approved baseline plus quarantined Unvetted record and evidence                                     |
 
 The current contract tests validate structural and semantic round trips,
 canonical hashes and strings, immutable predecessor chains, exact packet and

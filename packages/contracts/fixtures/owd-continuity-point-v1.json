@@ -1,0 +1,142 @@
+{
+  "acceptedDecisions": [
+    {
+      "decision": {
+        "createdAt": 1784820100,
+        "decisionId": "66000000-0000-4000-8000-000000000001",
+        "inputRecords": [
+          {
+            "contentSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "ownerDisposition": "accepted",
+            "recordId": "62000000-0000-4000-8000-000000000001",
+            "recordType": "handoff",
+            "schemaVersion": 1
+          }
+        ],
+        "ownerAuthored": true,
+        "projectId": "20000000-0000-4000-8000-000000000001",
+        "rationale": "Accept the reviewed contract direction for the replacement lead.",
+        "recordType": "decision",
+        "resolution": "accepted",
+        "schemaVersion": 1,
+        "supersedesDecisionId": null,
+        "workItemId": "30000000-0000-4000-8000-000000000001"
+      },
+      "recordSha256": "7777777777777777777777777777777777777777777777777777777777777777"
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact": {
+        "artifactId": "61000000-0000-4000-8000-000000000001",
+        "attemptId": "60000000-0000-4000-8000-000000000001",
+        "content": {
+          "byteLength": 128,
+          "contentSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "kind": "stored-object",
+          "mediaType": "text/markdown",
+          "portableObjectId": "80000000-0000-4000-8000-000000000001"
+        },
+        "label": "Contract review",
+        "projectId": "20000000-0000-4000-8000-000000000001",
+        "recordType": "artifact",
+        "schemaVersion": 1,
+        "supersedesRecordId": null,
+        "workItemId": "30000000-0000-4000-8000-000000000001",
+        "workPacketId": "50000000-0000-4000-8000-000000000001"
+      },
+      "disposition": "accepted",
+      "recordSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "visibility": "owner-only"
+    }
+  ],
+  "authority": {
+    "liveAuthorityIncluded": false,
+    "restoredAuthorityAllowed": false
+  },
+  "blockers": ["No production backup fixture is authorized for R1."],
+  "citedEvidence": [
+    {
+      "citation": {
+        "citationId": "52000000-0000-4000-8000-000000000001",
+        "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+        "excerptByteRange": { "endExclusive": 20, "start": 0 },
+        "generationId": "53000000-0000-4000-8000-000000000001",
+        "path": "Projects/Portable Intelligence/Brief.md",
+        "sourceByteLength": 32,
+        "sourceContentSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "stateLayer": "materialized-library",
+        "vaultId": "54000000-0000-4000-8000-000000000001"
+      },
+      "evidence": {
+        "byteLength": 20,
+        "contentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "evidenceObjectId": "51000000-0000-4000-8000-000000000001",
+        "mediaType": "text/markdown"
+      }
+    }
+  ],
+  "completedWork": [
+    "Validated the collaboration contract and portable evidence closure."
+  ],
+  "continuityPointId": "67000000-0000-4000-8000-000000000001",
+  "context": {
+    "createdAt": 1784818800,
+    "expiresAt": 1784905200,
+    "knowledgeSpaceVersionId": "10000000-0000-4000-8000-000000000002",
+    "workPacketId": "50000000-0000-4000-8000-000000000001",
+    "workPacketSha256": "9999999999999999999999999999999999999999999999999999999999999999"
+  },
+  "format": "owd-continuity-point-v1",
+  "integrity": {
+    "algorithm": "sha-256-jcs-rfc8785",
+    "digest": "574211207b5d771756773981f2745238790eadfb39fd6984b1770e5ea6749b28",
+    "scope": "object-with-integrity-digest-omitted"
+  },
+  "knownRejectedApproaches": [
+    "Restoring a lease, access token, or grant from backup."
+  ],
+  "nextAction": "Authorize a replacement lead and continue the bounded review.",
+  "objective": {
+    "project": "Design and validate the collaboration walking skeleton before migrations.",
+    "workItem": {
+      "constraints": ["Use only the cited disposable-vault evidence."],
+      "definitionOfDone": ["Return one evidence-linked handoff."],
+      "objective": "Prepare a portable collaboration contract review.",
+      "requestedOutput": "A concise Markdown handoff with risks and next actions."
+    }
+  },
+  "openWork": [
+    "Run the replacement exercise against a disposable deployed Worker."
+  ],
+  "previousContinuityPointId": null,
+  "project": {
+    "projectId": "20000000-0000-4000-8000-000000000001",
+    "projectVersionId": "20000000-0000-4000-8000-000000000002",
+    "projectVersionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "provenance": {
+    "acknowledgedAt": 1784820200,
+    "leadFencingToken": 7,
+    "leadIdentity": {
+      "claimedHarness": {
+        "assertedBy": "client",
+        "name": "Hermes",
+        "version": "1.0",
+        "verification": "claimed"
+      },
+      "claimedModel": null,
+      "displayName": "Synthetic lead"
+    },
+    "producerVerification": "authorization-bound-client"
+  },
+  "recordType": "continuity-point",
+  "risks": ["The preserved packet has a finite validity window."],
+  "schemaVersion": 1,
+  "workItem": {
+    "status": "open",
+    "workItemId": "30000000-0000-4000-8000-000000000001",
+    "workItemVersionId": "30000000-0000-4000-8000-000000000002",
+    "workItemVersionSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}

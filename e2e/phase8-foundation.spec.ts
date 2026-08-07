@@ -366,7 +366,7 @@ async function mockFoundationWithSnapshots(
         releaseId: "e2e-release-id",
         releaseTag: "e2e-release",
         service: "owd-platform",
-        version: "1.0.0-alpha.3",
+        version: "1.0.0-alpha.4",
       });
     } else if (url.pathname === "/api/setup/status") {
       await json({
@@ -497,6 +497,36 @@ async function mockFoundationWithSnapshots(
       });
     } else if (url.pathname === "/api/collaboration/connections") {
       await json({ connections: [] });
+    } else if (url.pathname === "/api/collaboration/lead-operations") {
+      await json({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        format: "owd-lead-operation-overview-v1",
+        projects: [],
+        schemaVersion: 1,
+      });
+    } else if (url.pathname === "/api/collaboration/elastic-operations") {
+      await json({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        format: "owd-elastic-operation-overview-v1",
+        runs: [],
+        schemaVersion: 1,
+      });
+    } else if (url.pathname === "/api/collaboration/policy-operations") {
+      await json({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        format: "owd-operational-overview-v1",
+        projects: [],
+        schemaVersion: 1,
+      });
     } else if (url.pathname.endsWith("/materialization")) {
       await json({
         generation: {
@@ -1040,7 +1070,7 @@ test("captures a managed invitation fragment into the fast claim screen", async 
         releaseId: "managed-e2e-release-id",
         releaseTag: "managed-e2e-release",
         service: "owd-platform",
-        version: "1.0.0-alpha.3",
+        version: "1.0.0-alpha.4",
       }),
       contentType: "application/json",
     }),
