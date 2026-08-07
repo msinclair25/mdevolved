@@ -1,6 +1,6 @@
 {
   "name": "@owd/client-packs",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "private": true,
   "description": "Thin, protocol-neutral compatibility profiles for OWD clients and vault runtimes.",
   "license": "Apache-2.0",

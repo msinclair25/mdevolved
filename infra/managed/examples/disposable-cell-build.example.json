@@ -4,7 +4,7 @@
   "cellRef": "synthetic-cell-01",
   "purpose": "disposable-test",
   "release": {
-    "communityVersion": "1.0.0-alpha.4",
+    "communityVersion": "1.0.0-alpha.5",
     "gitCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "compatibilityDate": "2026-07-26",
     "migrationLedgerSha256": "6f0db703672f9c8b17304b423adbc5d900a9b408f5dad24179d6d87753c5fbef",
