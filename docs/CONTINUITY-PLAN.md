@@ -1,6 +1,6 @@
 # OWD continuity-first product plan
 
-**Status:** R4 policy-autopilot and operational-continuity implementation and local automated acceptance complete; Community `1.0.0-alpha.5` is the forward-only release for the authorized persistent test cell, while live provider-agent acceptance remains a separate human gate
+**Status:** R4 policy-autopilot and operational-continuity implementation and local automated acceptance complete; Community `1.0.0-alpha.6` is the forward-only release for the authorized persistent test cell, while live provider-agent acceptance remains a separate human gate
 
 **Date:** 2026-08-06
 
@@ -505,7 +505,9 @@ Travel bookmark and the prior Worker version were recorded. Forward-only,
 trigger-free migrations `0030` through `0033` then applied in order with no
 pending migration, the existing Community Worker and owner UI first deployed
 as `1.0.0-alpha.4`, then advanced without schema changes to `1.0.0-alpha.5` so
-Community and OWD Sync tag namespaces are independently validated. Its
+Community and OWD Sync tag namespaces are independently validated, and to
+`1.0.0-alpha.6` with the patched Undici 7.x development-tooling dependency.
+Its
 scheduled bounded trigger was installed, the public
 health response reported the expected version, and D1 `quick_check` returned
 `ok`. No destructive down-migration or automatic rollback was used.
