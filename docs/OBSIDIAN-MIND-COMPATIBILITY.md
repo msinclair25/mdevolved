@@ -1,7 +1,8 @@
 # Obsidian Mind compatibility profile
 
-OWD remains one client-neutral MCP `2025-11-25` Streamable HTTP server with
-OAuth discovery, PKCE, resource indicators, standard Tools, Resources, and
+OWD remains one client-neutral MCP Streamable HTTP server implementing current
+`2026-07-28` requests and stateless `2025-11-25` compatibility, with OAuth
+discovery, S256 PKCE, resource indicators, standard Tools, Resources, and
 Prompts. Obsidian Mind support is a thin profile over that server—not a second
 endpoint, alternate authorization flow, tool-name translation layer, or
 forked Project model.
@@ -133,10 +134,13 @@ This profile does not:
 - duplicate every record into OWD and Mind; or
 - claim that advisory writer rules are a filesystem lock.
 
-The MCP transport and authorization requirements remain those in the
-[MCP transport specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+The current transport and authorization requirements remain those in the
+[MCP 2026-07-28 transport specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports)
 and
-[MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
+[MCP 2026-07-28 authorization specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization).
+OWD's legacy compatibility path remains bounded to the
+[MCP 2025-11-25 transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+and authorization baseline documented in [MCP compatibility](./MCP-COMPATIBILITY.md).
 
 ## Obsidian Mind 8.3 memory lifecycle
 

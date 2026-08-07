@@ -146,13 +146,17 @@ to finish setup.
 
 ## Standards-based agent compatibility
 
-OWD exposes one remote MCP server using Streamable HTTP and OAuth 2.1 with
-PKCE. OWD-specific behavior is expressed through ordinary MCP Tools,
-Resources, and Prompts—not a custom transport or a client-side protocol fork.
+OWD exposes one authenticated remote MCP server using Streamable HTTP and
+OAuth 2.1 with S256 PKCE. It implements the current MCP `2026-07-28` protocol
+and stateless `2025-11-25` compatibility. OWD-specific behavior is expressed
+through ordinary MCP Tools, Resources, and Prompts—not a custom transport or a
+client-side protocol fork. See the frozen [MCP compatibility
+matrix](docs/MCP-COMPATIBILITY.md).
 
-The portable baseline is designed for compliant remote MCP clients. Current
-production validation covers a generic MCP client, MCP Inspector, Codex,
-Claude Code, and Grok Build.
+The portable baseline is designed for compliant remote MCP clients. This is a
+protocol-compatibility claim, not certification of every client. A named
+client and version is described as independently validated only when a dated
+acceptance receipt for that exact combination exists.
 
 - **Obsidian Mind** receives a versioned compatibility profile, MCP Resource,
   setup Prompt, and script-free skill while preserving its native note layout
