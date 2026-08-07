@@ -1,7 +1,7 @@
 # OWD alpha status
 
 **Updated:** August 6, 2026<br />
-**OWD Platform:** `1.0.0-alpha.5`<br />
+**OWD Platform:** `1.0.0-alpha.6`<br />
 **OWD Sync:** `0.1.6`
 
 OWD Platform is now available as an Apache-2.0 Community alpha. The optional

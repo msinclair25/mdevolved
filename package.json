@@ -1,6 +1,6 @@
 {
   "name": "owd-platform",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "private": true,
   "description": "Owner-controlled continuity for Obsidian and independent AI agents, with cited handoffs, Decisions, and encrypted recovery.",
   "license": "Apache-2.0",
