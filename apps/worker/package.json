@@ -4,18 +4,18 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@cloudflare/workers-oauth-provider": "0.8.2",
-    "@modelcontextprotocol/sdk": "1.29.0",
+    "@cloudflare/workers-oauth-provider": "0.8.3",
+    "@modelcontextprotocol/sdk": "1.30.0",
     "@owd/client-packs": "workspace:*",
     "@owd/contracts": "workspace:*",
     "@owd/yaos-core": "workspace:*",
     "@simplewebauthn/server": "13.3.2",
     "age-encryption": "0.3.0",
-    "agents": "0.17.4",
-    "hono": "4.12.34",
-    "partyserver": "0.3.2",
-    "y-partyserver": "2.1.2",
-    "yjs": "13.6.20",
+    "agents": "0.20.1",
+    "hono": "4.13.0",
+    "partyserver": "0.5.10",
+    "y-partyserver": "2.2.0",
+    "yjs": "13.6.31",
     "zod": "4.4.3"
   }
 }
