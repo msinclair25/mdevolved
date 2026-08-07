@@ -34,7 +34,7 @@ const migrationEntries = await Promise.all(
   })),
 );
 const expectations = {
-  communityVersion: "1.0.0-alpha.4",
+  communityVersion: "1.0.0-alpha.5",
   compatibilityDate: "2026-07-26",
   migrationFiles,
   migrationLedgerSha256: hashMigrationLedger(migrationEntries),

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { unstable_splitSqlQuery } from "wrangler";
 
-const CORE_VERSION = "1.0.0-alpha.4";
+const CORE_VERSION = "1.0.0-alpha.5";
 const corePackages = [
   "package.json",
   "apps/web/package.json",
@@ -32,7 +32,7 @@ if (
   rootPackage.scripts?.["deploy:manual"] !== "pnpm deploy" ||
   rootPackage.scripts?.build !== "pnpm package:plugin && pnpm build:web" ||
   rootPackage.scripts?.["release:check"] !==
-    "pnpm package:plugin && node scripts/check-release-contract.mjs && node scripts/check-release-regressions.mjs"
+    "node --test scripts/plugin-release-tag-policy.test.mjs && pnpm package:plugin && node scripts/check-release-contract.mjs && node scripts/check-release-regressions.mjs"
 ) {
   throw new Error(
     "Release scripts must rebuild the exact web/plugin source, apply every D1 migration, and only then deploy the Worker.",
@@ -253,11 +253,12 @@ if (
   );
 }
 if (
-  !pluginPackager.includes('releaseRefType === "tag"') ||
-  !pluginPackager.includes("releaseTag !== `owd-sync-v${manifest.version}`")
+  !pluginPackager.includes("assertPluginPackagingRef({") ||
+  !pluginPackager.includes("coreVersion: corePackage.version") ||
+  !pluginPackager.includes("manifestVersion: manifest.version")
 ) {
   throw new Error(
-    "OWD Sync packaging must validate versions for tag refs without treating pull-request refs as release tags.",
+    "OWD Sync packaging must apply the tested namespace-aware tag policy.",
   );
 }
 

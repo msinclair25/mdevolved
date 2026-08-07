@@ -1,7 +1,7 @@
 # Release compatibility
 
 This page records the explicit compatibility boundary for OWD Platform
-`1.0.0-alpha.4` and OWD Sync `0.1.6`. A newer upstream release is not supported
+`1.0.0-alpha.5` and OWD Sync `0.1.6`. A newer upstream release is not supported
 merely because it exists.
 
 ## Supported contracts

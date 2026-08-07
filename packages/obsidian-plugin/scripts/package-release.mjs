@@ -1,28 +1,33 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { zipSync } from "fflate";
+import { assertPluginPackagingRef } from "./release-tag-policy.mjs";
 
 const releaseDirectory = new URL("../release/", import.meta.url);
 const manifest = JSON.parse(
   await readFile(new URL("../manifest.json", import.meta.url), "utf8"),
 );
+const corePackage = JSON.parse(
+  await readFile(new URL("../../../package.json", import.meta.url), "utf8"),
+);
 if (
   typeof manifest !== "object" ||
   manifest === null ||
-  typeof manifest.version !== "string"
+  typeof manifest.version !== "string" ||
+  typeof corePackage !== "object" ||
+  corePackage === null ||
+  typeof corePackage.version !== "string"
 ) {
-  throw new Error("Plugin manifest version is invalid.");
+  throw new Error("Core or plugin release version is invalid.");
 }
 const releaseTag = process.env.GITHUB_REF_NAME;
 const releaseRefType = process.env.GITHUB_REF_TYPE;
-if (
-  releaseRefType === "tag" &&
-  releaseTag !== `owd-sync-v${manifest.version}`
-) {
-  throw new Error(
-    `Release tag ${releaseTag} does not match plugin version owd-sync-v${manifest.version}.`,
-  );
-}
+assertPluginPackagingRef({
+  coreVersion: corePackage.version,
+  manifestVersion: manifest.version,
+  refName: releaseTag,
+  refType: releaseRefType,
+});
 
 const releaseFiles = [
   "LICENSE",

@@ -30,7 +30,7 @@ not private deployment schedules or service commitments.
 
 - Complete separately authorized live disposable durability exercises across
   more compliant MCP clients and Cloudflare cells
-- Observe the alpha.4 Community deployment and exercise separately authorized
+- Observe the alpha.5 Community deployment and exercise separately authorized
   application rollback evidence without destructive down-migrations
 - Submit OWD Sync to Obsidian Community Plugins and validate its updater path
 - Expand recovery scale and performance envelopes beyond the bounded R4
