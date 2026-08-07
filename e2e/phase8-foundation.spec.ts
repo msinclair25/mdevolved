@@ -497,6 +497,36 @@ async function mockFoundationWithSnapshots(
       });
     } else if (url.pathname === "/api/collaboration/connections") {
       await json({ connections: [] });
+    } else if (url.pathname === "/api/collaboration/lead-operations") {
+      await json({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        format: "owd-lead-operation-overview-v1",
+        projects: [],
+        schemaVersion: 1,
+      });
+    } else if (url.pathname === "/api/collaboration/elastic-operations") {
+      await json({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        format: "owd-elastic-operation-overview-v1",
+        runs: [],
+        schemaVersion: 1,
+      });
+    } else if (url.pathname === "/api/collaboration/policy-operations") {
+      await json({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        format: "owd-operational-overview-v1",
+        projects: [],
+        schemaVersion: 1,
+      });
     } else if (url.pathname.endsWith("/materialization")) {
       await json({
         generation: {

@@ -408,6 +408,11 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
     }
   }, [activeVaults, selectedVaultId]);
 
+  useEffect(() => {
+    if (createdProject === null) return;
+    createdProjectReceiptRef.current?.focus({ preventScroll: true });
+  }, [createdProject]);
+
   async function refresh(): Promise<void> {
     const generation = refreshGeneration.current + 1;
     refreshGeneration.current = generation;
@@ -626,9 +631,6 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
     setWorkObjective("");
     setRequestedOutput("");
     setSourcePath("");
-    window.requestAnimationFrame(() =>
-      createdProjectReceiptRef.current?.focus(),
-    );
   }
 
   function viewCreatedProject(projectId: string): void {
