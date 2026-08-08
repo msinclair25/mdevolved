@@ -1,8 +1,8 @@
 # OWD alpha status
 
-**Updated:** August 6, 2026<br />
-**OWD Platform:** `1.0.0-alpha.6`<br />
-**OWD Sync:** `0.1.6`
+**Updated:** August 8, 2026<br />
+**OWD Platform:** `1.0.0-alpha.7`<br />
+**OWD Sync:** `0.1.7`
 
 OWD Platform is now available as an Apache-2.0 Community alpha. The optional
 managed service remains invitation-only. Alpha means the contracts and safety
@@ -16,7 +16,7 @@ durability evidence is still being accumulated.
 | Community source          | Public Apache-2.0 alpha                                                  |
 | Community self-hosting    | Available for technical alpha use in the owner's Cloudflare account      |
 | Managed service           | Invitation-only alpha; one isolated data-plane cell per owner            |
-| OWD Sync                  | Public `0.1.6` alpha release and version-matched desktop installer       |
+| OWD Sync                  | Public `0.1.7` alpha release and version-matched desktop installer       |
 | Obsidian Community Plugin | Submission/listing pending                                               |
 | Public OWD Cloud accounts | Not generally available; billing and service commitments are future work |
 

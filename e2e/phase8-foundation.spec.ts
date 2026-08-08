@@ -207,7 +207,7 @@ function setupVaultReadiness(
     pendingProjectRequestCount: 0,
     pendingProjectRequests: [],
     pendingProjectReviewUrl: null,
-    pluginVersion: "0.1.6",
+    pluginVersion: "0.1.7",
     preparedProjectHandoff: null,
     syncConfirmed: true,
     verifiedSnapshot: false,
@@ -366,7 +366,7 @@ async function mockFoundationWithSnapshots(
         releaseId: "e2e-release-id",
         releaseTag: "e2e-release",
         service: "owd-platform",
-        version: "1.0.0-alpha.6",
+        version: "1.0.0-alpha.7",
       });
     } else if (url.pathname === "/api/setup/status") {
       await json({
@@ -947,12 +947,12 @@ test("installs the pinned plugin from one primary tester action", async ({
   await expect(page.getByText(/OWD cannot bypass it/u)).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Choose vault and install OWD Sync 0.1.6",
+      name: "Choose vault and install OWD Sync 0.1.7",
     }),
   ).toBeEnabled();
   await page
     .getByRole("button", {
-      name: "Choose vault and install OWD Sync 0.1.6",
+      name: "Choose vault and install OWD Sync 0.1.7",
     })
     .click();
   await expect(
@@ -994,11 +994,11 @@ test("installs the pinned plugin from one primary tester action", async ({
   ).toHaveAttribute("href", "obsidian://show-plugin?id=obsidian42-brat");
   await expect(
     page.getByRole("link", {
-      name: "Open the prefilled OWD Sync 0.1.6 form",
+      name: "Open the prefilled OWD Sync 0.1.7 form",
     }),
   ).toHaveAttribute(
     "href",
-    "obsidian://brat?plugin=msinclair25/owd-sync&version=0.1.6",
+    "obsidian://brat?plugin=msinclair25/owd-sync&version=0.1.7",
   );
   await expect(
     page.getByText(/not the final Community Plugins experience/u),
@@ -1033,7 +1033,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
   await openOperationalRegion(page, "vaults");
   await page
     .getByRole("button", {
-      name: "Choose vault and install OWD Sync 0.1.6",
+      name: "Choose vault and install OWD Sync 0.1.7",
     })
     .click();
   await expect(
@@ -1046,7 +1046,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
   ).toBeVisible();
   await expect(
     page.getByRole("link", {
-      name: "Open the prefilled OWD Sync 0.1.6 form",
+      name: "Open the prefilled OWD Sync 0.1.7 form",
     }),
   ).toBeVisible();
   await expect(
@@ -1070,7 +1070,7 @@ test("captures a managed invitation fragment into the fast claim screen", async 
         releaseId: "managed-e2e-release-id",
         releaseTag: "managed-e2e-release",
         service: "owd-platform",
-        version: "1.0.0-alpha.6",
+        version: "1.0.0-alpha.7",
       }),
       contentType: "application/json",
     }),
@@ -2637,12 +2637,12 @@ test("keeps a manual Project draft during an independent owner action", async ({
   ).not.toBeVisible();
   await expect(
     operationalRegion(page, "vaults").getByRole("link", {
-      name: "install or update OWD Sync 0.1.6",
+      name: "install or update OWD Sync 0.1.7",
     }),
   ).toHaveAttribute("href", "#owd-sync-installer");
   await operationalRegion(page, "vaults")
     .getByRole("button", {
-      name: "I see OWD Sync 0.1.6 — create request",
+      name: "I see OWD Sync 0.1.7 — create request",
     })
     .click();
 

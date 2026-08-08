@@ -28,10 +28,10 @@ repository, claim the resulting permanent URL, then start at step 2:
 2. In Obsidian, turn on Community plugins, then fully quit the application with
    **Obsidian → Quit Obsidian** or **⌘Q**. Closing a macOS window is not a
    quit.
-3. In **Vaults**, choose **Choose vault and install OWD Sync 0.1.6**. Select
+3. In **Vaults**, choose **Choose vault and install OWD Sync 0.1.7**. Select
    the exact synthetic vault root containing `.obsidian`, not `.obsidian`
    itself, and allow Chrome's write request.
-4. Reopen that exact vault and confirm OWD Sync `0.1.6` is enabled.
+4. Reopen that exact vault and confirm OWD Sync `0.1.7` is enabled.
 5. Return to OWD, create the private pairing request, and approve it from that
    exact open vault.
 6. Keep Obsidian open while OWD automatically publishes the current searchable

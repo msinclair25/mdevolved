@@ -179,7 +179,7 @@ async function installerDependencies(options?: {
         JSON.stringify({
           id: OWD_SYNC_PLUGIN_ID,
           name: "OWD Sync",
-          version: "0.1.6",
+          version: "0.1.7",
         }),
       ),
     ],
@@ -195,7 +195,7 @@ async function installerDependencies(options?: {
     ),
     format: OWD_SYNC_INSTALLER_FORMAT,
     pluginId: OWD_SYNC_PLUGIN_ID,
-    version: options?.manifestVersion ?? "0.1.6",
+    version: options?.manifestVersion ?? "0.1.7",
   };
 
   const fetcher: typeof fetch = async (input) => {
@@ -237,14 +237,14 @@ describe("OWD Sync direct vault installer", () => {
     expect(result).toEqual({
       enabledPluginCount: 3,
       vaultName: "Product vault",
-      version: "0.1.6",
+      version: "0.1.7",
     });
     expect(await plugin.readText("main.js")).toBe("console.log('OWD Sync');\n");
     expect(
       JSON.parse((await plugin.readText("manifest.json")) ?? "null"),
     ).toMatchObject({
       id: OWD_SYNC_PLUGIN_ID,
-      version: "0.1.6",
+      version: "0.1.7",
     });
     expect(
       JSON.parse((await obsidian.readText("community-plugins.json")) ?? "null"),

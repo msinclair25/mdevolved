@@ -327,7 +327,7 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
   });
 
   app.post("/vault/:vaultId/auth/ticket", async (context) => {
-    await enforcePairingRateLimit(context, "socket_ticket", 120);
+    await enforcePairingRateLimit(context, "socket_ticket", 10);
     const parsedVaultId = vaultIdSchema.safeParse(context.req.param("vaultId"));
     const credentialToken = readBearerToken(
       context.req.header("Authorization"),

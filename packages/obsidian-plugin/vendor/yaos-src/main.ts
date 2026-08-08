@@ -775,7 +775,12 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				const waitingForR2 =
 					!!this.settings.host &&
 					(!capabilityState || !capabilityState.attachments || !capabilityState.snapshots);
-				if (waitingForR2 && (this.capabilityUpdateService?.shouldRefreshCapabilities() ?? false)) {
+				const authRetryBlocked = this.vaultSync?.fatalAuthError ?? false;
+				if (
+					waitingForR2 &&
+					!authRetryBlocked &&
+					(this.capabilityUpdateService?.shouldRefreshCapabilities() ?? false)
+				) {
 					void this.refreshServerCapabilities("background-poll");
 				}
 			}, 3000);

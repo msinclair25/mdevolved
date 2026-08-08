@@ -30,7 +30,7 @@
 <p align="center">
   <a href="https://github.com/msinclair25/owd-platform/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/msinclair25/owd-platform/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-d7ff64.svg" /></a>
-  <a href="https://github.com/msinclair25/owd-sync/releases/tag/0.1.6"><img alt="OWD Sync 0.1.6" src="https://img.shields.io/badge/OWD%20Sync-0.1.6-90a5ff.svg" /></a>
+  <a href="https://github.com/msinclair25/owd-sync/releases/tag/0.1.7"><img alt="OWD Sync 0.1.7" src="https://img.shields.io/badge/OWD%20Sync-0.1.7-90a5ff.svg" /></a>
   <a href="docs/OBSIDIAN-MIND-COMPATIBILITY.md"><img alt="Obsidian Mind 8.3.1 profile" src="https://img.shields.io/badge/Obsidian%20Mind-8.3.1%20profile-90a5ff.svg" /></a>
   <a href="docs/EVE-COMPATIBILITY.md"><img alt="Eve.dev 0.29.4 profile" src="https://img.shields.io/badge/Eve.dev-0.29.4%20profile-90a5ff.svg" /></a>
   <a href="docs/ALBATROSS-COMPATIBILITY.md"><img alt="Albatross 2.0 profile" src="https://img.shields.io/badge/Albatross-2.0%20profile-90a5ff.svg" /></a>
@@ -360,7 +360,7 @@ easier while hardening Community deployment and upgrade behavior.
 
 - Use synthetic or disposable vaults; personal and production-vault adoption
   remains a later safety gate.
-- OWD Sync `0.1.6` is not yet in Obsidian Community Plugins. The OWD desktop
+- OWD Sync `0.1.7` is not yet in Obsidian Community Plugins. The OWD desktop
   installer is the primary alpha path; BRAT is a disclosed fallback.
 - Web mutation covers Markdown text and note creation. Rename, delete,
   attachment writes, and arbitrary `.obsidian` mutation are out of scope.

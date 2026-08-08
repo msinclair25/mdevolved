@@ -5,7 +5,7 @@ OWD Sync is the companion Obsidian plugin for
 vault you explicitly opened to an owner-controlled OWD deployment for sync,
 search, encrypted snapshots, and recovery.
 
-> **Invited family test:** OWD Sync `0.1.6` is available through OWD's
+> **Invited family test:** OWD Sync `0.1.7` is available through OWD's
 > temporary direct desktop installer because it is not yet listed in Obsidian
 > Community Plugins. The invited tester opens their private cell invitation;
 > the pre-provisioned OWD dashboard provides the version-matched installer.
@@ -19,10 +19,10 @@ search, encrypted snapshots, and recovery.
 3. Fully quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q**.
    Closing the macOS window is not enough.
 4. Open **Vault connections**, choose **Choose vault and install OWD Sync
-   0.1.6**, and select the intended vault root containing `.obsidian` in Chrome
+   0.1.7**, and select the intended vault root containing `.obsidian` in Chrome
    or Edge's native folder picker. Do not select `.obsidian` itself; choose
    **Allow** if the browser asks for write access.
-5. Reopen Obsidian and confirm the selected vault shows OWD Sync `0.1.6`
+5. Reopen Obsidian and confirm the selected vault shows OWD Sync `0.1.7`
    enabled. Stop if the version differs.
 
 The dashboard verifies the published release, writes only the OWD Sync files
@@ -54,7 +54,7 @@ request, run **OWD Sync: Pair this vault with OWD**, and paste it.
 ## Diagnostic package
 
 Download `owd-sync-<version>.zip` and `checksums.txt` from the matching
-[OWD Sync 0.1.6 GitHub Release](https://github.com/msinclair25/owd-sync/releases/tag/0.1.6).
+[OWD Sync 0.1.7 GitHub Release](https://github.com/msinclair25/owd-sync/releases/tag/0.1.7).
 Verify the checksum, then install the complete `owd-sync` directory as one
 version-matched unit. Do not mix `main.js`, `manifest.json`, or `styles.css`
 from different releases. If both direct install and BRAT are blocked, stop the

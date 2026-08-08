@@ -178,8 +178,8 @@
         "durableObject": { "$ref": "#/$defs/durableObject" },
         "rateLimits": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 3,
+          "minItems": 5,
+          "maxItems": 5,
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/rateLimit" }
         },
@@ -303,7 +303,9 @@
           "enum": [
             "OAUTH_REGISTRATION_ROUTE_LIMITER",
             "OAUTH_REGISTRATION_CLIENT_LIMITER",
-            "OAUTH_TOKEN_CLIENT_LIMITER"
+            "OAUTH_TOKEN_CLIENT_LIMITER",
+            "SOCKET_TICKET_IP_LIMITER",
+            "SOCKET_TICKET_VAULT_LIMITER"
           ]
         },
         "namespaceId": {

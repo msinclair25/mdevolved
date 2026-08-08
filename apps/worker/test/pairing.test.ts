@@ -121,6 +121,7 @@ async function exchangeGrant(
   grant: PairingGrantResponse,
   vaultName = "Synthetic disposable vault",
   origin = ORIGIN,
+  pluginVersion = "0.1.7",
 ): Promise<{
   response: Response;
   result: PairingExchangeResponse | null;
@@ -129,7 +130,7 @@ async function exchangeGrant(
   const response = await fetchWorker(`${origin}/api/pairing/exchange`, {
     body: JSON.stringify({
       grant: grantFromUrl(grant.pairingUrl),
-      pluginVersion: "0.1.6",
+      pluginVersion,
       schemaVersion: 3,
       vaultName,
     }),
@@ -192,6 +193,8 @@ describe("vault pairing and authorization", () => {
       serverVersion: "0.3.0",
       minSchemaVersion: 1,
       maxSchemaVersion: 3,
+      minPluginVersion: "0.1.7",
+      recommendedPluginVersion: "0.1.7",
     });
 
     await createOwnerSession();
@@ -324,6 +327,24 @@ describe("vault pairing and authorization", () => {
 
     expect(exchange.response.status).toBe(400);
     expect(error.error.code).toBe("pairing_grant_invalid");
+  });
+
+  it("requires the bounded-retry plugin without consuming the pairing grant", async () => {
+    const session = await createOwnerSession();
+    const grant = await createGrant(session);
+    const outdated = await exchangeGrant(
+      grant,
+      "Outdated plugin vault",
+      ORIGIN,
+      "0.1.6",
+    );
+    const current = await exchangeGrant(grant);
+
+    expect(outdated.response.status).toBe(409);
+    expect(apiErrorSchema.parse(outdated.body).error.code).toBe(
+      "plugin_update_required",
+    );
+    expect(current.response.status).toBe(200);
   });
 
   it("binds a grant to its exact deployment origin without consuming it on mismatch", async () => {

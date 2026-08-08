@@ -34,7 +34,7 @@ const migrationEntries = await Promise.all(
   })),
 );
 const expectations = {
-  communityVersion: "1.0.0-alpha.6",
+  communityVersion: "1.0.0-alpha.7",
   compatibilityDate: "2026-07-26",
   migrationFiles,
   migrationLedgerSha256: hashMigrationLedger(migrationEntries),
@@ -201,7 +201,7 @@ test("account registry rejects a reused rate-limit namespace", () => {
     workerName: "owd-cell-synthetic02",
     manifestSha256:
       "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    namespaceIds: ["710001", "720002", "720003"],
+    namespaceIds: ["710001", "720002", "720003", "720004", "720005"],
     status: "active",
   });
   assert.throws(

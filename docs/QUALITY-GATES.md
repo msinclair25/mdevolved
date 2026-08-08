@@ -42,6 +42,17 @@ hostname to an issue or test receipt.
   OWD Sync. Do not run both installation paths in the same check.
 - Pair only the open test vault and wait for its library to publish
   automatically.
+- Revoke the disposable vault credential while OWD Sync is running and confirm
+  one HTTP 401/403 permanently stops ticket refresh, reconnect, and degraded
+  capability polling until the vault is re-paired.
+- Simulate HTTP 429, 500, 503, and an offline network; confirm ticket refresh
+  has one request in flight and jittered exponential backoff from 30 seconds to
+  a 30-minute cap. Exercise both Worker ticket limits and retain only redacted
+  limiter evidence. See [sync request budget](SYNC-REQUEST-BUDGET.md).
+- After rollout, compare 15 minutes of production ticket requests and
+  authorization failures with the pre-deploy baseline. Treat sustained
+  rejection or limiting as an incident; do not raise the request budget to
+  hide a defective client.
 - Confirm read-only agent access does not require a recovery point.
 - Complete the guided order: vault, library, agent, prepared Project.
 - Say **Connect this project to OWD** once and confirm create, join, rejoin, and

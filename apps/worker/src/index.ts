@@ -4,6 +4,7 @@ import { oauthGrantPropsSchema } from "./agent-oauth-props";
 import { mcpHandler } from "./mcp-server";
 import { runScheduledMaintenance } from "./maintenance";
 import { guardOAuthAbuse } from "./oauth-abuse";
+import { guardSocketTicketAbuse } from "./socket-ticket-abuse";
 import {
   enforceManagedTrialAccess,
   enforceRuntimeRouting,
@@ -85,6 +86,11 @@ export default {
 
     const abuseResponse = await guardOAuthAbuse(request, env);
     if (abuseResponse !== null) return abuseResponse;
+    const socketTicketAbuseResponse = await guardSocketTicketAbuse(
+      request,
+      env,
+    );
+    if (socketTicketAbuseResponse !== null) return socketTicketAbuseResponse;
     return oauthProvider.fetch(
       request as Request<unknown, IncomingRequestCfProperties<unknown>>,
       env,

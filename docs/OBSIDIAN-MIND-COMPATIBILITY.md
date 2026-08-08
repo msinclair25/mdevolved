@@ -73,7 +73,7 @@ For a matching vault:
 Profile facts may narrow a proposed context. They never expand an OAuth grant,
 select a Project, approve a request, or replace server-side validation.
 
-OWD Sync `0.1.6` reports only a schema-validated descriptor. Once detected, an
+OWD Sync `0.1.7` reports only a schema-validated descriptor. Once detected, an
 ordinary sync that omits the descriptor does not silently clear it. The Worker
 intersects its content roots with the owner's OAuth folders and applies that
 effective boundary consistently to direct reads, FTS search, recent changes,

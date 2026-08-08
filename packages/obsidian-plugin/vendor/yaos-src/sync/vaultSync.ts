@@ -37,6 +37,7 @@ import {
 import type { CandidateStore, ScopeKey, ScopeMetadata } from "./candidateStore";
 import type { ProductFlightPathEventInput } from "../observability/traceSink";
 import { TICKET_REFRESH_BUFFER_MS, patchTicketInUrl } from "./socketTicket";
+import { decideSocketTicketFailure } from "./socketTicketRetry";
 
 /** Current schema version. Stored in sys.schemaVersion. */
 export { SCHEMA_VERSION } from "./schema";
@@ -283,6 +284,10 @@ export class VaultSync {
 
 	/** Timer handle for the proactive provider URL ticket refresh. */
 	private _socketTicketRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+	private _socketTicketRetryAttempt = 0;
+	private _socketTicketRefreshInFlight = false;
+	private _socketTicketRetryPausedProvider = false;
+	private _destroyed = false;
 
 	constructor(
 		settings: VaultSyncSettings,
@@ -424,7 +429,13 @@ export class VaultSync {
 			if (event.status === "connected") {
 				this._connectionGeneration++;
 				this.log(`Connection generation: ${this._connectionGeneration}`);
-			} else if (event.status === "disconnected" && this._getSocketTicket) {
+			} else if (
+				event.status === "disconnected" &&
+				this._getSocketTicket &&
+				!this._fatalAuthError &&
+				!this._socketTicketRetryPausedProvider &&
+				!this._destroyed
+			) {
 				// Best-effort: refresh provider.url before the reconnect timer fires.
 				// The proactive timer (scheduleSocketTicketRefresh) is the primary
 				// mechanism; this handles edge cases like laptop sleep where the
@@ -435,22 +446,8 @@ export class VaultSync {
 
 		const handleFatalAuthPayload = (payload: string) => {
 			const msg = parseFatalAuthMessage(payload);
-			if (!msg) {
-				return;
-			}
-			const firstFatal = !this._fatalAuthError;
-			this._fatalAuthError = true;
-			this._fatalAuthCode = msg.code;
-			this._fatalAuthDetails = {
-				clientSchemaVersion: msg.clientSchemaVersion,
-				roomSchemaVersion: msg.roomSchemaVersion,
-				reason: msg.reason,
-			};
-			if (firstFatal) {
-				this.log(`Fatal auth error: ${msg.code} — stopping reconnection`);
-			}
-			this.provider.disconnect();
-			this.resolvePendingProviderSyncWaiters(false);
+			if (!msg) return;
+			this.markFatalAuth(msg);
 		};
 
 		// y-partyserver emits "__YPS:" control payloads via "custom-message".
@@ -472,6 +469,7 @@ export class VaultSync {
 		});
 		void this.provider.connect().catch((err: unknown) => {
 			this.log(`Provider connect failed: ${formatUnknown(err)}`);
+			this.handleSocketTicketFailure(err, "initial-connect");
 		});
 	}
 
@@ -1967,6 +1965,7 @@ export class VaultSync {
 		localExpiresAt: number;
 		ttlMs: number;
 	}): void {
+		if (this._fatalAuthError || this._destroyed) return;
 		this.clearSocketTicketRefreshTimer();
 		const ttlRemaining = ticket.localExpiresAt - Date.now();
 		const buffer = Math.min(TICKET_REFRESH_BUFFER_MS, Math.floor(ttlRemaining / 2));
@@ -1982,6 +1981,60 @@ export class VaultSync {
 			clearTimeout(this._socketTicketRefreshTimer);
 			this._socketTicketRefreshTimer = null;
 		}
+	}
+
+	private markFatalAuth(message: FatalAuthMessage): void {
+		const firstFatal = !this._fatalAuthError;
+		this._fatalAuthError = true;
+		this._fatalAuthCode = message.code;
+		this._fatalAuthDetails = {
+			clientSchemaVersion: message.clientSchemaVersion,
+			roomSchemaVersion: message.roomSchemaVersion,
+			reason: message.reason,
+		};
+		this._socketTicketRetryAttempt = 0;
+		this._socketTicketRetryPausedProvider = false;
+		this.clearSocketTicketRefreshTimer();
+		if (firstFatal) {
+			this.log(`Fatal auth error: ${message.code} — stopping reconnection`);
+		}
+		this.provider.disconnect();
+		this.resolvePendingProviderSyncWaiters(false);
+	}
+
+	private handleSocketTicketFailure(error: unknown, phase: string): void {
+		if (!this._getSocketTicket || this._fatalAuthError || this._destroyed) return;
+		const decision = decideSocketTicketFailure(
+			error,
+			this._socketTicketRetryAttempt,
+		);
+		if (decision.kind === "fatal") {
+			this.log(
+				`Socket ticket ${phase} rejected (${decision.status}) — stopping network retries`,
+			);
+			this.markFatalAuth({
+				code: decision.code,
+				clientSchemaVersion: null,
+				roomSchemaVersion: null,
+				reason: decision.reason,
+			});
+			return;
+		}
+
+		this._socketTicketRetryAttempt = decision.nextAttempt;
+		this._socketTicketRetryPausedProvider = true;
+		this.clearSocketTicketRefreshTimer();
+		// Stop y-partyserver's independent reconnect loop while the ticket
+		// request is backing off; otherwise it can hammer the sync route with an
+		// expired URL even though ticket refresh itself is bounded.
+		this.provider.disconnect();
+		this.log(
+			`Socket ticket ${phase} failed — retry ${decision.nextAttempt} in ${decision.delayMs}ms`,
+		);
+		this._socketTicketRefreshTimer = setTimeout(() => {
+			this._socketTicketRefreshTimer = null;
+			void this.refreshProviderTicketUrl(true);
+		}, decision.delayMs);
 	}
 
 	/**
@@ -2000,34 +2053,44 @@ export class VaultSync {
 	/**
 	 * Fetch a fresh ticket (optionally bypassing the cache) and patch
 	 * provider.url.  Reschedules the refresh timer on success.
-	 * On transient failure, retries after TICKET_REFRESH_BUFFER_MS so the
-	 * proactive refresh cycle survives intermittent network errors.
+	 * On transient failure, pauses the provider reconnect loop and uses the
+	 * bounded exponential ticket policy before resuming with a fresh URL.
 	 */
 	private async refreshProviderTicketUrl(force = false): Promise<void> {
-		if (!this._getSocketTicket) return;
+		if (
+			!this._getSocketTicket ||
+			this._fatalAuthError ||
+			this._destroyed ||
+			this._socketTicketRefreshInFlight
+		) return;
+		this._socketTicketRefreshInFlight = true;
 		try {
 			const ticket = await this._getSocketTicket(force);
-			if (ticket) {
+			if (ticket && !this._fatalAuthError && !this._destroyed) {
+				const reconnectProvider = this._socketTicketRetryPausedProvider;
+				this._socketTicketRetryPausedProvider = false;
+				this._socketTicketRetryAttempt = 0;
 				this.patchProviderTicket(ticket.value);
 				this.scheduleSocketTicketRefresh(ticket);
+				if (reconnectProvider) {
+					void this.provider.connect().catch((err: unknown) => {
+						this.log(`Provider reconnect failed: ${formatUnknown(err)}`);
+						this.handleSocketTicketFailure(err, "reconnect");
+					});
+				}
 			}
 		} catch (err) {
 			this.log(`socket ticket refresh failed: ${formatUnknown(err)}`);
-			// Clear any existing timer before scheduling the retry so we never
-			// lose a handle and fire duplicate refreshes.  This matters when the
-			// disconnected best-effort path calls here while the proactive timer
-			// is already scheduled: without the clear, the proactive timer
-			// handle is overwritten but the timer still fires.
-			this.clearSocketTicketRefreshTimer();
-			this._socketTicketRefreshTimer = setTimeout(() => {
-				this._socketTicketRefreshTimer = null;
-				void this.refreshProviderTicketUrl(true);
-			}, TICKET_REFRESH_BUFFER_MS);
+			this.handleSocketTicketFailure(err, "refresh");
+		} finally {
+			this._socketTicketRefreshInFlight = false;
 		}
 	}
 
 	async destroy(): Promise<void> {
 		this.log("Destroying VaultSync");
+		this._destroyed = true;
+		this._socketTicketRetryPausedProvider = false;
 		if (this._renameTimer) clearTimeout(this._renameTimer);
 		this.clearSocketTicketRefreshTimer();
 		this.clearPendingRenames();

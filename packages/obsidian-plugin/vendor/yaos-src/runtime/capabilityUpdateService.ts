@@ -13,6 +13,9 @@ import { attachmentSizeCapKB } from "../settings/settingsStore";
 import { obsidianRequest } from "../utils/http";
 import { formatUnknown } from "../utils/format";
 import { compareSemver } from "../utils/semver";
+import { CAPABILITY_REFRESH_INTERVAL_MS } from "./capabilityPolicy";
+
+export { CAPABILITY_REFRESH_INTERVAL_MS } from "./capabilityPolicy";
 
 export type PersistedServerCapabilitiesCache = {
 	host: string;
@@ -45,7 +48,6 @@ const UPDATE_MANIFEST_URLS = [
 	"https://github.com/msinclair25/owd-platform/releases/latest/download/update-manifest.json",
 ] as const;
 const UPDATE_MANIFEST_CACHE_MS = 24 * 60 * 60 * 1000;
-export const CAPABILITY_REFRESH_INTERVAL_MS = 30_000;
 
 export function isServerCapabilities(value: unknown): value is ServerCapabilities {
 	if (typeof value !== "object" || value === null) return false;

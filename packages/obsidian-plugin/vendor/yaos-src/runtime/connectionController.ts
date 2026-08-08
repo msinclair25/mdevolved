@@ -291,6 +291,10 @@ export class ConnectionController {
 		this.onlineHandler = () => {
 			this.deps.log("Network online event — requesting fast reconnect");
 			this.deps.scheduleTraceStateSnapshot("network-online");
+			if (this.deps.getVaultSync()?.fatalAuthError) {
+				this.deps.refreshStatusBar();
+				return;
+			}
 			this.deps.refreshServerCapabilities("network-online");
 			this.requestFastReconnect("network-online");
 		};

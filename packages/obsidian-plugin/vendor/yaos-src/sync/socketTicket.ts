@@ -23,22 +23,13 @@
  */
 
 import { obsidianRequest } from "../utils/http";
+import { SocketTicketHttpError } from "./socketTicketError";
+
+export { SocketTicketHttpError } from "./socketTicketError";
 
 // ---------------------------------------------------------------------------
 // Typed HTTP error
 // ---------------------------------------------------------------------------
-
-/**
- * Thrown by fetchSocketTicket when the server responds with a non-200 status.
- * Using a typed error instead of parsing the status code out of a string lets
- * callers branch on `err.status` rather than regexing an English message.
- */
-export class SocketTicketHttpError extends Error {
-	constructor(readonly status: number) {
-		super(`socket ticket request failed (${status})`);
-		this.name = "SocketTicketHttpError";
-	}
-}
 
 /**
  * Returns true when the ticket endpoint does not exist on this server —

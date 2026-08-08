@@ -4,7 +4,7 @@
   "cellRef": "synthetic-cell-01",
   "purpose": "disposable-test",
   "release": {
-    "communityVersion": "1.0.0-alpha.6",
+    "communityVersion": "1.0.0-alpha.7",
     "gitCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "compatibilityDate": "2026-07-26",
     "migrationLedgerSha256": "6f0db703672f9c8b17304b423adbc5d900a9b408f5dad24179d6d87753c5fbef",
@@ -91,6 +91,14 @@
       {
         "binding": "OAUTH_TOKEN_CLIENT_LIMITER",
         "namespaceId": "710003"
+      },
+      {
+        "binding": "SOCKET_TICKET_IP_LIMITER",
+        "namespaceId": "710004"
+      },
+      {
+        "binding": "SOCKET_TICKET_VAULT_LIMITER",
+        "namespaceId": "710005"
       }
     ],
     "secretNames": ["OWD_RUNTIME_SIGNING_KEY"]
