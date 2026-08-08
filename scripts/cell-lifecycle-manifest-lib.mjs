@@ -15,8 +15,16 @@ const REQUIRED_RATE_LIMIT_BINDINGS = [
   "OAUTH_REGISTRATION_CLIENT_LIMITER",
   "OAUTH_REGISTRATION_ROUTE_LIMITER",
   "OAUTH_TOKEN_CLIENT_LIMITER",
+  "SOCKET_TICKET_IP_LIMITER",
+  "SOCKET_TICKET_VAULT_LIMITER",
 ];
-const COMMUNITY_RATE_LIMIT_NAMESPACE_IDS = new Set(["1001", "1002", "1003"]);
+const COMMUNITY_RATE_LIMIT_NAMESPACE_IDS = new Set([
+  "1001",
+  "1002",
+  "1003",
+  "1004",
+  "1005",
+]);
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 addFormats(ajv);
 const cellManifestSchema = JSON.parse(
@@ -408,7 +416,7 @@ export function validateCellBuildManifest(value, expectations = {}) {
   const rateLimits = requireArray(
     value.cloudflare.rateLimits,
     "cloudflare.rateLimits",
-    3,
+    5,
   );
   const rateLimitRefs = rateLimits.map((rateLimit, index) => {
     const path = `cloudflare.rateLimits[${index}]`;
@@ -427,7 +435,7 @@ export function validateCellBuildManifest(value, expectations = {}) {
     actualRateLimitBindings.join("\0") !==
     REQUIRED_RATE_LIMIT_BINDINGS.join("\0")
   ) {
-    reject("cloudflare.rateLimits must reserve the three exact OWD bindings.");
+    reject("cloudflare.rateLimits must reserve the five exact OWD bindings.");
   }
   requireUnique(
     rateLimits.map((rateLimit) => rateLimit.namespaceId),

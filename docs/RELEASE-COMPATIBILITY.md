@@ -1,14 +1,14 @@
 # Release compatibility
 
 This page records the explicit compatibility boundary for OWD Platform
-`1.0.0-alpha.6` and OWD Sync `0.1.6`. A newer upstream release is not supported
+`1.0.0-alpha.7` and OWD Sync `0.1.7`. A newer upstream release is not supported
 merely because it exists.
 
 ## Supported contracts
 
 | Surface               | Reviewed contract                                                                                                                                      | Boundary                                                                                                                                                          |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| OWD Sync              | `0.1.6`; vault schema 3; server reads schemas 1–3                                                                                                      | A newer unsupported vault schema fails with update guidance.                                                                                                      |
+| OWD Sync              | `0.1.7`; vault schema 3; server reads schemas 1–3                                                                                                      | A newer unsupported vault schema fails with update guidance.                                                                                                      |
 | YAOS live sync        | Pinned server `0.3.0`; Yjs schema fixtures 1–3                                                                                                         | OWD preserves the pinned upstream contract and carries explicit local adaptations.                                                                                |
 | MCP                   | Authenticated Streamable HTTP against MCP `2026-07-28`, with stateless `2025-11-25` compatibility                                                      | Read-only vault tools are the portable baseline. Project behavior uses ordinary MCP Tools, Resources, and Prompts. See [MCP compatibility](MCP-COMPATIBILITY.md). |
 | Project lifecycle     | `open_project`, `wait_for_project_connection`, and `resume_project`                                                                                    | Create, join, rejoin, and resume converge on one exact Project without a client-specific transport.                                                               |

@@ -14,19 +14,19 @@ describe("Obsidian plugin links", () => {
     expect(installUrl.protocol).toBe("obsidian:");
     expect(installUrl.hostname).toBe("brat");
     expect(installUrl.searchParams.get("plugin")).toBe("msinclair25/owd-sync");
-    expect(installUrl.searchParams.get("version")).toBe("0.1.6");
+    expect(installUrl.searchParams.get("version")).toBe("0.1.7");
   });
 
   it("pins every tester fallback to the compatible OWD Sync release", () => {
-    expect(OWD_SYNC_REQUIRED_VERSION).toBe("0.1.6");
-    expect(OWD_SYNC_RELEASES_URL.endsWith("/releases/tag/0.1.6")).toBe(true);
+    expect(OWD_SYNC_REQUIRED_VERSION).toBe("0.1.7");
+    expect(OWD_SYNC_RELEASES_URL.endsWith("/releases/tag/0.1.7")).toBe(true);
     expect(
       OWD_SYNC_ARCHIVE_URL.endsWith(
-        "/releases/download/0.1.6/owd-sync-0.1.6.zip",
+        "/releases/download/0.1.7/owd-sync-0.1.7.zip",
       ),
     ).toBe(true);
     expect(
-      OWD_SYNC_CHECKSUMS_URL.endsWith("/releases/download/0.1.6/checksums.txt"),
+      OWD_SYNC_CHECKSUMS_URL.endsWith("/releases/download/0.1.7/checksums.txt"),
     ).toBe(true);
   });
 });

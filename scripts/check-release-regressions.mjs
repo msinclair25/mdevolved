@@ -2,14 +2,14 @@ import { access, readFile } from "node:fs/promises";
 
 const ledger = JSON.parse(await readFile("release-regressions.json", "utf8"));
 const expectedIds = Array.from(
-  { length: 46 },
+  { length: 47 },
   (_, index) => `MTR-${String(index + 1).padStart(3, "0")}`,
 );
 const allowedKinds = new Set(["manual", "static", "test"]);
 
 if (
   ledger.schemaVersion !== 1 ||
-  ledger.findingRange !== "MTR-001..MTR-046" ||
+  ledger.findingRange !== "MTR-001..MTR-047" ||
   !Array.isArray(ledger.findings)
 ) {
   throw new Error("The release regression ledger header is invalid.");
@@ -111,6 +111,34 @@ const [
   readFile("migrations/0029_vault_primary_writer_transfer.sql", "utf8"),
   readFile("apps/worker/src/vault-local-writer-store.ts", "utf8"),
   readFile("apps/worker/src/agent-access-routes.ts", "utf8"),
+]);
+const [
+  socketTicketRetry,
+  vaultSync,
+  pluginMain,
+  capabilityPolicy,
+  socketTicketAbuse,
+  pairingRoutes,
+  wranglerConfig,
+  syncRequestBudget,
+] = await Promise.all([
+  readFile(
+    "packages/obsidian-plugin/vendor/yaos-src/sync/socketTicketRetry.ts",
+    "utf8",
+  ),
+  readFile(
+    "packages/obsidian-plugin/vendor/yaos-src/sync/vaultSync.ts",
+    "utf8",
+  ),
+  readFile("packages/obsidian-plugin/vendor/yaos-src/main.ts", "utf8"),
+  readFile(
+    "packages/obsidian-plugin/vendor/yaos-src/runtime/capabilityPolicy.ts",
+    "utf8",
+  ),
+  readFile("apps/worker/src/socket-ticket-abuse.ts", "utf8"),
+  readFile("apps/worker/src/pairing-routes.ts", "utf8"),
+  readFile("wrangler.jsonc", "utf8"),
+  readFile("docs/SYNC-REQUEST-BUDGET.md", "utf8"),
 ]);
 const normalizedAgents = agents.replace(/\s+/gu, " ");
 const normalizedOnboardingContract = onboardingContract.replace(/\s+/gu, " ");
@@ -329,6 +357,40 @@ if (
 ) {
   throw new Error(
     "MTR-046 regression: clean-macOS installation must retain explicit quit semantics, truthful picker states, and a pinned deterministic BRAT fallback.",
+  );
+}
+if (
+  !socketTicketRetry.includes("SOCKET_TICKET_RETRY_BASE_MS = 30_000") ||
+  !socketTicketRetry.includes("SOCKET_TICKET_RETRY_MAX_MS = 30 * 60_000") ||
+  !socketTicketRetry.includes("error.status === 401 || error.status === 403") ||
+  !vaultSync.includes("this.markFatalAuth(msg)") ||
+  !vaultSync.includes("this.clearSocketTicketRefreshTimer()") ||
+  !vaultSync.includes("this._socketTicketRefreshInFlight") ||
+  !vaultSync.includes("this._socketTicketRetryPausedProvider") ||
+  !pluginMain.includes("authRetryBlocked") ||
+  !capabilityPolicy.includes("5 * 60_000") ||
+  !socketTicketAbuse.includes("SOCKET_TICKET_IP_LIMITER") ||
+  !socketTicketAbuse.includes("SOCKET_TICKET_VAULT_LIMITER") ||
+  !socketTicketAbuse.includes("socket_ticket.rate_limited") ||
+  !socketTicketAbuse.includes("sha256Hex") ||
+  !socketTicketAbuse.includes("status: 429 | 503") ||
+  !pairingRoutes.includes(
+    'enforcePairingRateLimit(context, "socket_ticket", 10)',
+  ) ||
+  !/"name": "SOCKET_TICKET_IP_LIMITER"[\s\S]*?"limit": 4/u.test(
+    wranglerConfig,
+  ) ||
+  !/"name": "SOCKET_TICKET_VAULT_LIMITER"[\s\S]*?"limit": 2/u.test(
+    wranglerConfig,
+  ) ||
+  !syncRequestBudget.includes("one refresh per connected device") ||
+  !syncRequestBudget.includes("compare the ticket request/error rate") ||
+  !normalizedQualityGates.includes(
+    "permanently stops ticket refresh, reconnect, and degraded capability polling",
+  )
+) {
+  throw new Error(
+    "MTR-047 regression: sync control-plane retries must remain terminal for rejected credentials, bounded for transient failures, and independently contained by redacted Worker limits.",
   );
 }
 

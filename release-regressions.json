@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "findingRange": "MTR-001..MTR-046",
+  "findingRange": "MTR-001..MTR-047",
   "findings": [
     {
       "id": "MTR-001",
@@ -539,6 +539,31 @@
           "path": "apps/web/test/plugin-setup-guide.test.ts"
         },
         { "kind": "test", "path": "e2e/phase8-foundation.spec.ts" },
+        { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
+      ]
+    },
+    {
+      "id": "MTR-047",
+      "title": "Bounded sync control-plane retries and server containment",
+      "controls": [
+        {
+          "kind": "static",
+          "path": "packages/obsidian-plugin/vendor/yaos-src/sync/socketTicketRetry.ts"
+        },
+        {
+          "kind": "static",
+          "path": "packages/obsidian-plugin/vendor/yaos-src/sync/vaultSync.ts"
+        },
+        {
+          "kind": "test",
+          "path": "packages/obsidian-plugin/test/socket-ticket-retry.test.ts"
+        },
+        { "kind": "static", "path": "apps/worker/src/socket-ticket-abuse.ts" },
+        {
+          "kind": "test",
+          "path": "apps/worker/test/socket-ticket-abuse.test.ts"
+        },
+        { "kind": "manual", "path": "docs/SYNC-REQUEST-BUDGET.md" },
         { "kind": "manual", "path": "docs/QUALITY-GATES.md" }
       ]
     }

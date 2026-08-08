@@ -13,7 +13,7 @@ describe("OWD Sync tester setup guide", () => {
 
     expect(html).toContain('id="owd-sync-installer"');
     expect(html).toContain("Private trial · direct local install");
-    expect(html).toContain("Choose vault and install OWD Sync 0.1.6");
+    expect(html).toContain("Choose vault and install OWD Sync 0.1.7");
     expect(html.match(/<button/g)).toHaveLength(1);
     expect(html).toContain("Community plugins");
     expect(html).toContain("OWD cannot bypass it");
@@ -29,7 +29,7 @@ describe("OWD Sync tester setup guide", () => {
     );
     expect(html).toContain("obsidian://show-plugin?id=obsidian42-brat");
     expect(html).toContain(
-      "obsidian://brat?plugin=msinclair25/owd-sync&amp;version=0.1.6",
+      "obsidian://brat?plugin=msinclair25/owd-sync&amp;version=0.1.7",
     );
     expect(html).toContain("This link opens BRAT");
     expect(html).toContain("it does not finish the install");
@@ -38,8 +38,8 @@ describe("OWD Sync tester setup guide", () => {
     );
     expect(html).toContain("https://github.com/msinclair25/owd-sync");
     expect(html).toContain("Use either the direct installer or BRAT, not both");
-    expect(html).toContain("releases/tag/0.1.6");
-    expect(html).toContain("owd-sync-0.1.6.zip");
+    expect(html).toContain("releases/tag/0.1.7");
+    expect(html).toContain("owd-sync-0.1.7.zip");
     expect(html).toContain("not a normal tester installation path");
   });
 
