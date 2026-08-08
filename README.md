@@ -10,13 +10,15 @@
 
 <p align="center">
   <strong>Make one AI's work the next AI's head start.</strong><br />
-  The owner-controlled continuity layer for Obsidian and independent AI agents.
+  Owner-controlled policy autopilot and continuity for Obsidian and independent AI agents.
 </p>
 
 <p align="center">
   <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/owd-platform"><strong>Deploy Community</strong></a>
   ·
   <a href="#how-owd-works">See how it works</a>
+  ·
+  <a href="#autonomy-without-surrendering-control">Policy autopilot</a>
   ·
   <a href="https://mdevolved.com/#alpha-access">Request managed alpha</a>
   ·
@@ -36,11 +38,14 @@
   <img alt="Managed private alpha" src="https://img.shields.io/badge/Managed-private%20alpha-8250df.svg" />
 </p>
 
-OWD keeps the AI tools you already use independent, then carries the work you
-choose to share forward with its sources and your Decisions attached. It turns
-an Obsidian vault into bounded, cited Project context without becoming another
-model subscription, scraping hidden conversations, or silently deciding what
-is true.
+OWD gives independent AI agents one durable, cited Project record—and lets
+routine research and coding continue under standing policy without dashboard
+babysitting. Connect once, set the boundary, and step back in only when the
+work needs new authority or an owner Decision.
+
+It turns the Obsidian vault you choose into bounded Project context without
+becoming another model subscription, taking over the agent runtime, scraping
+hidden conversations, or silently deciding what is true.
 
 > [!IMPORTANT]
 > **This is an alpha release.**
@@ -48,6 +53,10 @@ is true.
 > self-hostable. Start with synthetic or disposable vaults while evaluating a
 > deployment. The optional managed service remains invitation-only and uses
 > one isolated data-plane cell per owner.
+
+| Connect once                                                            | Keep work moving                                                             | Know why it passed                                                          | Recover independently                                                  |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Pair one vault and authorize the exact agent, Project, and folder once. | Leads and actors carry routine work forward under immutable standing policy. | Deterministic gates cite exact owner-authored policy and accepted evidence. | Scheduled continuity points and portable recovery survive a lost lead. |
 
 ## The problem OWD solves
 
@@ -143,6 +152,31 @@ The authenticated workspace is a focused folder-style application:
 OWD derives one next action from authoritative state. A user should not have to
 understand materialization jobs, internal IDs, raw scopes, or packet rotation
 to finish setup.
+
+## Autonomy without surrendering control
+
+OWD automates the routine coordination around agent work while the execution
+harness keeps planning, models, tools, terminals, retries, schedules, and
+worktrees. OWD is the durable policy and continuity layer—not another agent
+supervisor.
+
+- **Owner-authored standing policy.** A lead cannot write or approve the policy
+  that judges its own work.
+- **Deterministic completion gates.** Research and coding Runs pass only from
+  bounded accepted evidence, independent Review, current budgets, integrity,
+  and fenced continuity state—never model confidence or hidden reasoning.
+- **Exceptions instead of babysitting.** Routine allowed work continues;
+  authority expansion, destructive actions, protected paths, conflicts,
+  exhausted budgets, and integrity failures return to the owner explicitly.
+- **Continuity that is measured.** Scheduled checkpoints and disposable drills
+  report RPO, RTO, continuity age, recovery quality, and runtime independence.
+- **Recovery without restored power.** A fresh Community installation can
+  restore quarantined evidence, but never grants, leases, credentials, OAuth
+  state, policy authority, or scheduler authority.
+
+Start with [policy autopilot](docs/POLICY-AUTOPILOT.md), the
+[continuity plan](docs/CONTINUITY-PLAN.md), or the
+[security model](docs/SECURITY-MODEL.md).
 
 ## Standards-based agent compatibility
 
@@ -331,8 +365,9 @@ easier while hardening Community deployment and upgrade behavior.
 - Web mutation covers Markdown text and note creation. Rename, delete,
   attachment writes, and arbitrary `.obsidian` mutation are out of scope.
 - Snapshot attachment and `.obsidian` sections remain disabled.
-- The current external gate is one unassisted, two-agent
-  Handoff → Review → owner Decision → recovery run.
+- Local synthetic policy-autopilot and disposable continuity-drill acceptance
+  is complete. The current external gate remains one unassisted, two-agent
+  Handoff → Review → owner Decision → recovery run using disposable data.
 - A standards-compatible path does not claim that every client has completed
   the full acceptance exercise.
 
