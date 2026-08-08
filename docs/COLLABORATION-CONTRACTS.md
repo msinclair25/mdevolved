@@ -380,6 +380,12 @@ bundle metadata without changing stored edge semantics.
 
 ### MCP 2025-11-25
 
+The versioned v1–v3 OWD capability Resources retain `2025-11-25` as their
+stable legacy baseline so older clients do not see a silent contract rewrite.
+The same Tools, Resources, and Prompts are also served through the current
+`2026-07-28` per-request envelope and routing-header contract documented in
+[`MCP-COMPATIBILITY.md`](MCP-COMPATIBILITY.md).
+
 - Tool inputs and `structuredContent` outputs use the published JSON Schema
   2020-12 shapes. Each structured result also includes concise serialized JSON
   text for clients that do not surface structured content.

@@ -28,6 +28,7 @@ const authRequestSchema = z
     state: z.string().max(4_096),
     codeChallenge: z.string().min(1).max(256).optional(),
     codeChallengeMethod: z.string().min(1).max(32).optional(),
+    issuer: z.string().url().max(2_048).optional(),
     resource: z
       .union([
         z.string().url().max(2_048),

@@ -1,5 +1,10 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { createMcpHandler, getMcpAuthContext } from "agents/mcp";
+import {
+  McpServer,
+  isJsonContentType,
+  isLegacyRequest,
+  originValidationResponse,
+} from "@modelcontextprotocol/server";
+import { createMcpHandler, getMcpAuthContext } from "agents/mcp/server";
 import { z } from "zod";
 import {
   ALBATROSS_PROFILE_PROMPT,
@@ -536,23 +541,198 @@ type ToolCallInspection = {
   name: string;
 };
 
-async function inspectToolCall(
-  request: Request,
-): Promise<ToolCallInspection | null> {
-  if (request.method !== "POST") return null;
-  const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
+type BoundedMcpRequest =
+  { bodyText: string | null; request: Request } | { response: Response };
+
+function mcpRequestError(
+  status: number,
+  code: number,
+  message: string,
+): Response {
+  return Response.json(
+    {
+      error: { code, message },
+      id: null,
+      jsonrpc: "2.0",
+    },
+    {
+      headers: { "Cache-Control": "private, no-store" },
+      status,
+    },
+  );
+}
+
+async function boundMcpRequest(request: Request): Promise<BoundedMcpRequest> {
+  if (request.method !== "POST") return { bodyText: null, request };
+  const declaredLength = request.headers.get("Content-Length");
+  if (declaredLength !== null) {
+    if (!/^(0|[1-9][0-9]*)$/.test(declaredLength)) {
+      return {
+        response: mcpRequestError(
+          400,
+          -32600,
+          "Invalid MCP Content-Length header.",
+        ),
+      };
+    }
+    const parsedLength = Number(declaredLength);
+    if (
+      !Number.isSafeInteger(parsedLength) ||
+      parsedLength > MCP_REQUEST_INSPECTION_BYTES
+    ) {
+      return {
+        response: mcpRequestError(
+          413,
+          -32000,
+          `MCP request body exceeds ${MCP_REQUEST_INSPECTION_BYTES} bytes.`,
+        ),
+      };
+    }
+  }
+
+  if (request.body === null) return { bodyText: "", request };
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      totalBytes += chunk.value.byteLength;
+      if (totalBytes > MCP_REQUEST_INSPECTION_BYTES) {
+        await reader.cancel("MCP request body limit exceeded.");
+        return {
+          response: mcpRequestError(
+            413,
+            -32000,
+            `MCP request body exceeds ${MCP_REQUEST_INSPECTION_BYTES} bytes.`,
+          ),
+        };
+      }
+      chunks.push(chunk.value);
+    }
+  } catch {
+    return {
+      response: mcpRequestError(400, -32700, "Unreadable MCP request body."),
+    };
+  }
+
+  const bodyBytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bodyBytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const headers = new Headers(request.headers);
+  headers.delete("Content-Length");
+  const boundedRequest = new Request(request.url, {
+    body: bodyBytes,
+    headers,
+    method: request.method,
+    redirect: request.redirect,
+    signal: request.signal,
+  });
+  let bodyText: string | null = null;
+  try {
+    bodyText = fatalDecoder.decode(bodyBytes);
+  } catch {
+    // The MCP handler owns the canonical parse error for invalid UTF-8.
+  }
+  return { bodyText, request: boundedRequest };
+}
+
+/** Strip only RFC 9110 optional whitespace (SP / HTAB). */
+export function stripMcpHeaderOws(value: string): string {
+  let start = 0;
+  while (start < value.length) {
+    const code = value.codePointAt(start);
+    if (code !== 9 && code !== 32) break;
+    start += 1;
+  }
+  let end = value.length;
+  while (end > start) {
+    const code = value.codePointAt(end - 1);
+    if (code !== 9 && code !== 32) break;
+    end -= 1;
+  }
+  return start === 0 && end === value.length ? value : value.slice(start, end);
+}
+
+export function decodeMcpHeaderValue(value: string): string | null {
+  const normalized = stripMcpHeaderOws(value);
+  const prefix = "=?base64?";
+  const suffix = "?=";
+  if (!(normalized.startsWith(prefix) && normalized.endsWith(suffix))) {
+    return normalized;
+  }
+  const encoded = normalized.slice(prefix.length, -suffix.length);
   if (
-    !Number.isFinite(declaredLength) ||
-    declaredLength > MCP_REQUEST_INSPECTION_BYTES
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+      encoded,
+    )
   ) {
     return null;
   }
   try {
-    const body = await request.clone().text();
-    if (encoder.encode(body).byteLength > MCP_REQUEST_INSPECTION_BYTES) {
-      return null;
-    }
-    const value: unknown = JSON.parse(body);
+    const bytes = Uint8Array.from(atob(encoded), (character) =>
+      character.charCodeAt(0),
+    );
+    return fatalDecoder.decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function canInterceptToolCall(
+  request: Request,
+  params: object,
+  name: string,
+): boolean {
+  const metadata: unknown = Reflect.get(params, "_meta");
+  if (typeof metadata !== "object" || metadata === null) {
+    const headerVersion = request.headers.get("MCP-Protocol-Version");
+    return (
+      headerVersion === null ||
+      stripMcpHeaderOws(headerVersion) === "2025-11-25"
+    );
+  }
+  const claimedVersion = Reflect.get(
+    metadata,
+    "io.modelcontextprotocol/protocolVersion",
+  );
+  if (claimedVersion === undefined) {
+    const headerVersion = request.headers.get("MCP-Protocol-Version");
+    return (
+      headerVersion === null ||
+      stripMcpHeaderOws(headerVersion) === "2025-11-25"
+    );
+  }
+  if (claimedVersion !== "2026-07-28") return false;
+  if (
+    stripMcpHeaderOws(request.headers.get("MCP-Protocol-Version") ?? "") !==
+      claimedVersion ||
+    stripMcpHeaderOws(request.headers.get("Mcp-Method") ?? "") !== "tools/call"
+  ) {
+    return false;
+  }
+  const headerName = request.headers.get("Mcp-Name");
+  if (headerName === null || decodeMcpHeaderValue(headerName) !== name) {
+    return false;
+  }
+  const clientCapabilities = Reflect.get(
+    metadata,
+    "io.modelcontextprotocol/clientCapabilities",
+  );
+  return typeof clientCapabilities === "object" && clientCapabilities !== null;
+}
+
+function inspectToolCall(
+  request: Request,
+  bodyText: string | null,
+): ToolCallInspection | null {
+  if (request.method !== "POST" || bodyText === null) return null;
+  try {
+    const value: unknown = JSON.parse(bodyText);
     if (typeof value !== "object" || value === null) return null;
     if (Reflect.get(value, "method") !== "tools/call") return null;
     const params: unknown = Reflect.get(value, "params");
@@ -565,10 +745,39 @@ async function inspectToolCall(
     ) {
       return null;
     }
+    if (!canInterceptToolCall(request, params, name)) return null;
     return { id, name };
   } catch {
     return null;
   }
+}
+
+export async function preferLegacyJsonResponse(
+  response: Response,
+): Promise<Response> {
+  if (!response.headers.get("Content-Type")?.includes("text/event-stream")) {
+    return response;
+  }
+  const body = await response.text();
+  const dataLines = [...body.matchAll(/^data: ?(.*)$/gmu)].map(
+    (match) => match[1] ?? "",
+  );
+  if (dataLines.length !== 1) {
+    return new Response(body, response);
+  }
+  try {
+    JSON.parse(dataLines[0] ?? "");
+  } catch {
+    return new Response(body, response);
+  }
+  const headers = new Headers(response.headers);
+  headers.set("Content-Type", "application/json");
+  headers.delete("Content-Length");
+  return new Response(dataLines[0], {
+    headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
 }
 
 async function insufficientScopeChallenge(
@@ -3447,7 +3656,45 @@ export const mcpHandler = {
     env: Env,
     context: ExecutionContext,
   ): Promise<Response> {
-    const toolCall = await inspectToolCall(request);
+    const endpointHostname = new URL(request.url).hostname;
+    const allowedOriginHostnames = [
+      endpointHostname,
+      "localhost",
+      "127.0.0.1",
+      "[::1]",
+    ];
+    const originRejection = originValidationResponse(
+      request,
+      allowedOriginHostnames,
+    );
+    if (originRejection) return originRejection;
+    if (
+      request.method === "POST" &&
+      !isJsonContentType(request.headers.get("Content-Type"))
+    ) {
+      return mcpRequestError(
+        415,
+        -32000,
+        "Unsupported Media Type: Content-Type must be application/json",
+      );
+    }
+    const bounded = await boundMcpRequest(request);
+    if ("response" in bounded) return bounded.response;
+    request = bounded.request;
+    if (bounded.bodyText !== null && bounded.bodyText.length > 0) {
+      try {
+        if (Array.isArray(JSON.parse(bounded.bodyText))) {
+          return mcpRequestError(
+            400,
+            -32600,
+            "MCP JSON-RPC batching is not supported.",
+          );
+        }
+      } catch {
+        // The MCP handler owns the canonical parse error.
+      }
+    }
+    const toolCall = inspectToolCall(request, bounded.bodyText);
     const challenge = await insufficientScopeChallenge(
       request,
       env,
@@ -3461,11 +3708,22 @@ export const mcpHandler = {
       toolCall,
     );
     if (retired !== null) return retired;
-    const server = createServer(env, context);
-    return createMcpHandler(server, {
-      enableJsonResponse: true,
+    let parsedBody: unknown;
+    try {
+      parsedBody =
+        bounded.bodyText === null || bounded.bodyText.length === 0
+          ? undefined
+          : JSON.parse(bounded.bodyText);
+    } catch {
+      // The MCP handler owns the canonical parse error.
+    }
+    const legacyRequest = await isLegacyRequest(request, parsedBody);
+    const response = await createMcpHandler(() => createServer(env, context), {
+      allowedOriginHostnames,
+      legacy: "stateless",
+      responseMode: "auto",
       route: "/mcp",
-      sessionIdGenerator: undefined,
     })(request, env, context);
+    return legacyRequest ? preferLegacyJsonResponse(response) : response;
   },
 } satisfies ExportedHandler<Env>;

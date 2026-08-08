@@ -1,7 +1,8 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 
-const PROTOCOL_VERSION = "2025-11-25";
+const CURRENT_PROTOCOL_VERSION = "2026-07-28";
+const LEGACY_PROTOCOL_VERSION = "2025-11-25";
 const BOOTSTRAP_SCOPES = [
   "vault.read",
   "project.initialize.request",
@@ -376,7 +377,7 @@ async function main() {
         Accept: "application/json, text/event-stream",
         Authorization: `Bearer ${token.access_token}`,
         "Content-Type": "application/json",
-        "MCP-Protocol-Version": PROTOCOL_VERSION,
+        "MCP-Protocol-Version": LEGACY_PROTOCOL_VERSION,
       },
       method: "POST",
     });
@@ -406,7 +407,7 @@ async function main() {
         Accept: "application/json, text/event-stream",
         Authorization: `Bearer ${token.access_token}`,
         "Content-Type": "application/json",
-        "MCP-Protocol-Version": PROTOCOL_VERSION,
+        "MCP-Protocol-Version": LEGACY_PROTOCOL_VERSION,
       },
       method: "POST",
     });
@@ -416,13 +417,93 @@ async function main() {
     await response.body?.cancel();
   }
 
+  async function currentRpc(method, params, name) {
+    requestId += 1;
+    const startedAt = performance.now();
+    const response = await fetch(new URL("/mcp", origin), {
+      body: JSON.stringify({
+        id: requestId,
+        jsonrpc: "2.0",
+        method,
+        params: {
+          ...params,
+          _meta: {
+            "io.modelcontextprotocol/clientCapabilities": {},
+            "io.modelcontextprotocol/clientInfo": {
+              name: "OWD production acceptance",
+              version: "0.2.0",
+            },
+            "io.modelcontextprotocol/protocolVersion": CURRENT_PROTOCOL_VERSION,
+          },
+        },
+      }),
+      headers: {
+        Accept: "application/json, text/event-stream",
+        Authorization: `Bearer ${token.access_token}`,
+        "Content-Type": "application/json",
+        "MCP-Protocol-Version": CURRENT_PROTOCOL_VERSION,
+        "Mcp-Method": method,
+        ...(name === undefined ? {} : { "Mcp-Name": name }),
+      },
+      method: "POST",
+    });
+    const durationMs = Math.round((performance.now() - startedAt) * 10) / 10;
+    const message = asRecord(
+      await readJson(response, `current MCP ${method}`),
+      `current MCP ${method}`,
+    );
+    if (message.error !== undefined) {
+      fail(`Current MCP ${method} returned a JSON-RPC error.`);
+    }
+    const timingKey =
+      method === "tools/call" && typeof params.name === "string"
+        ? `current:${method}:${params.name}`
+        : `current:${method}`;
+    timings[timingKey] = durationMs;
+    return message.result;
+  }
+
+  const discovery = asRecord(
+    await currentRpc("server/discover", {}),
+    "server/discover result",
+  );
+  if (
+    !Array.isArray(discovery.supportedVersions) ||
+    !discovery.supportedVersions.includes(CURRENT_PROTOCOL_VERSION)
+  ) {
+    fail("The server did not advertise the current MCP protocol version.");
+  }
+  for (const method of ["tools/list", "resources/list", "prompts/list"]) {
+    const result = asRecord(
+      await currentRpc(method, {}),
+      `current ${method} result`,
+    );
+    const collection =
+      method === "tools/list"
+        ? result.tools
+        : method === "resources/list"
+          ? result.resources
+          : result.prompts;
+    if (!Array.isArray(collection) || collection.length === 0) {
+      fail(`Current ${method} did not return its MCP collection.`);
+    }
+  }
+  toolContent(
+    await currentRpc(
+      "tools/call",
+      { arguments: {}, name: "connection_info" },
+      "connection_info",
+    ),
+    "current connection_info",
+  );
+
   const initialized = await rpc("initialize", {
     capabilities: {},
     clientInfo: { name: "OWD production acceptance", version: "0.1.0" },
-    protocolVersion: PROTOCOL_VERSION,
+    protocolVersion: LEGACY_PROTOCOL_VERSION,
   });
   const initializeResult = asRecord(initialized.result, "initialize result");
-  if (initializeResult.protocolVersion !== PROTOCOL_VERSION) {
+  if (initializeResult.protocolVersion !== LEGACY_PROTOCOL_VERSION) {
     fail("The server did not negotiate the expected MCP protocol version.");
   }
   await notify("notifications/initialized", {});
@@ -767,6 +848,7 @@ async function main() {
       event: "owd.agent_acceptance.ready_for_revocation",
       generation: generation.generationId.slice(0, 8),
       oauthTokenExchangeCount: 1,
+      protocols: [CURRENT_PROTOCOL_VERSION, LEGACY_PROTOCOL_VERSION],
       projectId,
       projectState: "ready",
       readOnly: true,

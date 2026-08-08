@@ -23,6 +23,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import worker from "../src/index";
 import {
+  decodeMcpHeaderValue,
+  preferLegacyJsonResponse,
+  stripMcpHeaderOws,
+} from "../src/mcp-server";
+import {
   activateAgentGrant,
   createPendingAgentGrant,
   ensureAgentAccessSchema,
@@ -834,6 +839,457 @@ describe("scoped universal agent access", () => {
         "proposal.status",
       ],
     });
+  });
+
+  it("serves current and stateless legacy MCP while failing closed on invalid transport requests", async () => {
+    const session = await createOwnerSession();
+    const vaultId = await createVault("MCP conformance vault");
+    await materialize(vaultId, []);
+    const authorization = await authorize(
+      session,
+      vaultId,
+      [],
+      ["vault.read", "project.initialize.request", "project.connect.request"],
+    );
+    const authenticatedHeaders = {
+      Accept: "application/json, text/event-stream",
+      Authorization: `Bearer ${authorization.accessToken}`,
+      "Content-Type": "application/json",
+    };
+    const modernMetadata = {
+      "io.modelcontextprotocol/clientCapabilities": {},
+      "io.modelcontextprotocol/clientInfo": {
+        name: "OWD MCP conformance",
+        version: "1.0.0",
+      },
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    };
+    const currentRequest = (
+      method: string,
+      params: Record<string, unknown>,
+      name?: string,
+    ): Promise<Response> =>
+      fetchWorker(`${ORIGIN}/mcp`, {
+        body: JSON.stringify({
+          id: 1,
+          jsonrpc: "2.0",
+          method,
+          params: { ...params, _meta: modernMetadata },
+        }),
+        headers: {
+          ...authenticatedHeaders,
+          "MCP-Protocol-Version": "2026-07-28",
+          "Mcp-Method": method,
+          ...(name === undefined ? {} : { "Mcp-Name": name }),
+        },
+        method: "POST",
+      });
+
+    const discoverResponse = await currentRequest("server/discover", {});
+    expect(discoverResponse.status).toBe(200);
+    expect(discoverResponse.headers.get("Content-Type")).toContain(
+      "application/json",
+    );
+    expect(
+      z
+        .object({
+          id: z.number(),
+          jsonrpc: z.literal("2.0"),
+          result: z.object({
+            capabilities: z.object({}),
+            supportedVersions: z.array(z.string()),
+          }),
+        })
+        .parse(await discoverResponse.json()),
+    ).toMatchObject({
+      result: { supportedVersions: expect.arrayContaining(["2026-07-28"]) },
+    });
+
+    const currentToolsResponse = await currentRequest("tools/list", {});
+    expect(currentToolsResponse.status).toBe(200);
+    expect(
+      z
+        .object({
+          result: z.object({
+            tools: z.array(z.object({ name: z.string() })).min(1),
+          }),
+        })
+        .parse(await currentToolsResponse.json())
+        .result.tools.map((tool) => tool.name),
+    ).toContain("connection_info");
+
+    const currentCallResponse = await currentRequest(
+      "tools/call",
+      { arguments: {}, name: "connection_info" },
+      "connection_info",
+    );
+    expect(currentCallResponse.status).toBe(200);
+    expect(
+      mcpResponseSchema.parse(await currentCallResponse.json()).result,
+    ).toMatchObject({ structuredContent: { ok: true } });
+
+    const encodedNameResponse = await currentRequest(
+      "tools/call",
+      { arguments: {}, name: "connection_info" },
+      "=?base64?Y29ubmVjdGlvbl9pbmZv?=",
+    );
+    expect(encodedNameResponse.status).toBe(200);
+
+    const invalidEncodedNameResponse = await currentRequest(
+      "tools/call",
+      { arguments: {}, name: "connection_info" },
+      "=?base64?***?=",
+    );
+    expect(invalidEncodedNameResponse.status).toBe(400);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_020) }) })
+        .parse(await invalidEncodedNameResponse.json()).error.code,
+    ).toBe(-32_020);
+
+    const currentResourcesResponse = await currentRequest("resources/list", {});
+    expect(currentResourcesResponse.status).toBe(200);
+    expect(
+      z
+        .object({
+          result: z.object({
+            resources: z.array(z.object({ uri: z.string() })).min(1),
+          }),
+        })
+        .parse(await currentResourcesResponse.json()).result.resources,
+    ).toContainEqual(
+      expect.objectContaining({
+        uri: "owd://collaboration/lead-continuity-capabilities/v1",
+      }),
+    );
+    const currentResourceReadResponse = await currentRequest(
+      "resources/read",
+      { uri: "owd://collaboration/lead-continuity-capabilities/v1" },
+      "owd://collaboration/lead-continuity-capabilities/v1",
+    );
+    expect(currentResourceReadResponse.status).toBe(200);
+    expect(
+      z
+        .object({
+          result: z.object({
+            contents: z.array(z.object({ text: z.string() })),
+          }),
+        })
+        .parse(await currentResourceReadResponse.json()).result.contents,
+    ).toHaveLength(1);
+
+    const currentPromptsResponse = await currentRequest("prompts/list", {});
+    expect(currentPromptsResponse.status).toBe(200);
+    expect(
+      z
+        .object({
+          result: z.object({
+            prompts: z.array(z.object({ name: z.string() })).min(1),
+          }),
+        })
+        .parse(await currentPromptsResponse.json()).result.prompts,
+    ).toContainEqual(expect.objectContaining({ name: "resume-owd-project" }));
+    const currentPromptResponse = await currentRequest(
+      "prompts/get",
+      { name: "resume-owd-project" },
+      "resume-owd-project",
+    );
+    expect(currentPromptResponse.status).toBe(200);
+    expect(
+      z
+        .object({
+          result: z.object({ messages: z.array(z.object({})).min(1) }),
+        })
+        .parse(await currentPromptResponse.json()).result.messages,
+    ).toHaveLength(1);
+
+    const initializeResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 2,
+        jsonrpc: "2.0",
+        method: "initialize",
+        params: {
+          capabilities: {},
+          clientInfo: { name: "OWD legacy conformance", version: "1.0.0" },
+          protocolVersion: "2025-11-25",
+        },
+      }),
+      headers: authenticatedHeaders,
+      method: "POST",
+    });
+    expect(initializeResponse.status).toBe(200);
+    expect(initializeResponse.headers.get("Content-Type")).toContain(
+      "application/json",
+    );
+    expect(
+      z
+        .object({
+          result: z.object({ protocolVersion: z.literal("2025-11-25") }),
+        })
+        .parse(await initializeResponse.json()),
+    ).toMatchObject({ result: { protocolVersion: "2025-11-25" } });
+
+    const initializedResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "notifications/initialized",
+      }),
+      headers: authenticatedHeaders,
+      method: "POST",
+    });
+    expect(initializedResponse.status).toBe(202);
+
+    const preflightResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      headers: {
+        "Access-Control-Request-Headers":
+          "authorization, content-type, mcp-protocol-version, mcp-method, mcp-name",
+        "Access-Control-Request-Method": "POST",
+        Origin: ORIGIN,
+      },
+      method: "OPTIONS",
+    });
+    expect(preflightResponse.status).toBe(204);
+    expect(preflightResponse.headers.get("Access-Control-Allow-Methods")).toBe(
+      "*",
+    );
+    expect(preflightResponse.headers.get("Access-Control-Allow-Headers")).toBe(
+      "Authorization, *",
+    );
+
+    for (const method of ["GET", "DELETE"]) {
+      const response = await fetchWorker(`${ORIGIN}/mcp`, {
+        headers: authenticatedHeaders,
+        method,
+      });
+      expect(response.status).toBe(405);
+    }
+
+    const rejectedOrigin = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 3,
+        jsonrpc: "2.0",
+        method: "tools/list",
+      }),
+      headers: { ...authenticatedHeaders, Origin: "https://untrusted.test" },
+      method: "POST",
+    });
+    expect(rejectedOrigin.status).toBe(403);
+
+    const acceptedOrigin = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 3,
+        jsonrpc: "2.0",
+        method: "tools/list",
+      }),
+      headers: { ...authenticatedHeaders, Origin: ORIGIN },
+      method: "POST",
+    });
+    expect(acceptedOrigin.status).toBe(200);
+
+    const unsupportedMedia = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 4,
+        jsonrpc: "2.0",
+        method: "tools/list",
+      }),
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "text/plain",
+      },
+      method: "POST",
+    });
+    expect(unsupportedMedia.status).toBe(415);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_000) }) })
+        .parse(await unsupportedMedia.json()).error.code,
+    ).toBe(-32_000);
+
+    const unsupportedMediaBatch = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify([
+        { id: 4, jsonrpc: "2.0", method: "ping" },
+        { id: 5, jsonrpc: "2.0", method: "tools/list" },
+      ]),
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "text/plain",
+      },
+      method: "POST",
+    });
+    expect(unsupportedMediaBatch.status).toBe(415);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_000) }) })
+        .parse(await unsupportedMediaBatch.json()).error.code,
+    ).toBe(-32_000);
+
+    const unsupportedMediaScopedCall = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 5,
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: {
+          _meta: modernMetadata,
+          arguments: {},
+          name: "start_run",
+        },
+      }),
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "text/plain",
+        "MCP-Protocol-Version": "2026-07-28",
+        "Mcp-Method": "tools/call",
+        "Mcp-Name": "start_run",
+      },
+      method: "POST",
+    });
+    expect(unsupportedMediaScopedCall.status).toBe(415);
+
+    const currentNotification = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "notifications/cancelled",
+        params: {
+          _meta: modernMetadata,
+          reason: "synthetic",
+          requestId: 999,
+        },
+      }),
+      headers: {
+        ...authenticatedHeaders,
+        "MCP-Protocol-Version": "2026-07-28",
+        "Mcp-Method": "notifications/cancelled",
+      },
+      method: "POST",
+    });
+    expect(currentNotification.status).toBe(202);
+
+    const mismatchedHeaders = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 5,
+        jsonrpc: "2.0",
+        method: "tools/list",
+        params: { _meta: modernMetadata },
+      }),
+      headers: {
+        ...authenticatedHeaders,
+        "MCP-Protocol-Version": "2026-07-28",
+        "Mcp-Method": "resources/list",
+      },
+      method: "POST",
+    });
+    expect(mismatchedHeaders.status).toBe(400);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_020) }) })
+        .parse(await mismatchedHeaders.json()).error.code,
+    ).toBe(-32_020);
+
+    const mismatchedScopedCall = await currentRequest(
+      "tools/call",
+      { arguments: {}, name: "start_run" },
+      "connection_info",
+    );
+    expect(mismatchedScopedCall.status).toBe(400);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_020) }) })
+        .parse(await mismatchedScopedCall.json()).error.code,
+    ).toBe(-32_020);
+
+    const futureMetadata = {
+      ...modernMetadata,
+      "io.modelcontextprotocol/protocolVersion": "2099-01-01",
+    };
+    const unsupportedVersion = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 6,
+        jsonrpc: "2.0",
+        method: "server/discover",
+        params: { _meta: futureMetadata },
+      }),
+      headers: {
+        ...authenticatedHeaders,
+        "MCP-Protocol-Version": "2099-01-01",
+        "Mcp-Method": "server/discover",
+      },
+      method: "POST",
+    });
+    expect(unsupportedVersion.status).toBe(400);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_022) }) })
+        .parse(await unsupportedVersion.json()).error.code,
+    ).toBe(-32_022);
+
+    const unknownMethod = await currentRequest("owd/unknown", {});
+    expect(unknownMethod.status).toBe(404);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_601) }) })
+        .parse(await unknownMethod.json()).error.code,
+    ).toBe(-32_601);
+
+    const batchResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify([
+        { id: 7, jsonrpc: "2.0", method: "ping" },
+        { id: 8, jsonrpc: "2.0", method: "tools/list" },
+      ]),
+      headers: authenticatedHeaders,
+      method: "POST",
+    });
+    expect(batchResponse.status).toBe(400);
+
+    const malformedResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: "{not-json",
+      headers: authenticatedHeaders,
+      method: "POST",
+    });
+    expect(malformedResponse.status).toBe(400);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_700) }) })
+        .parse(await malformedResponse.json()).error.code,
+    ).toBe(-32_700);
+
+    const oversizedResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({ padding: "x".repeat(65_536) }),
+      headers: authenticatedHeaders,
+      method: "POST",
+    });
+    expect(oversizedResponse.status).toBe(413);
+    expect(
+      z
+        .object({ error: z.object({ code: z.literal(-32_000) }) })
+        .parse(await oversizedResponse.json()).error.code,
+    ).toBe(-32_000);
+  });
+
+  it("preserves multi-event legacy SSE and applies exact MCP header decoding", async () => {
+    const body =
+      'event: message\ndata: {"jsonrpc":"2.0","method":"notifications/progress"}\n\n' +
+      'event: message\ndata: {"id":1,"jsonrpc":"2.0","result":{}}\n\n';
+    const response = await preferLegacyJsonResponse(
+      new Response(body, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "X-OWD-Test": "preserved",
+        },
+        status: 200,
+      }),
+    );
+
+    expect(response.headers.get("Content-Type")).toContain("text/event-stream");
+    expect(response.headers.get("X-OWD-Test")).toBe("preserved");
+    expect(await response.text()).toBe(body);
+    expect(stripMcpHeaderOws(" \t2026-07-28\t ")).toBe("2026-07-28");
+    expect(stripMcpHeaderOws("\u00a02026-07-28\u00a0")).toBe(
+      "\u00a02026-07-28\u00a0",
+    );
+    expect(decodeMcpHeaderValue(" \t=?base64?Y29ubmVjdGlvbl9pbmZv?=\t ")).toBe(
+      "connection_info",
+    );
+    expect(decodeMcpHeaderValue("=?base64?***?=")).toBeNull();
   });
 
   it("exposes only the hardened Project lifecycle tools in production", async () => {

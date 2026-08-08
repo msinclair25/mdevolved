@@ -2,7 +2,7 @@
 
 ## Purpose
 
-OWD will expose a portable, agent-neutral knowledge interface so Codex, Claude
+OWD exposes a portable, agent-neutral knowledge interface so Codex, Claude
 Code, Grok Build, Hermes, Hoplon, and other compatible clients can work with an
 owner's explicitly granted vault content. OWD is the trusted vault, policy,
 provenance, and approval layer. It is not an inference gateway or a general
@@ -23,8 +23,10 @@ skill automation.
 
 ## Protocol boundary
 
-- Serve the current MCP Streamable HTTP transport at `/mcp` from the existing
-  integrated Worker.
+- Serve authenticated MCP `2026-07-28` Streamable HTTP at `/mcp`, with
+  stateless `2025-11-25` compatibility, from the existing integrated Worker.
+  The exact claim and fail-closed matrix are frozen in
+  [`MCP-COMPATIBILITY.md`](MCP-COMPATIBILITY.md).
 - Start with Cloudflare's stateless MCP handler. Conversation and reasoning
   state belong to the client; ordinary tool calls do not justify a Durable
   Object per MCP session.
@@ -678,7 +680,9 @@ public evidence.
 
 ## Acceptance matrix
 
-The read-only foundation is complete only when:
+Protocol compatibility is covered by the local dual-era conformance matrix.
+Named-client validation is a separate release-evidence gate and is complete
+only when:
 
 - MCP Inspector and current supported versions of Codex, Claude Code, Grok
   Build, and one generic Streamable HTTP client complete authorization;
@@ -697,7 +701,8 @@ The read-only foundation is complete only when:
 - [Cloudflare remote MCP server](https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/)
 - [Cloudflare MCP authorization](https://developers.cloudflare.com/agents/model-context-protocol/protocol/authorization/)
 - [Cloudflare MCP security](https://developers.cloudflare.com/agents/model-context-protocol/guides/securing-mcp-server/)
-- [MCP Streamable HTTP transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+- [MCP 2026-07-28 Streamable HTTP transport](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http)
+- [MCP 2025-11-25 Streamable HTTP compatibility](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
 - [MCP security best practices](https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices)
 - [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp)
 - [Claude Code MCP configuration](https://code.claude.com/docs/en/mcp)
