@@ -51,7 +51,7 @@
     "public-source:check": "node scripts/check-public-source.mjs",
     "release:check": "node --test scripts/plugin-release-tag-policy.test.mjs && pnpm package:plugin && node scripts/check-release-contract.mjs && node scripts/check-release-regressions.mjs",
     "release:hash": "node scripts/hash-release-artifacts.mjs",
-    "test": "pnpm test:marketing && pnpm test:continuity:harness && pnpm test:operations && vitest run && pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter @owd/desktop test && pnpm --filter @owd/obsidian-plugin test",
+    "test": "pnpm test:marketing && pnpm test:continuity:harness && pnpm test:operations && vitest run && pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @owd/desktop test && pnpm --filter @owd/obsidian-plugin test",
     "test:continuity:harness": "node --test scripts/live-continuity-acceptance.test.mjs scripts/local-policy-continuity-drill.test.mjs",
     "test:clean-install:mdevolved": "node scripts/test-mdevolved-clean-install.mjs",
     "test:marketing": "pnpm --filter @owd/marketing test",
