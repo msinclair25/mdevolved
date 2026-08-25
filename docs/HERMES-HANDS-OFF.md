@@ -12,6 +12,11 @@ additional authority. It describes how an already authorized Project lead can
 map Hermes delegation onto OWD's provider-neutral R2 services. Other harnesses
 use the same tools and durable contracts.
 
+This is a compatibility recipe, not an OWD runtime. OWD never schedules,
+launches, retries, supervises, or stops Hermes workers; Hermes owns that
+execution loop. OWD only persists the bounded Project, Run, Actor, evidence,
+review, exception, and checkpoint records submitted by an authorized client.
+
 ## Preconditions
 
 - Resume the exact Project and claim its fenced lead lease.
@@ -42,6 +47,11 @@ use the same tools and durable contracts.
    started. A newer packet does not retarget that Run.
 8. Call `complete_work_item` only after an independent passing review and when
    `list_project_exceptions` has no blocking result.
+
+For a fresh Hermes task, call `owd_resume` first and continue from that bounded
+brief. Do not paste the prior Hermes prompt or session. If Hermes is operating
+in independent mode, the context intentionally omits peer conclusions; a later
+owner-authorized synthesis can compare separately attributable results.
 
 ## Exception boundary
 

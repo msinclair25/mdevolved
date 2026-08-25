@@ -9,7 +9,7 @@ overrides:
   fast-uri: 3.1.5
   hono: 4.12.34
   ip-address: 10.3.1
-  nanoid@<3.3.17: 3.3.17
+  nanoid@<3.3.18: 3.3.18
   postcss: 8.5.23
   sharp: 0.35.0
   undici@<7.29.0: 7.29.0
@@ -126,6 +126,9 @@ importers:
       y-partyserver:
         specifier: 2.1.2
         version: 2.1.2(@cloudflare/workers-types@4.20260702.1)(partyserver@0.3.2(@cloudflare/workers-types@4.20260702.1))(yjs@13.6.20)
+      yaml:
+        specifier: 2.9.0
+        version: 2.9.0
       yjs:
         specifier: 13.6.20
         version: 13.6.20
@@ -2191,8 +2194,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  nanoid@3.3.17:
-    resolution: {integrity: sha512-xQLf0A3HOMlgHq0n247/LRuAOYmB7dXJ/DvAxGvsSBij45XtBSmQycu+F8ODbHwns/XyFZagyL1+J0Offw1E0g==}
+  nanoid@3.3.18:
+    resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -4522,7 +4525,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  nanoid@3.3.17: {}
+  nanoid@3.3.18: {}
 
   nanoid@5.1.16: {}
 
@@ -4685,7 +4688,7 @@ snapshots:
 
   postcss@8.5.23:
     dependencies:
-      nanoid: 3.3.17
+      nanoid: 3.3.18
       picocolors: 1.1.1
       source-map-js: 1.2.1
 

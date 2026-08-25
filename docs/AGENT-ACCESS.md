@@ -2,24 +2,46 @@
 
 ## Purpose
 
-OWD exposes a portable, agent-neutral knowledge interface so Codex, Claude
-Code, Grok Build, Hermes, Hoplon, and other compatible clients can work with an
-owner's explicitly granted vault content. OWD is the trusted vault, policy,
-provenance, and approval layer. It is not an inference gateway or a general
-agent runtime.
+OWD exposes portable, owner-controlled Project memory so compatible clients can
+continue work from durable objectives, evidence, decisions, useful failures,
+and next steps. It complements each client's native harness. It is not an
+inference gateway, scheduler, worktree manager, or agent supervisor, and it
+never grants local shell, skill, Obsidian CLI, or filesystem authority.
 
-The read-only vault boundary, collaboration ledger, and agent-first Project
-connection (create/connect/rejoin/resume) are implemented. Real, unassisted
-two-client Handoff/Review/Decision and recovery runs remain an ongoing alpha
-quality gate; they do not change the authorization, provenance, portability,
-or recovery model. Durable Knowledge, evolving Skills, and proposed note
-writes remain later additions.
+The read-only vault boundary, collaboration ledger, agent-first Project
+connection, and M1 three-operation memory facade are implemented in this local
+candidate. It is not a production-deployment claim. Portable preferences and
+skills and evidence-backed, owner-reviewed compounding are available through
+the agent-native Project memory loop.
 
 The collaboration model and future durable-intelligence layers are defined in
 [`PORTABLE-INTELLIGENCE.md`](PORTABLE-INTELLIGENCE.md). The current alpha makes
 the deployed Project, Work Item, Work Packet, Handoff, Review, and Decision
 records usable from the owner's working agent before generalized memory or
 skill automation.
+
+## Ordinary Project memory contract
+
+One MCP connection and one Project consent cover the normal loop:
+
+1. `owd_resume(projectId, task?, contextMode?)` returns a bounded, cited,
+   structured brief. It does not replay raw transcripts or provider sessions.
+   `focused` is the default; `independent` withholds peer conclusions,
+   provisional results, and record bodies; `synthesis` includes only separately
+   attributable durable shared results.
+2. `owd_find(projectId, question)` searches the current brief, recent durable
+   Project memory, and authorized current library within explicit ceilings.
+3. `owd_checkpoint(...)` appends a compact outcome, verification evidence,
+   useful failures, remaining work, and next action. The agent passes the
+   opaque `checkpointBase` and `contextMode` returned by `owd_resume` unchanged.
+   Focused and synthesis stale bases fail closed; independent bases remain
+   bound to the exact frozen Work Packet. Exact retries are idempotent.
+
+`checkpointBase` and `contextMode` are agent-handled receipts, not a recurring
+owner gate.
+Provider-session expiry does not erase OWD records. Cross-computer preservation
+requires a deployed endpoint/account plus backup; revocation remains effective
+on the next call.
 
 ## Protocol boundary
 
@@ -175,16 +197,16 @@ The normal client algorithm is fixed:
 4. If owner approval is required, present the one `approvalUrl` and immediately
    call the tool and key named by `wait`.
 5. Repeat only that bounded wait while approval remains pending.
-6. In a fresh task, call `resume_project` with the complete `.owdignore`
-   context policy and its exact Project ID.
+6. In a fresh task, read `.owdignore` and call `owd_resume` with its exact
+   Project ID.
 
 When `.owdignore` exists, step 6 is the first OWD action. The session's writer
-role remains unconfirmed until `resume_project` returns
+role remains unconfirmed until `owd_resume` returns
 `localVaultAccess.role`; a fresh chat, process, or context window does not
 change the durable assignment. Clients must not report “not primary,” reconnect
 MCP, or seek new Project approval based only on missing conversation memory.
 If automatic startup is missed, **OWD resume project** is the human fallback
-phrase for the same receipt-based call.
+phrase for that same resume call.
 
 If a wrapper or context compaction loses the pending envelope before the wait,
 the client repeats the exact same `open_project` arguments once. Idempotent
@@ -290,7 +312,13 @@ returns only the current bounded packet and owner-shared records.
 
 ## Read-only tool contract
 
-The initial catalog stays intentionally small:
+The ordinary M1 catalog stays intentionally small:
+
+- `owd_resume`: bounded structured Project context and a checkpoint receipt.
+- `owd_find`: targeted durable recall with citations and scan ceilings.
+- `owd_checkpoint`: append-only verified progress using the resume receipt.
+
+The existing setup and vault tools remain current compatibility paths:
 
 - `connection_info`: deployment, client, grant, and protocol status without
   secrets.
@@ -312,7 +340,10 @@ implicit current vault. Search results return bounded excerpts, and note reads
 use 32-64 KiB pages within the existing one-MiB note limit. No tool returns an
 unbounded full-vault dump.
 
-The former `list_projects`, request, and request-status lifecycle tools remain
+The lower-level packet, submission, lease, Run, policy, and continuity tools
+remain callable advanced/reference paths for current and legacy clients; they
+are not routine M1 ceremony. The former `list_projects`, request, and
+request-status lifecycle tools remain
 test-only adapters for historical contract coverage. Production MCP discovery
 does not advertise them. If a stale client catalog nevertheless calls one,
 OWD returns `project_lifecycle_tool_retired`, names `open_project` as the exact
@@ -339,7 +370,8 @@ vault content is untrusted read-only data, every operation must name a granted
 vault, and results must preserve generation provenance. Client-specific setup
 may vary, but tool names and schemas do not.
 
-For an explicit Project ID, `resume_project` and `get_current_work_packet`
+For an explicit Project ID, `owd_resume` is the normal path. The lower-level
+`resume_project` and `get_current_work_packet`
 resolve and revalidate the exact live source and Project grants, Project,
 Knowledge Space, restored-source approvals, source generations, and packet
 integrity. When routine context has expired or its source generation advances,
@@ -369,7 +401,7 @@ must disclose this egress boundary. Access to especially sensitive vaults or
 folders should remain ungranted rather than relying on prompt text to contain
 the model.
 
-## Future proposals, memory, and skills
+## Future preferences, skills, and proposals
 
 Agents never receive direct note-write authority through OWD. A separately
 owner-authorized local writer remains outside OWD's enforcement boundary as
@@ -380,7 +412,8 @@ session, CSRF protection, and passkey step-up where policy requires. The
 proposing client cannot approve its own proposal. Accepted note proposals enter
 the existing expected-version Yjs write path; stale proposals fail closed.
 
-Portable intelligence is split deliberately:
+Portable preferences, skills, and evidence-backed compounding are M2/M3 plans,
+not M1 shipped claims. Their intended boundary is:
 
 - Working memory remains local to each agent session.
 - Accepted durable memories live in OWD with source provenance, confidence,
@@ -657,7 +690,9 @@ participant, or grant identities.
 ## Current implementation status
 
 The Worker, consent UI, dashboard management UI, migrations, read-only vault
-tools, and Project collaboration tools are implemented. Clients may use
+tools, Project collaboration tools, and the three-operation M1 facade are
+implemented in this local candidate. No production deployment is claimed.
+Clients may use
 public-only Client ID Metadata Documents or dynamic registration. Automated
 Worker-runtime coverage performs real dynamic registration, PKCE
 authorization-code exchange, bearer-authenticated MCP calls, SQL-level folder

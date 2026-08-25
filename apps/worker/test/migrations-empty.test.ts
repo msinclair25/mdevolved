@@ -5,10 +5,11 @@ import {
   declaredTables,
   declaredIndexes,
   migrations,
+  policyAutopilotR4MigrationEntry,
 } from "./migration-fixture";
 
 describe("D1 migration chain from empty", () => {
-  it("applies every migration from 0001 through 0033", async () => {
+  it("applies every migration from 0001 through 0035", async () => {
     await applyMigrations(env.DB, migrations);
 
     const rows = await env.DB.prepare(
@@ -18,7 +19,7 @@ describe("D1 migration chain from empty", () => {
     const expected = new Set(
       migrations.flatMap((migration) => declaredTables(migration.source)),
     );
-    const r4Migration = migrations.at(-1)!;
+    const r4Migration = policyAutopilotR4MigrationEntry;
     const expectedR4Indexes = declaredIndexes(r4Migration.source);
     const indexes = await env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'index'",
@@ -75,6 +76,17 @@ describe("D1 migration chain from empty", () => {
     expect(actual.has("project_orca_projections")).toBe(true);
     expect(actual.has("project_run_deltas")).toBe(true);
     expect(actual.has("project_run_delta_clock")).toBe(true);
+    expect(actual.has("working_profile_records")).toBe(true);
+    expect(actual.has("working_preferences")).toBe(true);
+    expect(actual.has("agent_skills")).toBe(true);
+    expect(actual.has("project_skill_attachments")).toBe(true);
+    expect(actual.has("working_profile_mutation_receipts")).toBe(true);
+    expect(actual.has("compounding_records")).toBe(true);
+    expect(actual.has("compounding_observations")).toBe(true);
+    expect(actual.has("compounding_drafts")).toBe(true);
+    expect(actual.has("compounding_mutation_receipts")).toBe(true);
+    expect(actual.has("compounding_checkpoint_bindings")).toBe(true);
+    expect(actual.has("compounding_draft_action_claims")).toBe(true);
     for (const table of declaredTables(r4Migration.source)) {
       expect(actual.has(table)).toBe(true);
     }

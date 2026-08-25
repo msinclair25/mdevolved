@@ -1,6 +1,6 @@
 # OWD alpha status
 
-**Updated:** August 8, 2026<br />
+**Updated:** August 25, 2026<br />
 **OWD Platform:** `1.0.0-alpha.7`<br />
 **OWD Sync:** `0.1.7`
 
@@ -34,6 +34,12 @@ does not place multiple owners in one vault database.
   grants
 - Agent-first Project create, connect, rejoin, and resume through
   `open_project`
+- The bounded `owd_resume` → `owd_find` → `owd_checkpoint` loop across fresh
+  compatible clients
+- Editable immutable Project briefs, portable preferences, inert Agent Skills,
+  and owner-reviewed memory suggestions
+- Owner-only local continuation evidence with no analytics provider or raw
+  Project content in the response
 - Prepared first-Project consent during guided onboarding
 - Work Packets, Attempts, Artifacts, Handoffs, Reviews, owner Decisions, and
   provenance

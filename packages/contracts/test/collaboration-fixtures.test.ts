@@ -3,6 +3,7 @@ import {
   APPROVED_INTELLIGENCE_CAPABILITY,
   MAX_SUBMISSION_BYTES,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
+  WORKING_PROFILE_SNAPSHOT_CAPABILITY,
   artifactSchema,
   collaborationCapabilityProfileSchema,
   collaborationLedgerJsonSchema,
@@ -373,6 +374,31 @@ describe("Phase 9A collaboration contract fixtures", () => {
       QUARANTINED_INTELLIGENCE_CAPABILITY,
     ]);
     expect(none.selection).toBe("none");
+  });
+
+  it("keeps legacy manifests valid and allows profile recovery with intelligence disabled", () => {
+    expect(
+      snapshotIntelligenceManifestSchema.safeParse(noneFixture).success,
+    ).toBe(true);
+    const profileOnly = {
+      ...structuredClone(noneFixture),
+      requiredCapabilities: [WORKING_PROFILE_SNAPSHOT_CAPABILITY],
+      workingProfile: {
+        logicalBytes: 0,
+        newlyStoredBytes: 0,
+        recordCount: 0,
+        records: [],
+      },
+    };
+    expect(
+      snapshotIntelligenceManifestSchema.safeParse(profileOnly).success,
+    ).toBe(true);
+    expect(
+      snapshotIntelligenceManifestSchema.safeParse({
+        ...profileOnly,
+        requiredCapabilities: [],
+      }).success,
+    ).toBe(false);
   });
 
   it("fails closed for unvetted-only, missing closure, and restored-authority attempts", () => {

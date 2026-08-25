@@ -7,6 +7,7 @@ const RETENTION_DELETE_BATCH_SIZE = 4;
 const GC_BATCH_SIZE = 24;
 const GC_GRACE_SECONDS = 24 * 60 * 60;
 const FAILED_SNAPSHOT_BATCH_SIZE = 4;
+const RESTORE_STAGING_BATCH_SIZE = 4;
 
 type RetentionRow = {
   enabled: number;
@@ -322,6 +323,40 @@ export async function queueFailedSnapshotCleanup(
   db: D1Database,
   now: number,
 ): Promise<number> {
+  const abandonedRestores = await db
+    .prepare(
+      `SELECT id, status FROM collaboration_restore_jobs
+       WHERE status IN ('staging', 'preview', 'confirmed', 'applied', 'failed')
+         AND created_at <= ?
+         AND EXISTS (
+           SELECT 1 FROM collaboration_restore_items items
+           WHERE items.restore_id = collaboration_restore_jobs.id
+         )
+       ORDER BY created_at, id LIMIT ?`,
+    )
+    .bind(now - GC_GRACE_SECONDS, RESTORE_STAGING_BATCH_SIZE)
+    .all<{ id: string; status: string }>();
+  for (const restore of abandonedRestores.results) {
+    await db.batch([
+      db
+        .prepare(
+          `INSERT OR IGNORE INTO snapshot_gc_objects (object_key, queued_at)
+           SELECT object_key, ? FROM collaboration_restore_items
+           WHERE restore_id = ?`,
+        )
+        .bind(now, restore.id),
+      db
+        .prepare(`DELETE FROM collaboration_restore_items WHERE restore_id = ?`)
+        .bind(restore.id),
+      db
+        .prepare(
+          `UPDATE collaboration_restore_jobs
+           SET status = 'failed', failure_code = 'restore_expired'
+           WHERE id = ? AND status IN ('staging', 'preview', 'confirmed')`,
+        )
+        .bind(restore.id),
+    ]);
+  }
   const failed = await db
     .prepare(
       `SELECT id, completed_at FROM workspace_snapshots
@@ -424,7 +459,27 @@ export async function runSnapshotGarbageCollection(
     )
     .bind(input.now - GC_GRACE_SECONDS, limit)
     .all<{ object_key: string }>();
+  const compoundingTable = await db
+    .prepare(
+      `SELECT 1 AS present FROM sqlite_master
+       WHERE type = 'table' AND name = 'compounding_records'`,
+    )
+    .first<{ present: number }>();
+  const compoundingReference =
+    compoundingTable?.present === 1
+      ? ` OR EXISTS (
+           SELECT 1 FROM compounding_records
+           WHERE body_object_key = ?
+         )`
+      : "";
   for (const object of queued.results) {
+    const referenceBindings = [
+      object.object_key,
+      object.object_key,
+      object.object_key,
+      object.object_key,
+      ...(compoundingReference === "" ? [] : [object.object_key]),
+    ];
     const referenced = await db
       .prepare(
         `SELECT 1 AS referenced
@@ -439,9 +494,12 @@ export async function runSnapshotGarbageCollection(
          ) OR EXISTS (
            SELECT 1 FROM snapshot_intelligence_items
            WHERE encrypted_object_key = ?
-         )`,
+         ) OR EXISTS (
+           SELECT 1 FROM working_profile_records
+           WHERE body_object_key = ?
+         )${compoundingReference}`,
       )
-      .bind(object.object_key, object.object_key, object.object_key)
+      .bind(...referenceBindings)
       .first<{ referenced: number }>();
     if (referenced?.referenced === 1) {
       await db

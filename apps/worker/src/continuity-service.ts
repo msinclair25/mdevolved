@@ -38,6 +38,7 @@ import {
   readLatestContinuityPoint,
   readProjectLeadLease,
   renewProjectLeadLeaseRow,
+  releaseProjectLeadLeaseStatement,
   revokeProjectLeadLeaseRow,
   type StoredCheckpointReceipt,
   type StoredContinuityPoint,
@@ -55,6 +56,17 @@ type AuthorizedContinuityInput = {
 function authorityKey(grantId: string): string {
   return `grant:${grantId}`;
 }
+
+export const AGENT_MEMORY_FACADE_LEAD_IDENTITY = {
+  claimedHarness: {
+    assertedBy: "client" as const,
+    name: "owd-agent-memory-facade",
+    verification: "claimed" as const,
+    version: "1",
+  },
+  claimedModel: null,
+  displayName: "Connected OWD agent",
+};
 
 async function requestSha256(value: unknown): Promise<string> {
   return sha256Hex(canonicalizeCollaborationJson(value));
@@ -312,6 +324,13 @@ export async function checkpointProject(
   storage: R2Bucket,
   input: {
     authorization: CollaborationAuthorizationContext;
+    facadeLeaseRelease?: {
+      clientId: string;
+      fencingToken: number;
+      grantId: string;
+      leaseId: string;
+      projectId: string;
+    };
     now: number;
     request: unknown;
   },
@@ -367,6 +386,18 @@ export async function checkpointProject(
     lease.lease.fencingToken !== request.fencingToken ||
     lease.holderGrantId !== grant.grantId ||
     lease.holderClientId !== grant.oauthClientId
+  ) {
+    throw new CollaborationProblem("lead_lease_invalid");
+  }
+  if (
+    input.facadeLeaseRelease !== undefined &&
+    (input.facadeLeaseRelease.projectId !== request.projectId ||
+      input.facadeLeaseRelease.leaseId !== lease.lease.leaseId ||
+      input.facadeLeaseRelease.fencingToken !== lease.lease.fencingToken ||
+      input.facadeLeaseRelease.grantId !== grant.grantId ||
+      input.facadeLeaseRelease.clientId !== grant.oauthClientId ||
+      canonicalizeCollaborationJson(lease.lease.leadIdentity) !==
+        canonicalizeCollaborationJson(AGENT_MEMORY_FACADE_LEAD_IDENTITY))
   ) {
     throw new CollaborationProblem("lead_lease_invalid");
   }
@@ -612,7 +643,7 @@ export async function checkpointProject(
     requestSha256: checkpointRequestSha256,
   };
   try {
-    await db.batch([
+    const statements = [
       insertContinuityPointStatement(db, prepared, {
         producerClientId: grant.oauthClientId,
         restoredAt: null,
@@ -627,7 +658,17 @@ export async function checkpointProject(
         ...storedReceipt,
         authorityKey: checkpointAuthorityKey,
       }),
-    ]);
+    ];
+    if (input.facadeLeaseRelease !== undefined) {
+      statements.push(
+        releaseProjectLeadLeaseStatement(db, {
+          ...input.facadeLeaseRelease,
+          leadIdentity: AGENT_MEMORY_FACADE_LEAD_IDENTITY,
+          now: input.now,
+        }),
+      );
+    }
+    await db.batch(statements);
   } catch (error) {
     try {
       await queueCollaborationObjectCleanup(

@@ -5,9 +5,11 @@ import {
   createAlbatrossMcpMergeConfig,
   createAlbatrossSetupKit,
   createAntigravityConfig,
+  createClaudeMcpConfig,
   createCodexSetupCommands,
   createCursorInstallUrl,
   createEveConnectionSource,
+  createGenericMcpConfig,
   createObsidianMindMcpMergeConfig,
   createObsidianMindProjectMcpCommand,
 } from "../src/agent-client-config";
@@ -34,6 +36,22 @@ describe("agent client setup helpers", () => {
         },
       },
     });
+  });
+
+  it("creates the provider-neutral HTTP config used by Claude and other clients", () => {
+    const expected = {
+      mcpServers: {
+        [AGENT_SERVER_NAME]: {
+          type: "http",
+          url: MCP_URL,
+        },
+      },
+    };
+    expect(JSON.parse(createGenericMcpConfig(MCP_URL))).toEqual(expected);
+    expect(createClaudeMcpConfig(MCP_URL)).toBe(
+      createGenericMcpConfig(MCP_URL),
+    );
+    expect(createClaudeMcpConfig(MCP_URL)).not.toContain("Bearer");
   });
 
   it("creates a complete least-privilege Codex setup", () => {

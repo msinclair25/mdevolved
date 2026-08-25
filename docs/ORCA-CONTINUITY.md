@@ -106,3 +106,15 @@ exhaustion, quarantine-only restore, and Orca-state loss followed by
 non-Orca resumption. Synthetic fixtures contain only disposable IDs, hashes,
 and metadata. Live vendor acceptance remains human-authorized and unverified
 until run.
+
+## M4 user recipe
+
+Connect the same generic OWD MCP endpoint from the owner's chosen client, then
+let Orca execute work in its own worktree. At a checkpoint, the client submits
+the bounded outcome and evidence; a fresh Codex, Claude, or Hermes client later
+calls `owd_resume` for the same Project or Run. That handoff does not restore an
+Orca session, terminal, worktree, branch, credentials, or scheduler state.
+
+OWD does not launch Orca, dispatch its agents, manage retries, or certify a
+commit or pull request. A worktree reference is evidence supplied by the
+harness and remains subject to the owner's normal review.

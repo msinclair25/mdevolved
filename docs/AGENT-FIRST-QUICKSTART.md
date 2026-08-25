@@ -18,6 +18,54 @@ OWD keeps four identities separate:
 
 Names may match, but a vault is never implicitly treated as a Project.
 
+## The normal agent loop
+
+After the Project is connected once, the user does not manage packets, leases,
+or fencing. Give the agent this instruction:
+
+> Before meaningful work, call `owd_resume` for this Project. Use `owd_find`
+> when you need targeted durable recall. Before finishing, call
+> `owd_checkpoint` with the resume receipt and verified outcome.
+
+`owd_resume` returns bounded structured Project context, not a transcript or
+provider-session replay. `focused` is the default. Use `independent` to withhold
+peer conclusions and provisional results, and `synthesis` only to compare
+separately attributable durable results.
+
+The agent passes the opaque `checkpointBase` and returned `contextMode` from
+`owd_resume` back to `owd_checkpoint` unchanged. Focused and synthesis work
+reject stale memory instead of silently overwriting newer progress. Independent
+work remains bound to the exact frozen Work Packet, allowing separately working
+agents to submit attributable results without seeing peer conclusions. These
+receipts are handled by the agent; they are never a human approval gate.
+
+Provider sessions may expire without erasing OWD records. Cross-computer
+preservation still requires a deployed OWD endpoint/account and a verified
+backup. Portable preferences, inert skills, and owner-reviewed evidence-backed
+suggestions are available in **Memory & Skills**; pending suggestions never
+enter a resume until the owner accepts them.
+
+## The cross-agent moment
+
+The smallest useful demonstration is deliberately boring:
+
+1. Client A connects the Project, does a bounded piece of work, and calls
+   `owd_checkpoint` with its verified outcome.
+2. The owner starts Client B on another computer or in a fresh session.
+3. Client B calls `owd_resume` for the exact Project ID and receives the
+   objective, current state, cited evidence, rejected approaches, and next
+   action. No prompt, transcript, terminal history, or provider session is
+   copied.
+
+For an independent review, Client B requests `independent` context. OWD keeps
+peer conclusions and synthesis out of that view; later synthesis can attribute
+the separately submitted results. OWD stores the bounded Project evidence and
+does not schedule, launch, retry, or supervise either client.
+
+Use the repository fixture
+`packages/contracts/fixtures/owd-m4-cross-agent-continuation-v1.json` for a
+no-cost local demonstration. It contains synthetic IDs and hashes only.
+
 ## Install and pair
 
 For a managed workspace, start at step 1. For Community, deploy from the public
@@ -161,6 +209,27 @@ the approved server-side context through OWD MCP after owner consent. The
 durable Project ID—not a label, path, or remembered chat—is how both agents
 refer to the same Project.
 
+## Client recipes
+
+Codex: use the dashboard's **Copy setup** command, authenticate the exact MCP
+server, then ask the agent to call `owd_resume` before meaningful work.
+
+Claude or another compatible client: add the dashboard's MCP URL to its
+project-scoped `mcpServers` configuration. The common HTTP shape is:
+
+```json
+{
+  "mcpServers": {
+    "md-evolved": { "type": "http", "url": "https://YOUR-OWD-HOST/mcp" }
+  }
+}
+```
+
+Hermes uses the same generic MCP tools and the inert hands-off mapping in
+[`HERMES-HANDS-OFF.md`](HERMES-HANDS-OFF.md). Orca may run the work in its own
+worktree, but remains the execution harness: OWD records bounded evidence and
+continuity only; it does not launch Orca agents or certify their work.
+
 ## Continue in a new agent task
 
 After approval, the initializing agent receives two exact continuity artifacts:
@@ -175,28 +244,23 @@ It never asks the owner to copy the receipt, Project ID, policy JSON, or
 instruction block.
 Codex reads the applicable `AGENTS.md` instruction chain at the start of a new
 task. The OWD block therefore tells a fresh task to read `.owdignore` and call
-`resume_project` before using prior Project context.
+`owd_resume` with its exact `projectId` before using prior Project context.
 
-That resume is the first OWD action when `.owdignore` exists. Until it returns,
-the fresh session's writer role is **unconfirmed**—the agent must not claim that
-it is or is not primary from chat history, a new session identity, or local
-tool availability. The current `localVaultAccess.role` response is
+That `owd_resume` call is the first OWD action when `.owdignore` exists. Until
+it returns, the fresh session's writer role is **unconfirmed**—the agent must
+not claim that it is or is not primary from chat history, a new session
+identity, or local tool availability. The current `localVaultAccess.role` is
 authoritative. A compliant client should perform this automatically. If it
 does not after a crash, restart, or context reset, the owner can say **OWD
 resume project**; the agent resumes the existing receipt without reconnecting
 MCP or requesting new authorization.
 
-`resume_project` uses the `projectId` in `.owdignore` rather than inferring a
+`owd_resume` uses the `projectId` in `.owdignore` rather than inferring a
 Project from a label or whichever grant was most recently used. It rechecks the
-live OAuth client, audience, Project scopes, authoritative D1 grant, revocation,
-pinned Knowledge Space version, selector hash, and the complete local policy.
-It returns the current Work Packet only when all of them agree. OWD
-automatically appends a successor when routine packet context expires or its
-source library advances, and it slides an active collaboration grant's
-availability window on authorized use. None of those maintenance actions can
-change the Project, scope, source boundary, or owner consent. A missing,
-changed, malformed, or broadened policy still fails closed and requires owner
-attention; the agent must not continue from chat memory.
+live client, exact Project grant, scope, revocation, and current durable state.
+It returns one bounded cited brief only when they agree. It does not replay raw
+conversation history. The lower-level `resume_project` receipt and packet
+behavior remain available under advanced compatibility paths.
 
 Do not hand-edit `.owdignore` as a way to change authority. Reinitialize or use
 an owner-approved Knowledge Space change so OWD can issue a new pinned version.
@@ -209,7 +273,7 @@ tools bypass OWD's read-only MCP boundary.
 
 The human always remains the vault owner. The first agent that establishes an
 OWD Project for the vault becomes its primary vault writer across Projects.
-Every successful `open_project`, connection completion, and `resume_project`
+Every successful `open_project`, connection completion, and `owd_resume`
 returns that caller's advisory `localVaultAccess` role. The managed `AGENTS.md`
 block requires an agent to check that role before a local mutation.
 
@@ -284,10 +348,12 @@ unsupported. They must never broaden a vault/folder selector, reuse another
 Project's identifiers, infer owner approval, or fall back to transcript or model
 claims as durable evidence.
 
-`work_packet_stale` means the exact historical task packet can no longer accept
-work. The agent calls `resume_project`, receives OWD's automatically refreshed
-current packet, and retries against that packet. It must not ask the owner to
-renew routine context or initialize a replacement Project.
+`continuity_point_conflict` means another checkpoint advanced the Project after
+this agent's resume. The agent calls `owd_resume`, incorporates the latest
+durable state, then creates a new checkpoint with a new idempotency key. It
+must not ask the owner to renew context or initialize a replacement Project.
+Advanced clients using historical packet APIs still handle `work_packet_stale`
+through the lower-level `resume_project` compatibility path.
 
 An older `.owdignore` without `projectId` is not permission to guess. The agent
 calls `open_project` once; when the same active source authorization still

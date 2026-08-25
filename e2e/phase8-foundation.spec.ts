@@ -277,6 +277,7 @@ function serverBoundProject() {
     activeProjectVersionId: "13131313-1313-4313-8313-131313131313",
     agentVisibility: "discoverable",
     createdAt: now - 100,
+    currentBrief: null,
     currentPacket: null,
     duplicateGroupSize: 1,
     label: "Agent-first review",
@@ -1156,7 +1157,7 @@ test("shows the transport-neutral collaboration owner surface", async ({
     }),
   ).toBeVisible();
   const totals = page.locator("details.collaboration-technical").filter({
-    hasText: "Workspace totals, participants, and agent access",
+    hasText: "Advanced / technical workspace activity",
   });
   await expect(totals).not.toHaveAttribute("open");
   await expect(page.getByText("0 pending inbox items")).not.toBeVisible();
@@ -1203,6 +1204,15 @@ test("keeps routine Work Packet rotation out of the owner workflow", async ({
             activeProjectVersionId: "13131313-1313-4313-8313-131313131313",
             agentVisibility: "discoverable",
             createdAt: now - 100,
+            currentBrief: {
+              constraints: [],
+              definitionOfDone: ["A fresh agent resumes the same Project."],
+              latestCheckpoint: null,
+              nextAction: "Resume this Project in the next agent.",
+              objective:
+                "Keep internal packet rotation out of routine owner work.",
+              requestedOutput: "A bounded continuation.",
+            },
             currentPacket: {
               createdAt: now - 86_401,
               expiresAt: now - 1,
@@ -1242,13 +1252,10 @@ test("keeps routine Work Packet rotation out of the owner workflow", async ({
       "New session, same Project",
       { exact: true },
     ),
-  ).toBeVisible();
+  ).toHaveCount(1);
   await expect(
-    operationalRegion(page, "collaboration").getByText("OWD resume project", {
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(page.getByText(/No owner action is required/u)).toBeVisible();
+    operationalRegion(page, "collaboration").getByText(/Call owd_resume/u),
+  ).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: /Renew .*packet/u }),
   ).toHaveCount(0);
@@ -1293,6 +1300,7 @@ test("keeps archived internal acceptance Projects out of the end-user surface", 
             activeProjectVersionId: "79797979-7979-4797-8797-797979797979",
             agentVisibility: "owner-only",
             createdAt: now - 10_000,
+            currentBrief: null,
             currentPacket: null,
             duplicateGroupSize: 1,
             label: "Phase 9A Production Acceptance",

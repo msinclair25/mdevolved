@@ -27,7 +27,7 @@ full durable Project ID and exact source-vault/context relationship.
 | Handoff prepared | Say **Connect this project to OWD** in the real client        | Matching `open_project` creates or joins and returns ready on the same token |
 | Review fallback  | Review one exact owner link only for a mismatch/later Project | Exact Project grant is approved once; no second Project OAuth flow           |
 | Project approved | Keep working in the same agent connection                     | `wait_for_project_connection` returns the ready exact Project                |
-| Ready            | Start or resume the task                                      | `.owdignore` supplies `projectId` and the approved context policy            |
+| Ready            | Use the three-operation agent loop                            | Resume, targeted find, and checkpoint complete without owner ceremony        |
 
 The plugin-install step is itself stateful and truthful. On macOS it says to
 quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q** because closing
@@ -59,7 +59,7 @@ completion, or resume returns the calling agent's advisory `localVaultAccess`
 role.
 
 Before local Obsidian CLI, skill, shell, or filesystem mutation, the managed
-`AGENTS.md` block requires the agent to call `resume_project` and obey that
+`AGENTS.md` block requires the agent to call `owd_resume` and obey that
 role. The primary writer still needs an owner-requested bounded task. A
 read-only collaborator warns the owner and hands off changes. A same-client
 restart retains the role; a different authorization remains read-only and the
@@ -94,6 +94,27 @@ understand “materialization” or service library freshness.
 history exists but does not match current sync state, the UI labels it stale
 while OWD prepares the successor automatically. Agents, search tools, Project
 initialization, and snapshots cannot treat it as current.
+
+## Ordinary work after setup
+
+The owner gives one short instruction; the compatible agent handles the loop:
+
+1. call `owd_resume` before meaningful work;
+2. call `owd_find` for targeted durable recall; and
+3. call `owd_checkpoint` before finishing.
+
+Resume returns bounded structured Project context rather than replaying a raw
+transcript or provider session. `focused` is the default, `independent`
+withholds peer conclusions, and `synthesis` compares separately attributable
+durable results. The agent passes `checkpointBase` and `contextMode` from resume
+back to checkpoint unchanged. Focused and synthesis stale memory fails closed;
+independent work remains bound to the exact frozen packet. These are
+agent-handled receipts, never a human approval step.
+
+The owner retains root authority and may revoke immediately. OWD does not grant
+local shell, skill, Obsidian CLI, or filesystem access. Packet renewal, leases,
+fencing, Runs, and continuity internals are advanced compatibility concerns,
+not routine owner work.
 
 ## Retry behavior
 
@@ -131,10 +152,10 @@ initialization, and snapshots cannot treat it as current.
   `client-authorization-pending` marker self-heals to an exact Project grant
   when the same active source connection opens it. The owner is never sent back
   through initialization.
-- Routine packet expiry never creates an owner step and never hides or replaces
-  the Project. A compatible Project remains discoverable; an access request or
-  authorized `resume_project` appends fresh context automatically after all
-  authority and integrity checks. The agent retries with that successor.
+- Routine internal packet expiry never creates an owner step and never hides or
+  replaces the Project. A compatible Project remains discoverable; an
+  authorized `owd_resume` refreshes the ordinary bounded context after all
+  authority and integrity checks. Advanced clients retain `resume_project`.
 - An exact expired packet remains immutable and cannot be retrieved for active
   work or used for a new submission.
 

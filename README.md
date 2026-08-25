@@ -10,7 +10,8 @@
 
 <p align="center">
   <strong>Make one AI's work the next AI's head start.</strong><br />
-  Owner-controlled policy autopilot and continuity for Obsidian and independent AI agents.
+  Connect once. Let every AI start with the right Project memory.<br />
+  Durable, owner-controlled memory, evidence, and next steps across compatible AI tools.
 </p>
 
 <p align="center">
@@ -38,25 +39,60 @@
   <img alt="Managed private alpha" src="https://img.shields.io/badge/Managed-private%20alpha-8250df.svg" />
 </p>
 
-OWD gives independent AI agents one durable, cited Project record—and lets
-routine research and coding continue under standing policy without dashboard
-babysitting. Connect once, set the boundary, and step back in only when the
-work needs new authority or an owner Decision.
+OWD gives compatible AI tools durable, cited Project memory: the objective,
+current state, decisions, evidence, useful failures, and next action that should
+survive a provider session. It complements the harnesses you already use. OWD
+does not run, schedule, route, or supervise agents, and it never grants their
+local shell, skills, or filesystem authority.
 
 It turns the Obsidian vault you choose into bounded Project context without
 becoming another model subscription, taking over the agent runtime, scraping
 hidden conversations, or silently deciding what is true.
 
 > [!IMPORTANT]
-> **This is an alpha release.**
+> **This branch contains the locally verified M1–M4 product slice; repository
+> state alone is not a production deployment.**
 > The complete Apache-2.0 Community source is public and independently
-> self-hostable. Start with synthetic or disposable vaults while evaluating a
-> deployment. The optional managed service remains invitation-only and uses
-> one isolated data-plane cell per owner.
+> self-hostable; the managed service remains invitation-only. Start with
+> synthetic or disposable vaults while evaluating it.
+> Durable records survive an AI provider session, but preservation across
+> computers requires a deployed OWD endpoint/account and a verified backup.
+> Portable preferences and inert skills are included. Repeated attributable
+> checkpoints can propose evidence-backed memory, but only the owner can accept,
+> edit and accept, ignore, or delete a suggestion.
 
-| Connect once                                                            | Keep work moving                                                             | Know why it passed                                                          | Recover independently                                                  |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Pair one vault and authorize the exact agent, Project, and folder once. | Leads and actors carry routine work forward under immutable standing policy. | Deterministic gates cite exact owner-authored policy and accepted evidence. | Scheduled continuity points and portable recovery survive a lost lead. |
+The owner-facing Project view keeps the current brief editable, makes Memory &
+Skills reviewable without continuity jargon, and shows local-only continuation
+evidence. These signals never leave the deployment and are not a success score.
+
+## The ordinary Project loop
+
+Connect a Project once, then give the agent one short instruction: resume before
+meaningful work, find durable context when needed, and checkpoint before
+finishing.
+
+1. `owd_resume(projectId)` returns bounded, structured Project context—not a raw
+   transcript or replay of a provider session. `focused` is the default;
+   `independent` withholds peer conclusions; `synthesis` compares separately
+   attributable durable results.
+2. `owd_find(projectId, question)` performs targeted recall with citations.
+3. `owd_checkpoint(...)` records the outcome and evidence for the next agent.
+   The agent passes the opaque `checkpointBase` and returned `contextMode` from
+   `owd_resume` back unchanged. Focused and synthesis work fail closed when the
+   durable tip changes; independent work stays bound to the exact frozen packet
+   so separately working agents can submit attributable results. This is an
+   agent-handled receipt, not a human approval step.
+4. Optional bounded `learningSignals` can suggest a repeated preference or
+   successful method. Two distinct checkpoints are required, nothing is
+   auto-promoted, and pending suggestions never enter resume context.
+
+The owner retains root authority and can revoke access immediately. The older
+packet, handoff, lease, fencing, Run, and recovery interfaces remain compatible
+advanced paths; they are not routine Project ceremony.
+
+| Connect once                                                            | Resume the right context                                    | Leave a better next step                              | Stay in control                                      |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| Pair one vault and authorize the exact agent, Project, and folder once. | A bounded cited brief survives provider-session expiration. | Compact verified checkpoints improve the next resume. | The owner can inspect provenance and revoke at once. |
 
 ## The problem OWD solves
 
@@ -78,29 +114,27 @@ makes access nearly impossible to audit.
 ```mermaid
 flowchart LR
     V["Your Obsidian vault"] <--> S["OWD Sync"]
-    S <--> O["Your OWD workspace"]
-    O <--> A["Agent A"]
-    O <--> B["Agent B"]
-    A --> H["Cited Handoff"]
-    H --> B
-    B --> R["Independent Review"]
-    R --> D["Your Decision"]
-    D --> O
-    O --> N["Next agent's head start"]
+    S <--> O["Owner-controlled OWD Project"]
+    O --> R["owd_resume"]
+    R --> A["Work in any compatible AI harness"]
+    A --> F["owd_find when needed"]
+    F --> C["owd_checkpoint"]
+    C --> O
 ```
 
 1. **Pair the vault you choose.** OWD Sync connects only the open, explicitly
    approved Obsidian vault.
 2. **Publish current context.** OWD automatically builds a searchable library
    from the latest durable sync state.
-3. **Connect independent agents.** Each compatible client receives its own
+3. **Connect a compatible agent.** Each client receives its own
    revocable, read-only vault and folder grant through remote MCP.
 4. **Prepare one Project handoff.** Choose the agent, Project name, vault, and
    folder once during guided onboarding.
 5. **Say _Connect this project to OWD_.** The working agent creates, joins,
    rejoins, or resumes the exact Project on the same connection.
-6. **Carry only the work you approve.** Share cited contributions, request an
-   independent Review, and record the owner Decision that should survive.
+6. **Use the three-operation loop.** The agent resumes durable context, finds
+   targeted evidence as needed, and checkpoints verified progress before it
+   finishes.
 
 No prompt is copied back into the agent. The prepared first Project requires no
 second MCP authorization and no daily packet renewal. A changed boundary or a
@@ -108,7 +142,7 @@ later unmatched Project still returns to one exact owner consent.
 
 > [!TIP]
 > **A new agent session continues the same Project.** OWD-compatible agents
-> should read `.owdignore` and call `resume_project` automatically before using
+> should read `.owdignore` and call `owd_resume` automatically before using
 > prior Project context or reporting their writer role. If a client misses that
 > startup step after a crash or reset, say **OWD resume project**. OWD restores
 > the exact Project and durable writer role without reconnecting MCP or asking

@@ -1,7 +1,9 @@
 import { z } from "./zod";
 import {
   APPROVED_INTELLIGENCE_CAPABILITY,
+  COMPOUNDING_SNAPSHOT_CAPABILITY,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
+  WORKING_PROFILE_SNAPSHOT_CAPABILITY,
   collaborationProjectSummarySchema,
   collaborationScopeSchema,
   snapshotIntelligenceManifestSchema,
@@ -17,6 +19,10 @@ export * from "./diagnostics";
 export * from "./project-initialization";
 export * from "./lead-operation";
 export * from "./policy-operation";
+export * from "./agent-memory";
+export * from "./working-profile";
+export * from "./compounding";
+export * from "./project-outcomes";
 
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
@@ -950,6 +956,8 @@ export const SUPPORTED_SNAPSHOT_REQUIRED_CAPABILITIES = [
   ...BASE_SNAPSHOT_REQUIRED_CAPABILITIES,
   APPROVED_INTELLIGENCE_CAPABILITY,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
+  WORKING_PROFILE_SNAPSHOT_CAPABILITY,
+  COMPOUNDING_SNAPSHOT_CAPABILITY,
 ] as const;
 
 export const snapshotObjectManifestSchema = z
@@ -1180,7 +1188,9 @@ export const snapshotManifestSchema = z
     const intelligenceCapabilities = manifest.requiredCapabilities.filter(
       (capability) =>
         capability === APPROVED_INTELLIGENCE_CAPABILITY ||
-        capability === QUARANTINED_INTELLIGENCE_CAPABILITY,
+        capability === QUARANTINED_INTELLIGENCE_CAPABILITY ||
+        capability === WORKING_PROFILE_SNAPSHOT_CAPABILITY ||
+        capability === COMPOUNDING_SNAPSHOT_CAPABILITY,
     );
     if (manifest.intelligence === undefined) {
       if (intelligenceCapabilities.length > 0) {

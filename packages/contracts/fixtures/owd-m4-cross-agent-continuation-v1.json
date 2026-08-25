@@ -1,0 +1,41 @@
+{
+  "format": "owd-m4-cross-agent-continuation-v1",
+  "project": {
+    "projectId": "10000000-0000-4000-8000-000000000001",
+    "label": "Synthetic launch brief",
+    "objective": "Ship a small provider-neutral continuation demo.",
+    "definitionOfDone": [
+      "Client A records a bounded checkpoint.",
+      "Client B resumes the same Project from OWD without session copying."
+    ],
+    "nextAction": "Verify the continuation in a fresh compatible client."
+  },
+  "clientA": {
+    "clientId": "synthetic-client-a",
+    "label": "Client A",
+    "checkpoint": {
+      "completedWork": ["Recorded the provider-neutral Project brief."],
+      "openWork": ["Verify a fresh-client resume."],
+      "knownRejectedApproaches": ["Do not copy a prior chat transcript."],
+      "citedEvidence": [
+        {
+          "label": "Synthetic brief",
+          "path": "Projects/Synthetic/Brief.md",
+          "contentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  },
+  "clientB": {
+    "clientId": "synthetic-client-b",
+    "label": "Client B",
+    "resumeInstruction": "Call owd_resume(\"10000000-0000-4000-8000-000000000001\") before meaningful work, then continue from the returned brief. Do not replay a prior session."
+  },
+  "assertions": {
+    "sameProjectId": true,
+    "noPromptCopying": true,
+    "noProviderCredentials": true,
+    "independentModeWithholdsPeerConclusions": true,
+    "owdDoesNotScheduleAgents": true
+  }
+}

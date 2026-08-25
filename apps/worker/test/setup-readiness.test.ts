@@ -26,6 +26,7 @@ import { ensurePairingSchema } from "../src/pairing-store";
 import { ensureSnapshotSchema } from "../src/snapshot-store";
 import {
   applyOnboardingLifecycleMigration,
+  applyContinuityR1Migration,
   applyPhase9aCollaborationMigration,
   applyPhase9bAgentFirstMigration,
   applyPreparedProjectHandoffsMigration,
@@ -63,7 +64,12 @@ async function resetState(): Promise<void> {
   await applyProjectAgentVisibilityMigration(env.DB);
   await applyVaultPrimaryWriterMigration(env.DB);
   await applyPreparedProjectHandoffsMigration(env.DB);
+  await applyContinuityR1Migration(env.DB);
   await env.DB.exec(`
+    DELETE FROM continuity_checkpoint_receipts;
+    DELETE FROM continuity_point_dependencies;
+    DELETE FROM project_continuity_points;
+    DELETE FROM project_lead_leases;
     DELETE FROM collaboration_submission_receipts;
     DELETE FROM collaboration_grant_clients;
     DELETE FROM collaboration_grants;

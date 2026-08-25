@@ -35,6 +35,7 @@ import {
   getCollaborationDashboard,
   readArtifactBody,
   submitCollaborationRecord,
+  updateCollaborationProjectBrief,
 } from "./collaboration-service";
 import { buildPortableContinuityBundle } from "./continuity-service";
 import { getElasticOperationOverview } from "./elastic-operation-service";
@@ -375,6 +376,24 @@ export function registerCollaborationRoutes(app: Hono<AppBindings>): void {
       );
       context.header("Cache-Control", "private, no-store");
       return context.json(created, 201);
+    } catch (error) {
+      return throwCollaborationProblem(error);
+    }
+  });
+
+  app.post("/api/collaboration/projects/:projectId/brief", async (context) => {
+    await requireOwnerSession(context, { csrf: true });
+    try {
+      const response = await updateCollaborationProjectBrief(
+        context.env.DB,
+        context.env.VAULT_STORAGE,
+        idParameter(context, "projectId", "project_reference_invalid"),
+        await parseJsonBody(context, 64 * 1024),
+        nowSeconds(),
+        context.get("requestId"),
+      );
+      context.header("Cache-Control", "private, no-store");
+      return context.json(response, 200);
     } catch (error) {
       return throwCollaborationProblem(error);
     }

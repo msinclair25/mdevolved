@@ -249,6 +249,26 @@ row identity, R2 key, or personal content.
 
 ## R3 continuity-record recovery and retention
 
+## M3 compounding recovery
+
+Compounding observations and draft actions are an additive encrypted snapshot
+extension negotiated with `owd.snapshot.compounding-v1`. They are Unvetted:
+`none` and Approved-only snapshots exclude them, while an explicit
+Approved-and-Unvetted snapshot includes each immutable `compounding_records`
+body with its canonical hash, byte size, portable identity, source Project
+identity, and exact Continuity Point dependency list. Fresh-cell
+restore verifies the exact body and writes only a quarantined
+`compounding_records` row: `project_id` stays null,
+`source_project_id` retains the source identity, and
+`restored_authority_allowed` remains zero. It does not recreate observations,
+draft projections, accepted preferences or skills, grants, leases, actors,
+credentials, OAuth state, sessions, or runtime authority. Missing dependencies,
+duplicate identities, malformed bodies, unknown capabilities, and hash/body
+mismatches fail closed. The combined compounding and working-profile inventory
+is capped at 14 objects for the Community restore path; larger mixed restores
+are rejected before staging until resumable restore exists. Legacy manifests
+without this optional section remain compatible.
+
 R3 adds bounded Run continuity records to the existing encrypted snapshot and
 portable export boundary. The records include the elastic profile, actor
 registration and recovery metadata, Run deltas, harness-reported budget
