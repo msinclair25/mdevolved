@@ -15,7 +15,7 @@
   "devDependencies": {
     "@electron/packager": "20.3.0",
     "electron": "44.0.0",
-    "esbuild": "0.25.5"
+    "esbuild": "0.28.2"
   },
   "dependencies": {
     "@owd/folder-adapter": "workspace:*",
