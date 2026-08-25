@@ -11,6 +11,8 @@ import {
   collaborationDecisionCreateRequestSchema,
   collaborationLedgerSchema,
   collaborationOwnerRecordActionSchema,
+  collaborationProjectBriefUpdateRequestSchema,
+  collaborationProjectBriefUpdateResponseSchema,
   collaborationProjectCreateRequestSchema,
   collaborationRecordId,
   collaborationSubmissionJsonSchema,
@@ -20,16 +22,21 @@ import {
   ownerEventSchema,
   portableWorkPacketBundleSchema,
   projectContextPolicySchema,
+  projectVersionSchema,
   provenanceEdgeSchema,
   workPacketJsonSchema,
   workPacketSchema,
+  workItemVersionSchema,
   type Artifact,
   type CollaborationDashboardResponse,
   type CollaborationContinuationPacketRequest,
   type CollaborationDecisionCreateRequest,
   type CollaborationProjectCreateRequest,
+  type CollaborationProjectBriefUpdateRequest,
+  type CollaborationProjectBriefUpdateResponse,
   type CollaborationScope,
   type CollaborationSubmission,
+  type ContinuityPoint,
   type Decision,
   type OwnerEvent,
   type PortableWorkPacketBundle,
@@ -62,6 +69,7 @@ import {
   type StoredContentObject,
 } from "./collaboration-store";
 import { queueCollaborationObjectCleanup } from "./collaboration-retention";
+import { readLatestContinuityPoint } from "./continuity-store";
 import {
   agentMayUseCurrentMaterializedPaths,
   readMaterializedNoteRestoreAccessBatch,
@@ -89,6 +97,49 @@ export function workPacketNeedsAutomaticRefresh(
   now: number,
 ): boolean {
   return packet.expiresAt <= now;
+}
+
+async function workPacketVersionsNeedRefresh(
+  db: D1Database,
+  packet: Pick<
+    WorkPacket,
+    | "knowledgeSpaceVersionId"
+    | "projectVersionId"
+    | "workItemId"
+    | "workItemVersionId"
+  >,
+  projectId: string,
+): Promise<boolean> {
+  const active = await db
+    .prepare(
+      `SELECT p.active_project_version_id,
+        p.active_knowledge_space_version_id, p.status AS project_status,
+        w.active_work_item_version_id, w.status AS work_item_status
+       FROM collaboration_projects p
+       JOIN collaboration_work_items w ON w.project_id = p.project_id
+       WHERE p.project_id = ? AND w.work_item_id = ?`,
+    )
+    .bind(projectId, packet.workItemId)
+    .first<{
+      active_knowledge_space_version_id: string;
+      active_project_version_id: string;
+      active_work_item_version_id: string;
+      project_status: "active" | "archived";
+      work_item_status: "closed" | "open" | "quarantined";
+    }>();
+  if (
+    active === null ||
+    active.project_status !== "active" ||
+    active.work_item_status !== "open"
+  ) {
+    throw new CollaborationProblem("project_reference_invalid");
+  }
+  return (
+    packet.projectVersionId !== active.active_project_version_id ||
+    packet.knowledgeSpaceVersionId !==
+      active.active_knowledge_space_version_id ||
+    packet.workItemVersionId !== active.active_work_item_version_id
+  );
 }
 
 async function workPacketSourcesNeedRefresh(
@@ -1376,6 +1427,379 @@ export async function createCollaborationProject(
     throw new CollaborationProblem("portable_identity_collision");
   }
   return { packet, projectId, workItemId };
+}
+
+/**
+ * Append an owner-authored successor to the active Project/Work Item brief.
+ * The two pointer updates and immutable record inserts are one D1 batch. A
+ * duplicate-project guard turns a stale expected pointer into a transaction
+ * failure, so a concurrent edit cannot publish a partial successor.
+ */
+export async function updateCollaborationProjectBrief(
+  db: D1Database,
+  storage: R2Bucket,
+  projectId: string,
+  rawRequest: unknown,
+  now: number,
+  requestId?: string,
+): Promise<CollaborationProjectBriefUpdateResponse> {
+  const parsed =
+    collaborationProjectBriefUpdateRequestSchema.safeParse(rawRequest);
+  if (!parsed.success) throw new CollaborationProblem("submission_invalid");
+  const request: CollaborationProjectBriefUpdateRequest = parsed.data;
+  const idempotencyRequestId =
+    request.idempotencyKey === undefined
+      ? undefined
+      : `${projectId}:${request.idempotencyKey}`;
+  const active = await db
+    .prepare(
+      `SELECT p.active_project_version_id,
+       p.active_knowledge_space_version_id, p.objective,
+        p.status AS project_status,
+        w.active_work_item_version_id, w.work_item_id, w.status
+       FROM collaboration_projects p
+       JOIN collaboration_work_items w ON w.project_id = p.project_id
+        AND w.work_item_id = (
+          SELECT packet.work_item_id
+          FROM collaboration_records packet
+          JOIN collaboration_work_items packet_work
+            ON packet_work.work_item_id = packet.work_item_id
+          WHERE packet.project_id = p.project_id
+            AND packet.record_type = 'work-packet'
+          ORDER BY
+            CASE WHEN packet_work.status = 'open' THEN 0 ELSE 1 END,
+            packet.received_at DESC, packet.id DESC
+          LIMIT 1
+        )
+       WHERE p.project_id = ? LIMIT 1`,
+    )
+    .bind(projectId)
+    .first<{
+      active_knowledge_space_version_id: string;
+      active_project_version_id: string;
+      active_work_item_version_id: string;
+      objective: string;
+      project_status: "active" | "archived";
+      status: "closed" | "open" | "quarantined";
+      work_item_id: string;
+    }>();
+  if (
+    active === null ||
+    active.project_status !== "active" ||
+    active.status !== "open"
+  ) {
+    throw new CollaborationProblem("project_reference_invalid");
+  }
+  if (
+    active.active_project_version_id !== request.expectedProjectVersionId ||
+    active.active_work_item_version_id !== request.expectedWorkItemVersionId
+  ) {
+    if (idempotencyRequestId !== undefined) {
+      const prior = await db
+        .prepare(
+          `SELECT id FROM audit_events
+           WHERE event_type = 'collaboration.project_brief_updated'
+             AND request_id = ? LIMIT 1`,
+        )
+        .bind(idempotencyRequestId)
+        .first<{ id: string }>();
+      if (prior !== null) {
+        const [projectCandidates, workItemCandidates] = await Promise.all([
+          db
+            .prepare(
+              `SELECT id FROM collaboration_records
+               WHERE project_id = ? AND record_type = 'project-version'
+               ORDER BY received_at DESC, id DESC LIMIT 256`,
+            )
+            .bind(projectId)
+            .all<{ id: string }>(),
+          db
+            .prepare(
+              `SELECT id FROM collaboration_records
+               WHERE project_id = ? AND record_type = 'work-item-version'
+                 AND work_item_id = ?
+               ORDER BY received_at DESC, id DESC LIMIT 256`,
+            )
+            .bind(projectId, active.work_item_id)
+            .all<{ id: string }>(),
+        ]);
+        let projectSuccessor: string | null = null;
+        if (request.project !== undefined) {
+          for (const row of projectCandidates.results) {
+            const loaded = await readCollaborationRecord(db, storage, row.id);
+            if (
+              loaded?.record.recordType === "project-version" &&
+              loaded.record.previousVersionId ===
+                request.expectedProjectVersionId &&
+              loaded.record.objective === request.project.objective
+            ) {
+              projectSuccessor = loaded.record.projectVersionId;
+              break;
+            }
+          }
+        }
+        let workItemSuccessor: string | null = null;
+        if (request.workItem !== undefined) {
+          for (const row of workItemCandidates.results) {
+            const loaded = await readCollaborationRecord(db, storage, row.id);
+            if (
+              loaded?.record.recordType === "work-item-version" &&
+              loaded.record.previousVersionId ===
+                request.expectedWorkItemVersionId &&
+              canonicalizeCollaborationJson(loaded.record.brief) ===
+                canonicalizeCollaborationJson(request.workItem)
+            ) {
+              workItemSuccessor = loaded.record.workItemVersionId;
+              break;
+            }
+          }
+        }
+        const projectReplayMatches =
+          request.project === undefined || projectSuccessor !== null;
+        const workItemReplayMatches =
+          request.workItem === undefined || workItemSuccessor !== null;
+        if (projectReplayMatches && workItemReplayMatches) {
+          return collaborationProjectBriefUpdateResponseSchema.parse({
+            activeProjectVersionId:
+              projectSuccessor ?? active.active_project_version_id,
+            activeWorkItemVersionId:
+              workItemSuccessor ?? active.active_work_item_version_id,
+            projectId,
+            workItemId: active.work_item_id,
+          });
+        }
+        throw new CollaborationProblem("idempotency_conflict");
+      }
+    }
+    throw new CollaborationProblem("continuity_point_conflict");
+  }
+  const [projectRecord, workItemRecord] = await Promise.all([
+    readCollaborationRecord(db, storage, active.active_project_version_id),
+    readCollaborationRecord(db, storage, active.active_work_item_version_id),
+  ]);
+  if (
+    projectRecord?.record.recordType !== "project-version" ||
+    projectRecord.record.projectId !== projectId ||
+    workItemRecord?.record.recordType !== "work-item-version" ||
+    workItemRecord.record.projectId !== projectId ||
+    workItemRecord.record.workItemId !== active.work_item_id
+  ) {
+    throw new CollaborationProblem("project_reference_invalid");
+  }
+  const nextProjectObjective =
+    request.project?.objective ?? projectRecord.record.objective;
+  const nextWorkItemBrief = request.workItem ?? workItemRecord.record.brief;
+  const projectChanged =
+    nextProjectObjective !== projectRecord.record.objective;
+  const workItemChanged =
+    canonicalizeCollaborationJson(nextWorkItemBrief) !==
+    canonicalizeCollaborationJson(workItemRecord.record.brief);
+  if (!projectChanged && !workItemChanged) {
+    return collaborationProjectBriefUpdateResponseSchema.parse({
+      activeProjectVersionId: active.active_project_version_id,
+      activeWorkItemVersionId: active.active_work_item_version_id,
+      projectId,
+      workItemId: active.work_item_id,
+    });
+  }
+
+  const nextProjectVersionId = projectChanged
+    ? crypto.randomUUID()
+    : active.active_project_version_id;
+  const nextWorkItemVersionId = workItemChanged
+    ? crypto.randomUUID()
+    : active.active_work_item_version_id;
+  const nextProjectVersion = projectVersionSchema.parse({
+    ...projectRecord.record,
+    createdAt: now,
+    objective: nextProjectObjective,
+    previousVersionId: projectChanged
+      ? projectRecord.record.projectVersionId
+      : projectRecord.record.previousVersionId,
+    projectVersionId: nextProjectVersionId,
+    version: projectChanged
+      ? projectRecord.record.version + 1
+      : projectRecord.record.version,
+  });
+  const nextWorkItemVersion = workItemVersionSchema.parse({
+    ...workItemRecord.record,
+    brief: nextWorkItemBrief,
+    createdAt: now,
+    previousVersionId: workItemChanged
+      ? workItemRecord.record.workItemVersionId
+      : workItemRecord.record.previousVersionId,
+    version: workItemChanged
+      ? workItemRecord.record.version + 1
+      : workItemRecord.record.version,
+    workItemVersionId: nextWorkItemVersionId,
+  });
+  const activation = projectChanged
+    ? ownerEventSchema.parse({
+        createdAt: now,
+        eventId: crypto.randomUUID(),
+        eventType: "project.version-activated",
+        ownerAuthenticated: true,
+        projectId,
+        projectVersionId: nextProjectVersionId,
+        reason: "Owner edited the Project brief.",
+        recordType: "owner-event",
+        schemaVersion: 1,
+      })
+    : null;
+  const records: StoredCollaborationRecord[] = [
+    ...(projectChanged ? [nextProjectVersion] : []),
+    ...(workItemChanged ? [nextWorkItemVersion] : []),
+    ...(activation === null ? [] : [activation]),
+  ];
+  const prepared = await Promise.all(
+    records.map((record) =>
+      prepareCollaborationRecord(storage, { now, record }),
+    ),
+  );
+  const dependencies = [
+    ...(projectChanged
+      ? [
+          dependencyStatement(db, nextProjectVersionId, projectId, "record"),
+          dependencyStatement(
+            db,
+            nextProjectVersionId,
+            active.active_knowledge_space_version_id,
+            "record",
+          ),
+        ]
+      : []),
+    ...(workItemChanged
+      ? [
+          dependencyStatement(db, nextWorkItemVersionId, projectId, "record"),
+          dependencyStatement(
+            db,
+            nextWorkItemVersionId,
+            active.work_item_id,
+            "record",
+          ),
+        ]
+      : []),
+    ...(activation === null
+      ? []
+      : [
+          dependencyStatement(db, activation.eventId, projectId, "record"),
+          dependencyStatement(
+            db,
+            activation.eventId,
+            nextProjectVersionId,
+            "record",
+          ),
+        ]),
+  ];
+  const guard = db
+    .prepare(
+      `INSERT INTO collaboration_projects (
+        project_id, active_project_version_id,
+        active_knowledge_space_version_id, label, objective, status, created_at
+      )
+      SELECT p.project_id, p.active_project_version_id,
+        p.active_knowledge_space_version_id, p.label, p.objective,
+        p.status, p.created_at
+      FROM collaboration_projects p
+      JOIN collaboration_work_items w ON w.project_id = p.project_id
+      WHERE p.project_id = ?
+        AND (p.active_project_version_id != ?
+          OR w.active_work_item_version_id != ?)`,
+    )
+    .bind(
+      projectId,
+      request.expectedProjectVersionId,
+      request.expectedWorkItemVersionId,
+    );
+  const statements: D1PreparedStatement[] = [
+    guard,
+    ...prepared.map((record) => insertRecordStatement(db, record)),
+    ...prepared.map((record) =>
+      insertStateStatement(db, {
+        changedAt: now,
+        disposition: "accepted",
+        recordId: record.metadata.id,
+        visibility: "owner-only",
+      }),
+    ),
+    ...dependencies,
+  ];
+  if (activation !== null) {
+    statements.push(
+      db
+        .prepare(
+          `INSERT INTO collaboration_owner_events (
+            event_id, project_id, event_type, project_version_id, created_at
+          ) VALUES (?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          activation.eventId,
+          projectId,
+          activation.eventType,
+          nextProjectVersionId,
+          now,
+        ),
+    );
+  }
+  statements.push(
+    db
+      .prepare(
+        `UPDATE collaboration_projects
+         SET active_project_version_id = ?, objective = ?
+         WHERE project_id = ? AND active_project_version_id = ?`,
+      )
+      .bind(
+        nextProjectVersionId,
+        nextProjectObjective,
+        projectId,
+        request.expectedProjectVersionId,
+      ),
+    db
+      .prepare(
+        `UPDATE collaboration_work_items
+         SET active_work_item_version_id = ?
+         WHERE project_id = ? AND work_item_id = ?
+           AND active_work_item_version_id = ?`,
+      )
+      .bind(
+        nextWorkItemVersionId,
+        projectId,
+        active.work_item_id,
+        request.expectedWorkItemVersionId,
+      ),
+    db
+      .prepare(
+        `INSERT INTO audit_events (id, event_type, request_id, created_at)
+         VALUES (?, 'collaboration.project_brief_updated', ?, ?)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        idempotencyRequestId ?? requestId ?? crypto.randomUUID(),
+        now,
+      ),
+  );
+  try {
+    await db.batch(statements);
+  } catch (error) {
+    await queueCollaborationObjectCleanup(
+      db,
+      prepared.map((record) => record.metadata.bodyObjectKey),
+      now,
+    );
+    if (
+      error instanceof Error &&
+      /unique|constraint|constraint failed/iu.test(error.message)
+    ) {
+      throw new CollaborationProblem("continuity_point_conflict");
+    }
+    throw error;
+  }
+  return collaborationProjectBriefUpdateResponseSchema.parse({
+    activeProjectVersionId: nextProjectVersionId,
+    activeWorkItemVersionId: nextWorkItemVersionId,
+    projectId,
+    workItemId: active.work_item_id,
+  });
 }
 
 export async function authorizeCollaboration(
@@ -2681,6 +3105,11 @@ export async function refreshContinuationWorkPacketIfNeeded(
     throw new CollaborationProblem("project_reference_invalid");
   }
   const expired = workPacketNeedsAutomaticRefresh(input.packet, input.now);
+  const versionsNeedRefresh = await workPacketVersionsNeedRefresh(
+    db,
+    input.packet,
+    input.projectId,
+  );
   let sourcesNeedRefresh = false;
   try {
     sourcesNeedRefresh = await workPacketSourcesNeedRefresh(db, input.packet);
@@ -2694,7 +3123,11 @@ export async function refreshContinuationWorkPacketIfNeeded(
     }
     throw error;
   }
-  const needsRefresh = input.force === true || expired || sourcesNeedRefresh;
+  const needsRefresh =
+    input.force === true ||
+    expired ||
+    versionsNeedRefresh ||
+    sourcesNeedRefresh;
   if (!needsRefresh) {
     return input.packet;
   }
@@ -2720,7 +3153,10 @@ export async function refreshContinuationWorkPacketIfNeeded(
     await verifyIntegrity(
       latest.record as WorkPacket & Record<string, unknown>,
     );
-    if (!workPacketNeedsAutomaticRefresh(latest.record, input.now)) {
+    if (
+      !workPacketNeedsAutomaticRefresh(latest.record, input.now) &&
+      !(await workPacketVersionsNeedRefresh(db, latest.record, input.projectId))
+    ) {
       try {
         if (!(await workPacketSourcesNeedRefresh(db, latest.record))) {
           return latest.record;
@@ -2889,15 +3325,52 @@ export async function getCollaborationDashboard(
   const vaultNames = new Map(
     vaultRows.results.map((row) => [row.id, row.display_name]),
   );
+  const requestedWorkItems = dashboard.projects.flatMap((project) =>
+    project.currentWorkItemId === null
+      ? []
+      : [
+          {
+            projectId: project.projectId,
+            workItemId: project.currentWorkItemId,
+          },
+        ],
+  );
+  const workItemRows =
+    requestedWorkItems.length === 0
+      ? []
+      : (
+          await db
+            .prepare(
+              `SELECT work.project_id, work.work_item_id,
+                work.active_work_item_version_id, work.status
+               FROM collaboration_work_items work
+               JOIN json_each(?) selected
+                 ON work.project_id = json_extract(selected.value, '$.projectId')
+                AND work.work_item_id = json_extract(selected.value, '$.workItemId')
+               LIMIT 100`,
+            )
+            .bind(JSON.stringify(requestedWorkItems))
+            .all<{
+              active_work_item_version_id: string;
+              project_id: string;
+              status: "closed" | "open" | "quarantined";
+              work_item_id: string;
+            }>()
+        ).results;
+  const activeWorkItems = new Map(
+    workItemRows.map((row) => [row.project_id, row]),
+  );
   const enriched: Array<{
     groupKey: string;
     project: CollaborationDashboardResponse["projects"][number];
   }> = [];
-  // Each Project can issue two storage reads. Keep the batch at three so a
-  // polluted dashboard never exceeds Workers' six simultaneous connections.
+  // Each Project's two legacy record reads run first. Keep the batch at three
+  // so a polluted dashboard never exceeds Workers' six simultaneous
+  // connections; the optional checkpoint read starts only after both finish.
   for (let offset = 0; offset < dashboard.projects.length; offset += 3) {
     const batch = await Promise.all(
       dashboard.projects.slice(offset, offset + 3).map(async (project) => {
+        const activeWorkItem = activeWorkItems.get(project.projectId);
         const [knowledgeSpace, packet] = await Promise.all([
           readCollaborationRecord(
             db,
@@ -2949,6 +3422,46 @@ export async function getCollaborationDashboard(
             packetIntegrityValid = false;
           }
         }
+        const authoritativePacket =
+          packet?.record.recordType === "work-packet" &&
+          packetMatchesActiveProject(packet.record, {
+            activeKnowledgeSpaceVersionId:
+              project.activeKnowledgeSpaceVersionId,
+            activeProjectVersionId: project.activeProjectVersionId,
+            activeWorkItemVersionId:
+              activeWorkItem?.active_work_item_version_id ?? null,
+            currentPacketId: project.currentPacketId,
+            currentWorkItemId: project.currentWorkItemId,
+            knowledgeSpaceValid,
+            packetIntegrityValid,
+            projectId: project.projectId,
+            projectStatus: project.status,
+            workItemStatus: activeWorkItem?.status ?? null,
+          })
+            ? packet.record
+            : null;
+        const checkpoint =
+          authoritativePacket !== null
+            ? await readLatestContinuityPoint(db, storage, project.projectId)
+            : null;
+        const currentBrief = projectWorkspaceSummary(
+          authoritativePacket,
+          authoritativePacket !== null &&
+            checkpoint !== null &&
+            checkpoint.point.project.projectId === project.projectId &&
+            checkpoint.point.project.projectVersionId ===
+              project.activeProjectVersionId &&
+            checkpoint.point.context.knowledgeSpaceVersionId ===
+              project.activeKnowledgeSpaceVersionId &&
+            checkpoint.point.context.workPacketId ===
+              authoritativePacket.packetId &&
+            checkpoint.point.workItem.workItemId ===
+              project.currentWorkItemId &&
+            checkpoint.point.workItem.workItemVersionId ===
+              activeWorkItem?.active_work_item_version_id
+            ? checkpoint.point
+            : null,
+        );
         const state =
           project.status === "archived"
             ? ("archived" as const)
@@ -2958,13 +3471,18 @@ export async function getCollaborationDashboard(
                 ? ("packet-missing" as const)
                 : currentPacket === null
                   ? ("integrity-invalid" as const)
-                  : project.currentWorkItemStatus === "closed"
+                  : activeWorkItem?.status === "closed"
                     ? ("work-item-closed" as const)
-                    : project.currentWorkItemStatus !== "open"
+                    : activeWorkItem?.status !== "open"
                       ? ("project-context-invalid" as const)
                       : packet?.record.recordType !== "work-packet" ||
+                          packet.record.packetId !== project.currentPacketId ||
+                          packet.record.workItemId !==
+                            project.currentWorkItemId ||
                           packet.record.projectVersionId !==
                             project.activeProjectVersionId ||
+                          packet.record.workItemVersionId !==
+                            activeWorkItem.active_work_item_version_id ||
                           packet.record.knowledgeSpaceVersionId !==
                             project.activeKnowledgeSpaceVersionId
                         ? ("packet-stale" as const)
@@ -2989,9 +3507,12 @@ export async function getCollaborationDashboard(
             activeKnowledgeSpaceVersionId:
               project.activeKnowledgeSpaceVersionId,
             activeProjectVersionId: project.activeProjectVersionId,
+            activeWorkItemVersionId:
+              activeWorkItem?.active_work_item_version_id,
             agentVisibility: project.agentVisibility,
             createdAt: project.createdAt,
             currentPacket,
+            currentBrief,
             duplicateGroupSize: 1,
             label: project.label,
             lastActivityAt: project.lastActivityAt,
@@ -3020,6 +3541,102 @@ export async function getCollaborationDashboard(
       duplicateGroupSize: groupCounts.get(groupKey) ?? 1,
     })),
   });
+}
+
+export function packetMatchesActiveProject(
+  packet: Pick<
+    WorkPacket,
+    | "knowledgeSpaceVersionId"
+    | "packetId"
+    | "projectId"
+    | "projectVersionId"
+    | "workItemId"
+    | "workItemVersionId"
+  >,
+  authority: {
+    activeKnowledgeSpaceVersionId: string;
+    activeProjectVersionId: string;
+    activeWorkItemVersionId: string | null;
+    currentPacketId: string | null;
+    currentWorkItemId: string | null;
+    knowledgeSpaceValid: boolean;
+    packetIntegrityValid: boolean;
+    projectId: string;
+    projectStatus: "active" | "archived";
+    workItemStatus: "closed" | "open" | "quarantined" | null;
+  },
+): boolean {
+  return (
+    authority.projectStatus === "active" &&
+    authority.workItemStatus === "open" &&
+    authority.knowledgeSpaceValid &&
+    authority.packetIntegrityValid &&
+    packet.projectId === authority.projectId &&
+    packet.packetId === authority.currentPacketId &&
+    packet.projectVersionId === authority.activeProjectVersionId &&
+    packet.knowledgeSpaceVersionId ===
+      authority.activeKnowledgeSpaceVersionId &&
+    packet.workItemId === authority.currentWorkItemId &&
+    packet.workItemVersionId === authority.activeWorkItemVersionId
+  );
+}
+
+export function projectWorkspaceSummary(
+  packet: Pick<WorkPacket, "brief"> | null,
+  checkpoint: {
+    acceptedDecisions: Array<{
+      decision: Pick<
+        ContinuityPoint["acceptedDecisions"][number]["decision"],
+        "createdAt" | "rationale" | "resolution"
+      >;
+    }>;
+    blockers: string[];
+    citedEvidence: Array<{
+      citation: Pick<
+        ContinuityPoint["citedEvidence"][number]["citation"],
+        "path" | "sourceContentSha256"
+      >;
+    }>;
+    completedWork: string[];
+    knownRejectedApproaches: string[];
+    nextAction: string;
+    openWork: string[];
+    provenance: { acknowledgedAt: number };
+  } | null,
+): CollaborationDashboardResponse["projects"][number]["currentBrief"] {
+  if (packet === null) return null;
+  return {
+    constraints: packet.brief.constraints,
+    definitionOfDone: packet.brief.definitionOfDone,
+    latestCheckpoint:
+      checkpoint === null
+        ? null
+        : {
+            acceptedDecisions: checkpoint.acceptedDecisions.map(
+              ({ decision }) => ({
+                createdAt: decision.createdAt,
+                rationale: decision.rationale,
+                resolution: decision.resolution,
+              }),
+            ),
+            acknowledgedAt: checkpoint.provenance.acknowledgedAt,
+            blockers: checkpoint.blockers,
+            citedEvidence: checkpoint.citedEvidence.map(({ citation }) => ({
+              contentSha256: citation.sourceContentSha256,
+              label: (citation.path.split("/").at(-1) ?? citation.path).slice(
+                0,
+                120,
+              ),
+              path: citation.path,
+            })),
+            completedWork: checkpoint.completedWork,
+            knownRejectedApproaches: checkpoint.knownRejectedApproaches,
+            openWork: checkpoint.openWork,
+          },
+    nextAction: checkpoint?.nextAction ?? packet.brief.objective,
+    objective: packet.brief.objective,
+    requestedOutput: packet.brief.requestedOutput,
+  };
 }
 
 async function validateAuthorizedWorkPacket(

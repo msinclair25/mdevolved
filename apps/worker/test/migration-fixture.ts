@@ -26,6 +26,8 @@ import continuityR1Migration from "../../../migrations/0030_continuity_r1.sql";
 import handsOffLeadR2Migration from "../../../migrations/0031_hands_off_lead_r2.sql";
 import elasticActorPlaneR3Migration from "../../../migrations/0032_elastic_actor_plane_r3.sql";
 import policyAutopilotR4Migration from "../../../migrations/0033_policy_autopilot_r4.sql";
+import workingProfileSkillsMigration from "../../../migrations/0034_working_profile_skills.sql";
+import compoundingDraftsMigration from "../../../migrations/0035_compounding_drafts.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -107,6 +109,14 @@ export const migrations = [
     file: "0033_policy_autopilot_r4.sql",
     source: policyAutopilotR4Migration,
   },
+  {
+    file: "0034_working_profile_skills.sql",
+    source: workingProfileSkillsMigration,
+  },
+  {
+    file: "0035_compounding_drafts.sql",
+    source: compoundingDraftsMigration,
+  },
 ] as const;
 
 export const priorReleaseMigrations = migrations.slice(0, 10);
@@ -130,6 +140,8 @@ export const continuityR1MigrationEntry = migrations[24]!;
 export const handsOffLeadR2MigrationEntry = migrations[25]!;
 export const elasticActorPlaneR3MigrationEntry = migrations[26]!;
 export const policyAutopilotR4MigrationEntry = migrations[27]!;
+export const workingProfileSkillsMigrationEntry = migrations[28]!;
+export const compoundingDraftsMigrationEntry = migrations[29]!;
 
 export function executableMigration(source: string): string {
   return source

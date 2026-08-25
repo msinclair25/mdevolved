@@ -3,6 +3,8 @@ import {
   collaborationConnectionListResponseSchema,
   collaborationDashboardResponseSchema,
   collaborationNotebookProjectionSchema,
+  collaborationProjectBriefUpdateResponseSchema,
+  type CollaborationProjectBriefUpdateRequest,
   collaborationParticipantClaimsResponseSchema,
   collaborationSubmissionReceiptSchema,
   collaborationTimelinePageResponseSchema,
@@ -26,6 +28,8 @@ import {
   OperationalRegion,
   revealOperationalRegion,
 } from "./OperationalRegion";
+import { ProjectOutcomePanel } from "./ProjectOutcomePanel";
+import { WorkingProfilePanel } from "./WorkingProfilePanel";
 
 type Props = {
   activeVaults: VaultSummary[];
@@ -113,6 +117,533 @@ function timestamp(value: number | null): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value * 1_000));
+}
+
+export function projectResumeInstruction(projectId: string): string {
+  return `Call owd_resume("${projectId}") before meaningful work, then continue from the returned brief. Do not replay a prior session.`;
+}
+
+export type ProjectCopyStatus = "copied" | "idle" | "unavailable";
+
+export async function copyProjectResumeInstruction(
+  projectId: string,
+  clipboard: Pick<Clipboard, "writeText"> | undefined,
+): Promise<ProjectCopyStatus> {
+  if (clipboard === undefined) return "unavailable";
+  try {
+    await clipboard.writeText(projectResumeInstruction(projectId));
+    return "copied";
+  } catch {
+    return "unavailable";
+  }
+}
+
+export function ProjectBrief({
+  copyStatus = "idle",
+  onContinue,
+  onSaveBrief,
+  project,
+}: {
+  copyStatus?: ProjectCopyStatus;
+  onContinue?: () => void;
+  onSaveBrief?: (
+    request: CollaborationProjectBriefUpdateRequest,
+  ) => Promise<void>;
+  project: CollaborationProjectSummary;
+}) {
+  const brief = project.currentBrief;
+  const checkpoint = brief?.latestCheckpoint ?? null;
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [projectObjective, setProjectObjective] = useState(project.objective);
+  const [objective, setObjective] = useState(brief?.objective ?? "");
+  const [definitionOfDone, setDefinitionOfDone] = useState(
+    brief?.definitionOfDone.join("\n") ?? "",
+  );
+  const [requestedOutput, setRequestedOutput] = useState(
+    brief?.requestedOutput ?? "",
+  );
+  const briefIdempotencyKey = useRef<string | null>(null);
+  const editGeneration = useRef(0);
+  useEffect(() => {
+    editGeneration.current += 1;
+    briefIdempotencyKey.current = null;
+    setEditing(false);
+    setEditError(null);
+    setProjectObjective(project.objective);
+    setObjective(brief?.objective ?? "");
+    setDefinitionOfDone(brief?.definitionOfDone.join("\n") ?? "");
+    setRequestedOutput(brief?.requestedOutput ?? "");
+  }, [brief, project.activeProjectVersionId, project.objective]);
+
+  async function saveBrief(): Promise<void> {
+    if (onSaveBrief === undefined || brief === null) return;
+    const expectedWorkItemVersionId = project.activeWorkItemVersionId;
+    if (expectedWorkItemVersionId === undefined) {
+      setEditError("Refresh this Project before editing its brief.");
+      return;
+    }
+    const done = definitionOfDone
+      .split("\n")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+    if (
+      projectObjective.trim() === "" ||
+      objective.trim() === "" ||
+      done.length === 0 ||
+      requestedOutput.trim() === ""
+    ) {
+      setEditError(
+        "Complete the objective, definition of done, and requested output.",
+      );
+      return;
+    }
+    const generation = editGeneration.current;
+    const idempotencyKey = briefIdempotencyKey.current ?? crypto.randomUUID();
+    briefIdempotencyKey.current = idempotencyKey;
+    setSaving(true);
+    setEditError(null);
+    try {
+      await onSaveBrief({
+        expectedProjectVersionId: project.activeProjectVersionId,
+        expectedWorkItemVersionId,
+        idempotencyKey,
+        project:
+          projectObjective.trim() === project.objective
+            ? undefined
+            : { objective: projectObjective.trim() },
+        workItem: {
+          constraints: brief.constraints ?? [],
+          definitionOfDone: done,
+          objective: objective.trim(),
+          requestedOutput: requestedOutput.trim(),
+        },
+      });
+      if (generation === editGeneration.current) setEditing(false);
+    } catch (error) {
+      if (generation === editGeneration.current) {
+        setEditError(
+          error instanceof Error
+            ? error.message
+            : "The brief could not be saved.",
+        );
+      }
+    } finally {
+      if (generation === editGeneration.current) setSaving(false);
+    }
+  }
+  return (
+    <div
+      aria-label={`${project.label} current brief`}
+      className="project-brief"
+      style={{ minWidth: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}
+    >
+      <div className="project-brief-field">
+        <strong>Project brief</strong>
+        {editing ? (
+          <label>
+            <span className="sr-only">Project objective</span>
+            <textarea
+              aria-label="Project objective"
+              value={projectObjective}
+              onChange={(event) => {
+                briefIdempotencyKey.current = null;
+                setProjectObjective(event.target.value);
+              }}
+            />
+          </label>
+        ) : (
+          <span>{project.objective}</span>
+        )}
+      </div>
+      <div className="project-brief-field">
+        <strong>Current objective</strong>
+        {editing ? (
+          <label>
+            <span className="sr-only">Current objective</span>
+            <textarea
+              aria-label="Current objective"
+              value={objective}
+              onChange={(event) => {
+                briefIdempotencyKey.current = null;
+                setObjective(event.target.value);
+              }}
+            />
+          </label>
+        ) : (
+          <span>
+            {brief?.objective ?? "Current Project context is unavailable."}
+          </span>
+        )}
+      </div>
+      <div className="project-brief-field">
+        <strong>Definition of done</strong>
+        {editing ? (
+          <label>
+            <span className="sr-only">
+              Definition of done, one item per line
+            </span>
+            <textarea
+              aria-label="Definition of done, one item per line"
+              value={definitionOfDone}
+              onChange={(event) => {
+                briefIdempotencyKey.current = null;
+                setDefinitionOfDone(event.target.value);
+              }}
+            />
+          </label>
+        ) : brief === null ? (
+          <span>Available after this Project context is restored.</span>
+        ) : (
+          <ul>
+            {brief.definitionOfDone.map((item, index) => (
+              <li key={`${index}-${item}`}>{item}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {editing ? (
+        <div className="project-brief-field">
+          <strong>Requested output</strong>
+          <label>
+            <span className="sr-only">Requested output</span>
+            <textarea
+              aria-label="Requested output"
+              value={requestedOutput}
+              onChange={(event) => {
+                briefIdempotencyKey.current = null;
+                setRequestedOutput(event.target.value);
+              }}
+            />
+          </label>
+        </div>
+      ) : brief?.requestedOutput === undefined ? null : (
+        <div className="project-brief-field">
+          <strong>Requested output</strong>
+          <span>{brief.requestedOutput}</span>
+        </div>
+      )}
+      <div className="project-brief-field">
+        <strong>Current state</strong>
+        {checkpoint === null ? (
+          <span>No durable checkpoint yet.</span>
+        ) : (
+          <>
+            <span>Checkpointed {timestamp(checkpoint.acknowledgedAt)}</span>
+            {checkpoint.completedWork.length > 0 ? (
+              <span>Completed: {checkpoint.completedWork.join(" · ")}</span>
+            ) : null}
+            {checkpoint.openWork.length > 0 ? (
+              <span>Open: {checkpoint.openWork.join(" · ")}</span>
+            ) : null}
+            {checkpoint.blockers.length > 0 ? (
+              <span>Blocked: {checkpoint.blockers.join(" · ")}</span>
+            ) : null}
+          </>
+        )}
+      </div>
+      {checkpoint !== null && checkpoint.acceptedDecisions.length > 0 ? (
+        <section className="project-brief-field project-memory-section">
+          <strong>Accepted Decisions</strong>
+          <ul>
+            {checkpoint.acceptedDecisions.map((decision, index) => (
+              <li key={`${decision.createdAt}-${index}`}>
+                <span className="project-memory-label">
+                  {decision.resolution}
+                </span>{" "}
+                {decision.rationale}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {checkpoint !== null && checkpoint.citedEvidence.length > 0 ? (
+        <section className="project-brief-field project-memory-section">
+          <strong>Cited evidence</strong>
+          <ul>
+            {checkpoint.citedEvidence.map((evidence) => (
+              <li key={`${evidence.path}-${evidence.contentSha256}`}>
+                <span>{evidence.label}</span>
+                <code>{evidence.path}</code>
+                <code>SHA {evidence.contentSha256}</code>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {checkpoint !== null && checkpoint.knownRejectedApproaches.length > 0 ? (
+        <section className="project-brief-field project-memory-section">
+          <strong>Known rejected approaches</strong>
+          <ul>
+            {checkpoint.knownRejectedApproaches.map((approach, index) => (
+              <li key={`${index}-${approach}`}>{approach}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <div className="project-brief-field project-brief-next">
+        <strong>Next action</strong>
+        <span>
+          {brief?.nextAction ??
+            "Restore this Project context before asking another AI to continue."}
+        </span>
+      </div>
+      {brief === null ? null : (
+        <div className="project-continue">
+          {!editing ? (
+            <button
+              className="compact-action"
+              type="button"
+              onClick={() => {
+                briefIdempotencyKey.current = null;
+                setEditing(true);
+              }}
+            >
+              Edit brief
+            </button>
+          ) : (
+            <>
+              <button
+                className="primary-action"
+                disabled={saving}
+                type="button"
+                onClick={() => void saveBrief()}
+              >
+                {saving ? "Saving brief…" : "Save"}
+              </button>
+              <button
+                className="text-action"
+                disabled={saving}
+                type="button"
+                onClick={() => {
+                  briefIdempotencyKey.current = null;
+                  setEditing(false);
+                }}
+              >
+                Cancel
+              </button>
+              <span>Changes apply to the next resume.</span>
+              {editError === null ? null : (
+                <span role="alert">{editError}</span>
+              )}
+            </>
+          )}
+          <button className="primary-action" type="button" onClick={onContinue}>
+            Continue in another AI
+          </button>
+          <span>New session, same Project</span>
+          <code>{projectResumeInstruction(project.projectId)}</code>
+          <span aria-live="polite">
+            {copyStatus === "copied"
+              ? "Instruction copied."
+              : copyStatus === "unavailable"
+                ? "Copy is unavailable. The instruction remains visible."
+                : "Copies this short instruction."}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export async function applyLatestRefresh<T>(input: {
+  apply: (value: T) => void;
+  currentGeneration: () => number;
+  generation: number;
+  load: () => Promise<T>;
+}): Promise<"applied" | "stale"> {
+  let value: T;
+  try {
+    value = await input.load();
+  } catch (error) {
+    if (input.generation !== input.currentGeneration()) return "stale";
+    throw error;
+  }
+  if (input.generation !== input.currentGeneration()) return "stale";
+  input.apply(value);
+  return "applied";
+}
+
+export function applyLocalRevocations(
+  connections: CollaborationConnection[],
+  revokedAtByGrant: ReadonlyMap<string, number>,
+): CollaborationConnection[] {
+  return connections.map((connection) => {
+    const revokedAt = revokedAtByGrant.get(connection.grantId);
+    return revokedAt === undefined
+      ? connection
+      : { ...connection, revokedAt, status: "revoked" as const };
+  });
+}
+
+export async function revokeLocallyThenRefresh(input: {
+  markRevoked: () => void;
+  refresh: () => Promise<"applied" | "stale">;
+  revoke: () => Promise<void>;
+}): Promise<"degraded" | "refreshed" | "stale"> {
+  await input.revoke();
+  input.markRevoked();
+  try {
+    const refresh = await input.refresh();
+    return refresh === "applied" ? "refreshed" : "stale";
+  } catch {
+    return "degraded";
+  }
+}
+
+export function PolicyAttention({
+  operation,
+}: {
+  operation: OperationalOverview["projects"][number] | undefined;
+}) {
+  if (
+    operation === undefined ||
+    (operation.integrityStatus !== "degraded" &&
+      operation.latestDecision?.outcome !== "exception")
+  ) {
+    return null;
+  }
+  return (
+    <article className="client-warning policy-attention" role="alert">
+      <strong>Project continuity needs owner attention</strong>
+      {operation.integrityStatus === "degraded" ? (
+        <span>
+          The latest continuity integrity check is degraded. Review the Project
+          before relying on automated continuation.
+        </span>
+      ) : null}
+      {operation.latestDecision?.outcome === "exception" ? (
+        <span>
+          The latest policy Decision stopped an exceptional request. Review the
+          blocked action before work continues.
+        </span>
+      ) : null}
+    </article>
+  );
+}
+
+export function ProjectRepairStatus({
+  disabled = false,
+  onRepair,
+  project,
+}: {
+  disabled?: boolean;
+  onRepair?: () => void;
+  project: CollaborationProjectSummary;
+}) {
+  const repair =
+    project.state === "packet-stale"
+      ? {
+          action: "Refresh Project context",
+          message:
+            "Routine context is stale. Refresh this existing Project or let the same agent refresh it automatically.",
+        }
+      : project.state === "work-item-closed"
+        ? {
+            action: "Reopen current Work Item",
+            message:
+              "The current Work Item is closed. Reopen this exact Work Item before continuing the Project.",
+          }
+        : project.state === "source-unavailable"
+          ? {
+              action: null,
+              message:
+                "A cited note is unavailable. Restore or sync that exact note in its existing vault.",
+            }
+          : project.state === "packet-missing" ||
+              project.state === "integrity-invalid" ||
+              project.state === "project-context-invalid"
+            ? {
+                action: null,
+                message:
+                  "This Project's durable context needs recovery before another AI can continue.",
+              }
+            : null;
+  if (repair === null) return null;
+  return (
+    <article className="client-warning project-primary-repair" role="alert">
+      <strong>{project.label} needs owner attention</strong>
+      <span>{repair.message}</span>
+      {repair.action === null ? null : (
+        <button
+          className="primary-action"
+          disabled={disabled}
+          type="button"
+          onClick={onRepair}
+        >
+          {repair.action}
+        </button>
+      )}
+    </article>
+  );
+}
+
+export function ProjectPrimaryAlerts({
+  disabled = false,
+  onRepair,
+  operation,
+  project,
+}: {
+  disabled?: boolean;
+  onRepair?: () => void;
+  operation: OperationalOverview["projects"][number] | undefined;
+  project: CollaborationProjectSummary;
+}) {
+  return (
+    <div className="project-primary-alerts">
+      <PolicyAttention operation={operation} />
+      <ProjectRepairStatus
+        disabled={disabled}
+        onRepair={onRepair}
+        project={project}
+      />
+    </div>
+  );
+}
+
+export function ProjectWorkspaceNotice({
+  error = null,
+  onRetry,
+  state,
+}: {
+  error?: string | null;
+  onRetry?: () => void;
+  state: "empty" | "error" | "loading";
+}) {
+  if (state === "loading") {
+    return (
+      <article className="collaboration-empty" aria-live="polite">
+        <span className="backup-step">Project workspace</span>
+        <h3>Loading your durable Project memory…</h3>
+        <p>The workspace will stay here while the current brief loads.</p>
+      </article>
+    );
+  }
+  if (state === "error") {
+    return (
+      <article className="collaboration-empty" role="alert">
+        <span className="backup-step">Project workspace unavailable</span>
+        <h3>Your Project memory could not be loaded.</h3>
+        <p>{error} Your durable records were not changed.</p>
+        <button className="secondary-action" type="button" onClick={onRetry}>
+          Try again
+        </button>
+      </article>
+    );
+  }
+  return (
+    <article className="collaboration-empty">
+      <span className="backup-step">Project collaboration</span>
+      <h3>No active OWD Projects yet.</h3>
+      <p>
+        Finish the first Project step in How OWD works, then say “Connect this
+        project to OWD” in the selected agent. The matching prepared request
+        finishes there; mismatches and later Projects appear here for exact
+        owner review.
+      </p>
+    </article>
+  );
 }
 
 export function LeadOperationStatus({
@@ -332,6 +863,12 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   const [showArchivedProjects, setShowArchivedProjects] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
+  const [copyResult, setCopyResult] = useState<{
+    projectId: string;
+    status: ProjectCopyStatus;
+  } | null>(null);
+  const revokedAtByGrant = useRef(new Map<string, number>());
   const [createdProject, setCreatedProject] = useState<{
     label: string;
     packetId: string;
@@ -413,58 +950,106 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
     createdProjectReceiptRef.current?.focus({ preventScroll: true });
   }, [createdProject]);
 
-  async function refresh(): Promise<void> {
+  async function refresh(): Promise<"applied" | "stale"> {
     const generation = refreshGeneration.current + 1;
     refreshGeneration.current = generation;
-    let responses: [unknown, unknown, unknown, unknown, unknown];
-    try {
-      responses = await Promise.all([
-        apiJson("/api/collaboration/dashboard"),
-        apiJson("/api/collaboration/connections"),
-        apiJson("/api/collaboration/lead-operations"),
-        apiJson("/api/collaboration/elastic-operations"),
-        apiJson("/api/collaboration/policy-operations"),
-      ]);
-    } catch (reason) {
-      if (generation !== refreshGeneration.current) return;
-      throw reason;
-    }
-    if (generation !== refreshGeneration.current) return;
-    const [
-      dashboardResponse,
-      connectionsResponse,
-      leadOperationsResponse,
-      elasticOperationsResponse,
-      operationalOverviewResponse,
-    ] = responses;
-    setDashboard(collaborationDashboardResponseSchema.parse(dashboardResponse));
-    setConnections(
-      collaborationConnectionListResponseSchema.parse(connectionsResponse)
-        .connections,
-    );
-    setLeadOperations(
-      leadOperationOverviewSchema.parse(leadOperationsResponse),
-    );
-    setElasticOperations(
-      elasticOperationOverviewSchema.parse(elasticOperationsResponse),
-    );
-    setOperationalOverview(
-      operationalOverviewSchema.parse(operationalOverviewResponse),
-    );
+    return applyLatestRefresh({
+      apply: (responses) => {
+        const [
+          dashboardResponse,
+          connectionsResponse,
+          leadOperationsResponse,
+          elasticOperationsResponse,
+          operationalOverviewResponse,
+        ] = responses;
+        const nextDashboard =
+          collaborationDashboardResponseSchema.parse(dashboardResponse);
+        const nextConnections = applyLocalRevocations(
+          collaborationConnectionListResponseSchema.parse(connectionsResponse)
+            .connections,
+          revokedAtByGrant.current,
+        );
+        const nextLeadOperations = leadOperationOverviewSchema.parse(
+          leadOperationsResponse,
+        );
+        const nextElasticOperations = elasticOperationOverviewSchema.parse(
+          elasticOperationsResponse,
+        );
+        const nextOperationalOverview = operationalOverviewSchema.parse(
+          operationalOverviewResponse,
+        );
+        setDashboard(nextDashboard);
+        setConnections(nextConnections);
+        setLeadOperations(nextLeadOperations);
+        setElasticOperations(nextElasticOperations);
+        setOperationalOverview(nextOperationalOverview);
+      },
+      currentGeneration: () => refreshGeneration.current,
+      generation,
+      load: () =>
+        Promise.all([
+          apiJson("/api/collaboration/dashboard"),
+          apiJson("/api/collaboration/connections"),
+          apiJson("/api/collaboration/lead-operations"),
+          apiJson("/api/collaboration/elastic-operations"),
+          apiJson("/api/collaboration/policy-operations"),
+        ]),
+    });
   }
 
-  useEffect(() => {
-    void refresh().catch((reason: unknown) =>
+  async function reload(): Promise<void> {
+    try {
+      if ((await refresh()) === "applied") {
+        setError(null);
+        setRefreshWarning(null);
+      }
+    } catch (reason) {
       setError(
         reason instanceof Error
           ? reason.message
-          : "The Project timeline could not be loaded.",
-      ),
-    );
+          : "The Project workspace could not be loaded.",
+      );
+    }
+  }
+
+  useEffect(() => {
+    void reload();
     return () => {
       refreshGeneration.current += 1;
     };
   }, []);
+
+  async function continueInAnotherAI(
+    project: CollaborationProjectSummary,
+  ): Promise<void> {
+    const status = await copyProjectResumeInstruction(
+      project.projectId,
+      navigator.clipboard,
+    );
+    setCopyResult({ projectId: project.projectId, status });
+  }
+
+  async function saveProjectBrief(
+    project: CollaborationProjectSummary,
+    request: CollaborationProjectBriefUpdateRequest,
+  ): Promise<void> {
+    if (working !== null)
+      throw new Error("Another Project operation is in progress.");
+    setWorking("Saving Project brief…");
+    setError(null);
+    try {
+      collaborationProjectBriefUpdateResponseSchema.parse(
+        await apiJson(
+          `/api/collaboration/projects/${encodeURIComponent(project.projectId)}/brief`,
+          { body: request, csrf: await loadCsrf(), method: "POST" },
+        ),
+      );
+      if ((await refresh()) !== "applied")
+        throw new Error("A newer Project refresh is already visible.");
+    } finally {
+      setWorking(null);
+    }
+  }
 
   async function run(
     label: string,
@@ -789,13 +1374,44 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
     ) {
       return;
     }
-    await run("Revoking the Project-scoped grant…", async (csrf) => {
-      await apiNoContent(
-        `/api/collaboration/connections/${encodeURIComponent(connection.grantId)}/revoke`,
-        csrf,
+    setWorking("Revoking the Project-scoped grant…");
+    setError(null);
+    setMessage(null);
+    setRefreshWarning(null);
+    try {
+      const result = await revokeLocallyThenRefresh({
+        markRevoked: () => {
+          const revokedAt = Math.floor(Date.now() / 1_000);
+          revokedAtByGrant.current.set(connection.grantId, revokedAt);
+          setConnections((current) =>
+            applyLocalRevocations(current, revokedAtByGrant.current),
+          );
+          setMessage(
+            "Project access revoked. Existing tokens are denied by the authoritative grant check.",
+          );
+        },
+        refresh,
+        revoke: async () => {
+          await apiNoContent(
+            `/api/collaboration/connections/${encodeURIComponent(connection.grantId)}/revoke`,
+            await loadCsrf(),
+          );
+        },
+      });
+      if (result === "degraded") {
+        setRefreshWarning(
+          "Access is revoked, but other Project workspace data could not be refreshed. Retry Refresh when convenient.",
+        );
+      }
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Project access could not be revoked.",
       );
-      return "Project access revoked. Existing tokens are denied by the authoritative grant check.";
-    });
+    } finally {
+      setWorking(null);
+    }
   }
 
   async function setProjectArchived(
@@ -950,7 +1566,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
       ? "Checking durable Project activity…"
       : `${activeProjects.length.toLocaleString()} active Project${
           activeProjects.length === 1 ? "" : "s"
-        } · ${(dashboard.timeline.length ?? 0).toLocaleString()} records · ${pendingActions.toLocaleString()} pending owner action${
+        } · ${pendingActions.toLocaleString()} owner decision${
           pendingActions === 1 ? "" : "s"
         }`;
   const content = (
@@ -972,7 +1588,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
             className="text-action"
             disabled={working !== null}
             type="button"
-            onClick={() => void refresh()}
+            onClick={() => void reload()}
           >
             Refresh
           </button>
@@ -995,33 +1611,23 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         </article>
       ) : null}
 
-      {activeProjects.length > 0 ? (
-        <article className="client-warning project-resume-cue" role="note">
-          <strong>New session, same Project</strong>
-          <span>
-            OWD should resume automatically from the local{" "}
-            <code>.owdignore</code> receipt. If an agent misses that startup
-            step, say <q>OWD resume project</q>. A restart does not change its
-            durable writer role and does not require reconnecting or approving
-            the Project again.
-          </span>
-        </article>
+      {dashboard === null && error === null ? (
+        <ProjectWorkspaceNotice state="loading" />
       ) : null}
 
-      {activeProjects.length === 0 ? (
-        <article className="collaboration-empty">
-          <span className="backup-step">Project collaboration</span>
-          <h3>No active OWD Projects yet.</h3>
-          <p>
-            Finish the first Project step in How OWD works, then say “Connect
-            this project to OWD” in the selected agent. The matching prepared
-            request finishes there; mismatches and later Projects appear here
-            for exact owner review.
-          </p>
-        </article>
+      {dashboard === null && error !== null ? (
+        <ProjectWorkspaceNotice
+          error={error}
+          onRetry={() => void reload()}
+          state="error"
+        />
       ) : null}
 
-      {activeProjects.length > 0 ? (
+      {dashboard !== null && activeProjects.length === 0 ? (
+        <ProjectWorkspaceNotice state="empty" />
+      ) : null}
+
+      {dashboard !== null && activeProjects.length > 0 ? (
         <div className="project-lifecycle-grid">
           {activeProjects.map((project) => (
             <article
@@ -1049,9 +1655,24 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                   {project.status}
                 </span>
               </div>
-              <p>{project.objective}</p>
-              {leadOperationsByProject.get(project.projectId) ===
-              undefined ? null : (
+              <ProjectBrief
+                copyStatus={
+                  copyResult?.projectId === project.projectId
+                    ? copyResult.status
+                    : "idle"
+                }
+                project={project}
+                onContinue={() => void continueInAnotherAI(project)}
+                onSaveBrief={(request) => saveProjectBrief(project, request)}
+              />
+              <WorkingProfilePanel
+                projectId={project.projectId}
+                projectLabel={project.label}
+              />
+              <ProjectOutcomePanel projectId={project.projectId} />
+              {leadOperationsByProject.get(project.projectId) === undefined ||
+              leadOperationsByProject.get(project.projectId)
+                ?.blockingExceptionCount === 0 ? null : (
                 <LeadOperationStatus
                   disabled={working !== null}
                   onResolve={(exceptionId) =>
@@ -1068,35 +1689,23 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                   }
                 />
               )}
-              {(elasticOperationsByProject.get(project.projectId) ?? []).map(
-                (run) => (
-                  <ElasticOperationStatus key={run.runId} run={run} />
-                ),
-              )}
-              {operationalOverviewByProject.get(project.projectId) ===
-              undefined ? null : (
-                <PolicyContinuityStatus
-                  activating={
-                    working === `Activating ${project.label}'s standing policy…`
-                  }
-                  disabled={working !== null}
-                  onActivate={() => void activateStandingPolicy(project)}
-                  operation={operationalOverviewByProject.get(
-                    project.projectId,
-                  )!}
-                />
-              )}
+              <ProjectPrimaryAlerts
+                disabled={working !== null}
+                operation={operationalOverviewByProject.get(project.projectId)}
+                project={project}
+                onRepair={
+                  project.state === "work-item-closed"
+                    ? () => void reopenCurrentWorkItem(project)
+                    : project.state === "packet-stale"
+                      ? () => void refreshProjectContext(project)
+                      : undefined
+                }
+              />
               <details
                 className="project-card-details"
                 open={project.duplicateGroupSize > 1}
               >
-                <summary>
-                  {project.sourceVaults.map((vault) => vault.name).join(", ") ||
-                    "Source unavailable"}
-                  {" · "}
-                  {project.activeGrantCount.toLocaleString()} active agent
-                  {project.activeGrantCount === 1 ? "" : "s"}
-                </summary>
+                <summary>Advanced / technical details</summary>
                 <dl className="project-lifecycle-details">
                   <div>
                     <dt>Source vaults</dt>
@@ -1146,124 +1755,84 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                     </dd>
                   </div>
                 </dl>
-              </details>
-              {project.duplicateGroupSize > 1 ? (
-                <div className="client-warning" role="alert">
-                  <strong>
-                    {project.duplicateGroupSize} matching Project records found
-                  </strong>
-                  <span>
-                    Compare the full IDs, record counts, grants, and last
-                    activity. Archive only the unwanted copy; OWD will not
-                    delete either record.
-                  </span>
+                {leadOperationsByProject.get(project.projectId) === undefined ||
+                leadOperationsByProject.get(project.projectId)
+                  ?.blockingExceptionCount !== 0 ? null : (
+                  <LeadOperationStatus
+                    operation={leadOperationsByProject.get(project.projectId)!}
+                  />
+                )}
+                {(elasticOperationsByProject.get(project.projectId) ?? []).map(
+                  (run) => (
+                    <ElasticOperationStatus key={run.runId} run={run} />
+                  ),
+                )}
+                {operationalOverviewByProject.get(project.projectId) ===
+                undefined ? null : (
+                  <PolicyContinuityStatus
+                    activating={
+                      working ===
+                      `Activating ${project.label}'s standing policy…`
+                    }
+                    disabled={working !== null}
+                    onActivate={() => void activateStandingPolicy(project)}
+                    operation={operationalOverviewByProject.get(
+                      project.projectId,
+                    )!}
+                  />
+                )}
+                {project.duplicateGroupSize > 1 ? (
+                  <div className="client-warning" role="alert">
+                    <strong>
+                      {project.duplicateGroupSize} matching Project records
+                      found
+                    </strong>
+                    <span>
+                      Compare the full IDs, record counts, grants, and last
+                      activity. Archive only the unwanted copy; OWD will not
+                      delete either record.
+                    </span>
+                  </div>
+                ) : null}
+                <div className="collaboration-actions">
+                  <button
+                    className="secondary-action"
+                    disabled={working !== null}
+                    type="button"
+                    onClick={() =>
+                      void setProjectAgentVisibility(
+                        project,
+                        project.agentVisibility === "discoverable"
+                          ? "owner-only"
+                          : "discoverable",
+                      )
+                    }
+                  >
+                    {project.agentVisibility === "discoverable"
+                      ? "Hide from agents"
+                      : "Allow agent discovery"}
+                  </button>
+                  <button
+                    className={
+                      project.status === "active"
+                        ? "danger-action"
+                        : "secondary-action"
+                    }
+                    disabled={working !== null}
+                    type="button"
+                    onClick={() =>
+                      void setProjectArchived(
+                        project,
+                        project.status === "active",
+                      )
+                    }
+                  >
+                    {project.status === "active"
+                      ? "Archive this Project"
+                      : "Reactivate Project"}
+                  </button>
                 </div>
-              ) : null}
-              {project.state === "authorization-required" ? (
-                <p className="project-next-action">
-                  Owner approval is complete. Continue in your agent—nothing to
-                  copy. The current MCP flow will finish this exact Project
-                  connection.
-                </p>
-              ) : project.state === "disconnected" ? (
-                <p className="project-next-action">
-                  This Project has no active agent. Continue in your connected
-                  agent—nothing to copy. Its exact access request will appear
-                  here for approval.
-                </p>
-              ) : project.state === "packet-expired" ? (
-                <p className="project-next-action">
-                  OWD refreshes this Project context automatically when an agent
-                  requests access or resumes the Project. No owner action is
-                  required.
-                </p>
-              ) : project.state === "packet-stale" ? (
-                <p className="project-next-action">
-                  Routine context is stale. Refresh this existing Project here,
-                  or let the same agent refresh it automatically—never create a
-                  duplicate.
-                </p>
-              ) : project.state === "work-item-closed" ? (
-                <p className="project-next-action">
-                  The current Work Item is closed. Reopen this exact Work Item
-                  here so the agent can reconnect the existing Project—do not
-                  create another Project.
-                </p>
-              ) : project.state === "source-unavailable" ? (
-                <p className="project-next-action">
-                  A cited note is unavailable. Restore or sync that exact note
-                  in its existing vault and OWD will recheck automatically, or
-                  archive this Project below. The agent keeps the same Project
-                  receipt.
-                </p>
-              ) : project.state === "packet-missing" ||
-                project.state === "integrity-invalid" ||
-                project.state === "project-context-invalid" ? (
-                <p className="project-next-action">
-                  This Project's durable context needs recovery. Restore its
-                  verified data or archive it; OWD will not create a replacement
-                  silently.
-                </p>
-              ) : null}
-              <div className="collaboration-actions">
-                <button
-                  className="secondary-action"
-                  disabled={working !== null}
-                  type="button"
-                  onClick={() =>
-                    void setProjectAgentVisibility(
-                      project,
-                      project.agentVisibility === "discoverable"
-                        ? "owner-only"
-                        : "discoverable",
-                    )
-                  }
-                >
-                  {project.agentVisibility === "discoverable"
-                    ? "Hide from agents"
-                    : "Allow agent discovery"}
-                </button>
-                {project.state === "work-item-closed" ? (
-                  <button
-                    className="primary-action"
-                    disabled={working !== null}
-                    type="button"
-                    onClick={() => void reopenCurrentWorkItem(project)}
-                  >
-                    Reopen current Work Item
-                  </button>
-                ) : null}
-                {project.state === "packet-stale" &&
-                project.currentPacket !== null ? (
-                  <button
-                    className="primary-action"
-                    disabled={working !== null}
-                    type="button"
-                    onClick={() => void refreshProjectContext(project)}
-                  >
-                    Refresh Project context
-                  </button>
-                ) : null}
-                <button
-                  className={
-                    project.status === "active"
-                      ? "danger-action"
-                      : "secondary-action"
-                  }
-                  disabled={working !== null}
-                  type="button"
-                  onClick={() =>
-                    void setProjectArchived(
-                      project,
-                      project.status === "active",
-                    )
-                  }
-                >
-                  {project.status === "active"
-                    ? "Archive this Project"
-                    : "Reactivate Project"}
-                </button>
-              </div>
+              </details>
             </article>
           ))}
         </div>
@@ -1558,9 +2127,47 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         </div>
       </details>
 
+      {connections.some((connection) => connection.status === "active") ? (
+        <div className="collaboration-list project-access-list">
+          <h3>Connected agent access</h3>
+          {connections
+            .filter((connection) => connection.status === "active")
+            .map((connection) => (
+              <article key={connection.grantId}>
+                <div>
+                  <strong>{connection.projectLabel}</strong>
+                  <span>
+                    Active Project connection · maintained automatically ·
+                    revoke anytime
+                  </span>
+                  <details className="collaboration-connection-details">
+                    <summary>Advanced / technical details</summary>
+                    <span>
+                      OAuth client {connection.oauthClientId.slice(0, 72)}
+                    </span>
+                    <span>Scopes: {connection.scopes.join(", ")}</span>
+                    <span>
+                      Current sliding authorization window ends{" "}
+                      {timestamp(connection.expiresAt)}
+                    </span>
+                  </details>
+                </div>
+                <button
+                  className="danger-action"
+                  disabled={working !== null}
+                  type="button"
+                  onClick={() => void revokeConnection(connection)}
+                >
+                  Revoke Project access
+                </button>
+              </article>
+            ))}
+        </div>
+      ) : null}
+
       <details className="collaboration-technical">
         <summary>
-          Workspace totals, participants, and agent access
+          Advanced / technical workspace activity
           <small>
             {activeProjects.length.toLocaleString()} active ·{" "}
             {(dashboard?.pendingActions.total ?? 0).toLocaleString()} owner
@@ -1667,44 +2274,6 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
             </p>
           </div>
         ) : null}
-
-        {connections.some((connection) => connection.status === "active") ? (
-          <div className="collaboration-list">
-            <h3>Project-scoped agent access</h3>
-            {connections
-              .filter((connection) => connection.status === "active")
-              .map((connection) => (
-                <article key={connection.grantId}>
-                  <div>
-                    <strong>{connection.projectLabel}</strong>
-                    <span>
-                      Active Project connection · maintained automatically ·
-                      revoke anytime
-                    </span>
-                    <details className="collaboration-connection-details">
-                      <summary>Technical details</summary>
-                      <span>
-                        OAuth client {connection.oauthClientId.slice(0, 72)}
-                      </span>
-                      <span>Scopes: {connection.scopes.join(", ")}</span>
-                      <span>
-                        Current sliding authorization window ends{" "}
-                        {timestamp(connection.expiresAt)}
-                      </span>
-                    </details>
-                  </div>
-                  <button
-                    className="danger-action"
-                    disabled={working !== null}
-                    type="button"
-                    onClick={() => void revokeConnection(connection)}
-                  >
-                    Revoke Project access
-                  </button>
-                </article>
-              ))}
-          </div>
-        ) : null}
       </details>
 
       {(dashboard?.inbox.length ?? 0) > 0 ? (
@@ -1713,11 +2282,18 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
           {dashboard?.inbox.map((item) => (
             <article key={item.recordId}>
               <div>
-                <strong>{recordLabel(item)}</strong>
-                <span>
-                  {timestamp(item.createdAt)} · {item.recordId.slice(0, 8)} ·
-                  SHA {item.contentSha256.slice(0, 12)}
-                </span>
+                <strong>
+                  {item.recordType === "review"
+                    ? "Review needs your decision"
+                    : `${item.recordType.replaceAll("-", " ")} needs your attention`}
+                </strong>
+                <span>Received {timestamp(item.createdAt)}</span>
+                <details className="collaboration-connection-details">
+                  <summary>Advanced / technical details</summary>
+                  <span>{recordLabel(item)}</span>
+                  <span>Record {item.recordId}</span>
+                  <span>Content SHA {item.contentSha256}</span>
+                </details>
               </div>
               <div className="collaboration-actions">
                 <button
@@ -1835,13 +2411,20 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
         <p className="vault-message" aria-live="polite">
           {working}
         </p>
-      ) : error !== null ? (
+      ) : null}
+      {error !== null && dashboard !== null ? (
         <p className="action-error" role="alert">
           {error}
         </p>
-      ) : message !== null ? (
+      ) : null}
+      {message !== null ? (
         <p className="backup-message" aria-live="polite">
           {message}
+        </p>
+      ) : null}
+      {refreshWarning !== null ? (
+        <p className="action-error" role="alert">
+          {refreshWarning}
         </p>
       ) : null}
     </section>
@@ -1850,7 +2433,11 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   return (
     <OperationalRegion
       attention={
-        error !== null ? "error" : pendingActions > 0 ? "pending" : "none"
+        error !== null || refreshWarning !== null
+          ? "error"
+          : pendingActions > 0
+            ? "pending"
+            : "none"
       }
       autoOpen={
         autoOpen ||

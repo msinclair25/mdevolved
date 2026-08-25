@@ -1,4 +1,5 @@
 import { z } from "./zod";
+import { workingProfileRecordTypeSchema } from "./working-profile";
 
 export const OWD_WORK_PACKET_FORMAT = "owd-work-packet-v1" as const;
 export const OWD_COLLABORATION_SUBMISSION_FORMAT =
@@ -19,10 +20,17 @@ export const APPROVED_INTELLIGENCE_CAPABILITY =
   "owd.snapshot.approved-intelligence-v1" as const;
 export const QUARANTINED_INTELLIGENCE_CAPABILITY =
   "owd.snapshot.quarantined-intelligence-v1" as const;
+export const WORKING_PROFILE_SNAPSHOT_CAPABILITY =
+  "owd.snapshot.working-profile-v1" as const;
+export const COMPOUNDING_SNAPSHOT_CAPABILITY =
+  "owd.snapshot.compounding-v1" as const;
+export const MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS = 14;
 
 export const snapshotIntelligenceRequiredCapabilitySchema = z.enum([
   APPROVED_INTELLIGENCE_CAPABILITY,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
+  WORKING_PROFILE_SNAPSHOT_CAPABILITY,
+  COMPOUNDING_SNAPSHOT_CAPABILITY,
 ]);
 
 export const MAX_KNOWLEDGE_SPACE_VAULTS = 20;
@@ -2318,6 +2326,220 @@ export const snapshotIntelligenceEvidenceSchema = z
   })
   .strict();
 
+export const snapshotWorkingProfileRecordSchema = z
+  .object({
+    byteLength: z
+      .number()
+      .int()
+      .positive()
+      .max(512 * 1_024),
+    contentSha256: sha256HexSchema,
+    createdAt: unixSecondsSchema,
+    dependencies: z.array(portableIdSchema).max(256),
+    portableObjectId: portableIdSchema,
+    preferenceId: portableIdSchema.nullable(),
+    projectId: portableIdSchema.nullable(),
+    recordId: portableIdSchema,
+    recordType: workingProfileRecordTypeSchema,
+    restoreDisposition: z.literal("restore-quarantined"),
+    skillId: portableIdSchema.nullable(),
+  })
+  .strict()
+  .superRefine((record, context) => {
+    const preference = record.recordType.startsWith("preference-");
+    const attachment = ["skill-attached", "skill-detached"].includes(
+      record.recordType,
+    );
+    const identityValid = preference
+      ? record.preferenceId !== null && record.skillId === null
+      : record.preferenceId === null && record.skillId !== null;
+    const projectValid = preference
+      ? true
+      : attachment
+        ? record.projectId !== null
+        : record.projectId === null;
+    if (!identityValid || !projectValid) {
+      context.addIssue({
+        code: "custom",
+        message: "Working-profile identities do not match the record kind.",
+        path: ["recordType"],
+      });
+    }
+    if (new Set(record.dependencies).size !== record.dependencies.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Working-profile dependencies must be unique.",
+        path: ["dependencies"],
+      });
+    }
+  });
+
+export const snapshotWorkingProfileSectionSchema = z
+  .object({
+    logicalBytes: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(MAX_INTELLIGENCE_LOGICAL_BYTES),
+    newlyStoredBytes: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(MAX_INTELLIGENCE_LOGICAL_BYTES),
+    recordCount: z.number().int().nonnegative(),
+    records: z
+      .array(snapshotWorkingProfileRecordSchema)
+      .max(MAX_INTELLIGENCE_RECORDS),
+  })
+  .strict()
+  .superRefine((section, context) => {
+    if (section.recordCount !== section.records.length) {
+      context.addIssue({
+        code: "custom",
+        message: "The working-profile count does not match its inventory.",
+        path: ["recordCount"],
+      });
+    }
+    const logicalBytes = section.records.reduce(
+      (total, record) => total + record.byteLength,
+      0,
+    );
+    if (
+      logicalBytes !== section.logicalBytes ||
+      section.newlyStoredBytes > logicalBytes
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Working-profile byte totals do not match the inventory.",
+        path: ["logicalBytes"],
+      });
+    }
+    const ids = new Set(section.records.map((record) => record.recordId));
+    if (ids.size !== section.records.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Working-profile record identities must be unique.",
+        path: ["records"],
+      });
+    }
+    for (const [recordIndex, record] of section.records.entries()) {
+      for (const [
+        dependencyIndex,
+        dependency,
+      ] of record.dependencies.entries()) {
+        if (!ids.has(dependency)) {
+          context.addIssue({
+            code: "custom",
+            message: "Every working-profile dependency must be included.",
+            path: ["records", recordIndex, "dependencies", dependencyIndex],
+          });
+        }
+      }
+    }
+  });
+
+export const snapshotCompoundingRecordSchema = z
+  .object({
+    byteLength: z
+      .number()
+      .int()
+      .positive()
+      .max(512 * 1_024),
+    contentSha256: sha256HexSchema,
+    createdAt: unixSecondsSchema,
+    dependencies: z.array(portableIdSchema).max(16),
+    draftId: portableIdSchema.nullable(),
+    fingerprint: sha256HexSchema,
+    observationId: portableIdSchema.nullable(),
+    portableObjectId: portableIdSchema,
+    projectId: portableIdSchema.nullable(),
+    recordId: portableIdSchema,
+    recordType: z.enum([
+      "checkpoint-observation",
+      "draft-version",
+      "draft-accepted",
+      "draft-ignored",
+      "draft-deleted",
+    ]),
+    restoreDisposition: z.literal("restore-quarantined"),
+    schemaVersion: z.literal(1),
+  })
+  .strict()
+  .superRefine((record, context) => {
+    const observation = record.recordType === "checkpoint-observation";
+    if (
+      (observation &&
+        (record.observationId === null || record.draftId !== null)) ||
+      (!observation &&
+        (record.draftId === null || record.observationId !== null))
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Compounding identity does not match its record kind.",
+        path: ["recordType"],
+      });
+    }
+    if (new Set(record.dependencies).size !== record.dependencies.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Compounding dependencies must be unique.",
+        path: ["dependencies"],
+      });
+    }
+  });
+
+export const snapshotCompoundingSectionSchema = z
+  .object({
+    logicalBytes: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(MAX_INTELLIGENCE_LOGICAL_BYTES),
+    newlyStoredBytes: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(MAX_INTELLIGENCE_LOGICAL_BYTES),
+    recordCount: z.number().int().nonnegative(),
+    records: z
+      .array(snapshotCompoundingRecordSchema)
+      .max(MAX_INTELLIGENCE_RECORDS),
+  })
+  .strict()
+  .superRefine((section, context) => {
+    if (section.recordCount !== section.records.length) {
+      context.addIssue({
+        code: "custom",
+        message: "The compounding count does not match its inventory.",
+        path: ["recordCount"],
+      });
+    }
+    const logicalBytes = section.records.reduce(
+      (total, record) => total + record.byteLength,
+      0,
+    );
+    if (
+      logicalBytes !== section.logicalBytes ||
+      section.newlyStoredBytes > logicalBytes
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Compounding byte totals do not match the inventory.",
+        path: ["logicalBytes"],
+      });
+    }
+    if (
+      new Set(section.records.map((record) => record.recordId)).size !==
+      section.records.length
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Compounding record identities must be unique.",
+        path: ["records"],
+      });
+    }
+  });
+
 export const snapshotIntelligenceSectionSchema = z
   .object({
     classification: z.enum(["approved", "unvetted"]),
@@ -2463,6 +2685,7 @@ export const snapshotIntelligenceSectionSchema = z
 export const snapshotIntelligenceManifestSchema = z
   .object({
     approved: snapshotIntelligenceSectionSchema.nullable(),
+    compounding: snapshotCompoundingSectionSchema.optional(),
     excludedAuthority: z.tuple([
       z.literal("oauth-access-tokens"),
       z.literal("oauth-refresh-tokens"),
@@ -2481,14 +2704,19 @@ export const snapshotIntelligenceManifestSchema = z
     format: z.literal(OWD_SNAPSHOT_INTELLIGENCE_FORMAT),
     requiredCapabilities: z
       .array(snapshotIntelligenceRequiredCapabilitySchema)
-      .max(2),
+      .max(4),
     schemaVersion: z.literal(1),
     selection: z.enum(["none", "approved", "approved-and-unvetted"]),
     unvetted: snapshotIntelligenceSectionSchema.nullable(),
+    workingProfile: snapshotWorkingProfileSectionSchema.optional(),
   })
   .strict()
   .superRefine((manifest, context) => {
-    const required = manifest.requiredCapabilities;
+    const required = manifest.requiredCapabilities.filter(
+      (capability) =>
+        capability !== WORKING_PROFILE_SNAPSHOT_CAPABILITY &&
+        capability !== COMPOUNDING_SNAPSHOT_CAPABILITY,
+    );
     const selectionShapeIsValid =
       (manifest.selection === "none" &&
         manifest.approved === null &&
@@ -2513,16 +2741,42 @@ export const snapshotIntelligenceManifestSchema = z
         path: ["selection"],
       });
     }
+    const hasProfileCapability = manifest.requiredCapabilities.includes(
+      WORKING_PROFILE_SNAPSHOT_CAPABILITY,
+    );
+    if (hasProfileCapability !== (manifest.workingProfile !== undefined)) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "The working-profile section and required capability must appear together.",
+        path: ["workingProfile"],
+      });
+    }
+    const hasCompoundingCapability = manifest.requiredCapabilities.includes(
+      COMPOUNDING_SNAPSHOT_CAPABILITY,
+    );
+    if (hasCompoundingCapability !== (manifest.compounding !== undefined)) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "The compounding section and required capability must appear together.",
+        path: ["compounding"],
+      });
+    }
 
     const totalRecordCount =
       (manifest.approved?.records.length ?? 0) +
-      (manifest.unvetted?.records.length ?? 0);
+      (manifest.unvetted?.records.length ?? 0) +
+      (manifest.workingProfile?.records.length ?? 0) +
+      (manifest.compounding?.records.length ?? 0);
     const totalEvidenceObjectCount =
       (manifest.approved?.evidenceObjects.length ?? 0) +
       (manifest.unvetted?.evidenceObjects.length ?? 0);
     const totalLogicalBytes =
       (manifest.approved?.logicalBytes ?? 0) +
-      (manifest.unvetted?.logicalBytes ?? 0);
+      (manifest.unvetted?.logicalBytes ?? 0) +
+      (manifest.workingProfile?.logicalBytes ?? 0) +
+      (manifest.compounding?.logicalBytes ?? 0);
     if (
       totalRecordCount > MAX_INTELLIGENCE_RECORDS ||
       totalEvidenceObjectCount > MAX_INTELLIGENCE_EVIDENCE_OBJECTS ||
@@ -2551,11 +2805,19 @@ export const snapshotIntelligenceManifestSchema = z
     for (const evidence of manifest.unvetted?.evidenceObjects ?? []) {
       allIds.add(evidence.evidenceObjectId);
     }
+    for (const record of manifest.workingProfile?.records ?? []) {
+      allIds.add(record.recordId);
+    }
+    for (const record of manifest.compounding?.records ?? []) {
+      allIds.add(record.recordId);
+    }
     const inventoryCount =
       (manifest.approved?.records.length ?? 0) +
       (manifest.approved?.evidenceObjects.length ?? 0) +
       (manifest.unvetted?.records.length ?? 0) +
-      (manifest.unvetted?.evidenceObjects.length ?? 0);
+      (manifest.unvetted?.evidenceObjects.length ?? 0) +
+      (manifest.workingProfile?.records.length ?? 0) +
+      (manifest.compounding?.records.length ?? 0);
     if (allIds.size !== inventoryCount) {
       context.addIssue({
         code: "custom",
@@ -2572,6 +2834,8 @@ export const snapshotIntelligenceManifestSchema = z
       ...(manifest.approved?.evidenceObjects ?? []),
       ...(manifest.unvetted?.records ?? []),
       ...(manifest.unvetted?.evidenceObjects ?? []),
+      ...(manifest.workingProfile?.records ?? []),
+      ...(manifest.compounding?.records ?? []),
     ]) {
       const existing = portableObjects.get(value.portableObjectId);
       if (
@@ -2620,6 +2884,29 @@ export const snapshotIntelligenceManifestSchema = z
               ],
             });
           }
+        }
+      }
+    }
+    for (const [recordIndex, record] of (
+      manifest.compounding?.records ?? []
+    ).entries()) {
+      for (const [
+        dependencyIndex,
+        dependency,
+      ] of record.dependencies.entries()) {
+        if (!allIds.has(dependency)) {
+          context.addIssue({
+            code: "custom",
+            message:
+              "Every compounding dependency must resolve in the snapshot.",
+            path: [
+              "compounding",
+              "records",
+              recordIndex,
+              "dependencies",
+              dependencyIndex,
+            ],
+          });
         }
       }
     }
@@ -2712,6 +2999,45 @@ export type CollaborationProjectCreateRequest = z.infer<
   typeof collaborationProjectCreateRequestSchema
 >;
 
+const collaborationProjectBriefUpdateProjectSchema = z
+  .object({
+    objective: proseSchema,
+  })
+  .strict();
+
+export const collaborationProjectBriefUpdateRequestSchema = z
+  .object({
+    expectedProjectVersionId: portableIdSchema,
+    expectedWorkItemVersionId: portableIdSchema,
+    idempotencyKey: canonicalStringSchema(128).optional(),
+    project: collaborationProjectBriefUpdateProjectSchema.optional(),
+    workItem: workItemBriefSchema.optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.project === undefined && value.workItem === undefined) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "A Project brief edit must change the Project or Work Item brief.",
+        path: ["workItem"],
+      });
+    }
+  });
+
+export type CollaborationProjectBriefUpdateRequest = z.infer<
+  typeof collaborationProjectBriefUpdateRequestSchema
+>;
+
+export const collaborationProjectBriefUpdateResponseSchema = z
+  .object({
+    activeProjectVersionId: portableIdSchema,
+    activeWorkItemVersionId: portableIdSchema,
+    projectId: portableIdSchema,
+    workItemId: portableIdSchema,
+  })
+  .strict();
+
 export const collaborationContinuationPacketRequestSchema = z
   .object({
     packetExpiresInSeconds: z
@@ -2732,6 +3058,7 @@ export const collaborationProjectSummarySchema = z
     activeGrantCount: z.number().int().nonnegative(),
     activeKnowledgeSpaceVersionId: portableIdSchema,
     activeProjectVersionId: portableIdSchema,
+    activeWorkItemVersionId: portableIdSchema.optional(),
     agentVisibility: z.enum(["discoverable", "owner-only"]),
     createdAt: unixSecondsSchema,
     currentPacket: z
@@ -2740,6 +3067,53 @@ export const collaborationProjectSummarySchema = z
         expiresAt: unixSecondsSchema,
         packetId: portableIdSchema,
         workItemId: portableIdSchema,
+      })
+      .strict()
+      .nullable(),
+    currentBrief: z
+      .object({
+        constraints: z.array(boundedListItemSchema).max(32).optional(),
+        definitionOfDone: z.array(boundedListItemSchema).min(1).max(32),
+        latestCheckpoint: z
+          .object({
+            acceptedDecisions: z
+              .array(
+                z
+                  .object({
+                    createdAt: unixSecondsSchema,
+                    rationale: proseSchema,
+                    resolution: z.enum([
+                      "accepted",
+                      "rejected",
+                      "mixed",
+                      "deferred",
+                    ]),
+                  })
+                  .strict(),
+              )
+              .max(MAX_CONTINUITY_REFERENCES),
+            acknowledgedAt: unixSecondsSchema,
+            blockers: continuityStateListSchema,
+            citedEvidence: z
+              .array(
+                z
+                  .object({
+                    contentSha256: sha256HexSchema,
+                    label: shortLabelSchema,
+                    path: safeMarkdownPathSchema,
+                  })
+                  .strict(),
+              )
+              .max(MAX_CONTINUITY_REFERENCES),
+            completedWork: continuityStateListSchema,
+            knownRejectedApproaches: continuityStateListSchema,
+            openWork: continuityStateListSchema,
+          })
+          .strict()
+          .nullable(),
+        nextAction: boundedListItemSchema,
+        objective: proseSchema,
+        requestedOutput: proseSchema.optional(),
       })
       .strict()
       .nullable(),
@@ -2780,6 +3154,9 @@ export const collaborationProjectSummarySchema = z
 
 export type CollaborationProjectSummary = z.infer<
   typeof collaborationProjectSummarySchema
+>;
+export type CollaborationProjectBriefUpdateResponse = z.infer<
+  typeof collaborationProjectBriefUpdateResponseSchema
 >;
 
 export const collaborationProjectArchiveRequestSchema = z
@@ -3084,9 +3461,12 @@ export const collaborationRestoreCreateRequestSchema = z
       .default([]),
   })
   .strict()
-  .refine((value) => value.manifest.selection !== "none", {
-    message: "A vault-only snapshot has no collaboration state to restore.",
-  })
+  .refine(
+    (value) =>
+      value.manifest.selection !== "none" ||
+      value.manifest.workingProfile !== undefined,
+    { message: "A vault-only snapshot has no portable memory to restore." },
+  )
   .superRefine((value, context) => {
     const sourceIds = value.vaultMappings.map(
       (mapping) => mapping.sourceVaultId,
@@ -3131,7 +3511,7 @@ export const collaborationRestoreJobSchema = z
   .object({
     expectedItemCount: z.number().int().nonnegative(),
     restoreId: portableIdSchema,
-    selection: z.enum(["approved", "approved-and-unvetted"]),
+    selection: z.enum(["none", "approved", "approved-and-unvetted"]),
     stagedItemCount: z.number().int().nonnegative(),
     status: z.enum(["staging", "preview", "confirmed", "applied", "failed"]),
   })

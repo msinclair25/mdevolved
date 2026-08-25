@@ -14,6 +14,9 @@ import { registerRestoreRoutes } from "./restore-routes";
 import { registerSnapshotRoutes } from "./snapshot-routes";
 import { registerProjectInitializationRoutes } from "./project-initialization-routes";
 import { registerSetupReadinessRoutes } from "./setup-readiness-routes";
+import { registerWorkingProfileRoutes } from "./working-profile-routes";
+import { registerCompoundingRoutes } from "./compounding-routes";
+import { registerProjectOutcomeRoutes } from "./project-outcome-routes";
 import type { AppBindings } from "./types";
 
 export const app = new Hono<AppBindings>();
@@ -104,6 +107,9 @@ registerSnapshotRoutes(app);
 registerRestoreRoutes(app);
 registerContentRoutes(app);
 registerCollaborationRoutes(app);
+registerWorkingProfileRoutes(app);
+registerCompoundingRoutes(app);
+registerProjectOutcomeRoutes(app);
 
 app.notFound((context) => {
   const response: ApiError = {

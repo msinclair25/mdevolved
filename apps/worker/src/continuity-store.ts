@@ -250,6 +250,38 @@ export async function revokeProjectLeadLeaseRow(
   return row?.project_id === input.projectId;
 }
 
+export function releaseProjectLeadLeaseStatement(
+  db: D1Database,
+  input: {
+    clientId: string;
+    fencingToken: number;
+    grantId: string;
+    leadIdentity: ProjectLeadIdentity;
+    leaseId: string;
+    now: number;
+    projectId: string;
+  },
+): D1PreparedStatement {
+  return db
+    .prepare(
+      `UPDATE project_lead_leases
+       SET status = 'revoked', revoked_at = ?
+       WHERE project_id = ? AND lease_id = ? AND fencing_token = ?
+         AND holder_grant_id = ? AND holder_client_id = ?
+         AND lead_identity_json = ? AND status = 'active'
+       RETURNING project_id`,
+    )
+    .bind(
+      input.now,
+      input.projectId,
+      input.leaseId,
+      input.fencingToken,
+      input.grantId,
+      input.clientId,
+      JSON.stringify(projectLeadIdentitySchema.parse(input.leadIdentity)),
+    );
+}
+
 async function putImmutableContinuityObject(
   storage: R2Bucket,
   input: { bytes: Uint8Array; objectKey: string; sha256: string },

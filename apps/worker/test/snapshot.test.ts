@@ -1,7 +1,11 @@
 import {
+  APPROVED_INTELLIGENCE_CAPABILITY,
   OWD_SNAPSHOT_EXPORT_MAGIC,
+  MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS,
+  WORKING_PROFILE_SNAPSHOT_CAPABILITY,
   apiErrorSchema,
   materializationJobSchema,
+  snapshotIntelligenceManifestSchema,
   snapshotExportIndexSchema,
   snapshotListResponseSchema,
   snapshotManifestSchema,
@@ -29,12 +33,16 @@ import { ensureBackupSchema } from "../src/backup-store";
 import { ensureMaterializationSchema } from "../src/materialization-store";
 import { ensurePairingSchema } from "../src/pairing-store";
 import { sha256Hex } from "../src/security";
+import { createCollaborationRestore } from "../src/collaboration-restore";
 import {
   enforceSnapshotRetention,
   queueFailedSnapshotCleanup,
   runSnapshotGarbageCollection,
 } from "../src/snapshot-retention";
-import { ensureSnapshotSchema } from "../src/snapshot-store";
+import {
+  buildPortableSnapshotExport,
+  ensureSnapshotSchema,
+} from "../src/snapshot-store";
 import {
   applyContinuityR1Migration,
   applyElasticActorPlaneR3Migration,
@@ -42,6 +50,8 @@ import {
   applyPolicyAutopilotR4Migration,
   applyPhase9aCollaborationMigration,
   applyRestoredContentAuthorizationMigration,
+  executableMigration,
+  workingProfileSkillsMigrationEntry,
 } from "./migration-fixture";
 
 const ORIGIN = "https://owd.test";
@@ -133,7 +143,15 @@ async function resetStorage(): Promise<void> {
   await applyHandsOffLeadR2Migration(env.DB);
   await applyElasticActorPlaneR3Migration(env.DB);
   await applyPolicyAutopilotR4Migration(env.DB);
+  await env.DB.exec(
+    executableMigration(workingProfileSkillsMigrationEntry.source),
+  );
   await env.DB.batch([
+    env.DB.prepare("DELETE FROM working_profile_mutation_receipts"),
+    env.DB.prepare("DELETE FROM project_skill_attachments"),
+    env.DB.prepare("DELETE FROM working_preferences"),
+    env.DB.prepare("DELETE FROM agent_skills"),
+    env.DB.prepare("DELETE FROM working_profile_records"),
     env.DB.prepare("DELETE FROM snapshot_intelligence_items"),
     env.DB.prepare("DELETE FROM snapshot_intelligence_selections"),
     env.DB.prepare("DELETE FROM snapshot_entries"),
@@ -580,6 +598,208 @@ describe("workspace snapshots", () => {
     expect(cancelled.status).toBe("failed");
   });
 
+  it("expires abandoned restore staging and retries deletion through bounded GC", async () => {
+    const restoreId = crypto.randomUUID();
+    const portableObjectId = crypto.randomUUID();
+    const objectKey = `collaboration/restores/${restoreId}/${portableObjectId}`;
+    const createdAt = 100;
+    await env.VAULT_STORAGE.put(objectKey, "staged");
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO collaboration_restore_jobs (
+          id, status, manifest_json, expected_item_count, staged_item_count,
+          created_at
+        ) VALUES (?, 'staging', '{}', 1, 1, ?)`,
+      ).bind(restoreId, createdAt),
+      env.DB.prepare(
+        `INSERT INTO collaboration_restore_items (
+          restore_id, item_id, portable_object_id, object_key,
+          content_sha256, byte_length
+        ) VALUES (?, ?, ?, ?, ?, 6)`,
+      ).bind(
+        restoreId,
+        crypto.randomUUID(),
+        portableObjectId,
+        objectKey,
+        "a".repeat(64),
+      ),
+    ]);
+    const grace = 24 * 60 * 60;
+    await queueFailedSnapshotCleanup(env.DB, createdAt + grace - 1);
+    expect(
+      await env.DB.prepare(
+        `SELECT object_key FROM collaboration_restore_items
+         WHERE restore_id = ?`,
+      )
+        .bind(restoreId)
+        .first(),
+    ).not.toBeNull();
+    await queueFailedSnapshotCleanup(env.DB, createdAt + grace);
+    expect(
+      await env.DB.prepare(
+        `SELECT status, failure_code FROM collaboration_restore_jobs
+         WHERE id = ?`,
+      )
+        .bind(restoreId)
+        .first(),
+    ).toEqual({ failure_code: "restore_expired", status: "failed" });
+    expect(
+      await env.DB.prepare(
+        `SELECT object_key FROM collaboration_restore_items
+         WHERE restore_id = ?`,
+      )
+        .bind(restoreId)
+        .first(),
+    ).toBeNull();
+    expect(
+      await runSnapshotGarbageCollection(env.DB, env.VAULT_STORAGE, {
+        now: createdAt + 2 * grace,
+      }),
+    ).toBe(0);
+    expect(await env.VAULT_STORAGE.head(objectKey)).toBeNull();
+
+    const sharedKey = `working-profile/${crypto.randomUUID()}.json`;
+    const sharedRecordId = crypto.randomUUID();
+    await env.VAULT_STORAGE.put(sharedKey, "{}");
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO working_profile_records (
+          record_id, record_type, portable_object_id, preference_id,
+          dependencies_json, body_object_key, content_sha256, byte_length,
+          created_at, restored_at, restore_state, restored_authority_allowed
+        ) VALUES (?, 'preference-version', ?, ?, '[]', ?, ?, 2, 1, 1,
+          'quarantined', 0)`,
+      ).bind(
+        sharedRecordId,
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        sharedKey,
+        "b".repeat(64),
+      ),
+      env.DB.prepare(
+        `INSERT INTO snapshot_gc_objects (object_key, queued_at)
+         VALUES (?, ?)`,
+      ).bind(sharedKey, createdAt),
+    ]);
+    expect(
+      await runSnapshotGarbageCollection(env.DB, env.VAULT_STORAGE, {
+        now: createdAt + grace,
+      }),
+    ).toBe(0);
+    expect(await env.VAULT_STORAGE.head(sharedKey)).not.toBeNull();
+  });
+
+  it("rejects an oversized working-profile restore before creating staging", async () => {
+    const profileManifest = (count: number, evidenceCount = 0) =>
+      snapshotIntelligenceManifestSchema.parse({
+        approved:
+          evidenceCount === 0
+            ? null
+            : {
+                classification: "approved",
+                evidenceObjectCount: evidenceCount,
+                evidenceObjects: Array.from({ length: evidenceCount }, () => ({
+                  byteLength: 1,
+                  classification: "approved",
+                  contentSha256: "b".repeat(64),
+                  evidenceObjectId: crypto.randomUUID(),
+                  portableObjectId: crypto.randomUUID(),
+                  restoreDisposition: "restore-evidence-only",
+                })),
+                logicalBytes: evidenceCount,
+                newlyStoredBytes: evidenceCount,
+                recordCount: 0,
+                records: [],
+              },
+        excludedAuthority: [
+          "oauth-access-tokens",
+          "oauth-refresh-tokens",
+          "oauth-authorization-codes",
+          "oauth-protocol-storage",
+          "sessions",
+          "passkeys",
+          "pairing-secrets",
+          "vault-credentials",
+          "live-agent-grants",
+          "recovery-private-keys",
+          "harness-context",
+          "provider-credentials",
+          "runtime-caches",
+        ],
+        format: "owd-snapshot-intelligence-v1",
+        requiredCapabilities: [
+          ...(evidenceCount === 0 ? [] : [APPROVED_INTELLIGENCE_CAPABILITY]),
+          WORKING_PROFILE_SNAPSHOT_CAPABILITY,
+        ],
+        schemaVersion: 1,
+        selection: evidenceCount === 0 ? "none" : "approved",
+        unvetted: null,
+        workingProfile: {
+          logicalBytes: count,
+          newlyStoredBytes: count,
+          recordCount: count,
+          records: Array.from({ length: count }, () => ({
+            byteLength: 1,
+            contentSha256: "a".repeat(64),
+            createdAt: 1,
+            dependencies: [],
+            portableObjectId: crypto.randomUUID(),
+            preferenceId: crypto.randomUUID(),
+            projectId: null,
+            recordId: crypto.randomUUID(),
+            recordType: "preference-version",
+            restoreDisposition: "restore-quarantined",
+            skillId: null,
+          })),
+        },
+      });
+
+    const restoreCountBefore =
+      (
+        await env.DB.prepare(
+          "SELECT COUNT(*) AS count FROM collaboration_restore_jobs",
+        ).first<{ count: number }>()
+      )?.count ?? 0;
+    const accepted = await createCollaborationRestore(
+      env.DB,
+      { manifest: profileManifest(MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS) },
+      1,
+    );
+    expect(accepted).toMatchObject({
+      expectedItemCount: MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS,
+      status: "staging",
+    });
+    expect(
+      await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM collaboration_restore_jobs",
+      ).first<{ count: number }>(),
+    ).toEqual({ count: restoreCountBefore + 1 });
+
+    await expect(
+      createCollaborationRestore(
+        env.DB,
+        {
+          manifest: profileManifest(MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS + 1),
+        },
+        2,
+      ),
+    ).rejects.toMatchObject({ code: "submission_too_large" });
+    await expect(
+      createCollaborationRestore(
+        env.DB,
+        {
+          manifest: profileManifest(1, MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS),
+        },
+        3,
+      ),
+    ).rejects.toMatchObject({ code: "submission_too_large" });
+    expect(
+      await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM collaboration_restore_jobs",
+      ).first<{ count: number }>(),
+    ).toEqual({ count: restoreCountBefore + 1 });
+  });
+
   it("permanently fails a legacy in-progress snapshot after recipient mismatch", async () => {
     const session = await createOwnerSession();
     await configureRecoveryRecipient(session);
@@ -813,6 +1033,15 @@ describe("workspace snapshots", () => {
         ["Second vault:Second.md", "shared"],
       ]),
     );
+    await env.DB.prepare(
+      `DELETE FROM snapshot_working_profile_selections WHERE snapshot_id = ?`,
+    )
+      .bind(first.snapshotId)
+      .run();
+    expect(
+      (await buildPortableSnapshotExport(env.DB, first.snapshotId)).index
+        .requiredCapabilities,
+    ).not.toContain(WORKING_PROFILE_SNAPSHOT_CAPABILITY);
 
     const timeline = await fetchWorker(`${ORIGIN}/api/snapshots`, {
       headers: ownerHeaders(session),

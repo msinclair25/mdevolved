@@ -19,6 +19,27 @@ claim stdio, the deprecated HTTP+SSE transport, MCP session persistence,
 resumability, subscriptions, tasks, sampling, elicitation, roots, logging, or
 completion support. Execution engines remain outside OWD.
 
+## Product operations over MCP
+
+The ordinary Project path uses three OWD tools over this unchanged protocol:
+
+- `owd_resume` returns bounded structured context, a `checkpointBase`, and the
+  applied `contextMode`;
+- `owd_find` performs targeted cited recall; and
+- `owd_checkpoint` passes that opaque base and context mode back unchanged with
+  verified progress.
+
+`focused` is the default resume mode. `independent` withholds peer conclusions
+and provisional results; `synthesis` compares only separately attributable
+durable results. Resume is not transcript or session replay. OWD keeps durable
+records when a provider session expires, but cross-computer preservation
+requires a deployed endpoint/account and backup.
+
+Existing packet, lease, fencing, collaboration, and Run tools remain compatible
+advanced operations. None of these operations makes OWD an agent runtime or
+grants a client local shell, skill, or filesystem authority. The owner retains
+root authority and immediate revocation.
+
 ## Authentication boundary
 
 The endpoint is protected by OAuth 2.1-style authorization with RFC 9728
@@ -77,6 +98,9 @@ After the frozen matrix passes locally, the precise public claim is:
 > OWD implements authenticated remote MCP Streamable HTTP for the current
 > `2026-07-28` protocol and stateless legacy `2025-11-25` clients, exposing
 > ordinary MCP Tools, Resources, and Prompts with OAuth 2.1 and S256 PKCE.
+
+The M1 facade is implemented in the local candidate; this document does not
+claim that candidate has been deployed to production.
 
 This is a protocol-compatibility statement. Named clients are described as
 independently validated only when a dated receipt for that exact client and

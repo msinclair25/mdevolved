@@ -1,12 +1,14 @@
 import {
   canonicalizeCollaborationJson,
   canonicalizeIntegrityPayload,
+  compoundingRecordBodySchema,
   collaborationDurableRecordSchema,
   continuityPointSchema,
   collaborationRestoreCreateRequestSchema,
   collaborationRestoreItemRequestSchema,
   collaborationRestoreJobSchema,
   collaborationRestoreResultSchema,
+  MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS,
   ownerEventSchema,
   provenanceEdgeSchema,
   snapshotIntelligenceManifestSchema,
@@ -18,6 +20,8 @@ import {
   type PolicyOperationalRecord,
   type SnapshotIntelligenceManifest,
   type ContinuityPoint,
+  workingProfileRecordBodySchema,
+  workingProfileRecordTypeSchema,
   leadOperationRecordSchema,
   elasticOperationRecordSchema,
   policyOperationalRecordSchema,
@@ -58,11 +62,30 @@ import {
 import { projectContextSelectorSha256 } from "./project-context-policy";
 import { projectCreationLabelKey } from "./project-initialization-store";
 import { decodeBase64Url, sha256Hex, sha256HexBytes } from "./security";
+import {
+  canonicalWorkingProfileBody,
+  putImmutableWorkingProfileBody,
+  type WorkingProfileRecord,
+} from "./working-profile-store";
+import { putImmutableCompoundingBody } from "./compounding-store";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const encoder = new TextEncoder();
+const R2_DELETE_BATCH_SIZE = 1_000;
 export const MAX_COLLABORATION_RESTORE_MANIFEST_BYTES = 1_750_000;
 
+/**
+ * A working-profile restore writes one durable body for each inventory item.
+ * In a fresh-cell restore that is three R2 subrequests per item (read staged
+ * body, inspect the destination key, and put the immutable body), plus one
+ * bounded cleanup delete. Fourteen items therefore remain below the 50
+ * subrequest floor for Community Workers, with room for the request's other
+ * R2 work. Larger manifests need a resumable restore worker and are rejected
+ * before a restore job or staging object is created.
+ *
+ * The imported shared contract constant is also advertised by the additive
+ * agent-memory capability resource.
+ */
 type RestoreRow = {
   expected_item_count: number;
   id: string;
@@ -76,13 +99,37 @@ type CollaborationRestorePayload = {
   vaultMappings: CollaborationRestoreVaultMapping[];
 };
 
+async function deleteR2Keys(storage: R2Bucket, keys: string[]): Promise<void> {
+  for (let index = 0; index < keys.length; index += R2_DELETE_BATCH_SIZE) {
+    await storage.delete(keys.slice(index, index + R2_DELETE_BATCH_SIZE));
+  }
+}
+
 function manifestItems(manifest: SnapshotIntelligenceManifest) {
   return [
     ...(manifest.approved?.records ?? []),
     ...(manifest.approved?.evidenceObjects ?? []),
     ...(manifest.unvetted?.records ?? []),
     ...(manifest.unvetted?.evidenceObjects ?? []),
+    ...(manifest.workingProfile?.records ?? []),
+    ...(manifest.compounding?.records ?? []),
   ];
+}
+
+function validateRestoreOperationBudget(
+  manifest: SnapshotIntelligenceManifest,
+): void {
+  if (
+    (manifest.workingProfile === undefined ||
+      manifest.workingProfile.records.length === 0) &&
+    (manifest.compounding === undefined ||
+      manifest.compounding.records.length === 0)
+  ) {
+    return;
+  }
+  if (manifestItems(manifest).length > MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS) {
+    throw new CollaborationProblem("submission_too_large");
+  }
 }
 
 function payloadFromRow(row: RestoreRow): CollaborationRestorePayload {
@@ -95,7 +142,11 @@ function payloadFromRow(row: RestoreRow): CollaborationRestorePayload {
   const payload = collaborationRestoreCreateRequestSchema.safeParse(raw);
   if (payload.success) return payload.data;
   const legacyManifest = snapshotIntelligenceManifestSchema.safeParse(raw);
-  if (!legacyManifest.success || legacyManifest.data.selection === "none") {
+  if (
+    !legacyManifest.success ||
+    (legacyManifest.data.selection === "none" &&
+      legacyManifest.data.workingProfile === undefined)
+  ) {
     throw new CollaborationProblem("submission_invalid");
   }
   return { manifest: legacyManifest.data, vaultMappings: [] };
@@ -103,9 +154,6 @@ function payloadFromRow(row: RestoreRow): CollaborationRestorePayload {
 
 function jobFromRow(row: RestoreRow): CollaborationRestoreJob {
   const { manifest } = payloadFromRow(row);
-  if (manifest.selection === "none") {
-    throw new CollaborationProblem("submission_invalid");
-  }
   return collaborationRestoreJobSchema.parse({
     expectedItemCount: row.expected_item_count,
     restoreId: row.id,
@@ -135,6 +183,7 @@ export async function createCollaborationRestore(
 ): Promise<CollaborationRestoreJob> {
   const parsed = collaborationRestoreCreateRequestSchema.safeParse(rawRequest);
   if (!parsed.success) throw new CollaborationProblem("submission_invalid");
+  validateRestoreOperationBudget(parsed.data.manifest);
   const manifestJson = JSON.stringify(parsed.data);
   if (
     encoder.encode(manifestJson).byteLength >
@@ -789,6 +838,10 @@ export async function applyCollaborationRestore(
     throw new CollaborationProblem("project_reference_invalid");
   }
   const { manifest, vaultMappings } = payloadFromRow(row);
+  // Recheck the bound for jobs created by an older Worker before reading or
+  // writing any staged content. This keeps an old oversized job from turning
+  // into a partial authority-affecting restore after an upgrade.
+  validateRestoreOperationBudget(manifest);
   const stagedRows = await db
     .prepare(
       `SELECT item_id, portable_object_id, object_key, content_sha256,
@@ -810,6 +863,8 @@ export async function applyCollaborationRestore(
     ...(manifest.approved?.records ?? []),
     ...(manifest.unvetted?.records ?? []),
   ];
+  const compoundingDescriptors = manifest.compounding?.records ?? [];
+  const profileDescriptors = manifest.workingProfile?.records ?? [];
   const evidenceDescriptors = [
     ...(manifest.approved?.evidenceObjects ?? []),
     ...(manifest.unvetted?.evidenceObjects ?? []),
@@ -821,6 +876,22 @@ export async function applyCollaborationRestore(
   const preparedPolicyOperationalRecords: PreparedPolicyOperationalRecord[] =
     [];
   const preparedContent: StoredContentObject[] = [];
+  const preparedProfileRecords: WorkingProfileRecord[] = [];
+  const newProfileObjectKeys: string[] = [];
+  const preparedCompoundingRecords: Array<{
+    bodyObjectKey: string;
+    byteLength: number;
+    contentSha256: string;
+    createdAt: number;
+    draftId: string | null;
+    fingerprint: string;
+    observationId: string | null;
+    portableObjectId: string;
+    projectId: string | null;
+    recordId: string;
+    recordType: (typeof compoundingDescriptors)[number]["recordType"];
+  }> = [];
+  const newCompoundingObjectKeys: string[] = [];
   try {
     const resolvedVaultMappings = await activeVaultMappings(db, vaultMappings);
     const sourceRecords: Array<{
@@ -878,6 +949,193 @@ export async function applyCollaborationRestore(
         record,
       ]),
     );
+    const profileDescriptorById = new Map(
+      profileDescriptors.map((descriptor) => [descriptor.recordId, descriptor]),
+    );
+    for (const descriptor of profileDescriptors) {
+      const item = staged.get(descriptor.portableObjectId);
+      const object =
+        item === undefined ? null : await storage.get(item.object_key);
+      if (object === null)
+        throw new CollaborationProblem("evidence_unavailable");
+      const bytes = new Uint8Array(await object.arrayBuffer());
+      if (
+        bytes.byteLength !== descriptor.byteLength ||
+        (await sha256HexBytes(bytes)) !== descriptor.contentSha256
+      ) {
+        throw new CollaborationProblem("integrity_mismatch");
+      }
+      const text = decoder.decode(bytes);
+      const body = workingProfileRecordBodySchema.parse(
+        JSON.parse(text) as unknown,
+      );
+      if (
+        canonicalWorkingProfileBody(body) !== text ||
+        body.recordId !== descriptor.recordId ||
+        body.type !== descriptor.recordType ||
+        ("projectId" in body ? body.projectId : null) !==
+          descriptor.projectId ||
+        ("preferenceId" in body ? body.preferenceId : null) !==
+          descriptor.preferenceId ||
+        ("skillId" in body ? body.skillId : null) !== descriptor.skillId
+      ) {
+        throw new CollaborationProblem("portable_identity_collision");
+      }
+      const existing = await db
+        .prepare(
+          `SELECT record_id FROM working_profile_records
+           WHERE record_id = ? OR portable_object_id = ? LIMIT 1`,
+        )
+        .bind(descriptor.recordId, descriptor.portableObjectId)
+        .first<{ record_id: string }>();
+      if (existing !== null) {
+        throw new CollaborationProblem("portable_identity_collision");
+      }
+      for (const dependencyId of descriptor.dependencies) {
+        const dependency = profileDescriptorById.get(dependencyId);
+        if (dependency === undefined) {
+          throw new CollaborationProblem("snapshot_dependency_missing");
+        }
+        if (
+          descriptor.preferenceId !== null &&
+          (dependency.preferenceId !== descriptor.preferenceId ||
+            dependency.projectId !== descriptor.projectId)
+        ) {
+          throw new CollaborationProblem("project_reference_invalid");
+        }
+        if (
+          descriptor.skillId !== null &&
+          dependency.skillId !== descriptor.skillId
+        ) {
+          throw new CollaborationProblem("project_reference_invalid");
+        }
+        if (
+          descriptor.projectId !== null &&
+          dependency.projectId !== null &&
+          dependency.projectId !== descriptor.projectId
+        ) {
+          throw new CollaborationProblem("project_reference_invalid");
+        }
+      }
+      if (
+        (body.type === "skill-attached" || body.type === "skill-detached") &&
+        (!descriptor.dependencies.includes(body.skillVersionRecordId) ||
+          profileDescriptorById.get(body.skillVersionRecordId)?.recordType !==
+            "skill-version")
+      ) {
+        throw new CollaborationProblem("snapshot_dependency_missing");
+      }
+      const storedBody = await putImmutableWorkingProfileBody(
+        storage,
+        text,
+        descriptor.portableObjectId,
+      );
+      newProfileObjectKeys.push(storedBody.bodyObjectKey);
+      preparedProfileRecords.push({
+        ...storedBody,
+        createdAt: descriptor.createdAt,
+        dependencies: descriptor.dependencies,
+        portableObjectId: descriptor.portableObjectId,
+        preferenceId: descriptor.preferenceId,
+        projectId: descriptor.projectId,
+        recordId: descriptor.recordId,
+        recordType: workingProfileRecordTypeSchema.parse(descriptor.recordType),
+        skillId: descriptor.skillId,
+      });
+    }
+    const restoreIdentityIds = new Set([
+      ...recordDescriptors.map((descriptor) => descriptor.recordId),
+      ...profileDescriptors.map((descriptor) => descriptor.recordId),
+      ...compoundingDescriptors.map((descriptor) => descriptor.recordId),
+    ]);
+    for (const descriptor of compoundingDescriptors) {
+      const item = staged.get(descriptor.portableObjectId);
+      const object =
+        item === undefined ? null : await storage.get(item.object_key);
+      if (object === null)
+        throw new CollaborationProblem("evidence_unavailable");
+      const bytes = new Uint8Array(await object.arrayBuffer());
+      if (
+        bytes.byteLength !== descriptor.byteLength ||
+        (await sha256HexBytes(bytes)) !== descriptor.contentSha256
+      ) {
+        throw new CollaborationProblem("integrity_mismatch");
+      }
+      const text = decoder.decode(bytes);
+      const parsedBody = compoundingRecordBodySchema.safeParse(
+        JSON.parse(text) as unknown,
+      );
+      if (
+        !parsedBody.success ||
+        canonicalizeCollaborationJson(parsedBody.data) !== text
+      ) {
+        throw new CollaborationProblem("integrity_mismatch");
+      }
+      const body = parsedBody.data;
+      if (
+        body.recordId !== descriptor.recordId ||
+        body.type !== descriptor.recordType
+      ) {
+        throw new CollaborationProblem("portable_identity_collision");
+      }
+      if (body.type === "checkpoint-observation") {
+        if (
+          body.observationId !== descriptor.observationId ||
+          body.fingerprint !== descriptor.fingerprint ||
+          descriptor.dependencies.length !== 1 ||
+          descriptor.dependencies[0] !== body.point.continuityPointId ||
+          !restoreIdentityIds.has(body.point.continuityPointId)
+        ) {
+          throw new CollaborationProblem("snapshot_dependency_missing");
+        }
+      } else if (
+        body.draft.draftId !== descriptor.draftId ||
+        body.draft.fingerprint !== descriptor.fingerprint ||
+        body.draft.projectId !== descriptor.projectId ||
+        descriptor.dependencies.length !==
+          new Set(body.draft.evidence.map((item) => item.continuityPointId))
+            .size ||
+        body.draft.evidence.some(
+          (item) =>
+            !descriptor.dependencies.includes(item.continuityPointId) ||
+            !restoreIdentityIds.has(item.continuityPointId),
+        )
+      ) {
+        throw new CollaborationProblem("portable_identity_collision");
+      }
+      for (const dependencyId of descriptor.dependencies) {
+        if (!restoreIdentityIds.has(dependencyId)) {
+          throw new CollaborationProblem("snapshot_dependency_missing");
+        }
+      }
+      const existing = await db
+        .prepare(
+          `SELECT record_id FROM compounding_records
+           WHERE record_id = ? OR portable_object_id = ? LIMIT 1`,
+        )
+        .bind(descriptor.recordId, descriptor.portableObjectId)
+        .first<{ record_id: string }>();
+      if (existing !== null) {
+        throw new CollaborationProblem("portable_identity_collision");
+      }
+      const storedBody = await putImmutableCompoundingBody(
+        storage,
+        text,
+        descriptor.recordId,
+      );
+      newCompoundingObjectKeys.push(storedBody.bodyObjectKey);
+      preparedCompoundingRecords.push({
+        ...storedBody,
+        createdAt: descriptor.createdAt,
+        draftId: descriptor.draftId,
+        fingerprint: descriptor.fingerprint,
+        observationId: descriptor.observationId,
+        portableObjectId: descriptor.portableObjectId,
+        projectId: descriptor.projectId,
+        recordId: descriptor.recordId,
+        recordType: descriptor.recordType,
+      });
+    }
     for (const { descriptor, record } of sourceRecords) {
       for (const dependencyId of descriptor.dependencies) {
         const dependency = sourceRecordById.get(dependencyId);
@@ -1084,8 +1342,64 @@ export async function applyCollaborationRestore(
     for (const object of preparedContent) {
       statements.push(insertContentObjectStatement(db, object));
     }
+    for (const record of preparedCompoundingRecords) {
+      statements.push(
+        db
+          .prepare(
+            `INSERT INTO compounding_records (
+              record_id, record_type, portable_object_id, project_id,
+              source_project_id, draft_id, observation_id, fingerprint,
+              body_object_key, content_sha256, byte_length, created_at,
+              restored_at, restore_state, restored_authority_allowed
+            ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+              'quarantined', 0)`,
+          )
+          .bind(
+            record.recordId,
+            record.recordType,
+            record.portableObjectId,
+            record.projectId,
+            record.draftId,
+            record.observationId,
+            record.fingerprint,
+            record.bodyObjectKey,
+            record.contentSha256,
+            record.byteLength,
+            record.createdAt,
+            now,
+          ),
+      );
+    }
     const projections = projectionStatements(db, preparedRecords);
     statements.push(...projections.statements);
+    for (const record of preparedProfileRecords) {
+      statements.push(
+        db
+          .prepare(
+            `INSERT INTO working_profile_records (
+              record_id, record_type, portable_object_id, project_id,
+              source_project_id,
+              preference_id, skill_id, dependencies_json, body_object_key,
+              content_sha256, byte_length, created_at, restored_at,
+              restore_state, restored_authority_allowed
+            ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'quarantined', 0)`,
+          )
+          .bind(
+            record.recordId,
+            record.recordType,
+            record.portableObjectId,
+            record.projectId,
+            record.preferenceId,
+            record.skillId,
+            canonicalWorkingProfileBody(record.dependencies),
+            record.bodyObjectKey,
+            record.contentSha256,
+            record.byteLength,
+            record.createdAt,
+            now,
+          ),
+      );
+    }
     for (const record of preparedLeadOperationRecords) {
       statements.push(
         insertQuarantinedLeadOperationRecordStatement(db, record),
@@ -1208,7 +1522,10 @@ export async function applyCollaborationRestore(
     }
     try {
       if (stagedRows.results.length > 0) {
-        await storage.delete(stagedRows.results.map((item) => item.object_key));
+        await deleteR2Keys(
+          storage,
+          stagedRows.results.map((item) => item.object_key),
+        );
       }
       await db
         .prepare(`DELETE FROM collaboration_restore_items WHERE restore_id = ?`)
@@ -1219,6 +1536,48 @@ export async function applyCollaborationRestore(
       // inert and is safe for a later reference-aware cleanup pass.
     }
   } catch (error) {
+    if (newProfileObjectKeys.length > 0) {
+      try {
+        for (let index = 0; index < newProfileObjectKeys.length; index += 40) {
+          await db.batch(
+            newProfileObjectKeys.slice(index, index + 40).map((objectKey) =>
+              db
+                .prepare(
+                  `INSERT OR IGNORE INTO snapshot_gc_objects (
+                    object_key, queued_at
+                  ) VALUES (?, ?)`,
+                )
+                .bind(objectKey, now),
+            ),
+          );
+        }
+      } catch {
+        // Best-effort queueing must not replace the original restore failure.
+      }
+    }
+    if (newCompoundingObjectKeys.length > 0) {
+      try {
+        for (
+          let index = 0;
+          index < newCompoundingObjectKeys.length;
+          index += 40
+        ) {
+          await db.batch(
+            newCompoundingObjectKeys.slice(index, index + 40).map((objectKey) =>
+              db
+                .prepare(
+                  `INSERT OR IGNORE INTO snapshot_gc_objects (
+                    object_key, queued_at
+                  ) VALUES (?, ?)`,
+                )
+                .bind(objectKey, now),
+            ),
+          );
+        }
+      } catch {
+        // Preserve the original restore failure; cleanup can retry safely.
+      }
+    }
     await db
       .prepare(
         `UPDATE collaboration_restore_jobs
@@ -1242,6 +1601,8 @@ export async function applyCollaborationRestore(
     grantCount: 0,
     restoreId,
     status: "applied",
-    unvettedQuarantinedCount: manifest.unvetted?.recordCount ?? 0,
+    unvettedQuarantinedCount:
+      (manifest.unvetted?.recordCount ?? 0) +
+      (manifest.compounding?.recordCount ?? 0),
   });
 }

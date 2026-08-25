@@ -239,6 +239,19 @@ export async function runCollaborationGarbageCollection(
   storage: R2Bucket,
   now: number,
 ): Promise<number> {
+  const compoundingTable = await db
+    .prepare(
+      `SELECT 1 AS present FROM sqlite_master
+       WHERE type = 'table' AND name = 'compounding_records'`,
+    )
+    .first<{ present: number }>();
+  const compoundingReference =
+    compoundingTable?.present === 1
+      ? ` OR EXISTS (
+            SELECT 1 FROM compounding_records compounding
+            WHERE compounding.body_object_key = queue.object_key
+          )`
+      : "";
   const queued = await db
     .prepare(
       `SELECT queue.object_key,
@@ -267,6 +280,11 @@ export async function runCollaborationGarbageCollection(
             SELECT 1 FROM project_operational_records operational
             WHERE operational.body_object_key = queue.object_key
           )
+          OR EXISTS (
+            SELECT 1 FROM working_profile_records profile
+            WHERE profile.body_object_key = queue.object_key
+          )
+          ${compoundingReference}
         THEN 1 ELSE 0 END AS referenced
        FROM collaboration_gc_objects queue
        WHERE queue.queued_at <= ?

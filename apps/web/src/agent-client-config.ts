@@ -40,6 +40,25 @@ export function createAntigravityConfig(mcpUrl: string): string {
   );
 }
 
+/**
+ * Generic Streamable HTTP MCP config for clients that accept the common
+ * mcpServers shape (including Claude's project .mcp.json).
+ */
+export function createGenericMcpConfig(mcpUrl: string): string {
+  return JSON.stringify(
+    {
+      mcpServers: {
+        [AGENT_SERVER_NAME]: {
+          type: "http",
+          url: mcpUrl,
+        },
+      },
+    },
+    null,
+    2,
+  );
+}
+
 export function createCodexSetupCommands(mcpUrl: string): string {
   const quotedUrl = `'${mcpUrl.replaceAll("'", `'\\''`)}'`;
   return [
@@ -50,6 +69,10 @@ export function createCodexSetupCommands(mcpUrl: string): string {
 
 export function createObsidianMindMcpMergeConfig(mcpUrl: string): string {
   return createProfileMcpMergeConfig(mcpUrl);
+}
+
+export function createClaudeMcpConfig(mcpUrl: string): string {
+  return createGenericMcpConfig(mcpUrl);
 }
 
 export function createObsidianMindProjectMcpCommand(mcpUrl: string): string {

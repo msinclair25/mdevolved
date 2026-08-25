@@ -1,8 +1,9 @@
 # OWD public roadmap
 
-OWD is being developed in public as an owner-controlled continuity layer for
-Obsidian and independent AI agents. This roadmap describes product outcomes,
-not private deployment schedules or service commitments.
+OWD is being developed in public as durable, owner-controlled Project memory
+and evidence for Obsidian and compatible AI tools. It complements execution
+harnesses; it does not run, schedule, route, or supervise agents. This roadmap
+describes product outcomes, not deployment schedules or service commitments.
 
 ## Available now
 
@@ -12,6 +13,12 @@ not private deployment schedules or service commitments.
 - Remote MCP over Streamable HTTP with OAuth 2.1/PKCE and revocable
   vault/folder grants
 - Agent-first Project creation, connection, rejoin, and resume
+- The ordinary `owd_resume` → `owd_find` → `owd_checkpoint` loop, including an
+  agent-handled `checkpointBase` that fails stale memory closed
+- Editable Project briefs, portable owner and Project preferences, inert Agent
+  Skills, and evidence-backed owner-reviewed suggestions
+- A provider-neutral synthetic continuation demo, cross-harness recipes, and
+  owner-only local outcome evidence
 - Durable Work Packets, Artifacts, Handoffs, Reviews, owner Decisions, and
   provenance
 - Fenced Project-lead substitution, bounded hands-off Runs, and an opt-in
@@ -26,10 +33,16 @@ not private deployment schedules or service commitments.
 - A direct desktop installer for OWD Sync while Community Plugin review is
   pending
 
-## Harden next
+## Continue hardening the agent-native resume loop
 
-- Complete separately authorized live disposable durability exercises across
-  more compliant MCP clients and Cloudflare cells
+- Make one MCP connection and one Project consent sufficient for the ordinary
+  loop, with no routine packet, lease, or fencing ceremony
+- Verify `focused` default context, `independent` withholding of peer
+  conclusions, and `synthesis` comparison of separately attributable durable
+  results
+- Complete separately authorized live disposable exercises across more
+  compliant MCP clients and Cloudflare cells; the local candidate is not a
+  production-deployment claim
 - Observe the alpha.6 Community deployment and exercise separately authorized
   application rollback evidence without destructive down-migrations
 - Submit OWD Sync to Obsidian Community Plugins and validate its updater path
@@ -42,7 +55,6 @@ not private deployment schedules or service commitments.
 
 ## Explore later
 
-- Owner-reviewed durable knowledge and inert, versioned skill promotion
 - Additional provider-neutral export and interop formats
 - Optional managed OWD Cloud accounts while preserving one isolated data-plane
   cell per owner

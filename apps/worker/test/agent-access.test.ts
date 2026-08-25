@@ -3,6 +3,8 @@ import {
   agentConsentContextSchema,
   joinableProjectListResponseSchema,
   oauthRedirectResponseSchema,
+  owdResumeResponseSchema,
+  owdResumeResponseV2Schema,
   projectAccessRequestResponseSchema,
   projectAccessStatusResponseSchema,
   projectInitializationConsentContextSchema,
@@ -27,6 +29,13 @@ import {
   preferLegacyJsonResponse,
   stripMcpHeaderOws,
 } from "../src/mcp-server";
+import { checkpointAgentMemory } from "../src/agent-memory-service";
+import {
+  importAgentSkill,
+  mutateProjectSkill,
+  saveWorkingPreference,
+} from "../src/working-profile-service";
+import { AGENT_MEMORY_FACADE_LEAD_IDENTITY } from "../src/continuity-service";
 import {
   activateAgentGrant,
   createPendingAgentGrant,
@@ -84,6 +93,8 @@ import {
   applyRestoredContentAuthorizationMigration,
   applyVaultPrimaryWriterMigration,
   applyVaultPrimaryWriterTransferMigration,
+  executableMigration,
+  workingProfileSkillsMigrationEntry,
 } from "./migration-fixture";
 
 const ORIGIN = "https://owd.test";
@@ -252,13 +263,34 @@ async function resetState(): Promise<void> {
   await applyPreparedProjectHandoffsMigration(env.DB);
   await applyContinuityR1Migration(env.DB);
   await applyHandsOffLeadR2Migration(env.DB);
+  await env.DB.exec(
+    executableMigration(workingProfileSkillsMigrationEntry.source),
+  );
   await env.DB.exec(`
+    DELETE FROM continuity_checkpoint_receipts;
+    DELETE FROM continuity_point_dependencies;
+  `);
+  for (;;) {
+    const deleted = await env.DB.prepare(
+      `DELETE FROM project_continuity_points
+       WHERE NOT EXISTS (
+         SELECT 1 FROM project_continuity_points child
+         WHERE child.project_id = project_continuity_points.project_id
+           AND child.previous_continuity_point_id =
+             project_continuity_points.continuity_point_id
+       )`,
+    ).run();
+    if (deleted.meta.changes === 0) break;
+  }
+  await env.DB.exec(`
+    DELETE FROM working_profile_mutation_receipts;
+    DELETE FROM project_skill_attachments;
+    DELETE FROM working_preferences;
+    DELETE FROM agent_skills;
+    DELETE FROM working_profile_records;
     DELETE FROM collaboration_submission_receipts;
     DELETE FROM collaboration_gc_objects;
     DELETE FROM collaboration_packet_rotations;
-    DELETE FROM continuity_checkpoint_receipts;
-    DELETE FROM continuity_point_dependencies;
-    DELETE FROM project_continuity_points;
     DELETE FROM project_lead_leases;
     DELETE FROM collaboration_grant_clients;
     DELETE FROM collaboration_grants;
@@ -746,6 +778,43 @@ async function callTool(
   return mcpResponseSchema.parse(await response.json());
 }
 
+async function callCurrentTool(
+  accessToken: string,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<z.infer<typeof mcpResponseSchema>> {
+  const response = await fetchWorker(`${ORIGIN}/mcp`, {
+    body: JSON.stringify({
+      id: 2,
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: {
+        _meta: {
+          "io.modelcontextprotocol/clientCapabilities": {},
+          "io.modelcontextprotocol/clientInfo": {
+            name: "Provider-neutral structured client",
+            version: "2.0.0",
+          },
+          "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        },
+        arguments: args,
+        name,
+      },
+    }),
+    headers: {
+      Accept: "application/json, text/event-stream",
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "MCP-Protocol-Version": "2026-07-28",
+      "Mcp-Method": "tools/call",
+      "Mcp-Name": name,
+    },
+    method: "POST",
+  });
+  expect(response.status).toBe(200);
+  return mcpResponseSchema.parse(await response.json());
+}
+
 function emptyVaultProjectDraft(label: string) {
   return {
     contextPolicy: {
@@ -949,17 +1018,21 @@ describe("scoped universal agent access", () => {
 
     const currentResourcesResponse = await currentRequest("resources/list", {});
     expect(currentResourcesResponse.status).toBe(200);
-    expect(
-      z
-        .object({
-          result: z.object({
-            resources: z.array(z.object({ uri: z.string() })).min(1),
-          }),
-        })
-        .parse(await currentResourcesResponse.json()).result.resources,
-    ).toContainEqual(
+    const currentResources = z
+      .object({
+        result: z.object({
+          resources: z.array(z.object({ uri: z.string() })).min(1),
+        }),
+      })
+      .parse(await currentResourcesResponse.json()).result.resources;
+    expect(currentResources).toContainEqual(
       expect.objectContaining({
         uri: "owd://collaboration/lead-continuity-capabilities/v1",
+      }),
+    );
+    expect(currentResources).toContainEqual(
+      expect.objectContaining({
+        uri: "owd://agent-memory/capabilities/v3",
       }),
     );
     const currentResourceReadResponse = await currentRequest(
@@ -977,6 +1050,46 @@ describe("scoped universal agent access", () => {
         })
         .parse(await currentResourceReadResponse.json()).result.contents,
     ).toHaveLength(1);
+    const compoundingResourceReadResponse = await currentRequest(
+      "resources/read",
+      { uri: "owd://agent-memory/capabilities/v3" },
+      "owd://agent-memory/capabilities/v3",
+    );
+    expect(compoundingResourceReadResponse.status).toBe(200);
+    expect(
+      JSON.parse(
+        mcpResourceReadResponseSchema.parse(
+          await compoundingResourceReadResponse.json(),
+        ).result.contents[0]?.text ?? "{}",
+      ),
+    ).toMatchObject({
+      authority: {
+        autoPromotion: false,
+        ownerReviewRequired: true,
+      },
+      evidence: { minimumDistinctContinuityPoints: 2 },
+      format: "owd-agent-memory-capabilities-v3",
+      learningSignals: { maxPerCheckpoint: 4, optionalOnOwdCheckpoint: true },
+    });
+    const legacyResourcesResponse = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 9,
+        jsonrpc: "2.0",
+        method: "resources/list",
+        params: {},
+      }),
+      headers: authenticatedHeaders,
+      method: "POST",
+    });
+    expect(legacyResourcesResponse.status).toBe(200);
+    expect(
+      mcpResourcesListResponseSchema.parse(await legacyResourcesResponse.json())
+        .result.resources,
+    ).toContainEqual(
+      expect.objectContaining({
+        uri: "owd://agent-memory/capabilities/v3",
+      }),
+    );
 
     const currentPromptsResponse = await currentRequest("prompts/list", {});
     expect(currentPromptsResponse.status).toBe(200);
@@ -1342,6 +1455,10 @@ describe("scoped universal agent access", () => {
       expect.arrayContaining([
         "open_project",
         "wait_for_project_connection",
+        "owd_resume",
+        "owd_find",
+        "owd_get_skill",
+        "owd_checkpoint",
         "resume_project",
         "claim_project_lead",
         "renew_project_lead",
@@ -1402,6 +1519,31 @@ describe("scoped universal agent access", () => {
     const resources = mcpResourcesListResponseSchema.parse(
       await resourcesResponse.json(),
     );
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "agent-memory-capabilities",
+        uri: "owd://agent-memory/capabilities/v2",
+      }),
+    );
+    const agentMemoryProfileResponse = await productionFetch("resources/read", {
+      uri: "owd://agent-memory/capabilities/v2",
+    });
+    expect(agentMemoryProfileResponse.status).toBe(200);
+    const agentMemoryProfile = mcpResourceReadResponseSchema.parse(
+      await agentMemoryProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(agentMemoryProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      format: "owd-agent-memory-capabilities-v2",
+      portableRecovery: {
+        maxTotalObjectsWhenProfilePresent: 14,
+        maxWorkingProfileRecordsPerRestore: 14,
+        restoresAuthority: false,
+      },
+      resumeContextVersions: [1, 2],
+      workingProfileSchemaVersion: 1,
+    });
     expect(resources.result.resources).toContainEqual(
       expect.objectContaining({
         name: "lead-continuity-capabilities",
@@ -2405,6 +2547,40 @@ describe("scoped universal agent access", () => {
         workItemId: z.string().uuid(),
       })
       .parse(packet.result.structuredContent.packet);
+    const projectPreference = await saveWorkingPreference(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        idempotencyKey: "mcp-profile-preference",
+        key: "package-manager",
+        projectId: currentPacket.projectId,
+        sourceLabel: "Project owner",
+        sourceUrl: null,
+        value: "Use pnpm.",
+      },
+    );
+    const skillFiles = [
+      {
+        contentBase64: btoa(
+          "---\nname: mcp-skill\ndescription: Pinned MCP skill\n---\n\nUse this checklist.",
+        ),
+        path: "SKILL.md",
+      },
+    ];
+    const attachedSkill = await importAgentSkill(env.DB, env.VAULT_STORAGE, {
+      files: skillFiles,
+      idempotencyKey: "mcp-profile-skill-v1",
+    });
+    await mutateProjectSkill(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        idempotencyKey: "mcp-profile-skill-attach",
+        projectId: currentPacket.projectId,
+        skillId: attachedSkill.skillId,
+      },
+      true,
+    );
     const claimedLead = await callTool(
       projectAccessToken,
       "claim_project_lead",
@@ -2472,6 +2648,440 @@ describe("scoped universal agent access", () => {
       resume: {
         latestContinuityPoint: { continuityPointId },
       },
+    });
+
+    const legacyIndependent = await callTool(projectAccessToken, "owd_resume", {
+      contextMode: "independent",
+      projectId: currentPacket.projectId,
+      task: "Continue without peer conclusions.",
+    });
+    const legacyPayload = owdResumeResponseSchema.parse(
+      legacyIndependent.result.structuredContent,
+    );
+    expect(legacyPayload.contextVersion).toBe(1);
+    expect(legacyPayload.context).not.toHaveProperty("workingProfile");
+    expect(legacyPayload.markdown).not.toContain("Pinned MCP skill");
+
+    const independent = await callCurrentTool(
+      projectAccessToken,
+      "owd_resume",
+      {
+        acceptedContextVersions: [1, 2],
+        contextMode: "independent",
+        projectId: currentPacket.projectId,
+        task: "Continue without peer conclusions.",
+      },
+    );
+    expect(independent.result.isError).not.toBe(true);
+    const currentPayload = owdResumeResponseV2Schema.parse(
+      independent.result.structuredContent,
+    );
+    const textOnlyPayload = independent.result.content?.[0]?.text ?? "";
+    expect(textOnlyPayload).toContain("Pinned MCP skill");
+    expect(textOnlyPayload).toContain(attachedSkill.versionRecordId);
+    expect(currentPayload.workingProfile).toEqual(
+      independent.result.structuredContent.workingProfile,
+    );
+    expect(independent.result.structuredContent).toMatchObject({
+      context: {
+        contextMode: "independent",
+        currentState: null,
+        localVaultAccess: { role: "primary-writer" },
+        project: { projectId: currentPacket.projectId },
+        results: [],
+      },
+      contextMode: "independent",
+      checkpointBase: expect.stringMatching(/^[0-9a-f]{64}$/u),
+      contextSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
+      contextVersion: 2,
+      markdown: expect.stringContaining("Pinned MCP skill"),
+      ok: true,
+      workingProfile: {
+        preferences: [projectPreference],
+        skills: [
+          expect.objectContaining({
+            description: "Pinned MCP skill",
+            skillId: attachedSkill.skillId,
+            versionRecordId: attachedSkill.versionRecordId,
+          }),
+        ],
+      },
+    });
+    const exactSkill = await callTool(projectAccessToken, "owd_get_skill", {
+      projectId: currentPacket.projectId,
+      skillId: attachedSkill.skillId,
+      versionRecordId: attachedSkill.versionRecordId,
+    });
+    expect(exactSkill.result.isError).not.toBe(true);
+    expect(exactSkill.result.structuredContent).toMatchObject({
+      executes: false,
+      files: skillFiles,
+      grantsAuthority: false,
+      projectId: currentPacket.projectId,
+      skill: { description: "Pinned MCP skill" },
+    });
+    const attachedRecord = await env.DB.prepare(
+      `SELECT body_object_key, byte_length, content_sha256
+       FROM working_profile_records WHERE record_id = ?`,
+    )
+      .bind(attachedSkill.versionRecordId)
+      .first<{
+        body_object_key: string;
+        byte_length: number;
+        content_sha256: string;
+      }>();
+    if (attachedRecord === null) throw new Error("Attached record missing.");
+    const currentSkill = await importAgentSkill(env.DB, env.VAULT_STORAGE, {
+      files: [
+        {
+          contentBase64: btoa(
+            "---\nname: mcp-skill\ndescription: Current MCP skill\n---\n\nUse v2.",
+          ),
+          path: "SKILL.md",
+        },
+      ],
+      idempotencyKey: "mcp-profile-skill-v2",
+      skillId: attachedSkill.skillId,
+    });
+    const staleSkill = await callTool(projectAccessToken, "owd_get_skill", {
+      projectId: currentPacket.projectId,
+      skillId: attachedSkill.skillId,
+      versionRecordId: currentSkill.versionRecordId,
+    });
+    expect(staleSkill.result.structuredContent).toMatchObject({
+      error: { code: "skill_not_attached" },
+      ok: false,
+    });
+    const currentRecord = await env.DB.prepare(
+      `SELECT body_object_key, byte_length, content_sha256
+       FROM working_profile_records WHERE record_id = ?`,
+    )
+      .bind(currentSkill.versionRecordId)
+      .first<{
+        body_object_key: string;
+        byte_length: number;
+        content_sha256: string;
+      }>();
+    if (currentRecord === null) throw new Error("Current record missing.");
+    const currentBody = await env.VAULT_STORAGE.get(
+      currentRecord.body_object_key,
+    );
+    if (currentBody === null) throw new Error("Current body missing.");
+    const semanticMismatchKey = `test/${crypto.randomUUID()}.json`;
+    await env.VAULT_STORAGE.put(semanticMismatchKey, await currentBody.bytes());
+    await env.DB.prepare(
+      `UPDATE working_profile_records
+       SET body_object_key = ?, byte_length = ?, content_sha256 = ?
+       WHERE record_id = ?`,
+    )
+      .bind(
+        semanticMismatchKey,
+        currentRecord.byte_length,
+        currentRecord.content_sha256,
+        attachedSkill.versionRecordId,
+      )
+      .run();
+    const conflictingSkill = await callTool(
+      projectAccessToken,
+      "owd_get_skill",
+      {
+        projectId: currentPacket.projectId,
+        skillId: attachedSkill.skillId,
+        versionRecordId: attachedSkill.versionRecordId,
+      },
+    );
+    expect(conflictingSkill.result.structuredContent).toMatchObject({
+      error: { code: "integrity_mismatch" },
+      ok: false,
+    });
+    const conflictingResume = await callTool(projectAccessToken, "owd_resume", {
+      projectId: currentPacket.projectId,
+    });
+    expect(conflictingResume.result.structuredContent).toMatchObject({
+      error: { code: "integrity_mismatch" },
+      ok: false,
+    });
+    await env.DB.prepare(
+      `UPDATE working_profile_records
+       SET body_object_key = ?, byte_length = ?, content_sha256 = ?
+       WHERE record_id = ?`,
+    )
+      .bind(
+        attachedRecord.body_object_key,
+        attachedRecord.byte_length,
+        attachedRecord.content_sha256,
+        attachedSkill.versionRecordId,
+      )
+      .run();
+    expect(JSON.stringify(independent.result.structuredContent)).not.toContain(
+      continuityPointId,
+    );
+    expect(independent.result.structuredContent.markdown).not.toContain(
+      continuityPointId,
+    );
+    expect(independent.result.structuredContent.markdown).not.toMatch(
+      /Omitted: \d/u,
+    );
+    const facadeCheckpointBase = z
+      .string()
+      .regex(/^[0-9a-f]{64}$/u)
+      .parse(independent.result.structuredContent.checkpointBase);
+    const found = await callTool(projectAccessToken, "owd_find", {
+      limit: 5,
+      projectId: currentPacket.projectId,
+      question: "bounded owner selected source",
+    });
+    expect(found.result.isError).not.toBe(true);
+    expect(found.result.structuredContent).toMatchObject({
+      coverage: {
+        ceiling: 5,
+        returned: 3,
+        searchedCurrentProjectBrief: true,
+        searchedExactCurrentLibrary: true,
+        searchedRecentProjectMemory: true,
+        recentProjectMemoryCeiling: 12,
+        truncated: false,
+      },
+      markdown: expect.stringContaining(
+        '"ceiling":5,"recentProjectMemoryCeiling":12,"returned":3',
+      ),
+      ok: true,
+      projectId: currentPacket.projectId,
+    });
+    expect(found.result.structuredContent).toMatchObject({
+      citations: expect.arrayContaining([
+        expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
+          path: "Projects/Brief.md",
+          sourceType: "materialized-note",
+        }),
+      ]),
+    });
+
+    const facadeIdempotencyKey = `owd-facade-${crypto.randomUUID()}`;
+    const facadeCheckpointInput = {
+      checkpointBase: facadeCheckpointBase,
+      contextMode: "independent" as const,
+      idempotencyKey: facadeIdempotencyKey,
+      nextAction: "Resume the verified facade outcome.",
+      outcome: "Recorded the agent-native facade checkpoint.",
+      projectId: currentPacket.projectId,
+      remainingWork: ["Exercise the next bounded Project task."],
+      usefulFailures: ["Do not restore expired authority."],
+      verificationEvidence: ["The legacy continuity path remained callable."],
+    };
+    const checkpointNow = Math.floor(Date.now() / 1_000) + 2;
+    await env.DB.prepare(
+      `UPDATE project_lead_leases
+       SET expires_at = renewed_at + 1 WHERE project_id = ?`,
+    )
+      .bind(currentPacket.projectId)
+      .run();
+    const facadeGrantId = z
+      .string()
+      .uuid()
+      .parse(
+        (
+          await env.DB.prepare(
+            `SELECT id FROM collaboration_grants
+           WHERE project_id = ? AND oauth_client_id = ? AND status = 'active'`,
+          )
+            .bind(currentPacket.projectId, bootstrap.clientId)
+            .first<{ id: string }>()
+        )?.id,
+      );
+    let rejectedContinuityPut = false;
+    const unavailableStorage = new Proxy(env.VAULT_STORAGE, {
+      get(target, property) {
+        if (property === "put") {
+          return async () => {
+            rejectedContinuityPut = true;
+            throw new Error("synthetic_continuity_storage_failure");
+          };
+        }
+        const value = Reflect.get(target, property, target) as unknown;
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    await expect(
+      checkpointAgentMemory(env.DB, unavailableStorage, {
+        authorization: {
+          audience: `${ORIGIN}/mcp`,
+          clientId: bootstrap.clientId,
+          grantId: facadeGrantId,
+          tokenScopes: requestedScopes,
+        },
+        now: checkpointNow,
+        request: facadeCheckpointInput,
+      }),
+    ).rejects.toThrow("synthetic_continuity_storage_failure");
+    expect(rejectedContinuityPut).toBe(true);
+    const failedAttemptLease = await env.DB.prepare(
+      `SELECT lease_id, fencing_token FROM project_lead_leases
+       WHERE project_id = ?`,
+    )
+      .bind(currentPacket.projectId)
+      .first<{ fencing_token: number; lease_id: string }>();
+    expect(failedAttemptLease).not.toBeNull();
+    await env.DB.prepare(
+      `UPDATE project_lead_leases
+       SET expires_at = renewed_at + 1 WHERE project_id = ?`,
+    )
+      .bind(currentPacket.projectId)
+      .run();
+    const recoveredCheckpoint = await checkpointAgentMemory(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        authorization: {
+          audience: `${ORIGIN}/mcp`,
+          clientId: bootstrap.clientId,
+          grantId: facadeGrantId,
+          tokenScopes: requestedScopes,
+        },
+        now: checkpointNow + 2,
+        request: facadeCheckpointInput,
+      },
+    );
+    expect(recoveredCheckpoint).toMatchObject({
+      checkpoint: {
+        previousContinuityPointId: continuityPointId,
+        projectId: currentPacket.projectId,
+      },
+      ok: true,
+      replayed: false,
+    });
+    const recoveredLease = await env.DB.prepare(
+      `SELECT lease_id, fencing_token FROM project_lead_leases
+       WHERE project_id = ?`,
+    )
+      .bind(currentPacket.projectId)
+      .first<{ fencing_token: number; lease_id: string }>();
+    expect(recoveredLease).toMatchObject({
+      fencing_token: (failedAttemptLease?.fencing_token ?? 0) + 1,
+    });
+    expect(recoveredLease?.lease_id).not.toBe(failedAttemptLease?.lease_id);
+    const facadePointId = z
+      .string()
+      .uuid()
+      .parse(recoveredCheckpoint.checkpoint.continuityPointId);
+    const facadeReplay = await callTool(
+      projectAccessToken,
+      "owd_checkpoint",
+      facadeCheckpointInput,
+    );
+    expect(facadeReplay.result.structuredContent).toMatchObject({
+      checkpoint: { continuityPointId: facadePointId },
+      ok: true,
+      replayed: true,
+    });
+    const facadeConflict = await callTool(
+      projectAccessToken,
+      "owd_checkpoint",
+      { ...facadeCheckpointInput, outcome: "Conflicting replay." },
+    );
+    expect(facadeConflict.result.structuredContent).toMatchObject({
+      error: { code: "idempotency_conflict" },
+      ok: false,
+    });
+    await env.DB.prepare(
+      `UPDATE project_lead_leases
+       SET holder_client_id = ?, lead_identity_json = ?, status = 'active',
+         revoked_at = NULL, expires_at = ? WHERE project_id = ?`,
+    )
+      .bind(
+        "https://busy-facade.test/client.json",
+        JSON.stringify(AGENT_MEMORY_FACADE_LEAD_IDENTITY),
+        checkpointNow + 600,
+        currentPacket.projectId,
+      )
+      .run();
+    const freshForFacadeBusy = await callTool(
+      projectAccessToken,
+      "owd_resume",
+      {
+        contextMode: "independent",
+        projectId: currentPacket.projectId,
+      },
+    );
+    const facadeBusy = await callTool(projectAccessToken, "owd_checkpoint", {
+      ...facadeCheckpointInput,
+      checkpointBase:
+        freshForFacadeBusy.result.structuredContent.checkpointBase,
+      idempotencyKey: `owd-busy-facade-${crypto.randomUUID()}`,
+    });
+    expect(facadeBusy.result.structuredContent).toMatchObject({
+      error: {
+        code: "checkpoint_busy",
+        message: expect.stringContaining("Retry owd_checkpoint immediately"),
+        retryAfterMs: 50,
+        retryable: true,
+      },
+      ok: false,
+    });
+    expect(
+      await env.DB.prepare(
+        `SELECT status FROM project_lead_leases WHERE project_id = ?`,
+      )
+        .bind(currentPacket.projectId)
+        .first(),
+    ).toEqual({ status: "active" });
+    await env.DB.prepare(
+      `UPDATE project_lead_leases
+       SET holder_client_id = ?, lead_identity_json = ?, status = 'active',
+         revoked_at = NULL, expires_at = ? WHERE project_id = ?`,
+    )
+      .bind(
+        "https://other-agent.test/client.json",
+        JSON.stringify({
+          claimedHarness: null,
+          claimedModel: null,
+          displayName: "Genuine legacy holder",
+        }),
+        checkpointNow + 600,
+        currentPacket.projectId,
+      )
+      .run();
+    const freshForLeaseConflict = await callTool(
+      projectAccessToken,
+      "owd_resume",
+      {
+        contextMode: "independent",
+        projectId: currentPacket.projectId,
+      },
+    );
+    const freshCheckpointBase = z
+      .string()
+      .regex(/^[0-9a-f]{64}$/u)
+      .parse(freshForLeaseConflict.result.structuredContent.checkpointBase);
+    const conflictingHolder = await callTool(
+      projectAccessToken,
+      "owd_checkpoint",
+      {
+        ...facadeCheckpointInput,
+        checkpointBase: freshCheckpointBase,
+        idempotencyKey: `owd-conflicting-holder-${crypto.randomUUID()}`,
+      },
+    );
+    expect(conflictingHolder.result.structuredContent).toMatchObject({
+      error: { code: "lead_lease_conflict" },
+      ok: false,
+    });
+    const focused = await callTool(projectAccessToken, "owd_resume", {
+      projectId: currentPacket.projectId,
+    });
+    expect(focused.result.structuredContent).toMatchObject({
+      context: {
+        contextMode: "focused",
+        currentState: {
+          completedWork: expect.arrayContaining([
+            "Recorded the agent-native facade checkpoint.",
+          ]),
+          nextAction: "Resume the verified facade outcome.",
+        },
+      },
+      contextMode: "focused",
+      ok: true,
     });
 
     const projectId = z.string().uuid().parse(status.projectId);
@@ -2827,6 +3437,22 @@ describe("scoped universal agent access", () => {
         },
       },
     });
+    const agentBMemory = await callTool(agentBProjectToken, "owd_resume", {
+      projectId,
+    });
+    expect(agentBMemory.result.structuredContent).toMatchObject({
+      context: {
+        currentState: {
+          completedWork: expect.arrayContaining([
+            "Recorded the agent-native facade checkpoint.",
+          ]),
+          nextAction: "Resume the verified facade outcome.",
+        },
+        project: { projectId },
+      },
+      contextMode: "focused",
+      ok: true,
+    });
     const projectsAfterAgentB = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM collaboration_projects",
     ).first<{ count: number }>();
@@ -3056,6 +3682,34 @@ describe("scoped universal agent access", () => {
         }),
       ]),
     );
+    const facadePointObject = await env.DB.prepare(
+      `SELECT body_object_key FROM project_continuity_points
+       WHERE continuity_point_id = ?`,
+    )
+      .bind(facadePointId)
+      .first<{ body_object_key: string }>();
+    if (facadePointObject === null) {
+      throw new Error("Facade Continuity Point projection missing.");
+    }
+    await env.VAULT_STORAGE.delete(facadePointObject.body_object_key);
+    const corruptMemory = await callTool(projectAccessToken, "owd_find", {
+      limit: 1,
+      projectId: currentPacket.projectId,
+      question: "durable Project memory",
+    });
+    expect(corruptMemory.result.structuredContent).toMatchObject({
+      error: {
+        code: "integrity_mismatch",
+        message: expect.stringContaining(
+          "call open_project with the exact projectId",
+        ),
+      },
+      ok: false,
+    });
+    expect(
+      (corruptMemory.result.structuredContent.error as { message: string })
+        .message,
+    ).not.toContain("read-only vault request");
   }, 15_000);
 
   it("finds an older compatible Project behind newer catalog noise without leaking unavailable metadata", async () => {

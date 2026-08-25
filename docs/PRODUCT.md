@@ -8,6 +8,12 @@ library, timestamped encrypted recovery points across vaults, or a protected
 structure through which independent agent harnesses can share reviewed
 knowledge and evolving skills.
 
+The Minimum Lovable Product centers a smaller promise: connect a Project once,
+then let a fresh compatible agent resume durable owner-controlled memory,
+retrieve targeted evidence, and leave a verified checkpoint for the next tool.
+OWD complements execution harnesses; it does not run, schedule, route, or
+supervise agents.
+
 ## Primary user
 
 The V1 user is one technically curious Obsidian owner with multiple vaults and
@@ -32,6 +38,16 @@ operator-access, recovery, and commercial gates in
 [`ALPHA-STATUS.md`](ALPHA-STATUS.md).
 
 ## Release ladder
+
+- **M1 locally verified:** the agent-native `owd_resume` → `owd_find` →
+  `owd_checkpoint` loop over existing durable Project records.
+- **M2 locally verified:** portable owner and Project preferences plus inert
+  portable skills across compatible harnesses.
+- **M3 locally verified:** evidence-backed, owner-reviewed compounding without
+  raw transcript ingestion or automatic promotion.
+- **M4 locally verified:** a new user can edit the current brief, review Memory
+  and Skills, follow provider-neutral client recipes, run a synthetic
+  cross-client continuation, and inspect local-only outcome evidence.
 
 - **Community `v1.0-alpha` foundation checkpoint:** accepted snapshot-first
   recovery, owner authentication, bounded vault sync and libraries, remote MCP,
@@ -60,6 +76,20 @@ Project policy, budgets, fixed-evidence multi-model work, and optional
 evaluation; it does not become OWD's control plane or vault source of truth.
 
 ## V1 outcomes
+
+- Connect a Project once, then let an agent call `owd_resume` before meaningful
+  work, `owd_find` for targeted durable recall, and `owd_checkpoint` before
+  finishing.
+- Return bounded structured resume context rather than a raw transcript or
+  provider-session replay. Default to `focused`; withhold peer conclusions in
+  `independent`; compare separately attributable durable results in
+  `synthesis`.
+- Have the agent pass `checkpointBase` and `contextMode` from resume to
+  checkpoint so focused/synthesis stale memory fails closed while independent
+  work remains bound to the exact packet, without becoming a human approval
+  gate.
+- Preserve owner root authority and immediate revocation while granting no
+  local shell, skill, Obsidian CLI, or filesystem authority.
 
 - Deploy an isolated instance to the user's Cloudflare account in under 10 minutes.
 - Claim the instance with a passkey.
@@ -199,6 +229,10 @@ remain separate human-authorized gates.
   server-side possession of model-provider credentials.
 - An embedded scheduler or agent supervisor remains excluded. R4 emits only
   bounded provider-neutral operational requests and receipts.
+- Automatic promotion of inferred preferences or skills, or treating a
+  correlation as proof; M3 suggestions remain owner-reviewed drafts.
+- Claims that a local candidate is deployed to production, or that data survives
+  across computers without a deployed OWD endpoint/account and backup.
 
 ## Product principles
 

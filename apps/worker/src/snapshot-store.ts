@@ -5,9 +5,11 @@ import {
   MAX_SNAPSHOT_LOGICAL_BYTES,
   APPROVED_INTELLIGENCE_CAPABILITY,
   BASE_SNAPSHOT_REQUIRED_CAPABILITIES,
+  COMPOUNDING_SNAPSHOT_CAPABILITY,
   OWD_SNAPSHOT_EXPORT_MAGIC,
   OWD_SNAPSHOT_FORMAT,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
+  WORKING_PROFILE_SNAPSHOT_CAPABILITY,
   snapshotExportIndexSchema,
   snapshotManifestSchema,
   snapshotSectionSchema,
@@ -933,7 +935,8 @@ async function processPendingIntelligence(
     if (
       source === null ||
       source.size !== item.byte_length ||
-      source.customMetadata?.sha256 !== item.content_sha256 ||
+      (source.customMetadata?.sha256 ??
+        source.customMetadata?.contentSha256) !== item.content_sha256 ||
       (source.checksums.sha256 !== undefined &&
         bytesToHex(source.checksums.sha256) !== item.content_sha256)
     ) {
@@ -1620,6 +1623,24 @@ export async function buildPortableSnapshotExport(
       portable_object_id: string;
     }>();
   const intelligence = await readCollaborationSnapshotSummary(db, snapshotId);
+  const profileSelection = await db
+    .prepare(
+      `SELECT included FROM snapshot_working_profile_selections
+       WHERE snapshot_id = ?`,
+    )
+    .bind(snapshotId)
+    .first<{ included: number }>();
+  const compoundingSelection = await db
+    .prepare(
+      `SELECT COUNT(*) AS count FROM snapshot_intelligence_items
+       WHERE snapshot_id = ? AND status = 'ready'
+         AND json_extract(descriptor_json, '$.recordType') IN (
+           'checkpoint-observation', 'draft-version', 'draft-accepted',
+           'draft-ignored', 'draft-deleted'
+         )`,
+    )
+    .bind(snapshotId)
+    .first<{ count: number }>();
   const parts: PortableSnapshotPart[] = [
     {
       ciphertextBytes: row.manifest_ciphertext_bytes,
@@ -1669,6 +1690,13 @@ export async function buildPortableSnapshotExport(
               APPROVED_INTELLIGENCE_CAPABILITY,
               QUARANTINED_INTELLIGENCE_CAPABILITY,
             ]),
+      ...(profileSelection?.included === 1
+        ? [WORKING_PROFILE_SNAPSHOT_CAPABILITY]
+        : []),
+      ...(compoundingSelection?.count !== undefined &&
+      compoundingSelection.count > 0
+        ? [COMPOUNDING_SNAPSHOT_CAPABILITY]
+        : []),
     ],
     snapshotId: row.portable_snapshot_id,
   });
@@ -1846,7 +1874,8 @@ async function repairSnapshotIntelligenceObject(
   if (
     source === null ||
     source.size !== input.candidate.byte_length ||
-    source.customMetadata?.sha256 !== input.candidate.content_sha256 ||
+    (source.customMetadata?.sha256 ?? source.customMetadata?.contentSha256) !==
+      input.candidate.content_sha256 ||
     (source.checksums.sha256 !== undefined &&
       bytesToHex(source.checksums.sha256) !== input.candidate.content_sha256)
   ) {

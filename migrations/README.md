@@ -295,3 +295,32 @@ they never restore grants, leases, credentials, or live authority. Budget,
 observation, and inert Orca projection rows contain only bounded logical or
 metadata evidence. Rollback leaves all R3 tables and immutable bodies intact;
 repair forward and quarantine any restored row rather than deleting history.
+
+The M2 working-profile migration is additive, forward-only, and trigger-free.
+It stores immutable preference and skill events plus small live projections,
+exact-version Project attachments, and non-portable idempotency receipts.
+Slot constraints cap each Project at 32 attached skills and each skill at 31
+Projects, keeping list and atomic-delete R2 operations within Worker budgets.
+Canonical bodies stay immutable in R2; an interrupted publication may leave a
+safe orphan queued for later reference-aware collection. A snapshot containing
+working-profile records is accepted for restore only when its complete portable
+inventory is at most 14 objects, bounding the new M2 R2 work beneath the
+50-subrequest Community Worker floor. An empty compatibility marker does not
+change legacy restore limits. Larger mixed or profile-only restores fail
+explicitly before staging until a resumable restore worker exists. Restored rows are
+authority-free quarantine and cannot satisfy a live projection foreign key.
+Rollback leaves every table and object intact; recover with a forward fix or a
+pre-change D1 backup, never a destructive down-migration.
+
+The M3 compounding recovery extension is additive and forward-compatible with
+older snapshot manifests. The `owd.snapshot.compounding-v1` capability carries
+immutable observation and draft-action bodies only when the owner selects
+Approved-and-Unvetted intelligence; `none` and Approved-only snapshots exclude
+them. Each selected body preserves its exact Continuity Point closure. Fresh-cell restore inserts
+only quarantined `compounding_records` with a null live Project foreign key and
+the source Project identity preserved in `source_project_id`. It restores no
+observation/draft projections or authority. The combined compounding and
+working-profile restore inventory is bounded to 14 objects under the Community
+subrequest floor and is rejected before staging when exceeded. Rollback leaves
+the migration and immutable R2 bodies in place; repair forward, never
+down-migrate or delete them.
