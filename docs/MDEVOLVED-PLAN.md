@@ -1,0 +1,389 @@
+# MDevolved source-independent product plan
+
+**Status:** MD1 is complete. MD2 is a locally verified release candidate; the
+three-OS GitHub package matrix and external release gates remain open.<br />
+**Date:** 2026-08-25
+
+## Milestone boundary
+
+MD0 planning is complete: the source-neutral architecture, compatibility rules,
+rollout order, security boundaries, and independent acceptance decisions below
+are explicit. MD1 completed the source-neutral core without changing the wire
+schema, public protocol names, stored identifiers, or deployment. MD2 is the
+next independently acceptable milestone.
+
+## Product promise
+
+> MDevolved gives every AI the right project memory, regardless of where the
+> project files live.
+
+MDevolved is durable, owner-controlled Project memory for people who move work
+between AI tools, computers, and local workspaces. A plain folder is the
+compatibility floor. Obsidian becomes an optional, deeply integrated source
+adapter instead of a prerequisite.
+
+The lovable moment remains unchanged: a fresh agent on another computer or in
+another compatible harness continues correctly without copied prompts or a
+reconstructed provider session.
+
+## Decisions frozen now
+
+1. **MDevolved is the human-facing product and umbrella brand.** The spelling is
+   `MDevolved`; URLs and package slugs use lowercase `mdevolved`.
+2. **A selected Markdown folder is the first generic source.** Version 1 does
+   not mirror an entire code repository, scrape conversations, or become a
+   general cloud-drive replacement.
+3. **Obsidian remains first-class.** Existing vault behavior, plugin identity,
+   settings, and updater compatibility stay intact while the plugin becomes an
+   adapter over the shared core.
+4. **The first desktop shell uses Electron.** It reuses the existing TypeScript,
+   Yjs, WebSocket, pairing, retry, and reconciliation code. Tauri is reconsidered
+   only if measured package size or patching cost outweighs a Rust bridge and
+   cross-webview test burden.
+5. **The protocol is not renamed.** Existing `owd_*` MCP operations,
+   `owd-pair`, `vaultId`, `@owd/*` packages, migrations, exports, and stored
+   records remain compatible throughout the first MDevolved release.
+6. **No local sync client gains agent authority.** Source synchronization and
+   agent authorization remain separate boundaries.
+
+The MDevolved name still needs ordinary trademark and store-listing clearance
+before paid promotion or app-store publication. A preliminary web search found
+no prominent software collision; that is not legal clearance and does not
+block local implementation.
+
+## Gates
+
+There is no human or external gate before MD1. Source-core extraction,
+compatibility work, hostile fixtures, and local automated acceptance can begin
+from the current repository.
+
+The later external gates are deliberately narrow:
+
+- reserve and publish the `mdevolved` npm name before the MD2 command is public;
+  the registry returned `404 Not Found` on 2026-08-25, which suggests the name
+  is unclaimed but does not reserve it;
+- obtain ordinary trademark and store-listing clearance before paid promotion
+  or app-store publication;
+- obtain signing credentials and approve any fees before distributing signed
+  macOS or Windows installers; unsigned synthetic builds remain testable; and
+- obtain explicit owner authorization at execution time before package
+  publication, production deployment, repository renaming, or paid services.
+
+Human usability feedback is valuable but is not a prerequisite for MD1-MD5
+implementation or automated validation. Each milestone's automated acceptance
+decision remains mandatory.
+
+## Product shape
+
+```text
+Selected local source
+  ├─ Markdown folder adapter
+  └─ Obsidian adapter
+          ↓
+Source-neutral sync core
+  pairing · path policy · reconciliation · Yjs · retries · receipts
+          ↓
+Existing OWD-compatible wire protocol
+          ↓
+MDevolved Community Worker
+  durable Projects · memory · evidence · skills · recovery · MCP
+          ↓
+Codex · Claude · Hermes · Orca · Cursor · other compatible harnesses
+```
+
+The execution harness still owns its model, tools, shell, browser, worktrees,
+retries, and runtime context. MDevolved owns durable Project identity, bounded
+memory, evidence, continuity, recovery, and revocation.
+
+## Source-neutral sync boundary
+
+The shared core depends on four small ports instead of Obsidian classes:
+
+- **Workspace files:** enumerate, stat, read, write, and watch paths inside one
+  explicitly selected root.
+- **Local state:** persist derived indexes, pending work, source identity, and
+  non-secret runtime settings outside the synchronized folder.
+- **Credential custody:** store pairing material in the operating system's
+  protected credential facility; never in Project files or logs.
+- **User interaction:** show consent, status, conflict, update, and repair
+  actions without exposing sync-engine internals.
+
+The core retains the existing Yjs schema and Worker protocol. Obsidian-only
+editor bindings, notices, commands, status bars, and runtime-profile discovery
+remain in the Obsidian adapter.
+
+### Generic folder contract
+
+Version 1 synchronizes Markdown under one selected root. It excludes symlinks,
+paths outside the resolved root, hidden control directories, dependency/build
+trees, credentials, secret-shaped configuration, application state, and its own
+local metadata. Attachments and arbitrary source-code mirroring require a later
+accepted milestone.
+
+Local and remote Markdown edits use the existing expected-version,
+reconciliation, conflict, durability-receipt, and retry boundaries. The app
+must stop permanently after authoritative revocation until the owner pairs it
+again.
+
+## Durable model and server compatibility
+
+The first implementation adds an additive source descriptor rather than
+renaming the current vault model:
+
+- `sourceKind`: `folder` or `obsidian`;
+- human-readable source label;
+- source capabilities such as Markdown, attachment, and editor integration;
+- client version and sync-schema version; and
+- immutable provenance for the pairing and later capability changes.
+
+Existing records without a descriptor resolve to `obsidian`. Existing table
+names, `vaultId` fields, grants, snapshots, exports, restore manifests, and MCP
+responses remain readable. New fields must be optional for old clients and
+included in portable export, encrypted snapshot, restore, quarantine, and
+retention coverage. Restore never recreates credentials, active device
+connections, sessions, grants, or live authority.
+
+The ordinary UI gradually says **Sources** and **Workspaces** where it means
+both folders and vaults. Technical compatibility surfaces may continue to say
+`vault` until a future major protocol version earns a migration.
+
+## Desktop application
+
+**MDevolved Sync** is a small tray/menu-bar application for macOS, Windows, and
+Linux. Its normal path is:
+
+1. install and open the app;
+2. choose one Markdown folder;
+3. open a short pairing link from the owner-controlled deployment;
+4. review the exact folder and file boundary;
+5. let the current library publish; and
+6. close the window while background sync continues.
+
+No terminal, Node installation, Cloudflare vocabulary, copied token, or manual
+binding is part of that path. Start-at-login is explicit and optional. The
+renderer receives no direct Node or credential access; filesystem and keychain
+operations stay behind a narrow privileged process boundary.
+
+Agents and developers with Node installed get a one-command path over the same
+sync core:
+
+```sh
+npx mdevolved@latest sync .
+```
+
+The command treats the current directory as the selected Markdown root, opens
+or prints the owner-controlled pairing step, and stays attached while it
+synchronizes. It emits concise human output by default and machine-readable
+JSON when requested. It must never accept pairing secrets as command-line
+arguments or print credentials to output. Re-running it for an already paired
+source is idempotent. This is a thin entry point, not a second sync engine or a
+requirement that desktop users install Node.
+
+Unsigned synthetic builds are sufficient for automated alpha validation.
+Apple notarization, Windows signing, store publication, and any associated fees
+are delivery gates, not prerequisites for building or testing the product.
+
+## Obsidian migration
+
+The existing companion becomes **MDevolved Sync for Obsidian** only after the
+shared core and folder adapter pass independently.
+
+- Keep the current Obsidian plugin ID and persisted settings schema.
+- Preserve `owd-pair` deep links and accepted package/update manifests.
+- Reuse the same core ports through Obsidian's public vault, request, storage,
+  notice, command, and status APIs.
+- Keep Obsidian Mind detection and editor-aware behavior inside this adapter.
+- Require an upgrade test proving existing users reconnect without re-pairing,
+  losing indexes, widening paths, or duplicating a source.
+
+Obsidian remains the richer knowledge-workspace integration. The folder adapter
+is the universal floor, not a reason to remove vault-specific value.
+
+## Brand transition
+
+The public rename happens additively:
+
+1. introduce **MDevolved, formerly OWD** in product copy after the generic
+   folder alpha works;
+2. rename the desktop display name to **MDevolved Sync** while retaining old
+   protocol and package identities;
+3. update docs, artwork, install links, and deployment copy with redirects;
+4. rename repositories only after GitHub redirects, Deploy-to-Cloudflare links,
+   release automation, checksums, and updater tests pass; and
+5. keep `owd_*` MCP names and existing stored identifiers for at least the full
+   1.x compatibility line.
+
+Existing owners should not need to migrate data, reconnect agents, re-pair
+Obsidian, or edit `.owdignore` merely because the display name changes.
+
+## Delivery milestones
+
+Each milestone is a fresh task with one final acceptance decision.
+
+### MD1 — Source-neutral core
+
+**Outcome:** The existing Obsidian client behavior runs through a small shared
+sync core that has no Obsidian import.
+
+**Build:** Extract the minimum filesystem, state, credential, and UI ports;
+reuse the current pairing, Yjs, reconciliation, retry, exclusion, and receipt
+logic; add source-capability contracts without changing the wire schema.
+
+**Acceptance decision:** Close only when the shared core passes hostile path,
+replay, conflict, restart, revocation, and bounded-scan tests, while the existing
+Obsidian package, bundle guards, fixtures, and updater compatibility remain
+unchanged.
+
+### MD2 — Generic folder desktop alpha
+
+**Outcome:** A user can install MDevolved Sync, select a Markdown folder, pair
+it, and receive a current searchable library without installing Obsidian.
+
+**Build:** Add the Electron shell, native folder chooser, protected credential
+storage, background lifecycle, status/repair UI, folder adapter, thin
+`npx mdevolved@latest sync .` entry point, and signed update-manifest format.
+Add the source descriptor through a forward-only migration and
+transport-neutral service.
+
+**Acceptance decision:** Close only when macOS, Windows, and Linux CI packages
+exercise a synthetic folder through pair, initial publish, edits in both
+directions, restart, offline retry, conflict, upgrade, revocation, export, and
+authority-free restore. Traversal, symlinks, hidden/generated trees,
+credential-shaped files, oversized files, and out-of-root writes must fail
+closed. A clean Node environment must also reach the pairing step with the one
+documented command, provide machine-readable next actions, avoid secrets in
+arguments and output, and reconnect idempotently on a second run.
+
+### MD3 — Obsidian as an adapter
+
+**Outcome:** Plain folders and Obsidian vaults use the same reviewed sync core,
+while Obsidian retains its richer editor integration.
+
+**Build:** Replace Obsidian-coupled core imports with adapter implementations;
+retain editor binding, commands, notices, status, runtime profiles, and plugin
+packaging.
+
+**Acceptance decision:** Close only when the same Markdown fixture produces the
+same durable hashes and library through both adapters, existing plugin settings
+upgrade without re-pairing, and the complete Obsidian product/installer gates
+remain green.
+
+### MD4 — Cross-computer source continuity
+
+**Outcome:** A user can resume the same Project from another computer even when
+the original local sync client is offline.
+
+**Build:** Make source/device state explicit, support an owner-approved second
+device for an existing source, preserve exact source boundaries, and show which
+device last published without treating device state as Project authority.
+
+**Acceptance decision:** Close only when two disposable devices reconcile the
+same source without duplicate Projects, stale overwrite, cross-source access,
+or restored device credentials; a fresh agent can resume while both local
+clients are offline.
+
+### MD5 — MDevolved brand transition
+
+**Outcome:** New users encounter MDevolved as source-independent Project memory,
+and existing OWD users continue without migration work.
+
+**Build:** Apply the dual-brand copy, Sources UI, artwork, docs, installer and
+update metadata, repository redirects, and compatibility notices.
+
+**Acceptance decision:** Close only when old bookmarks, deep links, MCP names,
+plugin identity, stored exports, backup restores, deploy links, and update paths
+still work; new users can start with either a folder or Obsidian without seeing
+the old product model in the normal path.
+
+### MD6 — Source-independent minimum lovable release
+
+**Outcome:** A new user on a second computer continues a real Project through a
+different compatible AI without Obsidian or copied context.
+
+**Acceptance decision:** Close only when the complete folder and Obsidian paths,
+cross-harness resume/checkpoint loop, accessibility, narrow-width UI, encrypted
+recovery, clean upgrade, public-source scan, full repository gate, and deployed
+Community health all pass from the exact candidate. Paid inference and human
+testing may improve confidence but are not release gates.
+
+## Required verification matrix
+
+- Shared-core contract tests run against in-memory, folder, and Obsidian ports.
+- Filesystem fixtures cover case collisions, Unicode, traversal, symlinks,
+  rapid rename/write bursts, partial writes, permissions, offline recovery, and
+  very large trees under explicit ceilings.
+- Worker tests cover old-client compatibility, source-kind isolation, immediate
+  revocation, export/snapshot/restore, quarantine, and no restored authority.
+- Desktop E2E runs on current macOS, Windows, and Linux GitHub runners.
+- Obsidian E2E keeps the pinned plugin, direct-installer, and updater paths.
+- Release gates keep the complete public-history scan and existing Community
+  build/deploy checks.
+
+## Explicit non-goals
+
+- A Dropbox, Git, Google Drive, OneDrive, or iCloud replacement.
+- Mirroring arbitrary code, binaries, dependency trees, or an entire home
+  directory in the first folder release.
+- Executing skills, agents, shell commands, or provider APIs.
+- Importing chats, hidden reasoning, terminal history, runtime state, browser
+  state, or credentials.
+- Renaming durable tables, MCP tools, package scopes, or plugin identity merely
+  for visual consistency.
+- Adding team accounts, shared administration, or a multi-tenant vault
+  database.
+- Requiring the managed service for Community sync or Project memory.
+
+## MD1 execution capsule
+
+The next task owns only the source-neutral-core extraction. It should begin by
+freezing current Obsidian behavior as adapter contract fixtures, map every
+direct `obsidian` import in the sync engine, extract only the four ports above,
+and keep the production bundle and wire output unchanged. It must not add the
+desktop shell, rename public surfaces, change the Worker schema, or begin MD2.
+
+## MD1 delivery receipt
+
+Completed on 2026-08-25. The Obsidian client now routes bounded Markdown
+enumeration, reads, conflict artifacts, and CRDT writeback through the shared
+`@owd/yaos-core` boundary. The core contains no Obsidian import and owns path
+confinement, bounded scans, lifecycle state, credential metadata, immediate
+revocation/expiry checks, and fail-closed recovery from malformed local state.
+
+The four frozen MD1 ports remain enumerate/stat/read/write/watch, local state,
+credential custody, and UI. Obsidian-specific editor events and remote
+rename/delete mechanics remain inside the adapter because rename/delete are not
+part of that frozen port contract; making the entire plugin a replaceable
+adapter is the explicit MD3 outcome. Attachments continue through the existing
+Obsidian subsystem and are not advertised by the text-only MD1 source adapter.
+
+No Worker contract, D1 migration, R2 object, MCP operation, pairing wire shape,
+plugin identity, updater identifier, credential store, deployment, or live data
+changed. Focused core, plugin, Worker compatibility, production bundle, and
+full repository gates are recorded in the milestone handoff.
+
+## MD2 candidate receipt
+
+The generic Markdown-folder vertical slice is implemented locally. It includes
+the source-neutral folder adapter, the real Yjs/receipt runtime, protected
+platform credential custody, the `mdevolved` CLI, the Electron tray shell,
+deferred deep-link pairing, offline retry and repair states, additive source
+descriptors, forward-only migration `0036`, portable snapshot/export metadata,
+and authority-free quarantine on restore.
+
+`pnpm test:md2:acceptance` is the named cross-platform candidate gate. It
+exercises pairing and initial publication, disk and remote edits, restart,
+offline receipts, conflicts, revocation, second-run idempotency, source
+descriptor negotiation and upgrade, encrypted export/quarantine semantics,
+hostile folder boundaries, protected desktop state, and a dependency-free
+clean-tarball pairing smoke. The complete repository check, 634 unit and
+service tests, 20 focused migration checks, 74 browser tests, production
+builds, Cloudflare deployment dry-runs, public-source history scan, and local
+macOS arm64 Electron packaging have passed from the candidate lineage.
+
+MD2 is not closed yet. The same named gate and Electron packaging must pass on
+GitHub's current macOS, Windows, and Linux runners. The public
+`npx mdevolved@latest sync .` path also requires explicit owner-approved npm
+publication. Desktop code signing/notarization, production migration and
+deployment, repository renaming, and paid services remain separately
+authorized delivery actions. No production or personal source was used during
+local validation.

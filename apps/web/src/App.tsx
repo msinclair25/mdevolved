@@ -3593,12 +3593,20 @@ function Dashboard() {
                         Create a fresh pairing request
                       </button>
                     ) : (
-                      <a
-                        className="primary-action"
-                        href={pairingGrant.obsidianUrl}
-                      >
-                        Open Obsidian and pair <span aria-hidden="true">↗</span>
-                      </a>
+                      <>
+                        <a
+                          className="primary-action"
+                          href={pairingGrant.pairingUrl.replace(
+                            /^owd-pair:/u,
+                            "mdevolved:",
+                          )}
+                        >
+                          Open MDevolved Sync <span aria-hidden="true">↗</span>
+                        </a>
+                        <a href={pairingGrant.obsidianUrl}>
+                          Or open Obsidian and pair
+                        </a>
+                      </>
                     )}
                     {pairingExpired ? (
                       <p className="action-error" role="status">

@@ -1,0 +1,277 @@
+import { basename } from "node:path";
+import {
+  canonicalizeFolderRoot,
+  createFolderSource,
+  folderSourceIdentity,
+} from "@owd/folder-adapter";
+import type { SourceDescriptor } from "@owd/yaos-core";
+import {
+  ProtectedCredentialCustody,
+  createSystemProtectedCredentialBackend,
+  type ProtectedCredentialBackend,
+} from "./custody.js";
+import {
+  createFetchPairingTransport,
+  pairFolder,
+  parsePairingLink,
+  type PairingConnection,
+  type PairingTransport,
+} from "./pairing.js";
+import {
+  createSyncRuntime,
+  type SyncRuntime,
+  type VaultSyncLike,
+} from "./runtime.js";
+import { createPortableVaultSync } from "./vaultFactory.js";
+
+export const CLIENT_VERSION = "mdevolved-cli-alpha.1";
+
+export interface CliArguments {
+  command: "sync";
+  sourceRoot: string;
+  pairingFromStdin: boolean;
+  json: boolean;
+}
+
+export type CliNextAction =
+  "provide_pairing" | "pairing_failed" | "sync_complete" | "sync_failed";
+
+export interface CliResult {
+  ok: boolean;
+  action: CliNextAction;
+  sourceId: string;
+  message?: string;
+  stats?: {
+    conflicts: number;
+    diskWrites: number;
+    remoteWrites: number;
+    skippedOversize: number;
+  };
+}
+
+export interface CliDependencies {
+  stdin?: AsyncIterable<string>;
+  stdout?: (line: string) => void;
+  backend?: ProtectedCredentialBackend;
+  pairingTransport?: PairingTransport;
+  vaultFactory?: (
+    connection: PairingConnection,
+    descriptor: SourceDescriptor,
+  ) => Promise<VaultSyncLike>;
+  stateDirectory?: string;
+}
+
+const SECRET_FLAGS = new Set([
+  "--grant",
+  "--token",
+  "--credential",
+  "--pairing-url",
+  "--pairing-link",
+]);
+
+export function parseCliArguments(argv: readonly string[]): CliArguments {
+  if (argv.length < 2 || argv[0] !== "sync")
+    throw new Error(
+      "usage: mdevolved sync <folder> [--pairing-stdin] [--json]",
+    );
+  const sourceRoot = argv[1];
+  if (!sourceRoot || sourceRoot.startsWith("-"))
+    throw new Error("source_folder_required");
+  let pairingFromStdin = false;
+  let json = false;
+  for (const argument of argv.slice(2)) {
+    if (
+      SECRET_FLAGS.has(argument) ||
+      [...SECRET_FLAGS].some((flag) => argument.startsWith(`${flag}=`))
+    ) {
+      throw new Error("credentials_must_not_be_passed_as_arguments");
+    }
+    if (argument === "--pairing-stdin") pairingFromStdin = true;
+    else if (argument === "--json") json = true;
+    else throw new Error("unknown_argument");
+  }
+  return { command: "sync", sourceRoot, pairingFromStdin, json };
+}
+
+async function readBoundedStdin(input: AsyncIterable<string>): Promise<string> {
+  let value = "";
+  for await (const chunk of input) {
+    value += chunk;
+    if (value.length > 2_048) throw new Error("pairing_input_too_large");
+  }
+  return value.trim();
+}
+
+function emit(result: CliResult, dependencies: CliDependencies): void {
+  dependencies.stdout?.(JSON.stringify(result));
+}
+
+export async function runCli(
+  args: CliArguments,
+  dependencies: CliDependencies = {},
+): Promise<CliResult> {
+  const canonicalRoot = await canonicalizeFolderRoot(args.sourceRoot);
+  const sourceId = await folderSourceIdentity(canonicalRoot);
+  const custody = new ProtectedCredentialCustody(
+    sourceId,
+    dependencies.backend ??
+      createSystemProtectedCredentialBackend(dependencies.stateDirectory),
+  );
+  let credential = await custody.get();
+  let connection: PairingConnection | null = null;
+  if (credential === null && args.pairingFromStdin) {
+    if (!dependencies.stdin) {
+      const result = {
+        ok: false,
+        action: "pairing_failed" as const,
+        sourceId,
+        message: "pairing_input_unavailable",
+      };
+      emit(result, dependencies);
+      return result;
+    }
+    try {
+      const pairing = parsePairingLink(
+        await readBoundedStdin(dependencies.stdin),
+      );
+      const descriptor = await descriptorFor(
+        canonicalRoot,
+        custody,
+        dependencies.stateDirectory,
+      );
+      connection = await pairFolder(
+        pairing,
+        descriptor,
+        basename(canonicalRoot),
+        CLIENT_VERSION,
+        dependencies.pairingTransport ?? createFetchPairingTransport(),
+      );
+      await custody.install(
+        {
+          sourceId,
+          fingerprint: connection.fingerprint,
+          status: "active",
+          issuedAt: connection.issuedAt,
+          ...(connection.expiresAt === undefined
+            ? {}
+            : { expiresAt: connection.expiresAt }),
+        },
+        connection.token,
+        { host: connection.host, vaultId: connection.vaultId },
+      );
+      credential = await custody.get();
+    } catch (error) {
+      const result = {
+        ok: false,
+        action: "pairing_failed" as const,
+        sourceId,
+        message: error instanceof Error ? error.message : "pairing_failed",
+      };
+      emit(result, dependencies);
+      return result;
+    }
+  }
+  if (credential === null || credential.status !== "active") {
+    const result = {
+      ok: false,
+      action: "provide_pairing" as const,
+      sourceId,
+      message: "provide_pairing_link_on_protected_stdin",
+    };
+    emit(result, dependencies);
+    return result;
+  }
+  if (!connection) {
+    connection = await custody.getConnection();
+    if (!connection) {
+      const result = {
+        ok: false,
+        action: "pairing_failed" as const,
+        sourceId,
+        message: "credential_unavailable",
+      };
+      emit(result, dependencies);
+      return result;
+    }
+  }
+  const descriptor = await descriptorFor(
+    canonicalRoot,
+    custody,
+    dependencies.stateDirectory,
+  );
+  const vaultFactory =
+    dependencies.vaultFactory ??
+    (async (candidate: PairingConnection): Promise<VaultSyncLike> =>
+      await createPortableVaultSync(candidate));
+  let runtime: SyncRuntime | undefined;
+  try {
+    runtime = await createSyncRuntime({
+      sourceRoot: canonicalRoot,
+      custody,
+      vault: await vaultFactory(connection, descriptor),
+      ...(dependencies.stateDirectory === undefined
+        ? {}
+        : { stateDirectory: dependencies.stateDirectory }),
+      clientVersion: CLIENT_VERSION,
+      watch: false,
+    });
+    await runtime.start();
+    const synced = await runtime.syncOnce();
+    const result = {
+      ok: true,
+      action: "sync_complete" as const,
+      sourceId,
+      stats: {
+        conflicts: synced.conflicts.length,
+        diskWrites: synced.diskWrites,
+        remoteWrites: synced.remoteWrites,
+        skippedOversize: synced.skippedOversize.length,
+      },
+    };
+    emit(result, dependencies);
+    return result;
+  } catch (error) {
+    const result = {
+      ok: false,
+      action: "sync_failed" as const,
+      sourceId,
+      message: error instanceof Error ? error.message : "sync_failed",
+    };
+    emit(result, dependencies);
+    return result;
+  } finally {
+    await runtime?.stop();
+  }
+}
+
+async function descriptorFor(
+  root: string,
+  custody: ProtectedCredentialCustody,
+  stateDirectory?: string,
+): Promise<SourceDescriptor> {
+  const source = await createFolderSource({
+    root,
+    credentials: custody,
+    ...(stateDirectory === undefined ? {} : { stateDirectory }),
+    clientVersion: CLIENT_VERSION,
+  });
+  const descriptor = source.descriptor;
+  await source.close();
+  return descriptor;
+}
+
+export async function main(argv = process.argv.slice(2)): Promise<number> {
+  try {
+    const args = parseCliArguments(argv);
+    const result = await runCli(args, {
+      stdout: (line) => process.stdout.write(`${line}\n`),
+      stdin: process.stdin,
+    });
+    return result.ok ? 0 : 2;
+  } catch (error) {
+    process.stderr.write(
+      `${error instanceof Error ? error.message : "mdevolved_failed"}\n`,
+    );
+    return 2;
+  }
+}

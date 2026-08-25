@@ -1,0 +1,65 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #101312;
+  color: #eff8ef;
+}
+main {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 12vh 24px;
+}
+.eyebrow,
+.label {
+  color: #98d49c;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+h1 {
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 1;
+  margin: 0.4rem 0 1rem;
+}
+.lede {
+  color: #c3d4c4;
+  font-size: 1.1rem;
+}
+.card {
+  background: #1b231e;
+  border: 1px solid #344238;
+  border-radius: 16px;
+  margin-top: 2rem;
+  padding: 24px;
+}
+.card p {
+  overflow-wrap: anywhere;
+}
+button {
+  background: #b4e9ae;
+  border: 0;
+  border-radius: 999px;
+  color: #152016;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 16px;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.setting {
+  display: block;
+  margin-top: 20px;
+  color: #c3d4c4;
+}

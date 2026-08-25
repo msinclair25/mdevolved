@@ -5,6 +5,24 @@ and evidence for Obsidian and compatible AI tools. It complements execution
 harnesses; it does not run, schedule, route, or supervise agents. This roadmap
 describes product outcomes, not deployment schedules or service commitments.
 
+## Next direction — MDevolved source independence
+
+OWD's durable protocol and Community data plane become the compatibility
+foundation for **MDevolved**: source-independent Project memory with a plain
+Markdown folder as the universal sync floor and Obsidian as an optional
+first-class adapter. Existing `owd_*` tools, plugin identity, stored records,
+exports, and deployments remain compatible during the additive brand
+transition.
+
+Implementation is split into independently acceptable source-core, desktop
+folder, Obsidian-adapter, cross-computer, brand, and lovable-release milestones.
+The complete architecture, security boundary, migration order, and acceptance
+decisions live in the [MDevolved source-independent product plan](MDEVOLVED-PLAN.md).
+The MD1 source-neutral core is complete. MD2 now has an integrated source
+candidate (folder adapter, one-command CLI, desktop shell, additive source
+descriptor migration, and cross-platform packaging workflow); exact-candidate
+CI and release evidence remain its active acceptance boundary.
+
 ## Available now
 
 - A complete Apache-2.0 Community data plane for one owner and multiple vaults

@@ -10,6 +10,7 @@ import {
   snapshotListResponseSchema,
   snapshotManifestSchema,
   snapshotSummarySchema,
+  sourceDescriptorSchema,
   type SnapshotManifest,
   type SnapshotSummary,
 } from "@owd/contracts";
@@ -950,6 +951,23 @@ describe("workspace snapshots", () => {
     const { identity } = await configureRecoveryRecipient(session);
     const firstVault = await createActiveVault("First vault");
     const secondVault = await createActiveVault("Second vault");
+    const folderDescriptor = sourceDescriptorSchema.parse({
+      sourceKind: "folder",
+      label: "First folder",
+      capabilities: ["markdown", "watch"],
+      clientVersion: "mdevolved-cli-alpha.1",
+      syncSchemaVersion: 1,
+      descriptorVersion: 1,
+      provenance: {
+        pairedAt: 1,
+        descriptorSha256: "a".repeat(64),
+      },
+    });
+    await env.DB.prepare(
+      "UPDATE vaults SET source_descriptor_json = ? WHERE id = ?",
+    )
+      .bind(JSON.stringify(folderDescriptor), firstVault)
+      .run();
     await Promise.all([
       env.VAULTS.getByName(firstVault).applyUpdate(
         createVaultUpdate([
@@ -1026,6 +1044,15 @@ describe("workspace snapshots", () => {
           (vault) => vault.vaultName === portableVault.vaultName,
         )?.generationId,
       );
+      if (portableVault.vaultName === "First vault") {
+        expect(portableVault.sourceDescriptor).toEqual({
+          ...folderDescriptor,
+          restoreDisposition: "quarantined",
+          authorityRestored: false,
+        });
+      } else {
+        expect(portableVault.sourceDescriptor).toBeUndefined();
+      }
     }
     expect(restored).toEqual(
       new Map([

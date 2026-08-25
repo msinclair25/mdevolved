@@ -12,6 +12,11 @@ import {
   PROJECT_CONNECTION_SCOPE,
   PROJECT_INITIALIZATION_SCOPE,
 } from "./project-initialization";
+import {
+  portableSourceDescriptorSchema,
+  sourceDescriptorCapabilitySchema,
+  sourceDescriptorInputSchema,
+} from "./source-descriptor";
 
 export * from "./vault-path";
 export * from "./collaboration";
@@ -23,6 +28,7 @@ export * from "./agent-memory";
 export * from "./working-profile";
 export * from "./compounding";
 export * from "./project-outcomes";
+export * from "./source-descriptor";
 
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
@@ -299,6 +305,7 @@ export const pairingExchangeRequestSchema = z
     vaultName: vaultDisplayNameSchema,
     pluginVersion: pluginVersionSchema,
     schemaVersion: z.number().int().min(1).max(3),
+    sourceDescriptor: sourceDescriptorInputSchema.optional(),
   })
   .strict();
 
@@ -1011,6 +1018,7 @@ export const snapshotVaultManifestSchema = z
     snapshotVaultId: z.string().uuid(),
     sourceVaultId: z.string().uuid().nullable().optional(),
     sourceGeneration: snapshotSourceGenerationSchema.nullable(),
+    sourceDescriptor: portableSourceDescriptorSchema.optional(),
     vaultName: vaultDisplayNameSchema,
   })
   .strict();
@@ -1543,6 +1551,7 @@ export const serverCapabilitiesSchema = z
     updateProvider: z.enum(["github", "gitlab", "unknown"]).nullable(),
     updateRepoUrl: z.string().url().nullable(),
     updateRepoBranch: z.string().min(1).max(255).nullable(),
+    sourceDescriptors: sourceDescriptorCapabilitySchema.optional(),
   })
   .strict();
 

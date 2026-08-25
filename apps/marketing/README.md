@@ -18,7 +18,7 @@ model changes. Private acceptance is not a public managed-service launch.
 
 The site explains the guided setup path before asking a visitor to request
 private-alpha access. The source section links the invited
-[OWD Platform repository](https://github.com/msinclair25/owd-platform) with an
+[OWD Platform repository](https://github.com/msinclair25/mdevolved) with an
 explicit availability label and the public
 [OWD Sync repository](https://github.com/msinclair25/owd-sync). Detailed release
 and installation status belongs in those GitHub READMEs.

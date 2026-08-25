@@ -39,7 +39,7 @@ export interface VaultSyncSettingsHost {
 }
 
 const CLOUDFLARE_DEPLOY_URL =
-	"https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/owd-platform";
+	"https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved";
 
 /** Returns true if the host URL is unencrypted and not localhost. */
 function isInsecureRemoteHost(host: string): boolean {

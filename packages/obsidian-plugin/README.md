@@ -1,7 +1,7 @@
 # OWD Sync
 
 OWD Sync is the companion Obsidian plugin for
-[OWD Platform](https://github.com/msinclair25/owd-platform). It connects the
+[OWD Platform](https://github.com/msinclair25/mdevolved). It connects the
 vault you explicitly opened to an owner-controlled OWD deployment for sync,
 search, encrypted snapshots, and recovery.
 

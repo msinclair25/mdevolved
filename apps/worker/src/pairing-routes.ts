@@ -92,6 +92,10 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
       updateProvider: null,
       updateRepoUrl: null,
       updateRepoBranch: null,
+      sourceDescriptors: {
+        version: 1,
+        kinds: ["folder", "obsidian"],
+      },
     });
 
     context.header("Cache-Control", "no-store");

@@ -18,6 +18,7 @@ import { ApiProblem } from "./api-problem";
 import { enforceRateLimit } from "./auth-store";
 import { readUsableMaterialization } from "./materialization-store";
 import { requireOwnerSession } from "./owner-session";
+import { readVaultSourceDescriptor } from "./pairing-store";
 import { parseJsonBody, sha256Hex } from "./security";
 import {
   enforceSnapshotRetention,
@@ -206,7 +207,13 @@ async function currentCaptureSources(
     if (generation === null || vault.displayName === null) {
       throw new SnapshotError("snapshot_source_unavailable");
     }
-    sources.push({ generation, vaultName: vault.displayName });
+    sources.push({
+      generation,
+      sourceDescriptor:
+        (await readVaultSourceDescriptor(context.env.DB, vault.id)) ??
+        undefined,
+      vaultName: vault.displayName,
+    });
   }
   return sources;
 }
@@ -234,15 +241,20 @@ async function freshCaptureSources(
   ) {
     throw new SnapshotError("snapshot_source_refresh_pending");
   }
-  return results.map(({ job, vault }) => {
-    if (job.status !== "completed" || job.generation === null) {
-      throw new SnapshotError("snapshot_source_unavailable");
-    }
-    return {
-      generation: job.generation,
-      vaultName: vault.displayName as string,
-    };
-  });
+  return await Promise.all(
+    results.map(async ({ job, vault }) => {
+      if (job.status !== "completed" || job.generation === null) {
+        throw new SnapshotError("snapshot_source_unavailable");
+      }
+      return {
+        generation: job.generation,
+        sourceDescriptor:
+          (await readVaultSourceDescriptor(context.env.DB, vault.id)) ??
+          undefined,
+        vaultName: vault.displayName as string,
+      };
+    }),
+  );
 }
 
 export function registerSnapshotRoutes(app: Hono<AppBindings>): void {

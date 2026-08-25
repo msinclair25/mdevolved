@@ -1,4 +1,5 @@
 import { type App, arrayBufferToHex, MarkdownView, TFile, normalizePath } from "obsidian";
+import type { SourceNeutralSyncCore } from "@owd/yaos-core";
 import * as Y from "yjs";
 import type { VaultSync } from "./vaultSync";
 import type { EditorBindingManager } from "./editorBinding";
@@ -153,6 +154,7 @@ export class DiskMirror {
 
 	constructor(
 		private app: App,
+		private sourceCore: SourceNeutralSyncCore,
 		private vaultSync: VaultSync,
 		private editorBindings: EditorBindingManager,
 		debug: boolean,
@@ -534,9 +536,9 @@ export class DiskMirror {
 		const normalized = normalizePath(path);
 
 		try {
-			const existing = this.app.vault.getAbstractFileByPath(normalized);
-			if (existing instanceof TFile) {
-				const currentContent = await this.app.vault.read(existing);
+			const existing = await this.sourceCore.stat(normalized);
+			if (existing?.kind === "file") {
+				const currentContent = new TextDecoder().decode(await this.sourceCore.read(normalized));
 				if (currentContent === content) {
 					this.log(`flushWrite: "${path}" unchanged, skipping`);
 					return;
@@ -546,7 +548,7 @@ export class DiskMirror {
 				}
 
 				await this.suppressWrite(path, content);
-				await this.app.vault.modify(existing, content);
+				await this.sourceCore.write(normalized, new TextEncoder().encode(content));
 				this.log(`flushWrite: updated "${path}" (${content.length} chars)`);
 				this.lastDiskWriteOkAt.set(normalized, Date.now());
 				this._onDiskWriteCallback?.(normalized, await contentBaselineHash(content));
@@ -565,15 +567,7 @@ export class DiskMirror {
 					return;
 				}
 				await this.suppressWrite(path, content);
-				const dir = normalized.substring(0, normalized.lastIndexOf("/"));
-				if (dir) {
-					const dirExists =
-						this.app.vault.getAbstractFileByPath(normalizePath(dir));
-					if (!dirExists) {
-						await this.app.vault.createFolder(dir);
-					}
-				}
-				await this.app.vault.create(normalized, content);
+				await this.sourceCore.write(normalized, new TextEncoder().encode(content));
 				this.log(
 					`flushWrite: created "${path}" on disk (${content.length} chars)`,
 				);
@@ -675,7 +669,9 @@ export class DiskMirror {
 
 					if (lastKnownContent !== null) {
 						try {
-							const diskContent = await this.app.vault.read(file);
+							const diskContent = new TextDecoder().decode(
+								await this.sourceCore.read(normalized),
+							);
 							if (diskContent !== lastKnownContent) {
 								// Known baseline exists, local file differs → known dirty.
 								// Preserve and revive: local dirty work wins over remote delete.
@@ -1357,7 +1353,9 @@ export class DiskMirror {
 		try {
 			// Read back the file only when a suppression candidate exists. This
 			// keeps the hot path cheap while making self-event detection causal.
-			const content = await this.app.vault.read(file);
+			const content = new TextDecoder().decode(
+				await this.sourceCore.read(path),
+			);
 			const fingerprint = await this.fingerprintContent(content);
 			if (
 				fingerprint.bytes === entry.expectedBytes

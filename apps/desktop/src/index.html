@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MDevolved Sync</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">MDevolved Sync</p>
+      <h1>Keep your project memory close.</h1>
+      <p class="lede">
+        Choose a Markdown folder to pair it with your MDevolved library.
+      </p>
+      <section aria-live="polite" class="card">
+        <p class="label">Status</p>
+        <p data-status>unconfigured</p>
+        <p data-message></p>
+        <p class="label">Folder</p>
+        <p data-folder>No folder selected</p>
+        <button data-action="choose" type="button">
+          Choose Markdown folder
+        </button>
+        <div class="actions">
+          <button data-action="retry" type="button" disabled>Retry</button>
+          <button data-action="repair" type="button" disabled>Repair</button>
+          <button data-action="revoke" type="button" disabled>
+            Disconnect
+          </button>
+        </div>
+      </section>
+      <label class="setting">
+        <input data-action="login" type="checkbox" /> Start MDevolved when I log
+        in
+      </label>
+    </main>
+    <script type="module" src="./renderer.js"></script>
+  </body>
+</html>

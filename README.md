@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/owd-platform"><strong>Deploy Community</strong></a>
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved"><strong>Deploy Community</strong></a>
   ·
   <a href="#how-owd-works">See how it works</a>
   ·
@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/msinclair25/owd-platform/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/msinclair25/owd-platform/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/msinclair25/mdevolved/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/msinclair25/mdevolved/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-d7ff64.svg" /></a>
   <a href="https://github.com/msinclair25/owd-sync/releases/tag/0.1.7"><img alt="OWD Sync 0.1.7" src="https://img.shields.io/badge/OWD%20Sync-0.1.7-90a5ff.svg" /></a>
   <a href="docs/OBSIDIAN-MIND-COMPATIBILITY.md"><img alt="Obsidian Mind 8.3.1 profile" src="https://img.shields.io/badge/Obsidian%20Mind-8.3.1%20profile-90a5ff.svg" /></a>
@@ -45,7 +45,27 @@ survive a provider session. It complements the harnesses you already use. OWD
 does not run, schedule, route, or supervise agents, and it never grants their
 local shell, skills, or filesystem authority.
 
-It turns the Obsidian vault you choose into bounded Project context without
+The next product direction is **MDevolved**: keep this compatible OWD data
+plane while making a plain Markdown folder the universal sync source and
+Obsidian an optional first-class adapter. See the
+[source-independent product plan](docs/MDEVOLVED-PLAN.md).
+
+The MD2 source candidate adds a native folder adapter, a protected Electron
+shell, and the thin install path below. The package is not published from this
+repository automatically; until its signed alpha release, use the workspace
+build and synthetic fixtures rather than a personal folder.
+
+```bash
+npx mdevolved@latest sync .
+```
+
+The command prints machine-readable pairing next actions, rejects credentials
+in arguments and output, and keeps secrets in the operating system's protected
+credential store. The same reviewed Yjs transport and receipt engine remains
+behind both the folder client and OWD Sync; Obsidian is an optional richer
+adapter, not a requirement.
+
+It turns the Markdown folder or Obsidian vault you choose into bounded Project context without
 becoming another model subscription, taking over the agent runtime, scraping
 hidden conversations, or silently deciding what is true.
 
@@ -380,7 +400,7 @@ See [Deployment Modes](docs/DEPLOYMENT-MODES.md) and
 
 ### Deploy Community
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/owd-platform)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved)
 
 The deployment runs in your Cloudflare account. Review the
 [alpha limits](docs/ALPHA-STATUS.md), [security model](docs/SECURITY-MODEL.md),
@@ -406,7 +426,7 @@ easier while hardening Community deployment and upgrade behavior.
   the full acceptance exercise.
 
 **Already use Obsidian and more than one AI client?**
-[Deploy Community](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/owd-platform)
+[Deploy Community](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved)
 or [request managed alpha access](https://mdevolved.com/#alpha-access).
 
 ## Documentation

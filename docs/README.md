@@ -12,6 +12,8 @@ you are changing.
 | Connect an agent to a Project             | [Agent-first quick start](AGENT-FIRST-QUICKSTART.md)              |
 | Deploy Community or compare hosted modes  | [Deployment modes](DEPLOYMENT-MODES.md)                           |
 | See what is next                          | [Public roadmap](ROADMAP.md)                                      |
+| Review the MDevolved source plan          | [MDevolved plan](MDEVOLVED-PLAN.md)                               |
+| Review MD2 migration and recovery         | [MD2 recovery](MD2-RECOVERY.md)                                   |
 | Review supported versions and limits      | [Release compatibility](RELEASE-COMPATIBILITY.md)                 |
 | Audit monitored upstream integration pins | [Compatibility manifest](../compatibility/upstreams.json)         |
 | Install the Obsidian companion            | [OWD Sync README](https://github.com/msinclair25/owd-sync#readme) |
@@ -20,6 +22,10 @@ you are changing.
 
 - [Product definition](PRODUCT.md) — users, outcomes, exclusions, and
   principles
+- [MDevolved plan](MDEVOLVED-PLAN.md) — source-independent sync, Obsidian
+  adapter, brand compatibility, milestones, and acceptance decisions
+- [MD2 recovery](MD2-RECOVERY.md) — folder-source migration, quarantine, and
+  authority-free restore behavior
 - [Architecture](ARCHITECTURE.md) — components, data flow, canonical and
   derived state, and deployment boundaries
 - [Security model](SECURITY-MODEL.md) — threats, authorization, redaction, and

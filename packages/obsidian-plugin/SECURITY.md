@@ -25,4 +25,4 @@ contact path.
   Obsidian's reviewed Community Plugin updater.
 
 The current compatibility and security contracts are maintained in the
-[OWD Platform repository](https://github.com/msinclair25/owd-platform).
+[OWD Platform repository](https://github.com/msinclair25/mdevolved).

@@ -4,6 +4,7 @@ packages:
 
 minimumReleaseAgeExclude:
   - eve@0.29.4
+  - electron@44.0.0
 
 overrides:
   "@hono/node-server": 2.0.11

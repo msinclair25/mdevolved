@@ -1,7 +1,7 @@
 import * as Y from "yjs";
 import YSyncProvider from "y-partyserver/provider";
 import { IndexeddbPersistence } from "y-indexeddb";
-import { normalizePath } from "obsidian";
+import { canonicalizeVaultPath } from "../paths/canonicalPath";
 import { type FileMeta, type BlobRef, type BlobMeta, type BlobTombstone } from "../types";
 import {
 	decodeFileMeta,
@@ -21,7 +21,7 @@ import {
 	type MetaChangeBatch,
 	type MetaShapeStats,
 } from "./fileMeta";
-import { ORIGIN_SEED, isLocalOrigin } from "./origins";
+import { ORIGIN_DISK_SYNC, ORIGIN_SEED, isLocalOrigin } from "./origins";
 import type { VaultSyncSettings } from "../settings";
 import type { TraceHttpContext, TraceRecord } from "../observability/traceContext";
 import { randomBase64Url } from "../utils/base64url";
@@ -36,7 +36,7 @@ import {
 } from "./svEchoMessage";
 import type { CandidateStore, ScopeKey, ScopeMetadata } from "./candidateStore";
 import type { ProductFlightPathEventInput } from "../observability/traceSink";
-import { TICKET_REFRESH_BUFFER_MS, patchTicketInUrl } from "./socketTicket";
+import { TICKET_REFRESH_BUFFER_MS, patchTicketInUrl } from "./socketTicketUrl";
 import { decideSocketTicketFailure } from "./socketTicketRetry";
 
 /** Current schema version. Stored in sys.schemaVersion. */
@@ -717,7 +717,7 @@ export class VaultSync {
 
 	/** Normalize a vault-relative path for consistent CRDT keys. */
 	private normPath(path: string): string {
-		return normalizePath(path);
+		return canonicalizeVaultPath(path).normalizedPath;
 	}
 
 	isFileMetaDeleted(meta: unknown): boolean {
@@ -1404,6 +1404,18 @@ export class VaultSync {
 		const text = this.idToText.get(fileId) ?? null;
 		if (text) this._textToFileId.set(text, fileId);
 		return text;
+	}
+
+	/** Portable folder adapter write path; preserves the reviewed local origin. */
+	writeMarkdownText(path: string, contents: string, device?: string): boolean {
+		const text = this.getTextForPath(path) ?? this.ensureFile(path, contents, device);
+		if (!text) return false;
+		if (text.toString() === contents) return true;
+		this.ydoc.transact(() => {
+			if (text.length > 0) text.delete(0, text.length);
+			if (contents.length > 0) text.insert(0, contents);
+		}, ORIGIN_DISK_SYNC);
+		return true;
 	}
 
 	getFileId(path: string): string | undefined {

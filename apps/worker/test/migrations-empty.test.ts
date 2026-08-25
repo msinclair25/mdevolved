@@ -9,7 +9,7 @@ import {
 } from "./migration-fixture";
 
 describe("D1 migration chain from empty", () => {
-  it("applies every migration from 0001 through 0035", async () => {
+  it("applies every migration from 0001 through 0036", async () => {
     await applyMigrations(env.DB, migrations);
 
     const rows = await env.DB.prepare(
