@@ -247,6 +247,19 @@ row identity, R2 key, or personal content.
 | Local downloaded file       | One streamed `.owdsnapshot`                         | Browser-local validation and restore without source service     |
 | Legacy `owd-backup-v1`      | Existing `.age` manifest and Markdown stream        | Remains downloadable, importable, and restorable under Advanced |
 
+## M2 working-profile recovery
+
+Encrypted snapshots include only live immutable preference and Agent Skill
+records. Fresh-cell restore verifies their canonical bodies and dependencies,
+then writes them as owner-only quarantined history with
+`restored_authority_allowed = 0`; it creates no current preference, skill,
+Project attachment, mutation receipt, grant, credential, session, or OAuth
+projection. Quarantined profile history is excluded from later snapshot
+capture, so restore cannot silently reclassify or recirculate it as a live
+working profile. The Community restore path rejects any combined manifest with
+working-profile or compounding records above the documented 14-object bound
+before staging.
+
 ## R3 continuity-record recovery and retention
 
 ## M3 compounding recovery

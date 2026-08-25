@@ -1401,6 +1401,42 @@ describe("Phase 9B agent-first collaboration walking path", () => {
         )?.count,
       ).toBe(0);
     }
+
+    const resnapshotId = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO workspace_snapshots (
+        id, portable_snapshot_id, format_version, origin, scope, status,
+        recipient_fingerprint, capture_started_at, vault_count, item_count,
+        logical_bytes, included_sections, unavailable_sections,
+        manifest_portable_object_id, created_at
+      ) VALUES (?, ?, 'owd-snapshot-v2', 'created', 'all-active', 'creating',
+        ?, ?, 1, 0, 0, '["notes"]', '[]', ?, ?)`,
+    )
+      .bind(
+        resnapshotId,
+        crypto.randomUUID(),
+        "f".repeat(64),
+        NOW + 3,
+        crypto.randomUUID(),
+        NOW + 3,
+      )
+      .run();
+    await stageCollaborationSnapshot(env.DB, {
+      now: NOW + 3,
+      selection: "none",
+      snapshotId: resnapshotId,
+    });
+    await env.DB.prepare(
+      `UPDATE snapshot_intelligence_items SET status = 'ready'
+       WHERE snapshot_id = ?`,
+    )
+      .bind(resnapshotId)
+      .run();
+    const resnapshot = await buildCollaborationSnapshotManifest(
+      env.DB,
+      resnapshotId,
+    );
+    expect(resnapshot.workingProfile?.records).toEqual([]);
   });
 
   it("rejects the combined collaboration and profile budget before staging", async () => {

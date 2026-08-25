@@ -199,7 +199,9 @@ async function buildPlan(
         COALESCE(source_project_id, project_id) AS project_id,
         preference_id, skill_id, dependencies_json, body_object_key,
         content_sha256, byte_length, created_at
-       FROM working_profile_records ORDER BY created_at, record_id`,
+       FROM working_profile_records
+       WHERE restore_state = 'live'
+       ORDER BY created_at, record_id`,
     )
     .all<WorkingProfileInventoryRow>();
   const evidenceRows = await db

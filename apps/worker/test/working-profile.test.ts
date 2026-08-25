@@ -322,6 +322,50 @@ describe("working-profile service", () => {
     ).rejects.toMatchObject({ code: "skill_package_too_large" });
   });
 
+  it("normalizes concurrent preference-key and skill-name conflicts", async () => {
+    const preferences = await Promise.allSettled(
+      ["First value", "Second value"].map((value, index) =>
+        saveWorkingPreference(env.DB, env.VAULT_STORAGE, {
+          idempotencyKey: `concurrent-preference-${index}`,
+          key: "concurrent-package-manager",
+          projectId: null,
+          sourceLabel: "Synthetic concurrency",
+          sourceUrl: null,
+          value,
+        }),
+      ),
+    );
+    expect(
+      preferences.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(
+      preferences.find((result) => result.status === "rejected"),
+    ).toMatchObject({
+      reason: { code: "preference_conflict" },
+      status: "rejected",
+    });
+
+    const skills = await Promise.allSettled(
+      ["First skill", "Second skill"].map((description, index) =>
+        importAgentSkill(env.DB, env.VAULT_STORAGE, {
+          files: skillFiles(
+            `name: concurrent-skill\ndescription: ${description}`,
+          ),
+          idempotencyKey: `concurrent-skill-${index}`,
+        }),
+      ),
+    );
+    expect(
+      skills.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(skills.find((result) => result.status === "rejected")).toMatchObject(
+      {
+        reason: { code: "skill_conflict" },
+        status: "rejected",
+      },
+    );
+  });
+
   it("queues every failed preference and skill publication for reference-safe cleanup", async () => {
     await expect(
       saveWorkingPreference(failNextBatch(), env.VAULT_STORAGE, {

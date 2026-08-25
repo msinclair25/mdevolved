@@ -33,8 +33,16 @@ import {
 import { ensureBackupSchema } from "../src/backup-store";
 import { ensureMaterializationSchema } from "../src/materialization-store";
 import { ensurePairingSchema } from "../src/pairing-store";
-import { sha256Hex } from "../src/security";
-import { createCollaborationRestore } from "../src/collaboration-restore";
+import { encodeBase64Url, sha256Hex } from "../src/security";
+import {
+  applyCollaborationRestore,
+  createCollaborationRestore,
+  stageCollaborationRestoreItem,
+} from "../src/collaboration-restore";
+import {
+  importAgentSkill,
+  saveWorkingPreference,
+} from "../src/working-profile-service";
 import {
   enforceSnapshotRetention,
   queueFailedSnapshotCleanup,
@@ -66,6 +74,10 @@ async function inspectPortableSnapshot(
     bytes: Uint8Array;
     path: string;
     vaultName: string;
+  }) => void,
+  onWorkingProfileEntry?: (input: {
+    bytes: Uint8Array;
+    portableObjectId: string;
   }) => void,
 ): Promise<SnapshotManifest> {
   const prefix = new Uint8Array(
@@ -121,7 +133,33 @@ async function inspectPortableSnapshot(
       });
     }
   }
+  for (const record of manifest.intelligence?.workingProfile?.records ?? []) {
+    const part = parts.get(record.portableObjectId);
+    expect(part?.role).toBe("content");
+    onWorkingProfileEntry?.({
+      bytes: await decrypt(part?.blob ?? new Blob()),
+      portableObjectId: record.portableObjectId,
+    });
+  }
   return manifest;
+}
+
+function portableSkillFiles() {
+  const encode = (value: string) => {
+    let binary = "";
+    for (const byte of new TextEncoder().encode(value)) {
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+  };
+  return [
+    {
+      contentBase64: encode(
+        "---\nname: encrypted-profile-check\ndescription: Verify portable recovery.\n---\n\nRemain inert.",
+      ),
+      path: "SKILL.md",
+    },
+  ];
 }
 
 async function fetchWorker(
@@ -353,6 +391,126 @@ beforeEach(async () => {
 });
 
 describe("workspace snapshots", () => {
+  it("encrypts, exports, decrypts, and restores live working-profile records without authority", async () => {
+    const session = await createOwnerSession();
+    const { identity } = await configureRecoveryRecipient(session);
+    const vaultId = await createActiveVault("Working profile source");
+    await env.VAULTS.getByName(vaultId).applyUpdate(
+      createVaultUpdate([
+        {
+          content: "Synthetic working-profile recovery source",
+          fileId: "profile-source",
+          path: "Profile.md",
+        },
+      ]),
+    );
+    await saveWorkingPreference(env.DB, env.VAULT_STORAGE, {
+      idempotencyKey: `encrypted-preference-${crypto.randomUUID()}`,
+      key: "package-manager",
+      projectId: null,
+      sourceLabel: "Synthetic owner",
+      sourceUrl: null,
+      value: "pnpm",
+    });
+    await importAgentSkill(env.DB, env.VAULT_STORAGE, {
+      files: portableSkillFiles(),
+      idempotencyKey: `encrypted-skill-${crypto.randomUUID()}`,
+    });
+
+    const snapshot = await createSnapshot(session, {
+      intelligenceSelection: "none",
+    });
+    const download = await fetchWorker(
+      `${ORIGIN}/api/snapshots/${snapshot.snapshotId}/download`,
+      { headers: ownerHeaders(session) },
+    );
+    expect(download.status).toBe(200);
+    const profileBodies = new Map<string, Uint8Array>();
+    const portableManifest = await inspectPortableSnapshot(
+      await download.blob(),
+      identity,
+      undefined,
+      ({ bytes, portableObjectId }) => {
+        profileBodies.set(portableObjectId, bytes);
+      },
+    );
+    const intelligence = snapshotIntelligenceManifestSchema.parse(
+      portableManifest.intelligence,
+    );
+    expect(portableManifest.requiredCapabilities).toContain(
+      WORKING_PROFILE_SNAPSHOT_CAPABILITY,
+    );
+    expect(
+      new Set(
+        intelligence.workingProfile?.records.map((record) => record.recordType),
+      ),
+    ).toEqual(new Set(["preference-version", "skill-version"]));
+    expect(profileBodies.size).toBe(2);
+
+    await resetStorage();
+    let restore = await createCollaborationRestore(
+      env.DB,
+      { manifest: intelligence },
+      snapshot.createdAt + 1,
+    );
+    for (const descriptor of intelligence.workingProfile?.records ?? []) {
+      const bytes = profileBodies.get(descriptor.portableObjectId);
+      if (bytes === undefined) throw new Error("Profile ciphertext missing.");
+      restore = await stageCollaborationRestoreItem(
+        env.DB,
+        env.VAULT_STORAGE,
+        restore.restoreId,
+        {
+          bytesBase64Url: encodeBase64Url(bytes),
+          portableObjectId: descriptor.portableObjectId,
+        },
+      );
+    }
+    expect(restore.status).toBe("preview");
+    await expect(
+      applyCollaborationRestore(
+        env.DB,
+        env.VAULT_STORAGE,
+        restore.restoreId,
+        snapshot.createdAt + 2,
+      ),
+    ).resolves.toMatchObject({ grantCount: 0, status: "applied" });
+    const restored = await env.DB.prepare(
+      `SELECT record_type, restore_state, restored_authority_allowed
+       FROM working_profile_records ORDER BY record_type`,
+    ).all<{
+      record_type: string;
+      restore_state: string;
+      restored_authority_allowed: number;
+    }>();
+    expect(restored.results).toEqual([
+      {
+        record_type: "preference-version",
+        restore_state: "quarantined",
+        restored_authority_allowed: 0,
+      },
+      {
+        record_type: "skill-version",
+        restore_state: "quarantined",
+        restored_authority_allowed: 0,
+      },
+    ]);
+    for (const table of [
+      "working_preferences",
+      "agent_skills",
+      "project_skill_attachments",
+      "agent_grants",
+    ]) {
+      expect(
+        (
+          await env.DB.prepare(`SELECT COUNT(*) AS count FROM ${table}`).first<{
+            count: number;
+          }>()
+        )?.count,
+      ).toBe(0);
+    }
+  });
+
   it("requires an owner session and CSRF proof at snapshot boundaries", async () => {
     const session = await createOwnerSession();
     const timeline = await fetchWorker(`${ORIGIN}/api/snapshots`);
