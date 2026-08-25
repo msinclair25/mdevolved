@@ -6,15 +6,17 @@ import { join } from "node:path";
 const temporary = await mkdtemp(join(tmpdir(), "mdevolved-clean-install-"));
 const packageDirectory = join(temporary, "package");
 const installDirectory = join(temporary, "install");
-const executable = (name) =>
-  process.platform === "win32" ? `${name}.cmd` : name;
-
 function run(command, args, cwd) {
-  const result = spawnSync(executable(command), args, {
-    cwd,
-    encoding: "utf8",
-    env: { ...process.env, npm_config_cache: join(temporary, "npm-cache") },
-  });
+  const windows = process.platform === "win32";
+  const result = spawnSync(
+    windows ? (process.env.ComSpec ?? "cmd.exe") : command,
+    windows ? ["/d", "/s", "/c", command, ...args] : args,
+    {
+      cwd,
+      encoding: "utf8",
+      env: { ...process.env, npm_config_cache: join(temporary, "npm-cache") },
+    },
+  );
   if (result.error) throw result.error;
   return result;
 }
