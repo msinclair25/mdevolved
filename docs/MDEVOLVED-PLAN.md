@@ -1,7 +1,8 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1 is complete. MD2 is a locally verified release candidate; the
-three-OS GitHub package matrix and external release gates remain open.<br />
+**Status:** MD1 is complete. MD2 implementation and its three-OS package matrix
+are verified; registry publication, release assets, migration, and deployment
+remain open.<br />
 **Date:** 2026-08-25
 
 ## Milestone boundary
@@ -375,15 +376,22 @@ exercises pairing and initial publication, disk and remote edits, restart,
 offline receipts, conflicts, revocation, second-run idempotency, source
 descriptor negotiation and upgrade, encrypted export/quarantine semantics,
 hostile folder boundaries, protected desktop state, and a dependency-free
-clean-tarball pairing smoke. The complete repository check, 634 unit and
+clean-tarball pairing smoke. The complete repository check, 636 unit and
 service tests, 20 focused migration checks, 74 browser tests, production
 builds, Cloudflare deployment dry-runs, public-source history scan, and local
 macOS arm64 Electron packaging have passed from the candidate lineage.
 
-MD2 is not closed yet. The same named gate and Electron packaging must pass on
-GitHub's current macOS, Windows, and Linux runners. The public
-`npx mdevolved@latest sync .` path also requires explicit owner-approved npm
-publication. Desktop code signing/notarization, production migration and
-deployment, repository renaming, and paid services remain separately
-authorized delivery actions. No production or personal source was used during
-local validation.
+The same named gate and Electron packaging passed on GitHub's current macOS,
+Windows, and Linux runners for the merged candidate lineage. The release
+candidate now adds an exact-version tag guard and reproducible unsigned desktop
+archives with SHA-256 checksums; its tag workflow refuses commits not already
+on `main` and requires all three platform artifacts before creating a
+prerelease.
+
+MD2 is not closed yet. The public `npx mdevolved@latest sync .` path still
+requires owner-authenticated npm publication and a real clean-environment
+install check. Forward-only migration `0036`, the exact Worker deployment, and
+the tag-triggered GitHub prerelease also require live verification. Desktop
+code signing/notarization, repository renaming, and paid services remain later
+delivery gates and are not required for this unsigned public alpha. No
+production or personal source was used during validation.
