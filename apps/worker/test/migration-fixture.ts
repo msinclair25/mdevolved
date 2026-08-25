@@ -28,6 +28,7 @@ import elasticActorPlaneR3Migration from "../../../migrations/0032_elastic_actor
 import policyAutopilotR4Migration from "../../../migrations/0033_policy_autopilot_r4.sql";
 import workingProfileSkillsMigration from "../../../migrations/0034_working_profile_skills.sql";
 import compoundingDraftsMigration from "../../../migrations/0035_compounding_drafts.sql";
+import sourceDescriptorsMigration from "../../../migrations/0036_source_descriptors.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -117,6 +118,10 @@ export const migrations = [
     file: "0035_compounding_drafts.sql",
     source: compoundingDraftsMigration,
   },
+  {
+    file: "0036_source_descriptors.sql",
+    source: sourceDescriptorsMigration,
+  },
 ] as const;
 
 export const priorReleaseMigrations = migrations.slice(0, 10);
@@ -142,6 +147,7 @@ export const elasticActorPlaneR3MigrationEntry = migrations[26]!;
 export const policyAutopilotR4MigrationEntry = migrations[27]!;
 export const workingProfileSkillsMigrationEntry = migrations[28]!;
 export const compoundingDraftsMigrationEntry = migrations[29]!;
+export const sourceDescriptorsMigrationEntry = migrations[30]!;
 
 export function executableMigration(source: string): string {
   return source

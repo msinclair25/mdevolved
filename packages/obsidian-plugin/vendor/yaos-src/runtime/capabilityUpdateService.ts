@@ -45,7 +45,7 @@ export type UpdateState = {
 };
 
 const UPDATE_MANIFEST_URLS = [
-	"https://github.com/msinclair25/owd-platform/releases/latest/download/update-manifest.json",
+	"https://github.com/msinclair25/mdevolved/releases/latest/download/update-manifest.json",
 ] as const;
 const UPDATE_MANIFEST_CACHE_MS = 24 * 60 * 60 * 1000;
 

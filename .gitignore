@@ -1,6 +1,7 @@
 node_modules/
 dist/
 apps/web/dist/
+apps/desktop/release/
 packages/obsidian-plugin/main.js
 packages/obsidian-plugin/release/
 .wrangler/

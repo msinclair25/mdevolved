@@ -1,4 +1,5 @@
-import { App, MarkdownView, Notice, TFile } from "obsidian";
+import type { SourceNeutralSyncCore, UserInteractionPort } from "@owd/yaos-core";
+import { App, MarkdownView, TFile } from "obsidian";
 import type { BlobSyncManager } from "../sync/blobSync";
 import type { DiskMirror } from "../sync/diskMirror";
 import {
@@ -81,6 +82,9 @@ import { type DiskIngestPort } from "./engineControlPort";
 
 interface ReconciliationControllerDeps {
 	app: App;
+	getSourceCore(): SourceNeutralSyncCore | null;
+	getInteraction(): UserInteractionPort | null;
+	isSourceRunning(): boolean;
 	getSettings(): VaultSyncSettings;
 	getRuntimeConfig(): RuntimeConfig;
 	getVaultSync(): VaultSync | null;
@@ -436,9 +440,11 @@ export class ReconciliationController {
 	}
 
 	async runReconciliation(mode: ReconcileMode): Promise<void> {
+		if (!this.deps.isSourceRunning()) return;
 		const vaultSync = this.deps.getVaultSync();
 		const diskMirror = this.deps.getDiskMirror();
-		if (!vaultSync || !diskMirror) return;
+		const sourceCore = this.deps.getSourceCore();
+		if (!vaultSync || !diskMirror || !sourceCore) return;
 		if (this.reconcileInFlight) {
 			this.reconcilePending = true;
 			this.deps.log("Reconciliation already in flight — queued");
@@ -484,7 +490,15 @@ export class ReconciliationController {
 			const runtimeConfig = this.deps.getRuntimeConfig();
 			const diskFiles = new Map<string, string>();
 			const diskPresentPaths = new Set<string>();
-			const allMdFiles = this.deps.app.vault.getMarkdownFiles();
+			const listedMarkdown = await sourceCore.listMarkdown({
+				maxEntries: 100_000,
+				maxFiles: 10_000,
+				maxDepth: 64,
+			});
+			const allMdFiles = listedMarkdown.flatMap((entry) => {
+				const file = this.deps.app.vault.getAbstractFileByPath(entry.path);
+				return file instanceof TFile ? [file] : [];
+			});
 			let excludedCount = 0;
 			let oversizedCount = 0;
 			let skippedByIndex = 0;
@@ -504,11 +518,11 @@ export class ReconciliationController {
 			let allStats: Map<string, { mtime: number; size: number }> = new Map();
 			if (mode === "authoritative") {
 				changed = eligibleFiles;
-				allStats = await collectFileStats(this.deps.app, eligibleFiles);
+				allStats = await collectFileStats(sourceCore, eligibleFiles);
 				skippedByIndex = 0;
 			} else {
 				const indexResult = await filterChangedFiles(
-					this.deps.app,
+					sourceCore,
 					eligibleFiles,
 					this.deps.getDiskIndex(),
 				);
@@ -524,7 +538,7 @@ export class ReconciliationController {
 					continue;
 				}
 				try {
-					const content = await this.deps.app.vault.read(file);
+					const content = await this.readSourceText(file.path);
 					if (runtimeConfig.maxFileSizeBytes > 0 && content.length > runtimeConfig.maxFileSizeBytes) {
 						oversizedCount++;
 						continue;
@@ -537,7 +551,7 @@ export class ReconciliationController {
 
 			for (const file of changed) {
 				try {
-					const content = await this.deps.app.vault.read(file);
+					const content = await this.readSourceText(file.path);
 					if (runtimeConfig.maxFileSizeBytes > 0 && content.length > runtimeConfig.maxFileSizeBytes) {
 						oversizedCount++;
 						this.deps.log(`reconcile: skipping "${file.path}" (${Math.round(content.length / 1024)} KB exceeds limit)`);
@@ -554,7 +568,7 @@ export class ReconciliationController {
 			}
 			if (oversizedCount > 0) {
 				this.deps.log(`reconcile: skipped ${oversizedCount} oversized files`);
-				new Notice(`OWD Sync: skipped ${oversizedCount} files exceeding ${runtimeConfig.maxFileSizeKB} KB size limit.`);
+				this.notify(`OWD Sync: skipped ${oversizedCount} files exceeding ${runtimeConfig.maxFileSizeKB} KB size limit.`);
 			}
 			if (skippedByIndex > 0) {
 				this.deps.log(`reconcile: ${skippedByIndex} files unchanged (stat match), ${changed.length} changed`);
@@ -635,7 +649,7 @@ export class ReconciliationController {
 				safetyBrakeReason = safetyBrakeDecision.reason;
 				this.deps.log(`Reconcile safety brake: ${safetyBrakeReason}.`);
 				console.error(`[yaos] Reconcile safety brake: ${safetyBrakeReason}.`);
-				new Notice(
+				this.notify(
 					`OWD Sync: Reconcile safety brake — ${safetyBrakeReason}. ` +
 					`Additive creates will continue. Export diagnostics and inspect logs.`,
 				);
@@ -1044,6 +1058,7 @@ export class ReconciliationController {
 	}
 
 	async importUntrackedFiles(): Promise<void> {
+		if (!this.deps.isSourceRunning()) return;
 		const vaultSync = this.deps.getVaultSync();
 		if (!vaultSync) return;
 
@@ -1074,7 +1089,7 @@ export class ReconciliationController {
 			if (!(file instanceof TFile)) continue;
 
 			try {
-				const content = await this.deps.app.vault.read(file);
+				const content = await this.readSourceText(file.path);
 				// Spec: .kiro/specs/no-event-reconcile-admission/requirements.md R2.7.
 				// Mint a per-path `op-import-untracked-*` opId BEFORE the CRDT
 				// mutation so the resulting `crdt.file.created` envelope is
@@ -1111,7 +1126,7 @@ export class ReconciliationController {
 		this.deps.log(`Imported ${imported} previously untracked files`);
 
 		if (imported > 0) {
-			new Notice(`OWD Sync: imported ${imported} files after server sync.`);
+			this.notify(`OWD Sync: imported ${imported} files after server sync.`);
 		}
 	}
 
@@ -1285,6 +1300,7 @@ export class ReconciliationController {
 		opId?: string,
 		coalescedOpIds?: string[],
 	): Promise<void> {
+		if (!this.deps.isSourceRunning()) return;
 		const abstractFile = this.deps.app.vault.getAbstractFileByPath(path);
 		if (!(abstractFile instanceof TFile)) {
 			this.deps.log(`Markdown ${reason}: "${path}" no longer exists, skipping`);
@@ -1361,7 +1377,7 @@ export class ReconciliationController {
 		}
 
 		try {
-			const content = await this.deps.app.vault.read(file);
+			const content = await this.readSourceText(file.path);
 
 			if (runtimeConfig.maxFileSizeBytes > 0 && content.length > runtimeConfig.maxFileSizeBytes) {
 				this.deps.log(`syncFileFromDisk: skipping "${file.path}" (${Math.round(content.length / 1024)} KB exceeds limit)`);
@@ -2436,19 +2452,27 @@ export class ReconciliationController {
 		return true;
 	}
 
+	private async readSourceText(path: string): Promise<string> {
+		const sourceCore = this.deps.getSourceCore();
+		if (!sourceCore) throw new Error("source_core_unavailable");
+		return new TextDecoder().decode(await sourceCore.read(path));
+	}
+
 	private async createMarkdownConflictArtifact(
 		path: string,
 		content: string,
 		reason: string,
 		source?: "crdt" | "disk" | "editor",
 	): Promise<string> {
+		const sourceCore = this.deps.getSourceCore();
+		if (!sourceCore) throw new Error("source_core_unavailable");
 		const basePath = this.conflictArtifactPath(path, source);
 		for (let i = 0; i < 100; i++) {
 			const candidate = i === 0
 				? basePath
 				: basePath.replace(/(\.md)?$/, ` ${i + 1}$1`);
-			if (this.deps.app.vault.getAbstractFileByPath(candidate)) continue;
-			await this.deps.app.vault.create(candidate, content);
+			if (await sourceCore.stat(candidate)) continue;
+			await sourceCore.write(candidate, new TextEncoder().encode(content));
 			this.deps.trace("conflict", "conflict-artifact-created", {
 				path,
 				conflictPath: candidate,
@@ -2491,11 +2515,11 @@ export class ReconciliationController {
 
 	private async updateDiskIndexForPath(path: string, settledContent?: string): Promise<void> {
 		try {
-			const stat = await this.deps.app.vault.adapter.stat(path);
-			if (stat) {
+			const stat = await this.deps.getSourceCore()?.stat(path);
+			if (stat?.kind === "file" && stat.mtimeMs !== undefined && stat.size !== undefined) {
 				const existing = this.deps.getDiskIndex()[path];
 				const nextEntry: import("../sync/diskIndex").DiskIndexEntry = {
-					mtime: stat.mtime,
+					mtime: stat.mtimeMs,
 					size: stat.size,
 					// Advance the baseline hash if settled content is provided.
 					// This covers disk→CRDT imports (external edits while YAOS is running).
@@ -2516,6 +2540,15 @@ export class ReconciliationController {
 		}
 	}
 
+	private notify(message: string, durationMs?: number): void {
+		void this.deps.getInteraction()?.emit({
+			kind: "message",
+			level: "warning",
+			message,
+			...(durationMs !== undefined ? { durationMs } : {}),
+		});
+	}
+
 	/**
 	 * Show a conflict notice with rate-limiting. Only one notice per
 	 * CONFLICT_NOTICE_COOLDOWN_MS window; suppressed conflicts are
@@ -2533,7 +2566,7 @@ export class ReconciliationController {
 		const suffix = suppressed > 0
 			? ` (and ${suppressed} other conflict${suppressed > 1 ? "s" : ""} in the last 30s)`
 			: "";
-		new Notice(`OWD Sync: ${message}${suffix}`, 10000);
+		this.notify(`OWD Sync: ${message}${suffix}`, 10000);
 	}
 
 	/**
@@ -2557,6 +2590,6 @@ export class ReconciliationController {
 		const suffix = suppressed > 0
 			? ` (and ${suppressed} other quarantine${suppressed > 1 ? "s" : ""} in the last 60s)`
 			: "";
-		new Notice(`OWD Sync: ${message}${suffix}`, 12000);
+		this.notify(`OWD Sync: ${message}${suffix}`, 12000);
 	}
 }

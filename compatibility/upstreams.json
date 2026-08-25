@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "monitorRepository": "msinclair25/owd-platform",
+  "monitorRepository": "msinclair25/mdevolved",
   "issueLabel": {
     "name": "upstream-compatibility",
     "color": "8250df",

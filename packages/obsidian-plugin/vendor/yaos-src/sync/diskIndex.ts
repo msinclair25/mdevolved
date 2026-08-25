@@ -6,10 +6,15 @@
  * Persisted as JSON via plugin's loadData/saveData under the key
  * "_diskIndex" in the plugin's data.json.
  */
-import { type App, TFile, normalizePath } from "obsidian";
+import type { WorkspaceEntry } from "@owd/yaos-core";
 import { mapWithConcurrency } from "../utils/concurrency";
 
 const DEFAULT_STAT_CONCURRENCY = 16;
+
+/** Narrow structural port accepted from the source core, never the raw adapter. */
+export interface WorkspaceStatPort {
+	stat(path: string): Promise<WorkspaceEntry | null>;
+}
 
 /**
  * Cheap FNV-1a-ish 32-bit fingerprint for diagnostics and loop detection.
@@ -83,13 +88,13 @@ export type DiskIndex = Record<string, DiskIndexEntry>;
  * Returns null if stat fails (file doesn't exist, adapter quirk).
  */
 async function statFile(
-	app: App,
+	files: WorkspaceStatPort,
 	path: string,
 ): Promise<{ mtime: number; size: number } | null> {
 	try {
-		const stat = await app.vault.adapter.stat(normalizePath(path));
-		if (!stat) return null;
-		return { mtime: stat.mtime, size: stat.size };
+		const stat = await files.stat(path);
+		if (!stat || stat.kind !== "file" || stat.mtimeMs === undefined || stat.size === undefined) return null;
+		return { mtime: stat.mtimeMs, size: stat.size };
 	} catch {
 		return null;
 	}
@@ -116,8 +121,8 @@ export function hasChanged(
  *   - unchanged: files whose stat matches index (skip read)
  *   - allStats: fresh stat map for updating the index after reconcile
  */
-export async function filterChangedFiles(
-	app: App,
+export async function filterChangedFiles<TFile extends { path: string }>(
+	files: WorkspaceStatPort,
 	mdFiles: TFile[],
 	index: DiskIndex,
 ): Promise<{
@@ -132,7 +137,7 @@ export async function filterChangedFiles(
 	const statResults = await mapWithConcurrency(
 		mdFiles,
 		DEFAULT_STAT_CONCURRENCY,
-		async (file) => ({ file, stat: await statFile(app, file.path) }),
+		async (file) => ({ file, stat: await statFile(files, file.path) }),
 	);
 
 	for (const { file, stat } of statResults) {
@@ -158,15 +163,15 @@ export async function filterChangedFiles(
  * Collect file stats with bounded concurrency.
  * Files that fail stat are omitted from the returned map.
  */
-export async function collectFileStats(
-	app: App,
+export async function collectFileStats<TFile extends { path: string }>(
+	workspace: WorkspaceStatPort,
 	files: TFile[],
 	concurrency = DEFAULT_STAT_CONCURRENCY,
 ): Promise<Map<string, { mtime: number; size: number }>> {
 	const stats = await mapWithConcurrency(
 		files,
 		concurrency,
-		async (file) => ({ file, stat: await statFile(app, file.path) }),
+		async (file) => ({ file, stat: await statFile(workspace, file.path) }),
 	);
 
 	const out = new Map<string, { mtime: number; size: number }>();
@@ -260,7 +265,7 @@ export function moveIndexEntries(
  * budget. Returns false only if the file disappeared while waiting.
  */
 export async function waitForDiskQuiet(
-	app: App,
+	files: WorkspaceStatPort,
 	path: string,
 	checks = 3,
 	delayMs = 400,
@@ -268,7 +273,7 @@ export async function waitForDiskQuiet(
 	let last: { mtime: number; size: number } | null = null;
 
 	for (let i = 0; i < checks; i++) {
-		const stat = await statFile(app, path);
+		const stat = await statFile(files, path);
 		if (!stat) return false; // file gone
 
 		if (last && last.mtime === stat.mtime && last.size === stat.size) {

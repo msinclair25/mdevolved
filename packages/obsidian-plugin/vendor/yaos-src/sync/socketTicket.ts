@@ -24,6 +24,11 @@
 
 import { obsidianRequest } from "../utils/http";
 import { SocketTicketHttpError } from "./socketTicketError";
+export {
+	TICKET_REFRESH_BUFFER_MS,
+	patchTicketInUrl,
+} from "./socketTicketUrl";
+import { TICKET_REFRESH_BUFFER_MS } from "./socketTicketUrl";
 
 export { SocketTicketHttpError } from "./socketTicketError";
 
@@ -58,7 +63,6 @@ export function isTicketEndpointUnsupported(err: unknown): boolean {
  * the timer fires at expiresAt - TICKET_REFRESH_BUFFER_MS so a fresh ticket
  * is in place before the current one becomes unusable.
  */
-export const TICKET_REFRESH_BUFFER_MS = 30_000;
 const MAX_REASONABLE_TICKET_TTL_MS = 24 * 60 * 60 * 1_000; // 24 hours
 
 export interface CachedSocketTicket {
@@ -138,13 +142,6 @@ export function createSocketTicketCache(): SocketTicketCache {
  * reconnects — y-partyserver's reconnect loop reads provider.url directly
  * without re-calling the async params() callback.
  */
-export function patchTicketInUrl(url: string, ticketValue: string): string {
-	const u = new URL(url);
-	u.searchParams.delete("token");
-	u.searchParams.set("ticket", ticketValue);
-	return u.toString();
-}
-
 // ---------------------------------------------------------------------------
 // Network fetch
 // ---------------------------------------------------------------------------

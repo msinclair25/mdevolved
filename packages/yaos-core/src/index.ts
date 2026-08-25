@@ -1,5 +1,7 @@
 export * from "./chunkedDocStore";
+export * from "./closedFileConflict";
 export * from "./fileMeta";
+export * from "./folderReconciliation";
 export * from "./persistenceCoordinator";
 export * from "./protocol";
 export * from "./schema";
@@ -8,4 +10,5 @@ export * from "./svEcho";
 export * from "./svEchoMessage";
 export * from "./svEchoProtocol";
 export * from "./syncMessageClassifier";
+export * from "./sourceBoundary";
 export * from "./version";

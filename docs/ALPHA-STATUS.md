@@ -85,6 +85,6 @@ Issues that create Project duplication, repeated authorization, cross-vault
 visibility, stale context, hidden internal data, or recovery ambiguity are
 release blockers.
 
-[Deploy Community](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/owd-platform) ·
+[Deploy Community](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved) ·
 [Request managed alpha access](https://mdevolved.com/#alpha-access) ·
 [Review the security model](SECURITY-MODEL.md)

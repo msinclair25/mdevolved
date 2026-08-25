@@ -12,7 +12,7 @@ const corePackages = [
   "packages/yaos-core/package.json",
 ];
 const rootPackage = JSON.parse(await readFile("package.json", "utf8"));
-const platformRepositoryUrl = "https://github.com/msinclair25/owd-platform";
+const platformRepositoryUrl = "https://github.com/msinclair25/mdevolved";
 const publicDeployUrl = `https://deploy.workers.cloudflare.com/?url=${platformRepositoryUrl}`;
 
 for (const filename of corePackages) {

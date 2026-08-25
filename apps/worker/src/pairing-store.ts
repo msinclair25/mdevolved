@@ -5,9 +5,14 @@ import type {
   PairingExchangeRequest,
   PairingExchangeResponse,
   PairingGrantResponse,
+  SourceDescriptor,
   VaultSummary,
 } from "@owd/contracts";
 import { obsidianMindRuntimeProfileSchema } from "@owd/contracts";
+import {
+  sourceDescriptorInputSchema,
+  sourceDescriptorSchema,
+} from "@owd/contracts";
 import {
   SERVER_MAX_SCHEMA_VERSION,
   SERVER_MIN_SCHEMA_VERSION,
@@ -120,6 +125,42 @@ export async function ensurePairingSchema(db: D1Database): Promise<void> {
       )
       .run();
   }
+  const sourceDescriptorColumn = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM pragma_table_info('vaults')
+       WHERE name = 'source_descriptor_json'`,
+    )
+    .first<{ count: number }>();
+  if (sourceDescriptorColumn?.count !== 1) {
+    await db
+      .prepare(
+        `ALTER TABLE vaults ADD COLUMN source_descriptor_json TEXT
+         CHECK (source_descriptor_json IS NULL OR json_valid(source_descriptor_json))`,
+      )
+      .run();
+  }
+}
+
+async function storedSourceDescriptor(
+  input: PairingExchangeRequest["sourceDescriptor"],
+  now: number,
+): Promise<SourceDescriptor | null> {
+  if (input === undefined) return null;
+  const descriptorInput = sourceDescriptorInputSchema.parse(input);
+  const canonical = JSON.stringify({
+    sourceKind: descriptorInput.sourceKind,
+    label: descriptorInput.label,
+    capabilities: descriptorInput.capabilities,
+    clientVersion: descriptorInput.clientVersion,
+    syncSchemaVersion: descriptorInput.syncSchemaVersion,
+  });
+  const descriptorSha256 = await sha256Hex(canonical);
+  return sourceDescriptorSchema.parse({
+    ...descriptorInput,
+    descriptorVersion: 1,
+    provenance: { pairedAt: now, descriptorSha256 },
+  });
 }
 
 export async function createPairingGrant(
@@ -244,6 +285,12 @@ export async function exchangePairingGrant(
     requestId: string;
   },
 ): Promise<PairingExchangeResponse | null> {
+  const descriptor = await storedSourceDescriptor(
+    input.sourceDescriptor,
+    input.now,
+  );
+  const descriptorJson =
+    descriptor === null ? null : JSON.stringify(descriptor);
   const [grantHash, tokenHash] = await Promise.all([
     sha256Hex(input.grant),
     (async () => {
@@ -251,6 +298,37 @@ export async function exchangePairingGrant(
       return { token, hash: await sha256Hex(token) };
     })(),
   ]);
+  const currentVault = await db
+    .prepare(
+      `SELECT v.source_descriptor_json
+       FROM pairing_grants grants
+       JOIN vaults v ON v.id = grants.vault_id
+       JOIN pairing_grant_origins origins
+         ON origins.grant_hash = grants.grant_hash
+       WHERE grants.grant_hash = ?
+         AND origins.deployment_origin = ?
+         AND grants.used_at IS NULL
+         AND grants.expires_at > ?`,
+    )
+    .bind(grantHash, input.deploymentUrl, input.now)
+    .first<{ source_descriptor_json: string | null }>();
+  if (currentVault === null) return null;
+  if (currentVault.source_descriptor_json !== null && descriptor !== null) {
+    let existing: SourceDescriptor;
+    try {
+      existing = sourceDescriptorSchema.parse(
+        JSON.parse(currentVault.source_descriptor_json) as unknown,
+      );
+    } catch {
+      return null;
+    }
+    if (
+      existing.provenance.descriptorSha256 !==
+      descriptor.provenance.descriptorSha256
+    ) {
+      return null;
+    }
+  }
   const exchangeId = crypto.randomUUID();
   const credentialId = crypto.randomUUID();
   const results = await db.batch<{ vault_id: string }>([
@@ -266,9 +344,29 @@ export async function exchangePairingGrant(
              WHERE origins.grant_hash = pairing_grants.grant_hash
                AND origins.deployment_origin = ?
            )
+           AND EXISTS (
+             SELECT 1 FROM vaults source_vault
+             WHERE source_vault.id = pairing_grants.vault_id
+               AND (
+                 source_vault.source_descriptor_json IS NULL
+                 OR ? IS NULL
+                 OR json_extract(
+                   source_vault.source_descriptor_json,
+                   '$.provenance.descriptorSha256'
+                 ) = ?
+               )
+           )
          RETURNING vault_id`,
       )
-      .bind(input.now, exchangeId, grantHash, input.now, input.deploymentUrl),
+      .bind(
+        input.now,
+        exchangeId,
+        grantHash,
+        input.now,
+        input.deploymentUrl,
+        descriptor?.provenance.descriptorSha256 ?? null,
+        descriptor?.provenance.descriptorSha256 ?? null,
+      ),
     db
       .prepare(
         `INSERT INTO vault_credentials (
@@ -290,13 +388,14 @@ export async function exchangePairingGrant(
     db
       .prepare(
         `UPDATE vaults
-         SET display_name = ?, status = 'active', paired_at = ?
+         SET display_name = ?, status = 'active', paired_at = ?,
+             source_descriptor_json = COALESCE(source_descriptor_json, ?)
          WHERE id = (
            SELECT vault_id FROM pairing_grants
            WHERE grant_hash = ? AND exchange_id = ?
          )`,
       )
-      .bind(input.vaultName, input.now, grantHash, exchangeId),
+      .bind(input.vaultName, input.now, descriptorJson, grantHash, exchangeId),
     db
       .prepare(
         `INSERT INTO audit_events (id, event_type, request_id, created_at)
@@ -376,6 +475,32 @@ export async function readVaultCredential(
     )
     .bind(vaultId, tokenHash)
     .first<VaultCredentialRecord>();
+}
+
+export async function readVaultSourceDescriptor(
+  db: D1Database,
+  vaultId: string,
+): Promise<SourceDescriptor | null> {
+  const row = await db
+    .prepare(
+      `SELECT source_descriptor_json
+       FROM vaults WHERE id = ?`,
+    )
+    .bind(vaultId)
+    .first<{ source_descriptor_json: string | null }>();
+  if (
+    row?.source_descriptor_json === undefined ||
+    row.source_descriptor_json === null
+  ) {
+    return null;
+  }
+  try {
+    return sourceDescriptorSchema.parse(
+      JSON.parse(row.source_descriptor_json) as unknown,
+    );
+  } catch {
+    return null;
+  }
 }
 
 export async function readVaultCredentialById(

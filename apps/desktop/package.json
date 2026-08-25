@@ -1,0 +1,25 @@
+{
+  "name": "@owd/desktop",
+  "version": "0.1.0-alpha.0",
+  "description": "MDevolved Sync desktop shell",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node build.mjs",
+    "package": "pnpm build && node package.mjs",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.0.0",
+    "esbuild": "0.25.5"
+  },
+  "dependencies": {
+    "@owd/folder-adapter": "workspace:*",
+    "@owd/yaos-core": "workspace:*",
+    "mdevolved": "workspace:*"
+  }
+}

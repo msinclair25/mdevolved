@@ -1,0 +1,54 @@
+{
+  "name": "mdevolved",
+  "version": "0.1.0-alpha.1",
+  "description": "MDevolved source-neutral Markdown folder sync client.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "mdevolved": "./dist/cli-entry.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./src/cli.ts",
+      "default": "./dist/index.js"
+    },
+    "./custody": {
+      "types": "./src/custody.ts",
+      "default": "./dist/index.js"
+    },
+    "./pairing": {
+      "types": "./src/pairing.ts",
+      "default": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./src/runtime.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && node build.mjs",
+    "prepublishOnly": "pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@owd/folder-adapter": "workspace:*",
+    "@owd/yaos-core": "workspace:*",
+    "@types/node": "26.1.1",
+    "esbuild": "0.25.5",
+    "fake-indexeddb": "6.2.5",
+    "y-indexeddb": "9.0.12",
+    "y-partyserver": "2.1.2",
+    "yjs": "13.6.29"
+  }
+}

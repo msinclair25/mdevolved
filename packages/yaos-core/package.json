@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts"
+  },
   "dependencies": {
     "lib0": "0.2.117",
     "y-protocols": "1.0.7",

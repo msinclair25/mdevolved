@@ -10,15 +10,18 @@ import {
   OWD_SNAPSHOT_FORMAT,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
   WORKING_PROFILE_SNAPSHOT_CAPABILITY,
+  portableSourceDescriptorSchema,
   snapshotExportIndexSchema,
   snapshotManifestSchema,
   snapshotSectionSchema,
   type MaterializationGeneration,
+  type PortableSourceDescriptor,
   type SnapshotEstimate,
   type SnapshotExportIndex,
   type SnapshotManifest,
   type SnapshotSection,
   type SnapshotSummary,
+  type SourceDescriptor,
 } from "@owd/contracts";
 import { Encrypter } from "age-encryption";
 import {
@@ -92,6 +95,7 @@ type SnapshotVaultRow = {
   snapshot_id: string;
   snapshot_vault_id: string;
   source_state_vector_sha256: string | null;
+  source_descriptor_json: string | null;
   source_vault_id: string | null;
   source_vault_name: string;
 };
@@ -186,12 +190,14 @@ type CapturePlan = {
     logicalBytes: number;
     notes: BackupMaterializedNote[];
     snapshotVaultId: string;
+    sourceDescriptor?: SourceDescriptor;
     vaultName: string;
   }>;
 };
 
 export type SnapshotCaptureSource = {
   generation: MaterializationGeneration;
+  sourceDescriptor?: SourceDescriptor;
   vaultName: string;
 };
 
@@ -258,6 +264,21 @@ export async function ensureSnapshotSchema(db: D1Database): Promise<void> {
   if (objects?.count !== 14) {
     await db.exec(executableMigration(snapshotMigration));
     await db.exec(executableMigration(snapshotArchiveMigration));
+  }
+  const descriptorColumn = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM pragma_table_info('snapshot_vaults')
+       WHERE name = 'source_descriptor_json'`,
+    )
+    .first<{ count: number }>();
+  if (descriptorColumn?.count !== 1) {
+    await db
+      .prepare(
+        `ALTER TABLE snapshot_vaults ADD COLUMN source_descriptor_json TEXT
+         CHECK (source_descriptor_json IS NULL OR json_valid(source_descriptor_json))`,
+      )
+      .run();
   }
 }
 
@@ -338,6 +359,9 @@ async function buildCapturePlan(
       logicalBytes: noteBytes,
       notes,
       snapshotVaultId,
+      ...(source.sourceDescriptor === undefined
+        ? {}
+        : { sourceDescriptor: source.sourceDescriptor }),
       vaultName: source.vaultName,
     });
   }
@@ -597,10 +621,10 @@ export async function startWorkspaceSnapshot(
             snapshot_id, snapshot_vault_id, source_vault_id,
             source_vault_name, generation_id, source_state_vector_sha256,
             generation_created_at, generation_completed_at, item_count,
-            logical_bytes, ordinal
+            logical_bytes, ordinal, source_descriptor_json
           )
           SELECT ?, ?, v.id, ?, g.id, g.source_state_vector_sha256,
-            g.created_at, g.completed_at, ?, ?, ?
+            g.created_at, g.completed_at, ?, ?, ?, ?
           FROM vaults v
           JOIN materialization_generations g ON g.vault_id = v.id
           WHERE v.id = ? AND v.status = 'active' AND g.id = ?
@@ -614,6 +638,9 @@ export async function startWorkspaceSnapshot(
           vault.notes.length,
           vault.logicalBytes,
           ordinal,
+          vault.sourceDescriptor === undefined
+            ? null
+            : JSON.stringify(vault.sourceDescriptor),
           vault.generation.vaultId,
           vault.generation.generationId,
         )
@@ -694,7 +721,7 @@ async function vaultRowsForSnapshots(
       `SELECT snapshot_id, snapshot_vault_id, source_vault_id,
         source_vault_name, generation_id, source_state_vector_sha256,
         generation_created_at, generation_completed_at, item_count,
-        logical_bytes, ordinal
+        logical_bytes, ordinal, source_descriptor_json
        FROM snapshot_vaults WHERE snapshot_id IN (${placeholders})
        ORDER BY snapshot_id, ordinal`,
     )
@@ -1147,6 +1174,24 @@ async function buildWorkspaceSnapshotManifest(
     });
   }
   const intelligence = await buildCollaborationSnapshotManifest(db, snapshotId);
+  const portableDescriptor = (
+    value: string | null,
+  ): PortableSourceDescriptor | undefined => {
+    if (value === null) return undefined;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value) as unknown;
+    } catch {
+      throw new SnapshotError("snapshot_state_invalid");
+    }
+    const descriptor = portableSourceDescriptorSchema.safeParse({
+      ...(typeof parsed === "object" && parsed !== null ? parsed : {}),
+      restoreDisposition: "quarantined",
+      authorityRestored: false,
+    });
+    if (!descriptor.success) throw new SnapshotError("snapshot_state_invalid");
+    return descriptor.data;
+  };
   return snapshotManifestSchema.parse({
     captureCompletedAt,
     captureStartedAt: row.capture_started_at,
@@ -1184,35 +1229,41 @@ async function buildWorkspaceSnapshotManifest(
     scope: row.scope,
     snapshotId: row.portable_snapshot_id,
     unavailableSections: parseSections(row.unavailable_sections),
-    vaults: vaultRows.map((vault) => ({
-      entries: entries
-        .filter((entry) => entry.snapshot_vault_id === vault.snapshot_vault_id)
-        .map((entry) => ({
-          byteLength: entry.byte_length,
-          contentSha256: entry.content_sha256,
-          modifiedAt: entry.modified_at,
-          path: entry.path,
-          portableObjectId: entry.portable_object_id,
-          section: entry.section,
-        })),
-      snapshotVaultId: vault.snapshot_vault_id,
-      sourceVaultId: vault.source_vault_id,
-      sourceGeneration:
-        vault.generation_id === null ||
-        vault.source_state_vector_sha256 === null ||
-        vault.generation_created_at === null ||
-        vault.generation_completed_at === null
-          ? null
-          : {
-              completedAt: vault.generation_completed_at,
-              createdAt: vault.generation_created_at,
-              generationId: vault.snapshot_vault_id,
-              noteCount: vault.item_count,
-              sourceStateVectorSha256: vault.source_state_vector_sha256,
-              totalBytes: vault.logical_bytes,
-            },
-      vaultName: vault.source_vault_name,
-    })),
+    vaults: vaultRows.map((vault) => {
+      const descriptor = portableDescriptor(vault.source_descriptor_json);
+      return {
+        entries: entries
+          .filter(
+            (entry) => entry.snapshot_vault_id === vault.snapshot_vault_id,
+          )
+          .map((entry) => ({
+            byteLength: entry.byte_length,
+            contentSha256: entry.content_sha256,
+            modifiedAt: entry.modified_at,
+            path: entry.path,
+            portableObjectId: entry.portable_object_id,
+            section: entry.section,
+          })),
+        snapshotVaultId: vault.snapshot_vault_id,
+        sourceVaultId: vault.source_vault_id,
+        ...(descriptor === undefined ? {} : { sourceDescriptor: descriptor }),
+        sourceGeneration:
+          vault.generation_id === null ||
+          vault.source_state_vector_sha256 === null ||
+          vault.generation_created_at === null ||
+          vault.generation_completed_at === null
+            ? null
+            : {
+                completedAt: vault.generation_completed_at,
+                createdAt: vault.generation_created_at,
+                generationId: vault.snapshot_vault_id,
+                noteCount: vault.item_count,
+                sourceStateVectorSha256: vault.source_state_vector_sha256,
+                totalBytes: vault.logical_bytes,
+              },
+        vaultName: vault.source_vault_name,
+      };
+    }),
   });
 }
 

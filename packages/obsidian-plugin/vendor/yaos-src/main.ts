@@ -70,6 +70,10 @@ import { AttachmentOrchestrator } from "./runtime/attachmentOrchestrator";
 import { EditorWorkspaceOrchestrator } from "./runtime/editorWorkspaceOrchestrator";
 import { SetupLinkController } from "./runtime/setupLinkController";
 import { TraceRuntimeController } from "./runtime/traceRuntimeController";
+import {
+	createObsidianSourceBoundary,
+	type ObsidianSourceBoundary,
+} from "./runtime/obsidianSourceBoundary";
 import { registerCommands } from "./commands";
 import {
 	getSyncStatusLabel,
@@ -111,6 +115,7 @@ type PersistedPluginState = Partial<VaultSyncSettings> & {
 	_updateManifestCache?: PersistedUpdateManifestCache;
 	_frontmatterQuarantine?: FrontmatterQuarantineEntry[];
 	_preservedUnresolved?: PreservedUnresolvedEntry[];
+	_sourceCore?: Record<string, unknown>;
 };
 
 export default class VaultCrdtSyncPlugin extends Plugin {
@@ -182,6 +187,8 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 	private savedBlobQueue: BlobQueueSnapshot | null = null;
 	private preservedUnresolvedEntries: PreservedUnresolvedEntry[] = [];
 	private persistedState: PersistedPluginState = {};
+	private sourceCoreState: Record<string, unknown> = {};
+	private sourceBoundary: ObsidianSourceBoundary | null = null;
 	private persistWriteChain: Promise<void> = Promise.resolve();
 
 	/** Pending stability checks for newly created/dropped files. */
@@ -205,6 +212,9 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 	private createReconciliationController(): ReconciliationController {
 		this.reconciliationController = new ReconciliationController({
 			app: this.app,
+			getSourceCore: () => this.sourceBoundary?.core ?? null,
+			getInteraction: () => this.sourceBoundary?.interaction ?? null,
+			isSourceRunning: () => this.sourceBoundary?.core.getStatus() === "running",
 			getSettings: () => this.settings,
 			getRuntimeConfig: () => this.getRuntimeConfig(),
 			getVaultSync: () => this.vaultSync,
@@ -265,6 +275,50 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		return this.runtimeConfig;
 	}
 
+	private rebuildSourceBoundary(): void {
+		this.sourceBoundary = createObsidianSourceBoundary({
+			app: this.app,
+			clientVersion: this.manifest.version,
+			syncSchemaVersion: SCHEMA_VERSION,
+			getConnection: () => ({
+				sourceId: this.settings.vaultId,
+				token: this.settings.token,
+			}),
+			readState: async <T>(key: string) => this.sourceCoreState[key] as T | undefined,
+			writeState: async <T>(key: string, value: T) => {
+				this.sourceCoreState = { ...this.sourceCoreState, [key]: value };
+				await this.persistPluginState();
+			},
+			removeState: async (key) => {
+				const next = { ...this.sourceCoreState };
+				delete next[key];
+				this.sourceCoreState = next;
+				await this.persistPluginState();
+			},
+			onStatus: (status) => {
+				if (status === "revoked" || status === "expired") {
+					this.updateStatusBar("unauthorized");
+				}
+			},
+		});
+	}
+
+	private async startSourceBoundary(): Promise<boolean> {
+		if (!this.sourceBoundary) this.rebuildSourceBoundary();
+		const status = await this.sourceBoundary?.core.start();
+		if (status === "running") return true;
+		this.log(`Source sync core did not start (${status ?? "unavailable"})`);
+		return false;
+	}
+
+	private async revokeSourceBoundary(): Promise<void> {
+		await this.sourceBoundary?.core.revoke();
+	}
+
+	private isSourceRunning(): boolean {
+		return this.sourceBoundary?.core.getStatus() === "running";
+	}
+
 	private getBlobSync(): BlobSyncManager | null {
 		return this.attachmentOrchestrator?.manager ?? null;
 	}
@@ -292,6 +346,11 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		) {
 			throw new Error("The new OWD vault connection was not applied.");
 		}
+		this.rebuildSourceBoundary();
+		const sourceBoundary = this.sourceBoundary;
+		if (!sourceBoundary) throw new Error("Source sync setup is not ready.");
+		const credential = await sourceBoundary.currentCredential();
+		if (credential) await sourceBoundary.core.replaceCredentials(credential);
 		this.settingsTab?.display();
 	}
 
@@ -455,6 +514,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				settings.deviceName = `device-${Date.now().toString(36)}`;
 			}, "startup-generate-device-name");
 		}
+		this.rebuildSourceBoundary();
 
 			this.setupTraceRuntime();
 		this.attachmentOrchestrator = new AttachmentOrchestrator({
@@ -556,6 +616,10 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			if (this.enforceCompatibilityGuard("init-sync-preflight")) {
 				return;
 			}
+			if (!(await this.startSourceBoundary())) {
+				this.updateStatusBar("unauthorized");
+				return;
+			}
 
 			// 1. Create VaultSync (Y.Doc + IndexedDB + provider in parallel)
 			this.vaultSync = new VaultSync(this.settings, {
@@ -653,6 +717,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			// 4. DiskMirror
 			this.diskMirror = new DiskMirror(
 				this.app,
+				this.sourceBoundary!.core,
 				this.vaultSync,
 				this.editorBindings,
 				this.settings.debug,
@@ -761,6 +826,9 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				}
 			});
 			this.statusInterval = setInterval(() => {
+				if (this.vaultSync?.fatalAuthCode === "unauthorized" && this.isSourceRunning()) {
+					void this.revokeSourceBoundary();
+				}
 				this.refreshStatusBar();
 				if (this.reconciliationController.isReconciled && this.editorBindings) {
 					const touched = this.editorWorkspace?.auditBindings("status-tick") ?? 0;
@@ -875,6 +943,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				console.error(`[yaos] ${schemaError}`);
 				new Notice(`OWD Sync: ${schemaError}`);
 				this.updateStatusBar("error");
+				await this.sourceBoundary?.core.stop();
 				return;
 			}
 
@@ -884,16 +953,24 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			// Check for fatal auth error before waiting for provider
 			if (this.vaultSync.fatalAuthError) {
 				this.log("Fatal auth error during startup");
+				if (this.vaultSync.fatalAuthCode === "unauthorized") {
+					await this.revokeSourceBoundary();
+					this.updateStatusBar("unauthorized");
+					this.showFatalSyncNotice();
+					return;
+				}
 				if (this.vaultSync.fatalAuthCode === "update_required") {
 					this.updateStatusBar("error");
 					this.showFatalSyncNotice();
+					await this.sourceBoundary?.core.stop();
 					return;
 				}
 				this.updateStatusBar("unauthorized");
 				this.showFatalSyncNotice();
-				// Still reconcile with whatever we have locally
+				// Non-credential server failures may still reconcile local state.
 				const mode = this.vaultSync.getSafeReconcileMode();
 				await this.runReconciliation(mode);
+				await this.sourceBoundary?.core.stop();
 				return;
 			}
 
@@ -908,6 +985,11 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			);
 
 			if (this.vaultSync.fatalAuthError) {
+				if (this.vaultSync.fatalAuthCode === "unauthorized") {
+					await this.revokeSourceBoundary();
+				} else {
+					await this.sourceBoundary?.core.stop();
+				}
 				this.updateStatusBar(this.vaultSync.fatalAuthCode === "update_required" ? "error" : "unauthorized");
 				this.showFatalSyncNotice();
 				return;
@@ -937,6 +1019,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				void this.snapshotService?.triggerDailySnapshot();
 			}
 		} catch (err) {
+			await this.sourceBoundary?.core.stop();
 			console.error("[yaos] Failed to initialize sync:", err);
 			new Notice(`OWD Sync: failed to initialize — ${formatUnknown(err)}`);
 			this.updateStatusBar("error");
@@ -999,6 +1082,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("modify", (file) => {
+				if (!this.isSourceRunning()) return;
 				if (!this.reconciliationController.isReconciled) return;
 				if (!(file instanceof TFile)) return;
 
@@ -1063,6 +1147,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		// Blob renames still go through the batch (blob exclusion is separate).
 		this.registerEvent(
 			this.app.vault.on("rename", (file, oldPath) => {
+				if (!this.isSourceRunning()) return;
 				if (!this.reconciliationController.isReconciled) return;
 				if (!(file instanceof TFile)) return;
 
@@ -1152,6 +1237,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("delete", (file) => {
+				if (!this.isSourceRunning()) return;
 				if (!this.reconciliationController.isReconciled) return;
 				if (!(file instanceof TFile)) return;
 
@@ -1201,6 +1287,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("create", (file) => {
+				if (!this.isSourceRunning()) return;
 				if (!this.reconciliationController.isReconciled) return;
 				if (!(file instanceof TFile)) return;
 
@@ -1221,8 +1308,13 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 						// For blob files, use the same stability check before uploading
 						if (this.pendingStabilityChecks.has(file.path)) return;
 						this.pendingStabilityChecks.add(file.path);
+						const sourceCore = this.sourceBoundary?.core;
+						if (!sourceCore) {
+							this.pendingStabilityChecks.delete(file.path);
+							return;
+						}
 
-						void waitForDiskQuiet(this.app, file.path).then((stable) => {
+						void waitForDiskQuiet(sourceCore, file.path).then((stable) => {
 							this.pendingStabilityChecks.delete(file.path);
 							if (stable) {
 								this.getBlobSync()?.handleFileChange(file);
@@ -1272,6 +1364,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		this.connectionController?.stop();
 
 		await this.vaultSync?.destroy();
+		await this.sourceBoundary?.core.stop();
 
 		this.vaultSync = null;
 		this.connectionController = null;
@@ -1757,6 +1850,9 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 					typeof (entry as PreservedUnresolvedEntry).lastSeenAt === "number",
 			);
 		}
+		if (data && typeof data._sourceCore === "object" && data._sourceCore !== null) {
+			this.sourceCoreState = { ...data._sourceCore };
+		}
 		const cachedCapabilities = readPersistedServerCapabilitiesCache(data?._serverCapabilitiesCache);
 		const cachedUpdateManifest = readPersistedUpdateManifestCache(data?._updateManifestCache);
 		this.capabilityUpdateService?.hydratePersistedCaches(cachedCapabilities, cachedUpdateManifest);
@@ -1924,9 +2020,13 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			...this.settingsStore.withSettings(this.persistedState, this.settings),
 			_diskIndex: this.diskIndex,
 			_blobHashCache: this.blobHashCache,
+			...(Object.keys(this.sourceCoreState).length > 0 && { _sourceCore: this.sourceCoreState }),
 			...(this.persistedState._blobQueue && { _blobQueue: this.persistedState._blobQueue }),
 			...(this.lastDiskIndexPersistedAt > 0 && { _lastDiskIndexPersistedAt: this.lastDiskIndexPersistedAt }),
 		};
+		if (Object.keys(this.sourceCoreState).length === 0) {
+			delete nextState._sourceCore;
+		}
 		const cachedCapabilities = this.capabilityUpdateService?.getPersistedServerCapabilitiesCache();
 		if (cachedCapabilities) {
 			nextState._serverCapabilitiesCache = cachedCapabilities;
