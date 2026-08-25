@@ -50,8 +50,8 @@ becoming another model subscription, taking over the agent runtime, scraping
 hidden conversations, or silently deciding what is true.
 
 > [!IMPORTANT]
-> **This branch contains the locally verified M1–M4 product slice; repository
-> state alone is not a production deployment.**
+> **M1–M4 are verified on `main` and deployed to the persistent Community
+> alpha; a source checkout by itself is still not a deployment.**
 > The complete Apache-2.0 Community source is public and independently
 > self-hostable; the managed service remains invitation-only. Start with
 > synthetic or disposable vaults while evaluating it.

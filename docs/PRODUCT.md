@@ -39,13 +39,13 @@ operator-access, recovery, and commercial gates in
 
 ## Release ladder
 
-- **M1 locally verified:** the agent-native `owd_resume` → `owd_find` →
+- **M1 shipped on `main`:** the agent-native `owd_resume` → `owd_find` →
   `owd_checkpoint` loop over existing durable Project records.
-- **M2 locally verified:** portable owner and Project preferences plus inert
+- **M2 shipped on `main`:** portable owner and Project preferences plus inert
   portable skills across compatible harnesses.
-- **M3 locally verified:** evidence-backed, owner-reviewed compounding without
+- **M3 shipped on `main`:** evidence-backed, owner-reviewed compounding without
   raw transcript ingestion or automatic promotion.
-- **M4 locally verified:** a new user can edit the current brief, review Memory
+- **M4 shipped on `main`:** a new user can edit the current brief, review Memory
   and Skills, follow provider-neutral client recipes, run a synthetic
   cross-client continuation, and inspect local-only outcome evidence.
 

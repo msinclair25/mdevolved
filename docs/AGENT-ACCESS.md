@@ -9,10 +9,10 @@ inference gateway, scheduler, worktree manager, or agent supervisor, and it
 never grants local shell, skill, Obsidian CLI, or filesystem authority.
 
 The read-only vault boundary, collaboration ledger, agent-first Project
-connection, and M1 three-operation memory facade are implemented in this local
-candidate. It is not a production-deployment claim. Portable preferences and
-skills and evidence-backed, owner-reviewed compounding are available through
-the agent-native Project memory loop.
+connection, M1 three-operation memory facade, portable preferences and skills,
+and evidence-backed owner-reviewed compounding are released on `main` and the
+persistent Community alpha. A compatible protocol implementation still does
+not imply a named-client acceptance claim.
 
 The collaboration model and future durable-intelligence layers are defined in
 [`PORTABLE-INTELLIGENCE.md`](PORTABLE-INTELLIGENCE.md). The current alpha makes
@@ -401,7 +401,7 @@ must disclose this egress boundary. Access to especially sensitive vaults or
 folders should remain ungranted rather than relying on prompt text to contain
 the model.
 
-## Future preferences, skills, and proposals
+## Preferences, skills, and proposals
 
 Agents never receive direct note-write authority through OWD. A separately
 owner-authorized local writer remains outside OWD's enforcement boundary as
@@ -412,8 +412,8 @@ session, CSRF protection, and passkey step-up where policy requires. The
 proposing client cannot approve its own proposal. Accepted note proposals enter
 the existing expected-version Yjs write path; stale proposals fail closed.
 
-Portable preferences, skills, and evidence-backed compounding are M2/M3 plans,
-not M1 shipped claims. Their intended boundary is:
+Portable preferences, skills, and evidence-backed compounding are shipped alpha
+capabilities. Their boundary is:
 
 - Working memory remains local to each agent session.
 - Accepted durable memories live in OWD with source provenance, confidence,
@@ -691,8 +691,9 @@ participant, or grant identities.
 
 The Worker, consent UI, dashboard management UI, migrations, read-only vault
 tools, Project collaboration tools, and the three-operation M1 facade are
-implemented in this local candidate. No production deployment is claimed.
-Clients may use
+implemented on `main` and deployed to the persistent Community alpha. This does
+not claim named-client certification or completion of the separately authorized
+live release exercises. Clients may use
 public-only Client ID Metadata Documents or dynamic registration. Automated
 Worker-runtime coverage performs real dynamic registration, PKCE
 authorization-code exchange, bearer-authenticated MCP calls, SQL-level folder

@@ -41,9 +41,9 @@ describes product outcomes, not deployment schedules or service commitments.
   conclusions, and `synthesis` comparison of separately attributable durable
   results
 - Complete separately authorized live disposable exercises across more
-  compliant MCP clients and Cloudflare cells; the local candidate is not a
-  production-deployment claim
-- Observe the alpha.6 Community deployment and exercise separately authorized
+  compliant MCP clients and Cloudflare cells; the deployed provider-neutral
+  contract does not imply a named-client acceptance claim
+- Observe the alpha.7 Community deployment and exercise separately authorized
   application rollback evidence without destructive down-migrations
 - Submit OWD Sync to Obsidian Community Plugins and validate its updater path
 - Expand recovery scale and performance envelopes beyond the bounded R4

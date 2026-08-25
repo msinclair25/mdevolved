@@ -1,10 +1,10 @@
 # OWD agent-native product plan
 
-**Status:** Product direction reset approved; R1-R4 continuity infrastructure is
-complete and remains a hidden foundation. M1-M4 are locally verified. The
-minimum lovable release candidate is ready for Community delivery.
+**Status:** R1-R4 continuity infrastructure is complete and remains a hidden
+foundation. M1-M4 are verified, merged, and deployed to the persistent
+Community alpha.
 
-**Date:** 2026-08-24
+**Date:** 2026-08-25
 
 ## Product promise
 
@@ -274,6 +274,15 @@ brief editing, Client A evidence, the fresh Client B instruction, generic MCP
 setup, and outcome feedback without provider credentials or prompt copying.
 No schema migration, telemetry service, executable skill runtime, or restored
 authority was added.
+
+**Release receipt (2026-08-25):** M1-M4 merged to `main` after the complete
+GitHub gate passed, including the production dependency audit, migrations,
+unit and Worker tests, browser E2E, builds, and deploy dry runs. Forward
+migrations `0034` and `0035` applied to the persistent Community alpha, the
+Worker health check reported `1.0.0-alpha.7`, and no migrations remained
+pending. The public-source history scan passes across every reachable public
+revision. No paid provider inference, personal vault data, restored authority,
+or new managed-service dependency was involved.
 
 ## Measures of success
 
