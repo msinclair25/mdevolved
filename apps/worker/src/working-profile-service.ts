@@ -325,13 +325,14 @@ export async function saveWorkingPreference(
     updated_at: now,
     value: input.value,
   });
-  return commit(
-    db,
-    [
-      insertWorkingProfileRecordStatement(db, record),
-      db
-        .prepare(
-          `INSERT INTO working_preferences (
+  try {
+    return await commit(
+      db,
+      [
+        insertWorkingProfileRecordStatement(db, record),
+        db
+          .prepare(
+            `INSERT INTO working_preferences (
              preference_id, project_id, preference_key, current_record_id,
              record_restore_state, status, value, source_label, source_url, updated_at
            ) VALUES (?, ?, ?, ?, 'live', 'active', ?, ?, ?, ?)
@@ -340,22 +341,35 @@ export async function saveWorkingPreference(
              status = 'active', value = excluded.value,
              source_label = excluded.source_label, source_url = excluded.source_url,
              updated_at = excluded.updated_at`,
-        )
-        .bind(
-          preferenceId,
-          input.projectId,
-          input.key,
-          recordId,
-          input.value,
-          input.sourceLabel,
-          input.sourceUrl,
-          now,
-        ),
-    ],
-    { identity, now, operation: "preference.save", response },
-    parse,
-    [stored.bodyObjectKey],
-  );
+          )
+          .bind(
+            preferenceId,
+            input.projectId,
+            input.key,
+            recordId,
+            input.value,
+            input.sourceLabel,
+            input.sourceUrl,
+            now,
+          ),
+      ],
+      { identity, now, operation: "preference.save", response },
+      parse,
+      [stored.bodyObjectKey],
+    );
+  } catch (error) {
+    const winner = await db
+      .prepare(
+        `SELECT preference_id FROM working_preferences
+         WHERE preference_key = ? AND project_id IS ?`,
+      )
+      .bind(input.key, input.projectId)
+      .first<{ preference_id: string }>();
+    if (winner !== null && winner.preference_id !== preferenceId) {
+      throw new WorkingProfileProblem("preference_conflict");
+    }
+    throw error;
+  }
 }
 
 export async function deleteWorkingPreference(
@@ -859,26 +873,27 @@ export async function importAgentSkill(
     updatedAt: now,
     versionRecordId: recordId,
   });
-  return commit(
-    db,
-    [
-      insertWorkingProfileRecordStatement(
-        db,
-        recordFromBody(stored, {
-          createdAt: now,
-          dependencies:
-            existing === null ? [] : [existing.current_version_record_id],
-          portableObjectId: recordId,
-          preferenceId: null,
-          projectId: null,
-          recordId,
-          recordType: "skill-version",
-          skillId,
-        }),
-      ),
-      db
-        .prepare(
-          `INSERT INTO agent_skills (
+  try {
+    return await commit(
+      db,
+      [
+        insertWorkingProfileRecordStatement(
+          db,
+          recordFromBody(stored, {
+            createdAt: now,
+            dependencies:
+              existing === null ? [] : [existing.current_version_record_id],
+            portableObjectId: recordId,
+            preferenceId: null,
+            projectId: null,
+            recordId,
+            recordType: "skill-version",
+            skillId,
+          }),
+        ),
+        db
+          .prepare(
+            `INSERT INTO agent_skills (
              skill_id, name, description, current_version_record_id,
              record_restore_state, status, updated_at
            ) VALUES (?, ?, ?, ?, 'live', 'active', ?)
@@ -886,13 +901,26 @@ export async function importAgentSkill(
              name = excluded.name, description = excluded.description,
              current_version_record_id = excluded.current_version_record_id,
              status = 'active', updated_at = excluded.updated_at`,
-        )
-        .bind(skillId, metadata.name, metadata.description, recordId, now),
-    ],
-    { identity, now, operation: "skill.import", response },
-    parse,
-    [stored.bodyObjectKey],
-  );
+          )
+          .bind(skillId, metadata.name, metadata.description, recordId, now),
+      ],
+      { identity, now, operation: "skill.import", response },
+      parse,
+      [stored.bodyObjectKey],
+    );
+  } catch (error) {
+    const winner = await db
+      .prepare(
+        `SELECT skill_id FROM agent_skills
+         WHERE name = ? COLLATE NOCASE AND status = 'active'`,
+      )
+      .bind(metadata.name)
+      .first<{ skill_id: string }>();
+    if (winner !== null && winner.skill_id !== skillId) {
+      throw new WorkingProfileProblem("skill_conflict");
+    }
+    throw error;
+  }
 }
 
 async function currentSkill(

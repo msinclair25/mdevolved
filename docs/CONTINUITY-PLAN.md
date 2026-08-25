@@ -219,6 +219,22 @@ portable export and authority-free recovery.
 in two harnesses without copied setup, executing through each harness's native
 permissions. Removing either takes effect on the next call.
 
+**Delivery receipt (2026-08-25):** Accepted automatically. Provider-neutral
+stateful and stateless clients receive the same bounded preference precedence
+and exact-version attached skill description; full inert skill contents load
+only on demand, and detach/delete takes effect on the next authorized call.
+Legacy context version 1 remains unchanged while version 2 is additive and
+negotiated. Mutations are replay-safe, concurrent first-write conflicts return
+stable domain errors, and cross-Project, stale-version, credential-shaped, and
+oversize inputs fail closed. Encrypted portable export/decrypt/restore was
+exercised end to end: live profile records restore only as owner-visible
+quarantine with zero grants or live projections, quarantined history is not
+captured again, and profile-bearing restore is rejected above the 14-object
+Community bound. The exact candidate passed focused M2 validation, the complete
+repository test and migration gates, browser E2E, builds, public-source scan,
+and Worker/marketing deploy dry runs. A named two-product exercise remains
+optional compatibility evidence rather than an unimplemented M2 surface.
+
 ### M3 — Evidence-backed compounding
 
 **Outcome:** Successful work leaves the owner with better reusable context,
