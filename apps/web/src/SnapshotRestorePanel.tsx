@@ -93,7 +93,7 @@ export function snapshotArchiveSummary(
     (total, vault) => total + vault.entries.length,
     0,
   );
-  return `${filename} · created ${captureCompletedAtLabel} · ${manifest.vaults.length.toLocaleString()} source vault${manifest.vaults.length === 1 ? "" : "s"} · ${itemCount.toLocaleString()} items · portable manifest reference ${manifest.snapshotId.slice(0, 8)}`;
+  return `${filename} · created ${captureCompletedAtLabel} · ${manifest.vaults.length.toLocaleString()} Source${manifest.vaults.length === 1 ? "" : "s"} · ${itemCount.toLocaleString()} items · portable manifest reference ${manifest.snapshotId.slice(0, 8)}`;
 }
 
 export function revealRestoreCompletion(
@@ -216,7 +216,7 @@ export function collaborationRestoreVaultMappings(
   const targetIdFor = (snapshotVaultId: string): string => {
     const targetVaultId = targets[snapshotVaultId];
     if (targetVaultId === undefined || targetVaultId === "") {
-      throw new Error("Every source vault needs an approved destination.");
+      throw new Error("Every Source needs an approved destination.");
     }
     return targetVaultId;
   };
@@ -393,7 +393,7 @@ export function SnapshotRestorePanel({
         ),
       );
       setMessage(
-        "Snapshot and recovery key match. Map every source vault before staging a preview.",
+        "Snapshot and recovery key match. Map every Source before staging a preview.",
       );
     } catch (reason: unknown) {
       setPrepared(null);
@@ -430,7 +430,7 @@ export function SnapshotRestorePanel({
       for (const sourceVault of prepared.manifest.vaults) {
         const targetVaultId = mappings[sourceVault.snapshotVaultId];
         if (targetVaultId === undefined || targetVaultId === "") {
-          throw new Error("Every source vault needs an explicit target.");
+          throw new Error("Every Source needs an explicit target.");
         }
         const existing = nextJobs[sourceVault.snapshotVaultId];
         if (existing === undefined) {
@@ -754,7 +754,7 @@ export function SnapshotRestorePanel({
           tabIndex={-1}
         >
           <span>Restore checked</span>
-          <h4>Every mapped vault was restored.</h4>
+          <h4>Every mapped Source was restored.</h4>
           <p>Target-only notes were kept and fresh libraries were verified.</p>
         </div>
       ) : prepared === null ? (
@@ -841,7 +841,7 @@ export function SnapshotRestorePanel({
       ) : !previewsReady() ? (
         <div className="snapshot-mapping">
           <div>
-            <h4>Map every source vault to one destination.</h4>
+            <h4>Map every Source to one destination.</h4>
             <p>
               Targets start blank deliberately. A target can be used only once
               in this workspace restore.
@@ -867,7 +867,7 @@ export function SnapshotRestorePanel({
                     }));
                   }}
                 >
-                  <option value="">Choose a target vault</option>
+                  <option value="">Choose a target Source</option>
                   {activeVaults.map((target) => (
                     <option value={target.id} key={target.id}>
                       {target.displayName ?? target.id}
@@ -882,7 +882,7 @@ export function SnapshotRestorePanel({
           new Set(Object.values(mappings).filter(Boolean)).size !==
             Object.values(mappings).filter(Boolean).length ? (
             <p className="action-error" role="alert">
-              Choose a different target for each source vault.
+              Choose a different target for each Source.
             </p>
           ) : null}
           <label className="cross-vault-confirmation">
@@ -976,7 +976,7 @@ export function SnapshotRestorePanel({
             type="button"
             onClick={() => void confirmAndApply()}
           >
-            Restore mapped vaults and intelligence
+            Restore mapped Sources and intelligence
           </button>
         </div>
       )}

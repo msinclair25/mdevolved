@@ -857,7 +857,9 @@ test("reopens a downloaded recovery key before activation", async ({
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download recovery key" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/^owd-recovery-key-.+Z\.txt$/u);
+  expect(download.suggestedFilename()).toMatch(
+    /^mdevolved-recovery-key-.+Z\.txt$/u,
+  );
   const savedKey = testInfo.outputPath(download.suggestedFilename());
   await download.saveAs(savedKey);
 
@@ -870,16 +872,16 @@ test("reopens a downloaded recovery key before activation", async ({
   await page.getByRole("button", { name: "Finish setup" }).click();
   await expect(page.getByText("Ready for backup")).toBeVisible();
   await page.getByText("Advanced: choose a narrower scope").click();
-  await page.getByRole("radio", { name: "Only selected vaults" }).click();
+  await page.getByRole("radio", { name: "Only selected Sources" }).click();
   await expect(
-    page.getByText("0 vaults selected at capture start"),
+    page.getByText("0 Sources selected at capture start"),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create snapshot" }),
   ).toBeDisabled();
   await page.getByRole("checkbox", { name: "Recovery target" }).click();
   await expect(
-    page.getByText("1 vault selected at capture start"),
+    page.getByText("1 Source selected at capture start"),
   ).toBeVisible();
   await context.close();
 });
@@ -943,17 +945,19 @@ test("installs the pinned plugin from one primary tester action", async ({
 
   await openOperationalRegion(page, "vaults");
   await expect(
-    page.getByRole("heading", { name: "Install OWD Sync in this vault" }),
+    page.getByRole("heading", {
+      name: "Install MDevolved Sync for Obsidian",
+    }),
   ).toBeVisible();
-  await expect(page.getByText(/OWD cannot bypass it/u)).toBeVisible();
+  await expect(page.getByText(/MDevolved cannot bypass it/u)).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Choose vault and install OWD Sync 0.1.7",
+      name: "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
     }),
   ).toBeEnabled();
   await page
     .getByRole("button", {
-      name: "Choose vault and install OWD Sync 0.1.7",
+      name: "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
     })
     .click();
   await expect(
@@ -963,7 +967,7 @@ test("installs the pinned plugin from one primary tester action", async ({
   ).toBeVisible();
   await expect(
     page.getByText(
-      /Wait up to 30 seconds.*switch OWD Sync off and back on once/u,
+      /Wait up to 30 seconds.*switch the MDevolved plugin off and back on once/u,
     ),
   ).toBeVisible();
   const snapshot: unknown = await page.evaluate(() =>
@@ -995,7 +999,7 @@ test("installs the pinned plugin from one primary tester action", async ({
   ).toHaveAttribute("href", "obsidian://show-plugin?id=obsidian42-brat");
   await expect(
     page.getByRole("link", {
-      name: "Open the prefilled OWD Sync 0.1.7 form",
+      name: "Open the prefilled MDevolved Sync for Obsidian 0.1.7 form",
     }),
   ).toHaveAttribute(
     "href",
@@ -1034,7 +1038,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
   await openOperationalRegion(page, "vaults");
   await page
     .getByRole("button", {
-      name: "Choose vault and install OWD Sync 0.1.7",
+      name: "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
     })
     .click();
   await expect(
@@ -1047,7 +1051,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
   ).toBeVisible();
   await expect(
     page.getByRole("link", {
-      name: "Open the prefilled OWD Sync 0.1.7 form",
+      name: "Open the prefilled MDevolved Sync for Obsidian 0.1.7 form",
     }),
   ).toBeVisible();
   await expect(
@@ -1100,13 +1104,13 @@ test("captures a managed invitation fragment into the fast claim screen", async 
 
   await expect(page).toHaveURL(/\/$/u);
   await expect(
-    page.getByRole("heading", { name: "Your OWD workspace is ready." }),
+    page.getByRole("heading", { name: "Your MDevolved workspace is ready." }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Start my workspace" }),
   ).toBeEnabled();
   await expect(
-    page.getByText(/includes two active vaults with no agent-seat limit/u),
+    page.getByText(/includes two active Sources with no agent-seat limit/u),
   ).toBeVisible();
   await expect(
     page.getByText(
@@ -1136,12 +1140,12 @@ test("shows the transport-neutral collaboration owner surface", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("heading", {
-      name: "No active OWD Projects yet.",
+      name: "No active MDevolved Projects yet.",
     }),
   ).toBeVisible();
   await expect(
     page.getByText(
-      /say “Connect this project to OWD” in the selected agent\. The matching prepared request finishes there/u,
+      /say “Connect this project to MDevolved” in the selected agent\. The matching prepared request finishes there/u,
     ),
   ).toBeVisible();
   await expect(page.getByLabel("Project label")).not.toBeVisible();
@@ -1368,14 +1372,14 @@ test("keeps onboarding progress bound to one explicitly named vault", async ({
   await page.goto("/");
 
   const setup = page.locator(".setup-panel--active");
-  const selector = setup.getByLabel("Set up this Obsidian vault");
+  const selector = setup.getByLabel("Set up this Source workspace");
   await expect(selector).toHaveValue(sourceVaultId);
   await expect(
     setup.getByText("Preparing Second vault's searchable library"),
   ).toBeVisible();
   await expect(
     setup.getByText(
-      "Each vault completes this journey independently. Progress from another vault never fills these steps.",
+      "Each Source completes this journey independently. Progress from another Source never fills these steps.",
     ),
   ).toBeVisible();
   const secondVaultReceipt = setup.locator(".setup-progress-receipt");
@@ -1398,7 +1402,7 @@ test("keeps onboarding progress bound to one explicitly named vault", async ({
     setup.getByText("Returning after a crash or new session?"),
   ).toBeVisible();
   await expect(
-    setup.getByText("OWD resume project", { exact: true }),
+    setup.getByText("MDevolved resume project", { exact: true }),
   ).toBeVisible();
   await expect(setup.locator(".setup-progress-receipt")).toContainText(
     "7 verified milestones · show details",
@@ -1625,10 +1629,10 @@ test("derives the agent-first next action on desktop and narrow screens", async 
 
   const setup = page.locator(".setup-panel--active");
   await expect(
-    setup.getByRole("heading", { name: /Connect your Obsidian vault/u }),
+    setup.getByText("Finish in Working agent", { exact: true }),
   ).toBeVisible();
   await expect(
-    setup.getByText(/say “Connect this project to OWD\.”/u),
+    setup.getByText(/say “Connect this project to MDevolved\.”/u),
   ).toBeVisible();
   await expect(
     setup.getByText(/matching first request finishes there/u),
@@ -1889,7 +1893,7 @@ test("offers a repeatable Project 2 and later launcher", async ({
     .getByLabel("What are you trying to get done? · optional")
     .fill("Polish the onboarding flow");
   await expect(agents.locator(".later-project-request code")).toContainText(
-    'Start a new OWD Project named "Project 2"',
+    'Start a new MDevolved Project named "Project 2"',
   );
   await expect(
     agents.getByRole("button", { name: "Copy request" }),
@@ -1963,7 +1967,7 @@ test("keeps later Projects and unfinished vault onboarding distinct", async ({
   ).toHaveCount(1);
   await expect(
     agents.getByText(
-      "1 connected vault still needs a separate Project 1 setup.",
+      "1 connected Source still needs a separate Project 1 setup.",
     ),
   ).toBeVisible();
   await expect(
@@ -2239,7 +2243,7 @@ test("reveals the prepared Project handoff immediately after readiness changes",
   const setup = page.locator(".setup-panel--active");
   await expect(setup).toBeVisible();
   await expect(
-    setup.getByText(/say “Connect this project to OWD\.”/u),
+    setup.getByText(/say “Connect this project to MDevolved\.”/u),
   ).toBeVisible();
   await expect(
     setup.getByText(/no return to this website, copied prompt, reconnect/u),
@@ -2290,7 +2294,7 @@ test("shows the exact Project boundary and a reconnect-free completion", async (
     page.getByText("You stay the owner; one agent coordinates writes"),
   ).toBeVisible();
   await expect(
-    page.getByText(/first agent that establishes an OWD Project/u),
+    page.getByText(/first agent that establishes a MDevolved Project/u),
   ).toBeVisible();
   await expect(
     page.getByText(/does not block local filesystem access/u),
@@ -2319,7 +2323,7 @@ test("shows the exact Project boundary and a reconnect-free completion", async (
     "PROJECT-NOTES.md → docs/project-notes.md",
   );
   await expect(
-    page.getByText("OWD does not move local repository files"),
+    page.getByText("MDevolved does not move local repository files"),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Choose legitimate Project context" }),
@@ -2352,7 +2356,7 @@ test("shows the exact Project boundary and a reconnect-free completion", async (
     }),
   ).toBeVisible();
   await expect(page.getByText("No MCP reconnect is required")).toBeVisible();
-  await expect(page.getByText("You remain the vault owner")).toBeVisible();
+  await expect(page.getByText("You remain the Source owner")).toBeVisible();
   await expect(page.getByText(/reauthenticate/u)).toHaveCount(0);
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
   await context.close();
@@ -2477,10 +2481,10 @@ test("imports and restores a named snapshot in a fresh narrow session", async ({
   await restore
     .getByLabel("Type Recovery target to confirm")
     .fill("Recovery target");
-  await restore.getByRole("button", { name: "Restore mapped vaults" }).click();
+  await restore.getByRole("button", { name: "Restore mapped Sources" }).click();
 
   const completion = restore.getByRole("status").filter({
-    hasText: "Every mapped vault was restored.",
+    hasText: "Every mapped Source was restored.",
   });
   await expect(completion).toBeFocused();
   await expect(completion).toBeInViewport();
@@ -2521,7 +2525,7 @@ test("preserves staged library input across workspace folder navigation", async 
 
   const library = operationalRegion(page, "library");
   const agents = operationalRegion(page, "agents");
-  await expect(library).toContainText("Selected vault · open to load");
+  await expect(library).toContainText("Selected Source · open to load");
   await expect(library).not.toBeVisible();
   await expect(library.locator(".library-panel")).toHaveCount(0);
   expect(noteRequests).toBe(0);
@@ -2645,20 +2649,25 @@ test("keeps a manual Project draft during an independent owner action", async ({
   ).not.toBeVisible();
   await expect(
     operationalRegion(page, "vaults").getByRole("link", {
-      name: "install or update OWD Sync 0.1.7",
+      name: "install or update the Obsidian adapter 0.1.7",
     }),
   ).toHaveAttribute("href", "#owd-sync-installer");
   await operationalRegion(page, "vaults")
     .getByRole("button", {
-      name: "I see OWD Sync 0.1.7 — create request",
+      name: "My folder app or Obsidian adapter is ready — create request",
     })
     .click();
 
   await expect(
     operationalRegion(page, "vaults").getByRole("heading", {
-      name: "Pair from the selected vault",
+      name: "Pair the selected Source",
     }),
   ).toBeVisible();
+  await expect(
+    operationalRegion(page, "vaults").getByRole("link", {
+      name: "Open MDevolved Sync",
+    }),
+  ).toHaveAttribute("href", /^mdevolved:\/\/connect\?/u);
   await expect(
     operationalRegion(page, "vaults").getByRole("link", {
       name: "Open Obsidian and pair",
@@ -2708,7 +2717,7 @@ test("confirms a manually created Project beside the form and clears completed f
   await page.getByRole("button", { name: "Create Project and packet" }).click();
   await expect(
     page.getByText(
-      "Choose a vault and complete every required Project and Work Item field.",
+      "Choose a Source and complete every required Project and Work Item field.",
     ),
   ).toBeVisible();
   await expect(page.locator(".project-create-receipt")).not.toBeVisible();
@@ -2760,7 +2769,7 @@ test("explains how to recover from a stopped agent authorization", async ({
     page.getByText(/No access was granted.*start Authenticate again/u),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Check OWD setup" }),
+    page.getByRole("link", { name: "Check MDevolved setup" }),
   ).toHaveAttribute("href", "/");
   await context.close();
 });
@@ -2785,13 +2794,15 @@ test("routes the Advanced Project form to vault setup instead of leaving a disab
     .click();
 
   await expect(
-    page.getByText("Connect and sync a vault before creating a Project."),
+    page.getByText("Connect and sync a Source before creating a Project."),
   ).toBeVisible();
-  await expect(page.getByLabel("Source vault")).toBeDisabled();
+  await expect(
+    page.getByLabel("Source workspace", { exact: true }),
+  ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Create Project and packet" }),
   ).toBeDisabled();
-  await page.getByRole("button", { name: "Open vault setup" }).click();
+  await page.getByRole("button", { name: "Open Source setup" }).click();
   await expect(operationalRegion(page, "vaults")).toBeVisible();
   await expect(page).toHaveURL(/#vaults$/u);
   await context.close();
@@ -2811,11 +2822,11 @@ test("requires an explicit vault choice before agent authorization", async ({
     "/authorize?response_type=code&client_id=explicit-choice&state=test",
   );
 
-  const vault = page.getByLabel("Vault");
+  const vault = page.getByLabel("Source workspace");
   await expect(vault).toHaveValue("");
   await expect(
     vault.getByRole("option", {
-      name: "Choose the vault for this project…",
+      name: "Choose the Source for this Project…",
     }),
   ).toBeAttached();
   const approve = page.getByRole("button", { name: "Approve scoped access" });
@@ -2931,11 +2942,11 @@ test("keeps agent setup closed until a vault is active", async ({
   const agents = operationalRegion(page, "agents");
   await expect(
     agents.getByRole("heading", {
-      name: "Pair the vault for this workspace before adding agents",
+      name: "Pair a Source for this workspace before adding agents",
     }),
   ).toBeVisible();
   await expect(agents.getByText(`${e2eOrigin}/mcp`)).not.toBeVisible();
-  await agents.getByRole("button", { name: "Set up a vault" }).click();
+  await agents.getByRole("button", { name: "Set up a Source" }).click();
   await expect(
     operationalRegion(page, "vaults").locator(".operational-region-content"),
   ).toBeVisible();
@@ -2969,7 +2980,7 @@ test("keeps agent setup closed until the vault library is ready", async ({
   const agents = operationalRegion(page, "agents");
   await expect(
     agents.getByRole("heading", {
-      name: "OWD is preparing the searchable library",
+      name: "MDevolved is preparing the searchable library",
     }),
   ).toBeVisible();
   await expect(agents.getByText(`${e2eOrigin}/mcp`)).not.toBeVisible();
@@ -3137,7 +3148,9 @@ test("keeps authorized clients compact without global writer promotion", async (
   await expect(
     clientWindow.getByText(/cannot be promoted from this global screen/u),
   ).toBeVisible();
-  await expect(clientWindow.getByText("OWD resume project")).toBeVisible();
+  await expect(
+    clientWindow.getByText("MDevolved resume project"),
+  ).toBeVisible();
   await expect(
     agents.locator(".later-project-fields select option"),
   ).toHaveText([

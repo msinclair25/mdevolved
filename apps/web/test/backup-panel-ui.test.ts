@@ -86,7 +86,7 @@ describe("backup and restore task chooser", () => {
       revokedVault.id,
     );
     expect(html).toContain("Backup &amp; restore");
-    expect(html).toContain("No active vault is connected");
+    expect(html).toContain("No active Source is connected");
     expect(html).toContain("No active vault connected");
     expect(html).toContain("Existing backups remain available below");
     expect(html).toContain("Disconnected archive · disconnected");

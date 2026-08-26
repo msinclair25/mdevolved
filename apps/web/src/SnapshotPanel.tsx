@@ -58,8 +58,8 @@ export function snapshotScopeSummary(
   selectedVaultCount: number,
 ): { label: string; vaultCount: number } {
   return scope === "all-active"
-    ? { label: "All active vaults", vaultCount: activeVaultCount }
-    : { label: "Only selected vaults", vaultCount: selectedVaultCount };
+    ? { label: "All active Sources", vaultCount: activeVaultCount }
+    : { label: "Only selected Sources", vaultCount: selectedVaultCount };
 }
 
 export function splitSnapshotHistory(snapshots: SnapshotSummary[]): {
@@ -324,7 +324,7 @@ export function SnapshotPanel({
     ) {
       return;
     }
-    setWorking("Refreshing every selected vault library…");
+    setWorking("Refreshing every selected Source library…");
     setError(null);
     setMessage(null);
     try {
@@ -349,7 +349,7 @@ export function SnapshotPanel({
         );
         if (active.length === 0) break;
         setWorking(
-          `Refreshing ${active.length.toLocaleString()} selected vault ${active.length === 1 ? "library" : "libraries"}…`,
+          `Refreshing ${active.length.toLocaleString()} selected Source ${active.length === 1 ? "library" : "libraries"}…`,
         );
         await new Promise((resolve) => window.setTimeout(resolve, 500));
         for (const job of active) {
@@ -364,8 +364,8 @@ export function SnapshotPanel({
       if (jobs.some((job) => job.status !== "completed")) {
         throw new Error(
           jobs.some((job) => job.status === "failed")
-            ? "A selected vault library could not be refreshed. The prior snapshot history is unchanged."
-            : "The selected vault libraries are still refreshing. Try the snapshot again in a moment.",
+            ? "A selected Source library could not be refreshed. The prior snapshot history is unchanged."
+            : "The selected Source libraries are still refreshing. Try the snapshot again in a moment.",
         );
       }
       const started = snapshotSummarySchema.parse(
@@ -603,7 +603,7 @@ export function SnapshotPanel({
       setRetention(policy);
       setMessage(
         policy.enabled
-          ? `Automatic retention is on. OWD keeps ${policy.keepReadyCount} recent snapshots and always protects pinned snapshots plus the newest known-good point.`
+          ? `Automatic retention is on. MDevolved keeps ${policy.keepReadyCount} recent snapshots and always protects pinned snapshots plus the newest known-good point.`
           : "Automatic retention is off. Snapshots remain until you enable it.",
       );
     } catch (reason: unknown) {
@@ -633,9 +633,9 @@ export function SnapshotPanel({
             </strong>
             <span>
               {snapshot.scope === "all-active"
-                ? "All active vaults"
+                ? "All active Sources"
                 : snapshot.scope === "selected"
-                  ? "Selected vaults"
+                  ? "Selected Sources"
                   : "Imported copy"}
               {" · "}
               {snapshot.itemCount.toLocaleString()} items
@@ -673,7 +673,7 @@ export function SnapshotPanel({
         </dl>
         {viewedSnapshotId === snapshot.snapshotId ? (
           <div className="snapshot-view">
-            <strong>Included vault generations</strong>
+            <strong>Included Source generations</strong>
             <ul>
               {snapshot.vaults.map((vault) => (
                 <li key={vault.snapshotVaultId}>
@@ -812,8 +812,8 @@ export function SnapshotPanel({
           <span className="backup-step">02 · Recovery point</span>
           <h3>Create a workspace snapshot</h3>
           <p>
-            The default includes every active vault in one coordinated,
-            encrypted recovery point. No vault is silently omitted.
+            The default includes every active Source in one coordinated,
+            encrypted recovery point. No Source is silently omitted.
           </p>
         </div>
         <button
@@ -836,7 +836,7 @@ export function SnapshotPanel({
         <div>
           <strong>{scopeSummary.label}</strong>
           <span>
-            {scopeSummary.vaultCount.toLocaleString()} vault
+            {scopeSummary.vaultCount.toLocaleString()} Source
             {scopeSummary.vaultCount === 1 ? "" : "s"} selected at capture start
           </span>
         </div>
@@ -850,7 +850,7 @@ export function SnapshotPanel({
                 type="radio"
                 onChange={() => setScope("all-active")}
               />
-              <span>All active vaults (recommended)</span>
+              <span>All active Sources (recommended)</span>
             </label>
             <label>
               <input
@@ -862,7 +862,7 @@ export function SnapshotPanel({
                   setScope("selected");
                 }}
               />
-              <span>Only selected vaults</span>
+              <span>Only selected Sources</span>
             </label>
             {scope === "selected" ? (
               <div className="snapshot-vault-choices">

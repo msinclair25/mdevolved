@@ -1,14 +1,16 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1, MD2, MD3, and MD4 are complete. MD5 requires a fresh milestone task.<br />
+**Status:** MD1–MD5 are complete. MD6 requires a fresh milestone task.<br />
 **Date:** 2026-08-26
 
 ## Milestone boundary
 
 MD0 planning and MD1 through MD4 delivery are complete. The source-neutral
 architecture, compatibility rules, rollout order, security boundaries, and
-independent acceptance decisions below remain explicit. MD5 is the next
-independently acceptable milestone and requires a fresh task.
+independent acceptance decisions below remain explicit. MD5's final candidate
+passed its exact complete gate and authoritative legacy-repository redirect
+check. Its required PR checks, merge, and post-merge `main` health complete the
+recorded delivery workflow. MD6 requires a fresh milestone task.
 
 ## Product promise
 
@@ -452,5 +454,44 @@ foreign keys, and repaired migration-fixture coverage; all findings were
 retested before merge.
 
 Validation used only synthetic and disposable data. MD4 required no deployment,
-package publication, release, paid service, or external cost. MD5 and MD6 were
-not started; MD5 requires a fresh milestone task.
+package publication, release, paid service, or external cost.
+
+## MD5 delivery receipt
+
+MD5 changes the human-facing product
+to MDevolved and the normal model to Sources, Workspaces, and durable Projects
+across the web app, marketing site, folder and Obsidian onboarding, recovery,
+Collaboration, snapshots, installer/update metadata, client packs, release
+contracts, and public documentation. It adds the `#sources` navigation alias and
+MDevolved resume/connect wording while preserving the legacy `#vaults` bookmark,
+`OWD resume project`, and every frozen compatibility identifier.
+
+No wire contract, migration, stored record, package scope, MCP tool, `vaultId`,
+plugin ID, settings schema, updater path, archive format, deployment resource,
+or authority boundary was renamed or widened. Existing users require no data
+migration, re-pairing, reconnect, plugin reinstall, or manual edit. Folder and
+Obsidian Sources share neutral normal-path copy because the strict existing
+readiness contract does not expose source kind; technical vault/OWD names remain
+only in explicit Advanced or compatibility details.
+
+The candidate's focused evidence includes the 4-case MD5 static contract, 112
+Worker compatibility cases, folder, CLI, desktop, Obsidian, web, marketing, and
+release/package suites, plus all 74 desktop/narrow Playwright cases. Independent
+critic rework corrected resume phrase delivery, source-neutral onboarding and
+recovery, exact MDevolved artwork and marketing copy, Albatross generated
+prompts, stale browser assertions, recovery-key filename guidance, and visible
+App, Collaboration, Snapshot, and README terminology. Independent focused
+testing found no remaining code regression. Exact candidate `ba40d21` passed the
+complete repository gate: frozen install and audit, format/lint/types/policy and
+release checks, 21 migration tests, 537 repository tests, all 74 desktop/narrow
+Playwright cases, builds, and both non-deploying Cloudflare dry-runs. Required
+GitHub checks and post-merge `main` health are verified in PR #43's delivery
+record.
+
+The legacy repository gate is green. On 2026-08-26, GitHub's API resolved
+`msinclair25/owd-platform` to repository identity `mdevolved`, and uncached
+redirect-following checks returned HTTP 200 at the renamed effective root,
+`/tree/main/docs`, and `/blob/main/README.md` URLs. The earlier distinct-repo
+browser/search view was stale. No production deployment, npm/plugin/desktop
+publication, new repository mutation, paid service, or external cost was
+performed. MD6 has not started and requires a fresh milestone task.

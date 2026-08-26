@@ -95,7 +95,9 @@ async function parsePortableIndex(file: Blob): Promise<{
   }
   const magic = `${decoder.decode(prefix.slice(0, firstLineEnd))}\n`;
   if (magic !== OWD_SNAPSHOT_EXPORT_MAGIC) {
-    throw new Error("This is not an OWD portable snapshot.");
+    throw new Error(
+      "This is not a MDevolved-compatible OWD portable snapshot.",
+    );
   }
   const index = snapshotExportIndexSchema.parse(
     JSON.parse(

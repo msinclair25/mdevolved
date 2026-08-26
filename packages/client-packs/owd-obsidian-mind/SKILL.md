@@ -34,7 +34,8 @@ name, or a display label as OWD authority.
 In a fresh session, the writer role is unconfirmed until `resume_project`
 returns the current `localVaultAccess.role`. Never infer that a restarted
 session lost or retained primary status from chat history, session labels, or
-Mind tool availability. Treat **OWD resume project** as a direct request to run
+Mind tool availability. Treat **MDevolved resume project** and the legacy phrase
+**OWD resume project** as the same direct request to run
 this receipt-based resume; do not reconnect or request new authorization.
 
 When no receipt exists, call `open_project` with the Project name the user

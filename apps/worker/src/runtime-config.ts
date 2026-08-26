@@ -98,7 +98,7 @@ export function enforceRuntimeRouting(
     return routingProblem(
       503,
       "deployment_configuration_invalid",
-      "This OWD deployment is not configured for activation.",
+      "This MDevolved deployment is not configured for activation.",
     );
   }
 

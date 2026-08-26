@@ -62,7 +62,7 @@ describe("snapshot restore panel UI", () => {
         "Jul 22, 2026, 11:20 PM",
       ),
     ).toBe(
-      "owd-snapshot-92c2d08d-9c23-4843-9325-bba4d9be89f7.owdsnapshot · created Jul 22, 2026, 11:20 PM · 2 source vaults · 51 items · portable manifest reference 92c2d08d",
+      "owd-snapshot-92c2d08d-9c23-4843-9325-bba4d9be89f7.owdsnapshot · created Jul 22, 2026, 11:20 PM · 2 Sources · 51 items · portable manifest reference 92c2d08d",
     );
   });
 

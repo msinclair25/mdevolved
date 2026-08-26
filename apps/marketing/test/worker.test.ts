@@ -67,13 +67,13 @@ describe("marketing alpha access endpoint", () => {
       to: "support@mdevolved.com",
       from: {
         email: "alpha@mdevolved.com",
-        name: "MD Evolved Alpha",
+        name: "MDevolved Alpha",
       },
       replyTo: {
         email: "ada@example.com",
         name: "Ada & Co",
       },
-      subject: "OWD alpha request — Ada & Co",
+      subject: "MDevolved alpha request — Ada & Co",
     });
     expect(sent[0]?.html).toContain("Ada &amp; Co");
     expect(sent[0]?.html).toContain("&lt;script&gt;");

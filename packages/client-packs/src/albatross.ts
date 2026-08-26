@@ -317,7 +317,7 @@ ${createAlbatrossMcpMergeConfig(mcpUrl, participant)}
 
 ${ALBATROSS_WORKSPACE_PROMPT}
 
-4. Start Albatross, run \`/mcp trust owd\`, then say: \`Connect this project to OWD.\`
+4. Start Albatross, run \`/mcp trust owd\`, then say: \`Connect this project to MDevolved.\` The legacy phrase \`Connect this project to OWD.\` remains equivalent. On later tasks, \`MDevolved resume project\` and the legacy phrase \`OWD resume project\` both resume the existing receipt without reconnecting.
 
 Use a different participant ID and repeat authorization only for a genuinely independent writer or reviewer. The participant header is not a credential; OWD OAuth and server-side grants remain authoritative.`;
 }

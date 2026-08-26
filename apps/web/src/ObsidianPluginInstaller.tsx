@@ -54,7 +54,7 @@ export function ObsidianPluginInstaller({
           In Obsidian, turn on <strong>Settings → Community plugins</strong>,
           then choose <strong>Obsidian → Quit Obsidian</strong> or press{" "}
           <strong>⌘Q</strong>. Closing the Mac window is not enough. Obsidian
-          requires this one-time security consent; OWD cannot bypass it.
+          requires this one-time security consent; MDevolved cannot bypass it.
         </li>
         <li>
           <div className="plugin-installer-action">
@@ -68,7 +68,7 @@ export function ObsidianPluginInstaller({
                 ? "Waiting for Chrome’s folder picker…"
                 : state.kind === "installing"
                   ? `Installing in ${state.vaultName}…`
-                  : `Choose vault and install OWD Sync ${OWD_SYNC_REQUIRED_VERSION}`}
+                  : `Choose vault and install MDevolved Sync for Obsidian ${OWD_SYNC_REQUIRED_VERSION}`}
             </button>
             <span>
               Choose the vault root containing your notes and hidden{" "}
@@ -78,7 +78,7 @@ export function ObsidianPluginInstaller({
           </div>
         </li>
         <li>
-          Reopen that exact vault and confirm OWD Sync{" "}
+          Reopen that exact vault and confirm MDevolved Sync for Obsidian{" "}
           <strong>{OWD_SYNC_REQUIRED_VERSION}</strong> is enabled under
           Community plugins. Then return here to pair it.
         </li>
@@ -92,8 +92,8 @@ export function ObsidianPluginInstaller({
       ) : null}
       {state.kind === "choosing" ? (
         <p className="plugin-installer-status" role="status">
-          Chrome should now be showing its folder picker. If you cancel it, OWD
-          will confirm that nothing changed.
+          Chrome should now be showing its folder picker. If you cancel it,
+          MDevolved will confirm that nothing changed.
         </p>
       ) : null}
       {state.kind === "installing" ? (
@@ -115,18 +115,18 @@ export function ObsidianPluginInstaller({
           <ol>
             <li>Reopen this exact vault in Obsidian.</li>
             <li>
-              Open Settings → Community plugins and confirm OWD Sync{" "}
-              {OWD_SYNC_REQUIRED_VERSION} is switched on.
+              Open Settings → Community plugins and confirm MDevolved Sync for
+              Obsidian {OWD_SYNC_REQUIRED_VERSION} is switched on.
             </li>
             <li>
               A brief Connecting or Disconnected status can appear while the
               first durable sync starts. Wait up to 30 seconds. If it stays
-              disconnected, switch OWD Sync off and back on once—do not
-              reinstall it.
+              disconnected, switch the MDevolved plugin off and back on once—do
+              not reinstall it.
             </li>
             <li>Return here and continue with Pair this vault.</li>
           </ol>
-          <span>Do not also install OWD Sync with BRAT.</span>
+          <span>Do not also install the Obsidian adapter with BRAT.</span>
         </div>
       ) : null}
       {state.kind === "cancelled" ? (

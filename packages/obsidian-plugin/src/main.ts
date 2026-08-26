@@ -34,7 +34,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
     );
     if (actual === expected) return true;
     new Notice(
-      "OWD Sync is paused because this device's approved vault root changed. Pair this vault again to resume safely.",
+      "MDevolved Sync is paused because this device's approved vault root changed. Pair this vault again to resume safely.",
       10000,
     );
     return false;
@@ -43,7 +43,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
   override async onload(): Promise<void> {
     this.addCommand({
       id: "pair-this-vault",
-      name: "Pair this vault with OWD",
+      name: "Pair this vault with MDevolved",
       callback: () => this.startOwdPairing(),
     });
 
@@ -91,7 +91,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
 
       if (outcome === "cancelled") {
         new Notice(
-          "OWD pairing cancelled. No connection settings were changed.",
+          "MDevolved pairing cancelled. No connection settings were changed.",
           6000,
         );
       }
@@ -99,7 +99,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       new Notice(
         error instanceof OwdPairingError
           ? error.message
-          : "OWD pairing could not be completed. Generate a new link and try again.",
+          : "MDevolved pairing could not be completed. Generate a new link and try again.",
         8000,
       );
     }
@@ -157,12 +157,12 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
         throw new OwdPairingError(
           typeof problem === "string"
             ? problem
-            : `OWD could not confirm the first sync (server status ${response.status}).`,
+            : `MDevolved could not confirm the first sync (server status ${response.status}).`,
         );
       }
       if (showSuccess) {
         new Notice(
-          "OWD Sync connected this vault and started its searchable library.",
+          "MDevolved Sync connected this vault and started its searchable library.",
           8000,
         );
       }
@@ -171,8 +171,8 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       if (!showSuccess) {
         new Notice(
           error instanceof Error
-            ? `OWD Sync: ${error.message}`
-            : "OWD Sync could not confirm this vault.",
+            ? `MDevolved Sync: ${error.message}`
+            : "MDevolved Sync could not confirm this vault.",
           8000,
         );
       }

@@ -549,7 +549,7 @@ export function ProjectRepairStatus({
           ? {
               action: null,
               message:
-                "A cited note is unavailable. Restore or sync that exact note in its existing vault.",
+                "A cited note is unavailable. Restore or sync that exact note in its existing Source.",
             }
           : project.state === "packet-missing" ||
               project.state === "integrity-invalid" ||
@@ -635,12 +635,12 @@ export function ProjectWorkspaceNotice({
   return (
     <article className="collaboration-empty">
       <span className="backup-step">Project collaboration</span>
-      <h3>No active OWD Projects yet.</h3>
+      <h3>No active MDevolved Projects yet.</h3>
       <p>
-        Finish the first Project step in How OWD works, then say “Connect this
-        project to OWD” in the selected agent. The matching prepared request
-        finishes there; mismatches and later Projects appear here for exact
-        owner review.
+        Finish the first Project step in How MDevolved works, then say “Connect
+        this project to MDevolved” in the selected agent. The matching prepared
+        request finishes there; mismatches and later Projects appear here for
+        exact owner review.
       </p>
     </article>
   );
@@ -667,7 +667,7 @@ export function LeadOperationStatus({
       </strong>
       <span>
         {blocking
-          ? "OWD stopped the exceptional request; it did not expand authority, execute a destructive action, enter a protected path, exceed the budget, or choose between conflicting evidence."
+          ? "MDevolved stopped the exceptional request; it did not expand authority, execute a destructive action, enter a protected path, exceed the budget, or choose between conflicting evidence."
           : `${operation.activeActorCount.toLocaleString()} claimed actor${operation.activeActorCount === 1 ? " is" : "s are"} operating inside the bounded Run without routine owner action.`}
       </span>
       {operation.recentExceptions.map((exception) => (
@@ -809,23 +809,23 @@ const PROJECT_REPAIR_REASONS = new Set([
 function projectRepairMessage(reason: string): string {
   switch (reason) {
     case "folder-scope-mismatch":
-      return "The connected agent does not include this Project folder. Approve the correct folder boundary for that same vault, then retry the same Project.";
+      return "The connected agent does not include this Project folder. Approve the correct folder boundary for that same Source, then retry the same Project.";
     case "integrity-invalid":
-      return "The Project's immutable context failed integrity validation. Restore its last verified recovery point or archive it; OWD will not create a replacement silently.";
+      return "The Project's immutable context failed integrity validation. Restore its last verified recovery point or archive it; MDevolved will not create a replacement silently.";
     case "multi-vault-project":
-      return "This Project spans multiple vaults. The current agent-first path requires one exact vault boundary; review the Project context instead of creating a duplicate.";
+      return "This Project spans multiple Sources. The current agent-first path requires one exact Source boundary; review the Project context instead of creating a duplicate.";
     case "packet-expired":
-      return "Routine Project context expired. OWD refreshes it automatically on the same agent connection; no renewal or reconnect is required.";
+      return "Routine Project context expired. MDevolved refreshes it automatically on the same agent connection; no renewal or reconnect is required.";
     case "packet-missing":
-      return "The Project is missing its durable Work Packet. Restore its verified Project data or archive it; OWD will not invent context or create a duplicate.";
+      return "The Project is missing its durable Work Packet. Restore its verified Project data or archive it; MDevolved will not invent context or create a duplicate.";
     case "packet-stale":
-      return "The Project's pinned context changed. OWD will rebuild routine context on the same connection; if that fails, review the exact source state here.";
+      return "The Project's pinned context changed. MDevolved will rebuild routine context on the same connection; if that fails, review the exact source state here.";
     case "project-context-invalid":
       return "The Project's Knowledge Space is invalid or unavailable. Restore that exact Project context or archive it; do not create another Project.";
     case "source-unavailable":
-      return "A cited note is no longer available inside this Project's approved vault boundary. Restore or sync that exact note in its existing vault and OWD will recheck automatically, or archive this Project below. Do not create a duplicate.";
+      return "A cited note is no longer available inside this Project's approved Source boundary. Restore or sync that exact note in its existing Source and MDevolved will recheck automatically, or archive this Project below. Do not create a duplicate.";
     case "vault-not-member":
-      return "The local Project receipt and this agent connection name different vault boundaries. OWD will not change Project sources silently. Use the Project's existing Obsidian vault, or retire the stale local receipt and create separate work for this vault.";
+      return "The local Project receipt and this agent connection name different Source boundaries. MDevolved will not change Project sources silently. Use the Project's existing Source, or retire the stale local receipt and create separate work for this workspace.";
     case "work-item-closed":
       return "The existing Project's current Work Item is closed. Reopen it below, then let the same agent retry; do not create another Project.";
     default:
@@ -855,7 +855,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
   const [requestedOutput, setRequestedOutput] = useState("");
   const [sourcePath, setSourcePath] = useState("");
   const [selectedVaultId, setSelectedVaultId] = useState("");
-  const [notebookFolder, setNotebookFolder] = useState("OWD Projects");
+  const [notebookFolder, setNotebookFolder] = useState("MDevolved Projects");
   const [importText, setImportText] = useState("");
   const [artifactBody, setArtifactBody] = useState("");
   const [working, setWorking] = useState<string | null>(null);
@@ -1147,7 +1147,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
       requestedOutput.trim() === ""
     ) {
       setError(
-        "Choose a vault and complete every required Project and Work Item field.",
+        "Choose a Source and complete every required Project and Work Item field.",
       );
       return;
     }
@@ -1477,8 +1477,8 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
           },
         );
         return visibility === "owner-only"
-          ? "Project is now owner-only. Project workflows cannot reveal its label, objective, source membership, or ID; vault-note permissions remain a separate boundary."
-          : "Project is discoverable again. Agents still need the exact vault boundary and owner-approved access.";
+          ? "Project is now owner-only. Project workflows cannot reveal its label, objective, source membership, or ID; Source-note permissions remain a separate boundary."
+          : "Project is discoverable again. Agents still need the exact Source boundary and owner-approved access.";
       },
     );
   }
@@ -1601,9 +1601,9 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
           <span>{projectRepairMessage(repairReason)}</span>
           {repairReason === "vault-not-member" ? (
             <span>
-              Agent vault:{" "}
+              Agent Source:{" "}
               {repairAgentVault?.displayName ?? "unavailable or revoked"}.
-              Project vault:{" "}
+              Project Source:{" "}
               {repairProject.sourceVaults.map((vault) => vault.name).join(", ")}
               . These boundaries must not be merged automatically.
             </span>
@@ -1639,7 +1639,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
               <div className="project-lifecycle-heading">
                 <div>
                   <span className="backup-step">
-                    OWD Project ·{" "}
+                    MDevolved Project ·{" "}
                     {(project.state === "packet-expired"
                       ? project.activeGrantCount > 0
                         ? "ready"
@@ -1925,7 +1925,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                 }}
               />
               <small>
-                A short name you will recognize in OWD and your agent.
+                A short name you will recognize in MDevolved and your agent.
               </small>
             </label>
             <label>
@@ -1989,17 +1989,17 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
             </label>
             <label>
               <span>
-                Source vault <b className="required-marker">Required</b>
+                Source workspace <b className="required-marker">Required</b>
               </span>
               <select
-                aria-label="Source vault"
+                aria-label="Source workspace"
                 disabled={activeVaults.length === 0}
                 required
                 value={selectedVaultId}
                 onChange={(event) => setSelectedVaultId(event.target.value)}
               >
                 {activeVaults.length === 0 ? (
-                  <option value="">No active vaults yet</option>
+                  <option value="">No active Sources yet</option>
                 ) : null}
                 {activeVaults.map((vault) => (
                   <option key={vault.id} value={vault.id}>
@@ -2011,19 +2011,19 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
             {activeVaults.length === 0 ? (
               <div className="project-form-prerequisite" role="note">
                 <strong>
-                  Connect and sync a vault before creating a Project.
+                  Connect and sync a Source before creating a Project.
                 </strong>
                 <span>
-                  OWD needs one active vault boundary for the Project&apos;s
-                  sources. Your form draft will stay here while you finish that
-                  step.
+                  MDevolved needs one active Source boundary for the
+                  Project&apos;s sources. Your form draft will stay here while
+                  you finish that step.
                 </span>
                 <button
                   className="text-action"
                   type="button"
                   onClick={() => revealOperationalRegion("vaults")}
                 >
-                  Open vault setup
+                  Open Source setup
                 </button>
               </div>
             ) : null}
@@ -2037,7 +2037,7 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
               />
               <small>
                 Add one starting note, or leave blank to begin from the approved
-                vault boundary.
+                Source boundary.
               </small>
             </label>
             <label>
@@ -2048,8 +2048,8 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                 onChange={(event) => setNotebookFolder(event.target.value)}
               />
               <small>
-                OWD keeps its generated Project notebook out of source context
-                to avoid feeding an agent its own output.
+                MDevolved keeps its generated Project notebook out of source
+                context to avoid feeding an agent its own output.
               </small>
             </label>
             <button

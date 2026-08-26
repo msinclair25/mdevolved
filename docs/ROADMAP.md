@@ -1,11 +1,11 @@
-# OWD public roadmap
+# MDevolved public roadmap
 
-OWD is being developed in public as durable, owner-controlled Project memory
-and evidence for Obsidian and compatible AI tools. It complements execution
+MDevolved is being developed in public as durable, owner-controlled Project memory
+and evidence for Markdown folders, Obsidian, and compatible AI tools. It complements execution
 harnesses; it does not run, schedule, route, or supervise agents. This roadmap
 describes product outcomes, not deployment schedules or service commitments.
 
-## Next direction — MDevolved source independence
+## Current direction — MDevolved source independence
 
 OWD's durable protocol and Community data plane become the compatibility
 foundation for **MDevolved**: source-independent Project memory with a plain

@@ -2,29 +2,28 @@
 
 ## Problem
 
-Obsidian users often have several local vaults and fragmented backup strategies.
-Existing sync tools may synchronize notes but do not provide one self-hosted
-library, timestamped encrypted recovery points across vaults, or a protected
-structure through which independent agent harnesses can share reviewed
-knowledge and evolving skills.
+People move project files between plain Markdown folders, Obsidian workspaces,
+computers, and AI tools. Existing sync and provider sessions do not provide one
+owner-controlled Project memory, cited continuity, or portable recovery across
+those boundaries.
 
 The Minimum Lovable Product centers a smaller promise: connect a Project once,
 then let a fresh compatible agent resume durable owner-controlled memory,
 retrieve targeted evidence, and leave a verified checkpoint for the next tool.
-OWD complements execution harnesses; it does not run, schedule, route, or
+MDevolved complements execution harnesses; it does not run, schedule, route, or
 supervise agents.
 
 ## Primary user
 
-The V1 user is one technically curious Obsidian owner with multiple vaults and
-multiple AI subscriptions. They want Cloudflare-managed infrastructure without
+The V1 user is one technically curious owner with Markdown folders, optional
+Obsidian workspaces, and multiple AI subscriptions. They want Cloudflare-managed infrastructure without
 operating a server, and they want to move work among the native agent harnesses
 they already pay for without repeatedly reconstructing context, provenance, and
 decisions by hand.
 
 ## Distribution
 
-OWD Community is the complete Apache-2.0 product deployed into a user's own
+MDevolved Community (formerly OWD Community) is the complete Apache-2.0 product deployed into a user's own
 Cloudflare account. The invitation-only managed alpha runs that same single-owner data
 plane in operator-provisioned, isolated managed cells. Managed hosting sells
 convenience—onboarding, upgrades, monitoring, retention, and operations—not
@@ -93,26 +92,26 @@ evaluation; it does not become OWD's control plane or vault source of truth.
 
 - Deploy an isolated instance to the user's Cloudflare account in under 10 minutes.
 - Claim the instance with a passkey.
-- Follow one state-aware setup path that clearly separates OWD Sync vault
+- Follow one state-aware setup path that clearly separates Source sync
   pairing, encrypted recovery, agent connection, and agent-first Project
   initialization.
-- Pair the first vault in under 5 additional minutes without copying long-lived credentials.
+- Pair the first Markdown folder or Obsidian workspace in under 5 additional minutes without copying long-lived credentials.
 - Browse and search the current materialized Markdown library across paired
-  vaults.
+  Sources.
 - Edit Markdown text and create notes with a clear sync status.
 - Observe last sync, last library refresh, retained snapshot history, and
   failure state.
 - Produce timestamped, owner-key-encrypted, independently restorable snapshots
-  outside the live sync layer, with all active vaults as the safe default.
-- Connect a supported AI agent to one explicitly selected vault with passkey
+  outside the live sync layer, with all active Sources as the safe default.
+- Connect a supported AI agent to one explicitly selected Source with passkey
   consent and read-only, generation-grounded access.
 - In guided onboarding, select that agent, the exact first Project name, and
   its already-approved folder boundary once.
-- From the supported agent already working in the project folder/vault, say
-  **Connect this project to OWD**. `open_project` creates, connects, rejoins, or
+- From the supported agent already working in the project folder/workspace, say
+  **Connect this project to MDevolved**. `open_project` creates, connects, rejoins, or
   resumes it. The matching prepared first Project completes in that agent
   without another website approval; a mismatch or later Project uses one exact
-  owner review while the agent waits on the same MCP connection. OWD requires
+  owner review while the agent waits on the same MCP connection. MDevolved requires
   no copied prompt, second OAuth flow, manual ID, scope, JSON, or endpoint URL.
 - Give any supported agent a frozen, cited Work Packet through MCP or a
   no-executable portable file.

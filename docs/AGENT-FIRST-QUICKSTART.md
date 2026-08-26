@@ -3,20 +3,22 @@
 This guide describes the agent-first workflow shared by Community deployments
 and the invitation-only managed alpha. Community operators deploy from this
 public repository; managed users start from a pre-provisioned workspace
-invitation. OWD Sync synchronizes the selected Obsidian vault. OWD MCP gives an
-already-authorized agent explicitly approved access to OWD collaboration. You
-continue working in your project folder, Obsidian vault, and existing agent.
+invitation. MDevolved Sync synchronizes a selected Markdown folder; its optional
+Obsidian adapter retains the OWD Sync compatibility identity. MDevolved MCP
+gives an already-authorized agent explicitly approved access to durable Project
+memory. You continue working in your project folder, Obsidian workspace, and
+existing agent.
 
-OWD keeps four identities separate:
+MDevolved keeps four identities separate:
 
-- an **Obsidian vault** is an approved knowledge source;
+- a **Source** is one approved Markdown folder or Obsidian workspace;
 - its **library** is the current searchable publication;
-- an **agent connection** grants one selected vault and any optional folder
+- an **agent connection** grants one selected Source and any optional folder
   limits;
-- an **OWD Project** is the durable initiative that holds the objective,
+- a **MDevolved Project** is the durable initiative that holds the objective,
   approved context, Work Packets, agents, and collaboration history.
 
-Names may match, but a vault is never implicitly treated as a Project.
+Names may match, but a Source is never implicitly treated as a Project.
 
 ## The normal agent loop
 
@@ -39,8 +41,8 @@ work remains bound to the exact frozen Work Packet, allowing separately working
 agents to submit attributable results without seeing peer conclusions. These
 receipts are handled by the agent; they are never a human approval gate.
 
-Provider sessions may expire without erasing OWD records. Cross-computer
-preservation still requires a deployed OWD endpoint/account and a verified
+Provider sessions may expire without erasing MDevolved records. Cross-computer
+preservation still requires a deployed MDevolved endpoint/account and a verified
 backup. Portable preferences, inert skills, and owner-reviewed evidence-backed
 suggestions are available in **Memory & Skills**; pending suggestions never
 enter a resume until the owner accepts them.
@@ -57,9 +59,9 @@ The smallest useful demonstration is deliberately boring:
    action. No prompt, transcript, terminal history, or provider session is
    copied.
 
-For an independent review, Client B requests `independent` context. OWD keeps
+For an independent review, Client B requests `independent` context. MDevolved keeps
 peer conclusions and synthesis out of that view; later synthesis can attribute
-the separately submitted results. OWD stores the bounded Project evidence and
+the separately submitted results. MDevolved stores the bounded Project evidence and
 does not schedule, launch, retry, or supervise either client.
 
 Use the repository fixture
@@ -69,35 +71,38 @@ no-cost local demonstration. It contains synthetic IDs and hashes only.
 ## Install and pair
 
 For a managed workspace, start at step 1. For Community, deploy from the public
-repository, claim the resulting permanent URL, then start at step 2:
+repository, claim the resulting permanent URL, then start at step 2. Choose
+either the folder path or the optional Obsidian path:
 
 1. Open the private invitation and claim the pre-provisioned workspace with a
    passkey.
-2. In Obsidian, turn on Community plugins, then fully quit the application with
+2. For a plain folder, open MDevolved Sync and choose the exact Markdown root.
+   For Obsidian, turn on Community plugins, then fully quit the application with
    **Obsidian → Quit Obsidian** or **⌘Q**. Closing a macOS window is not a
    quit.
-3. In **Vaults**, choose **Choose vault and install OWD Sync 0.1.7**. Select
+3. In **Sources**, choose the folder path, or choose **Install MDevolved Sync
+   for Obsidian 0.1.7**. For Obsidian, select
    the exact synthetic vault root containing `.obsidian`, not `.obsidian`
    itself, and allow Chrome's write request.
-4. Reopen that exact vault and confirm OWD Sync `0.1.7` is enabled.
-5. Return to OWD, create the private pairing request, and approve it from that
-   exact open vault.
-6. Keep Obsidian open while OWD automatically publishes the current searchable
+4. Reopen that exact vault and confirm MDevolved Sync for Obsidian `0.1.7` is enabled.
+5. Return to MDevolved, create the private pairing request, and approve it from
+   the selected folder app or exact open Obsidian workspace.
+6. Keep the sync client open while MDevolved automatically publishes the current searchable
    library.
-7. Connect your existing agent to the workspace's OWD MCP server.
+7. Connect your existing agent to the workspace's MDevolved MCP server.
 
-OWD Sync is not yet listed in Obsidian Community Plugins, so both modes use the
-version-matched desktop installer during the alpha. The Project workflow below
-is the same in both modes.
+MDevolved Sync for Obsidian is not yet listed in Obsidian Community Plugins, so
+that adapter uses the version-matched installer during the alpha. The Project
+workflow below is the same for folders and Obsidian workspaces.
 
 Download and reopen the recovery key, then create a verified encrypted snapshot
-as an independent safeguard. Read-only agent setup does not wait for it; OWD
-requires recovery before a future vault mutation, restore, delete, or other
+as an independent safeguard. Read-only agent setup does not wait for it;
+MDevolved requires recovery before a future Source mutation, restore, delete, or other
 destructive operation.
 
-The dashboard shows these prerequisites for one explicitly named vault at a
-time. Progress from another vault never fills its checklist. Agent setup stays
-closed until at least one active vault has its own current library.
+The dashboard shows these prerequisites for one explicitly named Source at a
+time. Progress from another Source never fills its checklist. Agent setup stays
+closed until at least one active Source has its own current library.
 
 Branches, commands, migrations, bindings, Cloudflare resources, MCP endpoint
 construction, JSON, scopes, and internal IDs are not normal managed setup
@@ -105,22 +110,22 @@ choices. Community operators see infrastructure only during deployment and
 maintenance. The direct local plugin installer is a temporary desktop-alpha
 path. BRAT is the unsupported-browser fallback: its deep link opens a
 prefilled form, but the user must still choose **Add Plugin**, wait for BRAT to
-finish, and enable OWD Sync.
+finish, and enable MDevolved Sync for Obsidian (legacy plugin ID: OWD Sync).
 
 ## Set up the Project from the agent
 
-Finish the owner choices first in **How OWD works**. Select the active agent you
-want coordinating this vault, enter the exact first Project name, choose one of
+Finish the owner choices first in **How MDevolved works**. Select the active agent you
+want coordinating this Source, enter the exact first Project name, choose one of
 that agent's already-approved folder boundaries, and select **Prepare first
-Project**. OWD shows a receipt naming the agent, Project, and folder.
+Project**. MDevolved shows a receipt naming the agent, Project, and folder.
 
 In the project folder, tell the agent:
 
-> Connect this project to OWD.
+> Connect this project to MDevolved.
 
 The agent starts with `open_project`. That single entry point handles a new
 Project, an existing Project, a rejoin, and a resume. If exactly one compatible
-Project exists, OWD opens it without asking you to choose an internal mode. If
+Project exists, MDevolved opens it without asking you to choose an internal mode. If
 more than one exists, the agent asks which visible Project you mean. If none
 exists, it prepares one bounded New Project draft and calls `open_project`
 again. A `.owdignore` `projectId` is authoritative. When you name the work and
@@ -131,7 +136,7 @@ Before either request, the agent inventories Markdown files at repository root.
 Keep repository control files such as `README.md`, `AGENTS.md`,
 `CONTRIBUTING.md`, and `SECURITY.md` at root. For other Project documentation,
 the agent proposes exact moves into `docs/` and asks before moving anything.
-The owner page shows the retained files and exact moves. OWD does not move local
+The owner page shows the retained files and exact moves. MDevolved does not move local
 files; after approval, the agent applies only the approved moves, updates
 relative links, and verifies that every resulting path exists. If you keep
 files at root, the agent must use their actual paths rather than inventing a
@@ -140,8 +145,8 @@ files at root, the agent must use their actual paths rather than inventing a
 For a new Project, an agent using the hardened Project contract requests
 only:
 
-- the selected paired vault;
-- one normalized folder boundary inside that vault;
+- the selected paired Source;
+- one normalized folder boundary inside that Source;
 - an explicit default-deny Project context policy inside that boundary;
 - a bounded Project label and objective; and
 - `project.initialize.request`, which can request browser consent but cannot
@@ -149,30 +154,30 @@ only:
 
 For the matching prepared first Project, `open_project` consumes that exact
 single-use handoff and returns ready on the same MCP connection. You do not
-return to OWD, copy anything, reconnect, or approve the same choices again.
+return to MDevolved, copy anything, reconnect, or approve the same choices again.
 
 When approval is genuinely needed—a different name or folder, a later Project,
 or an advanced/repair action—`open_project` returns one visible owner link, and
-the waiting OWD dashboard shows the same approval automatically. The agent
+the waiting MDevolved dashboard shows the same approval automatically. The agent
 immediately calls `wait_for_project_connection` on the same MCP connection
-while you review it. The consent page leads with the exact vault, Project, and
+while you review it. The consent page leads with the exact Source, Project, and
 objective; detailed client, folder, scopes, egress, preservation, and
-included/excluded context remain reviewable. OWD does not guess which Markdown
+included/excluded context remain reviewable. MDevolved does not guess which Markdown
 is legitimate Project context. The owner can correct the proposed paths before
 approval. Include paths are an allowlist; exclusions win, including for future
 notes created under an included folder. The policy affects Project context
 only. It does not exclude notes from OWD Sync or encrypted recovery.
 
-If the selected vault is a recovery target, agent consent separately lists
+If the selected Source is a recovery target, agent consent separately lists
 each named restore source and leaves it unchecked. Leave it unchecked unless
-this agent should read those restored paths. The target vault grant alone does
+this agent should read those restored paths. The target Source grant alone does
 not include them. Explicitly approved restored reads identify their source in
 MCP provenance.
 
 The durable Project and its exact, separately revocable collaboration grant are
 created atomically only after exact owner consent—either the matching
 single-use handoff prepared during onboarding or the fallback review. The
-existing vault-scoped MCP connection is not widened: every Project call
+existing Source-scoped MCP connection is not widened: every Project call
 resolves and rechecks that separate D1 grant behind the same connection. There
 is no second OAuth ceremony. Denial, expiry of the one-time request, an
 OAuth-client mismatch, out-of-bound paths, an excluded source note, ambiguous
@@ -195,17 +200,17 @@ website.
 For an existing Project—such as Agent B on another computer—the connection
 uses the separate `project.connect.request` capability. `open_project` sees only
 Projects whose active context is fully covered by that connection's approved
-vault folders. Internal packet or source-generation changes never hide an
+Source folders. Internal packet or source-generation changes never hide an
 otherwise compatible Project. One compatible Project resumes directly;
 multiple compatible Projects require a visible-name choice. When this exact
 client has not yet been approved for the Project, the one owner confirmation
-shows the client, Project label and ID, vault folders, current work item,
+shows the client, Project label and ID, Source folders, current work item,
 immutable context policy, and requested capabilities. Approval creates the
 client's separate Project grant on the existing connection; it does not create
 or change the Project.
 
-The second computer does not need the source vault on disk. Its agent reaches
-the approved server-side context through OWD MCP after owner consent. The
+The second computer does not need the Source on disk. Its agent reaches the
+approved server-side context through the OWD-compatible MCP after owner consent. The
 durable Project ID—not a label, path, or remembered chat—is how both agents
 refer to the same Project.
 
@@ -220,14 +225,14 @@ project-scoped `mcpServers` configuration. The common HTTP shape is:
 ```json
 {
   "mcpServers": {
-    "md-evolved": { "type": "http", "url": "https://YOUR-OWD-HOST/mcp" }
+    "mdevolved": { "type": "http", "url": "https://YOUR-MDEVOLVED-HOST/mcp" }
   }
 }
 ```
 
 Hermes uses the same generic MCP tools and the inert hands-off mapping in
 [`HERMES-HANDS-OFF.md`](HERMES-HANDS-OFF.md). Orca may run the work in its own
-worktree, but remains the execution harness: OWD records bounded evidence and
+worktree, but remains the execution harness: MDevolved records bounded evidence and
 continuity only; it does not launch Orca agents or certify their work.
 
 ## Continue in a new agent task
@@ -251,8 +256,9 @@ it returns, the fresh session's writer role is **unconfirmed**—the agent must
 not claim that it is or is not primary from chat history, a new session
 identity, or local tool availability. The current `localVaultAccess.role` is
 authoritative. A compliant client should perform this automatically. If it
-does not after a crash, restart, or context reset, the owner can say **OWD
-resume project**; the agent resumes the existing receipt without reconnecting
+does not after a crash, restart, or context reset, the owner can say
+**MDevolved resume project**. The legacy phrase **OWD resume project** remains
+equivalent; the agent resumes the existing receipt without reconnecting
 MCP or requesting new authorization.
 
 `owd_resume` uses the `projectId` in `.owdignore` rather than inferring a
@@ -263,7 +269,7 @@ conversation history. The lower-level `resume_project` receipt and packet
 behavior remain available under advanced compatibility paths.
 
 Do not hand-edit `.owdignore` as a way to change authority. Reinitialize or use
-an owner-approved Knowledge Space change so OWD can issue a new pinned version.
+an owner-approved Knowledge Space change so MDevolved can issue a new pinned version.
 
 ## When an agent can also edit the vault
 
@@ -300,8 +306,8 @@ Agent A works against the current Project-scoped Work Packet and creates a durab
 Attempt, Artifact, and Handoff. These records remain private until the owner
 explicitly shares the selected Handoff and supporting records.
 
-To continue with another agent, connect Agent B to the same OWD deployment and
-approve its vault/folder connection with `project.connect.request`. Tell it to
+To continue with another agent, connect Agent B to the same MDevolved deployment and
+approve its Source/folder connection with `project.connect.request`. Tell it to
 connect to the Project. Agent B calls `open_project`; it opens the single
 compatible Project automatically or asks only when more than one is compatible.
 After the one exact owner approval, ask it to review the shared Handoff. Agent B
@@ -318,7 +324,7 @@ model identity.
 ## Continuity and recovery
 
 The website is for setup, consent, activity and provenance, owner Decisions,
-revocation, recovery, and advanced inspection—not daily project work. OWD
+revocation, recovery, and advanced inspection—not daily project work. MDevolved
 projects accepted collaboration records into the paired Obsidian notebook and
 can export a portable exchange when an agent cannot use MCP directly.
 
@@ -335,7 +341,7 @@ The current alpha uses short-lived access tokens with normal client-managed
 OAuth refresh and a separate collaboration grant whose availability window
 slides on authorized use. Token possession is never sufficient: every tool call
 rechecks the authoritative application grant, source grant, exact Project,
-vault/path boundary, and revocation state. Closing a chat does not revoke
+Source/path boundary, and revocation state. Closing a chat does not revoke
 access. Routine token, grant, packet, and source refresh must never become an
 owner task. Explicit revocation is final and the next call fails; reconnecting
 after revocation requires a new deliberate owner authorization.
@@ -344,7 +350,7 @@ after revocation requires a new deliberate owner authorization.
 
 Agents must stop and report the actionable failure when authorization is
 missing, revoked, expired, ambiguous, cross-Project, stale, replayed, or
-unsupported. They must never broaden a vault/folder selector, reuse another
+unsupported. They must never broaden a Source/folder selector, reuse another
 Project's identifiers, infer owner approval, or fall back to transcript or model
 claims as durable evidence.
 
@@ -357,11 +363,12 @@ through the lower-level `resume_project` compatibility path.
 
 An older `.owdignore` without `projectId` is not permission to guess. The agent
 calls `open_project` once; when the same active source authorization still
-covers the approved Project, OWD repairs the legacy receipt without another
+covers the approved Project, MDevolved repairs the legacy receipt without another
 owner approval. A revoked or narrowed source authorization fails closed.
 
-`library_setup_required` or `library_not_ready` means the paired vault has no
-exact-current searchable library yet. Keep Obsidian open and retry the same
-bounded request shortly. If OWD reports that the automatic build failed, select
-**Build now** for that vault and retry after it completes. Do not repeat pairing,
+`library_setup_required` or `library_not_ready` means the paired Source has no
+exact-current searchable library yet. Keep the folder or Obsidian adapter open
+and retry the same bounded request shortly. If MDevolved reports that the
+automatic build failed, select **Build now** for that Source and retry after it
+completes. Do not repeat pairing,
 invent an authorization URL, or substitute the deployment homepage.

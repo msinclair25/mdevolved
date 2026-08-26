@@ -118,7 +118,7 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 		const setupIncomplete = !this.host.settings.host || !this.host.settings.token;
 		const syncStatus = this.host.getSettingsStatusSummary();
 
-		addSectionHeading(containerEl, "OWD Sync");
+		addSectionHeading(containerEl, "MDevolved Sync for Obsidian");
 
 		if (setupIncomplete) {
 			const callout = containerEl.createDiv({ cls: "callout yaos-settings-setup-callout" });
@@ -129,11 +129,11 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 
 			const calloutContent = callout.createDiv({ cls: "callout-content" });
 			calloutContent.createEl("p", {
-				text: "OWD Sync connects this vault to a private Cloudflare deployment you control.",
+				text: "MDevolved Sync connects this vault to a private deployment you control.",
 			});
 
 			calloutContent.createEl("p", {
-				text: "Open your OWD dashboard and copy a short-lived pairing link. Return to this exact vault window to paste it.",
+				text: "Open your MDevolved dashboard and copy a short-lived pairing link. Return to this exact vault window to paste it.",
 				cls: "yaos-settings-setup-hint",
 			});
 
@@ -345,7 +345,7 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 		const manualBody = manualDetails.createDiv({ cls: "yaos-settings-details-body" });
 				if (setupIncomplete) {
 					manualBody.createEl("p", {
-						text: "Claim your OWD deployment in the browser, then create a pairing link. You can also enter the connection details manually here.",
+						text: "Claim your MDevolved deployment in the browser, then create a pairing link. You can also enter the compatibility connection details manually here.",
 							cls: "yaos-settings-details-intro",
 						});
 					}

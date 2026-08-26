@@ -7,16 +7,18 @@ function render(): string {
   return renderToStaticMarkup(createElement(PluginSetupGuide));
 }
 
-describe("OWD Sync tester setup guide", () => {
+describe("MDevolved Sync for Obsidian setup guide", () => {
   it("leads with one direct local install action and keeps BRAT secondary", () => {
     const html = render();
 
     expect(html).toContain('id="owd-sync-installer"');
     expect(html).toContain("Private trial · direct local install");
-    expect(html).toContain("Choose vault and install OWD Sync 0.1.7");
+    expect(html).toContain(
+      "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
+    );
     expect(html.match(/<button/g)).toHaveLength(1);
     expect(html).toContain("Community plugins");
-    expect(html).toContain("OWD cannot bypass it");
+    expect(html).toContain("MDevolved cannot bypass it");
     expect(html).toContain("Quit Obsidian");
     expect(html).toContain("⌘Q");
     expect(html).toContain("Closing the Mac window is not enough");
@@ -48,6 +50,6 @@ describe("OWD Sync tester setup guide", () => {
 
     expect(html).toContain("<section");
     expect(html).not.toContain('<details class="plugin-setup-guide"');
-    expect(html).toContain("Install OWD Sync in this vault");
+    expect(html).toContain("Install MDevolved Sync for Obsidian");
   });
 });

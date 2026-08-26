@@ -1,23 +1,23 @@
-# OWD Platform
+# MDevolved
 
 <p align="center">
   <img
-    src="apps/marketing/public/og-head-start.png"
-    alt="Make one AI's work the next AI's head start — OWD cited handoffs and owner control"
+    src="apps/marketing/public/og-mdevolved.png"
+    alt="Every AI, one durable Project memory — MDevolved source independence and owner control"
     width="1200"
   />
 </p>
 
 <p align="center">
-  <strong>Make one AI's work the next AI's head start.</strong><br />
-  Connect once. Let every AI start with the right Project memory.<br />
+  <strong>Every AI. One durable Project memory.</strong><br />
+  Start with a Markdown folder or Obsidian.<br />
   Durable, owner-controlled memory, evidence, and next steps across compatible AI tools.
 </p>
 
 <p align="center">
-  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved"><strong>Deploy Community</strong></a>
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved"><strong>Deploy MDevolved Community</strong></a>
   ·
-  <a href="#how-owd-works">See how it works</a>
+  <a href="#how-mdevolved-works">See how it works</a>
   ·
   <a href="#autonomy-without-surrendering-control">Policy autopilot</a>
   ·
@@ -39,18 +39,18 @@
   <img alt="Managed private alpha" src="https://img.shields.io/badge/Managed-private%20alpha-8250df.svg" />
 </p>
 
-OWD gives compatible AI tools durable, cited Project memory: the objective,
+MDevolved gives compatible AI tools durable, cited Project memory: the objective,
 current state, decisions, evidence, useful failures, and next action that should
-survive a provider session. It complements the harnesses you already use. OWD
+survive a provider session. It complements the harnesses you already use. MDevolved
 does not run, schedule, route, or supervise agents, and it never grants their
 local shell, skills, or filesystem authority.
 
-The next product direction is **MDevolved**: keep this compatible OWD data
-plane while making a plain Markdown folder the universal sync source and
-Obsidian an optional first-class adapter. See the
-[source-independent product plan](docs/MDEVOLVED-PLAN.md).
+MDevolved was formerly called **OWD**. The transition is additive: existing
+deployments, bookmarks, data, MCP tools, `owd-pair` links, exports, backups,
+`@owd/*` packages, and the `owd-sync` Obsidian plugin identity stay compatible.
+Those technical names remain visible only where an existing client needs them.
 
-The MD2 public alpha adds a native folder adapter, a protected Electron shell,
+The public alpha includes a native folder adapter, a protected Electron shell,
 and the thin install path below. The package is published on
 [npm](https://www.npmjs.com/package/mdevolved); unsigned macOS, Windows, and
 Linux builds with SHA-256 checksums are available from the
@@ -63,21 +63,21 @@ npx mdevolved@latest sync .
 The command prints machine-readable pairing next actions, rejects credentials
 in arguments and output, and keeps secrets in the operating system's protected
 credential store. The same reviewed Yjs transport and receipt engine remains
-behind both the folder client and OWD Sync; Obsidian is an optional richer
+behind both the folder client and MDevolved Sync for Obsidian; Obsidian is an optional richer
 adapter, not a requirement.
 
-It turns the Markdown folder or Obsidian vault you choose into bounded Project context without
+It turns the Markdown folder or Obsidian workspace you choose into bounded Project context without
 becoming another model subscription, taking over the agent runtime, scraping
 hidden conversations, or silently deciding what is true.
 
 > [!IMPORTANT]
-> **M1–M4 are verified on `main` and deployed to the persistent Community
-> alpha; a source checkout by itself is still not a deployment.**
+> **The verified Community alpha is deployed from `main`; a source checkout by
+> itself is still not a deployment.**
 > The complete Apache-2.0 Community source is public and independently
 > self-hostable; the managed service remains invitation-only. Start with
-> synthetic or disposable vaults while evaluating it.
+> synthetic or disposable Sources while evaluating it.
 > Durable records survive an AI provider session, but preservation across
-> computers requires a deployed OWD endpoint/account and a verified backup.
+> computers requires a deployed MDevolved endpoint/account and a verified backup.
 > Portable preferences and inert skills are included. Repeated attributable
 > checkpoints can propose evidence-backed memory, but only the owner can accept,
 > edit and accept, ignore, or delete a suggestion.
@@ -111,31 +111,33 @@ The owner retains root authority and can revoke access immediately. The older
 packet, handoff, lease, fencing, Run, and recovery interfaces remain compatible
 advanced paths; they are not routine Project ceremony.
 
-| Connect once                                                            | Resume the right context                                    | Leave a better next step                              | Stay in control                                      |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
-| Pair one vault and authorize the exact agent, Project, and folder once. | A bounded cited brief survives provider-session expiration. | Compact verified checkpoints improve the next resume. | The owner can inspect provenance and revoke at once. |
+| Connect once                                                             | Resume the right context                                    | Leave a better next step                              | Stay in control                                      |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| Pair one Source and authorize the exact agent, Project, and folder once. | A bounded cited brief survives provider-session expiration. | Compact verified checkpoints improve the next resume. | The owner can inspect provenance and revoke at once. |
 
-## The problem OWD solves
+## The problem MDevolved solves
 
 Every capable AI starts strong and then forgets the work trapped in another
 tool. Copying chats forward loses sources, mixes claims with decisions, and
 makes access nearly impossible to audit.
 
-| Without OWD                                      | With OWD                                                          |
+| Without MDevolved                                | With MDevolved                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------- |
 | Re-explain the Project in every new session      | Resume one durable, versioned Project record                      |
 | Copy conclusions without knowing their sources   | Carry cited Artifacts, Handoffs, and Reviews                      |
 | Let an agent's output quietly become “the truth” | Keep agent contributions separate from owner Decisions            |
-| Hand over a whole vault or paste notes manually  | Grant one exact vault and optional folder boundary                |
+| Hand over a whole Source or paste notes manually | Grant one exact Source and optional folder boundary               |
 | Treat sync as if it were a backup                | Keep encrypted, independently restorable recovery points          |
 | Lock useful context inside one provider          | Use standard MCP plus portable Markdown and JSON fallback formats |
 
-## How OWD works
+<a id="how-owd-works"></a>
+
+## How MDevolved works
 
 ```mermaid
 flowchart LR
-    V["Your Obsidian vault"] <--> S["OWD Sync"]
-    S <--> O["Owner-controlled OWD Project"]
+    V["Markdown folder or Obsidian workspace"] <--> S["MDevolved Sync"]
+    S <--> O["Owner-controlled MDevolved Project"]
     O --> R["owd_resume"]
     R --> A["Work in any compatible AI harness"]
     A --> F["owd_find when needed"]
@@ -143,15 +145,16 @@ flowchart LR
     C --> O
 ```
 
-1. **Pair the vault you choose.** OWD Sync connects only the open, explicitly
-   approved Obsidian vault.
-2. **Publish current context.** OWD automatically builds a searchable library
+1. **Pair the Source you choose.** MDevolved Sync connects one explicitly
+   selected Markdown folder. Its optional Obsidian adapter connects only the
+   open, explicitly approved Source workspace.
+2. **Publish current context.** MDevolved automatically builds a searchable library
    from the latest durable sync state.
 3. **Connect a compatible agent.** Each client receives its own
-   revocable, read-only vault and folder grant through remote MCP.
-4. **Prepare one Project handoff.** Choose the agent, Project name, vault, and
+   revocable, read-only Source and folder grant through remote MCP.
+4. **Prepare one Project handoff.** Choose the agent, Project name, Source, and
    folder once during guided onboarding.
-5. **Say _Connect this project to OWD_.** The working agent creates, joins,
+5. **Say _Connect this project to MDevolved_.** The working agent creates, joins,
    rejoins, or resumes the exact Project on the same connection.
 6. **Use the three-operation loop.** The agent resumes durable context, finds
    targeted evidence as needed, and checkpoints verified progress before it
@@ -162,10 +165,10 @@ second MCP authorization and no daily packet renewal. A changed boundary or a
 later unmatched Project still returns to one exact owner consent.
 
 > [!TIP]
-> **A new agent session continues the same Project.** OWD-compatible agents
+> **A new agent session continues the same Project.** MDevolved-compatible agents
 > should read `.owdignore` and call `owd_resume` automatically before using
 > prior Project context or reporting their writer role. If a client misses that
-> startup step after a crash or reset, say **OWD resume project**. OWD restores
+> startup step after a crash or reset, say **MDevolved resume project**. MDevolved restores
 > the exact Project and durable writer role without reconnecting MCP or asking
 > for new approval.
 
@@ -175,44 +178,44 @@ later unmatched Project still returns to one exact owner consent.
 | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Projects, Work Packets, Artifacts, Handoffs, Reviews, Decisions, and provenance survive the session.     | Codex, Claude, Grok, Eve.dev, Obsidian Mind, Hermes, and other clients keep their native tools and subscriptions. |
 | **Evidence before memory**                                                                               | **Consent before access**                                                                                         |
-| Sources remain attached. Shared work is visible without becoming accepted truth until the owner decides. | Every grant names the exact client, vault, folders, scopes, and restored sources—and can be revoked.              |
+| Sources remain attached. Shared work is visible without becoming accepted truth until the owner decides. | Every grant names the exact client, Source, folders, scopes, and restored sources—and can be revoked.             |
 | **Portable by design**                                                                                   | **Recovery separate from sync**                                                                                   |
 | Canonical notes remain Markdown; collaboration exports use documented, provider-neutral records.         | Encrypted snapshots remain independently inspectable, downloadable, and restorable.                               |
 
 ## One workspace, clear responsibilities
 
-| Surface          | What it owns                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------------- |
-| **Obsidian**     | The owner's readable Markdown workspace                                                           |
-| **OWD Sync**     | The sync boundary for only the explicitly paired vault                                            |
-| **OWD Platform** | Passkeys, libraries, grants, Projects, provenance, Decisions, and encrypted recovery              |
-| **AI clients**   | The work itself, using their own models, tools, sandboxes, and subscriptions through standard MCP |
+| Surface            | What it owns                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| **Your Source**    | The owner's Markdown folder or Obsidian workspace                                                 |
+| **MDevolved Sync** | The sync boundary for only the explicitly paired Source                                           |
+| **MDevolved**      | Passkeys, libraries, grants, Projects, provenance, Decisions, and encrypted recovery              |
+| **AI clients**     | The work itself, using their own models, tools, sandboxes, and subscriptions through standard MCP |
 
-OWD Sync does not authorize agents or create Projects. An MCP grant does not
+MDevolved Sync does not authorize agents or create Projects. An MCP grant does not
 grant local Obsidian CLI, shell, or filesystem authority. The human always
-remains the vault owner.
+remains the Source owner.
 
 ## Built around the owner's workflow
 
 The authenticated workspace is a focused folder-style application:
 
-- **How OWD works** — guided onboarding first; advanced controls afterward
-- **Vaults** — install OWD Sync, pair vaults, and see exact sync state
+- **How MDevolved works** — guided onboarding first; advanced controls afterward
+- **Sources** — connect Markdown folders or Obsidian and see exact sync state
 - **Projects** — inspect durable activity, consent, participants, and provenance
 - **Agents** — connect, scope, inspect, and revoke MCP clients
 - **Notes** — search, browse, create, and safely edit Markdown text
 - **Backup & restore** — create, verify, export, and restore encrypted recovery points
 - **System health** — compatibility, deployment identity, and redacted diagnostics
 
-OWD derives one next action from authoritative state. A user should not have to
+MDevolved derives one next action from authoritative state. A user should not have to
 understand materialization jobs, internal IDs, raw scopes, or packet rotation
 to finish setup.
 
 ## Autonomy without surrendering control
 
-OWD automates the routine coordination around agent work while the execution
+MDevolved automates the routine coordination around agent work while the execution
 harness keeps planning, models, tools, terminals, retries, schedules, and
-worktrees. OWD is the durable policy and continuity layer—not another agent
+worktrees. MDevolved is the durable policy and continuity layer—not another agent
 supervisor.
 
 - **Owner-authored standing policy.** A lead cannot write or approve the policy
@@ -235,7 +238,8 @@ Start with [policy autopilot](docs/POLICY-AUTOPILOT.md), the
 
 ## Standards-based agent compatibility
 
-OWD exposes one authenticated remote MCP server using Streamable HTTP and
+The technical compatibility protocol retains the OWD name and exposes one
+authenticated remote MCP server using Streamable HTTP and
 OAuth 2.1 with S256 PKCE. It implements the current MCP `2026-07-28` protocol
 and stateless `2025-11-25` compatibility. OWD-specific behavior is expressed
 through ordinary MCP Tools, Resources, and Prompts—not a custom transport or a
@@ -252,15 +256,15 @@ acceptance receipt for that exact combination exists.
   and local `qmd`/`om` server.
 - **Eve.dev** receives a source-pinned, user-scoped connection module, MCP Resource,
   setup Prompt, and script-free skill. Its sessions and subagents remain native
-  to Eve while OWD supplies portable Project continuity and independently
+  to Eve while MDevolved supplies portable Project continuity and independently
   attributable collaboration identities.
 - **Albatross** receives a source-pinned setup kit, workspace prompt, MCP
   Resource, setup Prompt, and script-free skill. A pinned temporary bridge
-  connects its stdio-only MCP client to OWD without changing OWD's standard
+  connects its stdio-only MCP client to MDevolved without changing MDevolved's standard
   remote endpoint or OAuth authority.
 - **Hermes Agent** uses the universal MCP endpoint and remains an optional
-  client, never an OWD runtime dependency.
-- **Orca ADE** can host compatible clients without giving OWD control of Orca
+  client, never a MDevolved runtime dependency.
+- **Orca ADE** can host compatible clients without giving MDevolved control of Orca
   tasks, worktrees, terminals, or permission settings.
 
 Compatibility profiles improve setup; they never widen authority. See
@@ -279,29 +283,30 @@ claim.
 
 ### Obsidian Mind: local intelligence, durable collaboration
 
-Obsidian Mind turns an Obsidian vault into an active local knowledge system
-with graph search, scoped recall, reasoning, and capture. OWD gives selected
-work a durable, owner-approved Project record that can move between
-independently authorized agents without exposing the rest of the vault or
-flattening local memory into shared truth.
+Obsidian Mind turns an Obsidian Source into an active local knowledge system
+with graph search, scoped recall, reasoning, and capture. MDevolved gives
+selected work a durable, owner-approved Project record that can move between
+independently authorized agents without exposing the rest of the Source or
+flattening local memory into shared truth. Existing OWD identities and MCP
+connections remain compatible.
 
-- Keep Obsidian Mind's native `qmd` and `om` servers. OWD is added beside them
-  as the remote `md-evolved` MCP connection; it never replaces or proxies the
-  local tools.
+- Keep Obsidian Mind's native `qmd` and `om` servers. MDevolved is added beside
+  them as the remote MCP connection; legacy `md-evolved` connection names keep
+  working and never replace or proxy the local tools.
 - Use Mind's `search`, `expand`, `recall`, and `reason` for fast local
-  cognition. Use OWD for the current Work Packet, cited Artifacts, Handoffs,
+  cognition. Use MDevolved for the current Work Packet, cited Artifacts, Handoffs,
   Reviews, owner Decisions, provenance, and recovery.
 - Detect an Obsidian Mind vault from its versioned manifest, preserve its
   native note layout, and derive narrow concrete content roots without treating
   local profile data as authorization.
 - Keep `memories/`, private notes, configured never-expose files, and runtime
-  infrastructure outside ordinary OWD Project context. The server enforces the
+  infrastructure outside ordinary MDevolved Project context. The server enforces the
   same ceiling across reads, search, Project discovery, citations, repair, and
   resume.
 - Treat Mind's `record_work` and `remember` as direct vault writes. They obey
-  OWD's primary-writer guidance so a second agent does not silently create
+  MDevolved's primary-writer guidance so a second agent does not silently create
   overlapping edits or sync conflicts.
-- Carry Mind's consultation result into the OWD Artifact or Handoff before
+- Carry Mind's consultation result into the MDevolved Artifact or Handoff before
   committing to an approach, including contrary evidence or an explicit
   “nothing recorded” result.
 
@@ -461,7 +466,7 @@ or [request managed alpha access](https://mdevolved.com/#alpha-access).
 
 ## Development
 
-OWD Platform is a TypeScript monorepo built around one integrated Cloudflare
+MDevolved is a TypeScript monorepo built around one integrated Cloudflare
 Worker and a separately released Obsidian companion.
 
 ```sh
@@ -494,5 +499,5 @@ managed alpha users receive a pre-provisioned workspace instead.
 
 ## License
 
-OWD Platform is licensed under the [Apache License 2.0](LICENSE). Vendored
+MDevolved is licensed under the [Apache License 2.0](LICENSE). Vendored
 upstream components retain their original notices and licenses.

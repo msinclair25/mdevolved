@@ -1134,13 +1134,21 @@ describe("scoped universal agent access", () => {
     expect(initializeResponse.headers.get("Content-Type")).toContain(
       "application/json",
     );
-    expect(
-      z
-        .object({
-          result: z.object({ protocolVersion: z.literal("2025-11-25") }),
-        })
-        .parse(await initializeResponse.json()),
-    ).toMatchObject({ result: { protocolVersion: "2025-11-25" } });
+    const initializeBody = z
+      .object({
+        result: z.object({
+          instructions: z.string(),
+          protocolVersion: z.literal("2025-11-25"),
+        }),
+      })
+      .parse(await initializeResponse.json());
+    expect(initializeBody).toMatchObject({
+      result: { protocolVersion: "2025-11-25" },
+    });
+    expect(initializeBody.result.instructions).toContain(
+      "MDevolved resume project",
+    );
+    expect(initializeBody.result.instructions).toContain("OWD resume project");
 
     const initializedResponse = await fetchWorker(`${ORIGIN}/mcp`, {
       body: JSON.stringify({

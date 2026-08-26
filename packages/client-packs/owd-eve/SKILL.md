@@ -86,7 +86,8 @@ context policy. Otherwise pass the visible Project name the user supplied.
 In a fresh Eve session, the writer role is unconfirmed until
 `owd__resume_project` returns the current `localVaultAccess.role`. Never infer
 that a session reset changed the durable role from the agent name, channel,
-sandbox, or prior conversation. Treat **OWD resume project** as a direct request
+sandbox, or prior conversation. Treat **MDevolved resume project** and the
+legacy phrase **OWD resume project** as the same direct request
 to perform this receipt-based resume without reconnecting or asking for new
 authorization.
 

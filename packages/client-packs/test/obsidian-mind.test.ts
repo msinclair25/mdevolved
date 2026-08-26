@@ -88,6 +88,10 @@ describe("Obsidian Mind compatibility profile", () => {
       "The promoted note still wins any conflict",
     );
     expect(OBSIDIAN_MIND_PROFILE_PROMPT).toContain("localVaultAccess");
+    expect(OBSIDIAN_MIND_CONTINUITY_GUIDANCE).toContain(
+      "MDevolved resume project",
+    );
+    expect(OBSIDIAN_MIND_CONTINUITY_GUIDANCE).toContain("OWD resume project");
     expect(OBSIDIAN_MIND_PROFILE_PROMPT).toContain(
       "do not let the raw capture overrule the promoted note",
     );

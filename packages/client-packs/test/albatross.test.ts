@@ -123,7 +123,12 @@ describe("Albatross compatibility profile", () => {
     expect(ALBATROSS_WORKSPACE_PROMPT).toContain(
       "ignores server initialize instructions",
     );
-    expect(createAlbatrossSetupKit(MCP_URL)).toContain("/mcp trust owd");
+    const setupKit = createAlbatrossSetupKit(MCP_URL);
+    expect(setupKit).toContain("/mcp trust owd");
+    expect(setupKit).toContain("Connect this project to MDevolved");
+    expect(setupKit).toContain("Connect this project to OWD");
+    expect(setupKit).toContain("MDevolved resume project");
+    expect(setupKit).toContain("OWD resume project");
   });
 
   it.each([

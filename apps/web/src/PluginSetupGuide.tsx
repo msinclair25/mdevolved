@@ -27,11 +27,14 @@ export function PluginSetupGuide() {
         <span className="pairing-label">
           Private trial · direct local install
         </span>
-        <h3 id="owd-sync-installer-heading">Install OWD Sync in this vault</h3>
+        <h3 id="owd-sync-installer-heading">
+          Install MDevolved Sync for Obsidian
+        </h3>
         <p>
-          This temporary installer puts the pinned OWD Sync{" "}
-          {OWD_SYNC_REQUIRED_VERSION} release into the vault you choose. The
-          Community Plugins listing will replace it as the permanent path.
+          Already use Obsidian? This optional adapter installs the pinned,
+          compatibility-preserving OWD Sync {OWD_SYNC_REQUIRED_VERSION} package
+          into the vault you choose. Its <code>owd-sync</code> identity and
+          update path stay unchanged for existing users.
         </p>
       </div>
 
@@ -52,7 +55,9 @@ export function PluginSetupGuide() {
             Manual BRAT fallback—only if direct install reports an error
           </summary>
           <ol>
-            <li>Reopen the exact vault where you want OWD Sync installed.</li>
+            <li>
+              Reopen the exact vault where you want MDevolved Sync installed.
+            </li>
             <li>
               <a href={BRAT_PLUGIN_PAGE_URL}>Open BRAT in Obsidian</a>, install
               and enable it, then wait until BRAT appears in the Command
@@ -60,7 +65,8 @@ export function PluginSetupGuide() {
             </li>
             <li>
               <a href={OWD_SYNC_BRAT_INSTALL_URL}>
-                Open the prefilled OWD Sync {OWD_SYNC_REQUIRED_VERSION} form
+                Open the prefilled MDevolved Sync for Obsidian{" "}
+                {OWD_SYNC_REQUIRED_VERSION} form
               </a>
               . This link opens BRAT&apos;s form; it does not finish the
               install. Verify <code>{OWD_SYNC_DISTRIBUTION_REPOSITORY}</code>{" "}
@@ -68,8 +74,8 @@ export function PluginSetupGuide() {
               <strong>Add Plugin</strong>, and wait for BRAT to finish.
             </li>
             <li>
-              In <strong>Settings → Community plugins</strong>, enable OWD Sync{" "}
-              {OWD_SYNC_REQUIRED_VERSION}.
+              In <strong>Settings → Community plugins</strong>, enable MDevolved
+              Sync for Obsidian {OWD_SYNC_REQUIRED_VERSION}.
             </li>
           </ol>
           <p>

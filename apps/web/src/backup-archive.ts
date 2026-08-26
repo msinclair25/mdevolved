@@ -101,7 +101,9 @@ export function identityFromFile(value: string): string {
     .map((line) => line.trim())
     .find((line) => line.startsWith("AGE-SECRET-KEY-1"));
   if (identity === undefined) {
-    throw new Error("This file does not contain an OWD recovery key.");
+    throw new Error(
+      "This file does not contain a MDevolved (OWD-compatible) recovery key.",
+    );
   }
   return identity;
 }
@@ -131,7 +133,7 @@ export async function inspectBackupArchive(
   try {
     const magic = `${decoder.decode(await reader.readLine(64))}\n`;
     if (magic !== OWD_BACKUP_MAGIC) {
-      throw new Error("This is not an OWD backup archive.");
+      throw new Error("This is not a MDevolved-compatible OWD backup archive.");
     }
     const manifest = backupArchiveManifestSchema.parse(
       JSON.parse(

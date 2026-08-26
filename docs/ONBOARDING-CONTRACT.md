@@ -1,4 +1,4 @@
-# OWD onboarding contract
+# MDevolved onboarding contract
 
 This is the product contract for Community, managed trial, owner acceptance,
 and future trial cells. The same release and state machine must run in every
@@ -6,25 +6,26 @@ deployment.
 
 ## The model in one sentence
 
-An **Obsidian vault** supplies explicitly approved knowledge; an **OWD
-Project** supplies the durable objective, context boundary, agents, Work
+An approved **Source**—a Markdown folder or Obsidian workspace—supplies
+explicitly approved knowledge; a **MDevolved Project** supplies the durable objective, context boundary, agents, Work
 Packets, and collaboration history.
 
-A vault name is never a Project identity. A Project is recognized only by its
-full durable Project ID and exact source-vault/context relationship.
+A Source label is never a Project identity. A Project is recognized only by its
+full durable Project ID and exact source/context relationship. Technical
+compatibility responses continue to use `vaultId`.
 
 ## The single path
 
 | State            | One primary action                                            | Completion proof                                                             |
 | ---------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Unclaimed        | Create owner passkey                                          | Owner exists and the owner session is active                                 |
-| No vault         | Install OWD Sync in the selected vault                        | Exact compatible plugin version is enabled in that vault                     |
-| Plugin installed | Pair this vault                                               | Single-use grant is exchanged for this exact vault                           |
-| Paired           | Keep Obsidian open                                            | Durable reconcile confirms the first sync and current state vector           |
+| No Source        | Choose a Markdown folder or install the Obsidian adapter      | Exact compatible sync client is ready for that Source                        |
+| Client ready     | Pair this Source                                              | Single-use grant is exchanged for this exact Source                          |
+| Paired           | Keep the folder app or Obsidian adapter open                  | Durable reconcile confirms the first sync and current state vector           |
 | Synced           | Wait for automatic library build                              | Published generation matches the exact current state vector                  |
-| Library current  | Connect an agent                                              | Active grant names the exact vault, folder boundary, and restored sources    |
-| Agent connected  | Prepare its first Project in OWD                              | One exact agent, Project name, and approved folder handoff is durable        |
-| Handoff prepared | Say **Connect this project to OWD** in the real client        | Matching `open_project` creates or joins and returns ready on the same token |
+| Library current  | Connect an agent                                              | Active grant names the exact Source, folder boundary, and restored sources   |
+| Agent connected  | Prepare its first Project in MDevolved                        | One exact agent, Project name, and approved folder handoff is durable        |
+| Handoff prepared | Say **Connect this project to MDevolved** in the real client  | Matching `open_project` creates or joins and returns ready on the same token |
 | Review fallback  | Review one exact owner link only for a mismatch/later Project | Exact Project grant is approved once; no second Project OAuth flow           |
 | Project approved | Keep working in the same agent connection                     | `wait_for_project_connection` returns the ready exact Project                |
 | Ready            | Use the three-operation agent loop                            | Resume, targeted find, and checkpoint complete without owner ceremony        |
@@ -39,20 +40,20 @@ link opens a form; the user must still choose **Add Plugin**, wait for BRAT,
 and enable OWD Sync. Direct install and BRAT are never presented as simultaneous
 steps.
 
-Recovery is tracked beside this path, not inside it. OWD recommends a verified
+Recovery is tracked beside this path, not inside it. MDevolved recommends a verified
 encrypted recovery point as soon as the library is current, but it does not
 block read-only agent authorization. A current verified recovery point is
 mandatory before any vault mutation, restore, delete, or other destructive
 operation.
 
-The dashboard shows only the next incomplete action for the selected vault.
+The dashboard shows only the next incomplete action for the selected Source.
 Verified milestones remain available in a collapsed receipt. Progress from
-another vault never completes a step.
+another Source never completes a step.
 
 ## Primary vault writer
 
 The human always remains the vault owner. The first agent that establishes an
-OWD Project for a vault becomes that vault's primary writer across Projects.
+MDevolved Project for a Source becomes that Source's primary writer across Projects.
 Later agents remain connected as read-only collaborators. Owner consent teaches
 this rule before approval, and every successful Project open, connection
 completion, or resume returns the calling agent's advisory `localVaultAccess`
@@ -67,16 +68,17 @@ global Agents screen never promotes it. This deters accidental writes but is
 not an operating-system or filesystem lock.
 
 A crash, restart, or fresh agent session does not change the vault-wide writer
-assignment. When `.owdignore` exists, the agent resumes it as its first OWD
+assignment. When `.owdignore` exists, the agent resumes it as its first MDevolved
 action and treats the role as unconfirmed until the current
-`localVaultAccess.role` response arrives. The normal path is automatic; **OWD
-resume project** is the visible fallback and never means reconnect MCP, repeat
+`localVaultAccess.role` response arrives. The normal path is automatic;
+**MDevolved resume project** is the visible fallback. The legacy phrase **OWD
+resume project** remains equivalent; neither means reconnect MCP, repeat
 consent, or create another Project.
 
 The operational regions follow the same top-to-bottom order as the state
-machine: **Vault connections → Note library → Agent access**. After the
+machine: **Source connections → Note library → Agent access**. After the
 automatic first library build succeeds and authoritative readiness confirms the
-library, OWD makes the adjacent Agent access region the next action. Refreshing
+library, MDevolved makes the adjacent Agent access region the next action. Refreshing
 an already-current library does not move the owner.
 
 A second passkey is a strongly recommended owner-recovery action in **System

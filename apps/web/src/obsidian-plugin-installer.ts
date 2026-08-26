@@ -127,7 +127,7 @@ function parseInstallerManifest(value: unknown): InstallerManifest {
   ) {
     throw new OwdSyncInstallerError(
       "invalid_installer_manifest",
-      "The OWD Sync installer manifest is invalid or version-mismatched.",
+      "The MDevolved Sync for Obsidian installer manifest is invalid or version-mismatched.",
     );
   }
 
@@ -148,7 +148,7 @@ function parseInstallerManifest(value: unknown): InstallerManifest {
     ) {
       throw new OwdSyncInstallerError(
         "invalid_installer_manifest",
-        "The OWD Sync installer manifest contains an invalid asset.",
+        "The MDevolved Sync for Obsidian installer manifest contains an invalid asset.",
       );
     }
 
@@ -167,7 +167,7 @@ function parseInstallerManifest(value: unknown): InstallerManifest {
   ) {
     throw new OwdSyncInstallerError(
       "invalid_installer_manifest",
-      "The OWD Sync installer asset set is incomplete or too large.",
+      "The MDevolved Sync for Obsidian installer asset set is incomplete or too large.",
     );
   }
 
@@ -230,7 +230,7 @@ async function fetchJson(
   if (!response.ok) {
     throw new OwdSyncInstallerError(
       "installer_asset_unavailable",
-      "The pinned OWD Sync installer files are unavailable from this workspace.",
+      "The pinned MDevolved Sync for Obsidian installer files are unavailable from this workspace.",
     );
   }
   return response.json();
@@ -278,7 +278,7 @@ async function loadVerifiedAssets(
   if (pluginManifestBytes === undefined) {
     throw new OwdSyncInstallerError(
       "installer_asset_mismatch",
-      "The pinned OWD Sync plugin manifest is missing.",
+      "The pinned MDevolved Sync for Obsidian plugin manifest is missing.",
     );
   }
 
@@ -288,7 +288,7 @@ async function loadVerifiedAssets(
   } catch (error) {
     throw new OwdSyncInstallerError(
       "installer_asset_mismatch",
-      "The pinned OWD Sync plugin manifest is not valid JSON.",
+      "The pinned MDevolved Sync for Obsidian plugin manifest is not valid JSON.",
       { cause: error },
     );
   }
@@ -299,7 +299,7 @@ async function loadVerifiedAssets(
   ) {
     throw new OwdSyncInstallerError(
       "installer_asset_mismatch",
-      "The pinned OWD Sync plugin identity or version does not match this workspace.",
+      "The pinned MDevolved Sync for Obsidian plugin identity or version does not match this workspace.",
     );
   }
 
@@ -444,7 +444,7 @@ async function rollback(
   if (errors.length > 0) {
     throw new OwdSyncInstallerError(
       "rollback_incomplete",
-      "Installation failed and OWD could not fully restore the prior plugin files. Keep Obsidian closed and inspect .obsidian/plugins/owd-sync before retrying.",
+      "Installation failed and MDevolved could not fully restore the prior plugin files. Keep Obsidian closed and inspect .obsidian/plugins/owd-sync before retrying.",
       { cause: errors[0] },
     );
   }
@@ -479,7 +479,7 @@ export function normalizeOwdSyncInstallerError(
     case "SecurityError":
       return new OwdSyncInstallerError(
         "folder_picker_blocked",
-        "Chrome blocked the folder picker. Keep this secure OWD tab active, choose Try again, and allow the folder prompt. If it is still blocked, use the BRAT fallback below.",
+        "Chrome blocked the folder picker. Keep this secure MDevolved tab active, choose Try again, and allow the folder prompt. If it is still blocked, use the BRAT fallback below.",
         { cause: error },
       );
     case "NotReadableError":
@@ -492,7 +492,7 @@ export function normalizeOwdSyncInstallerError(
     default:
       return new OwdSyncInstallerError(
         "install_failed",
-        "OWD Sync could not be installed. Your existing vault files were left unchanged. Try again or use the BRAT fallback below.",
+        "MDevolved Sync for Obsidian could not be installed. Your existing vault files were left unchanged. Try again or use the BRAT fallback below.",
         { cause: error },
       );
   }

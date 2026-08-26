@@ -93,6 +93,9 @@ describe("Project context policy", () => {
     expect(receipt.managedInstructionBlock).toContain(
       "writer role is **unconfirmed**",
     );
+    expect(receipt.managedInstructionBlock).toContain(
+      "**MDevolved resume project**",
+    );
     expect(receipt.managedInstructionBlock).toContain("**OWD resume project**");
     expect(receipt.managedInstructionBlock).toContain(
       "A `read-only-collaborator` must warn the owner",

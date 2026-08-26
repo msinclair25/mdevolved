@@ -1,25 +1,25 @@
-# OWD alpha status
+# MDevolved alpha status
 
 **Updated:** August 26, 2026<br />
-**OWD Platform:** `1.0.0-alpha.7`<br />
-**OWD Sync:** `0.1.7`
+**MDevolved Community (OWD-compatible core):** `1.0.0-alpha.7`<br />
+**MDevolved Sync for Obsidian (`owd-sync` identity):** `0.1.7`
 
-OWD Platform is now available as an Apache-2.0 Community alpha. The optional
+MDevolved is available as an Apache-2.0 Community alpha. The optional
 managed service remains invitation-only. Alpha means the contracts and safety
 boundaries are explicit, but broader real-world compatibility, upgrade, and
 durability evidence is still being accumulated.
 
 ## Availability
 
-| Surface                   | Current status                                                           |
-| ------------------------- | ------------------------------------------------------------------------ |
-| Community source          | Public Apache-2.0 alpha                                                  |
-| Community self-hosting    | Available for technical alpha use in the owner's Cloudflare account      |
-| Managed service           | Invitation-only alpha; one isolated data-plane cell per owner            |
-| MDevolved Sync            | Public `0.1.0-alpha.1` npm and unsigned macOS/Windows/Linux prerelease   |
-| OWD Sync                  | Public `0.1.7` alpha release and version-matched desktop installer       |
-| Obsidian Community Plugin | Submission/listing pending                                               |
-| Public OWD Cloud accounts | Not generally available; billing and service commitments are future work |
+| Surface                     | Current status                                                           |
+| --------------------------- | ------------------------------------------------------------------------ |
+| Community source            | Public Apache-2.0 alpha                                                  |
+| Community self-hosting      | Available for technical alpha use in the owner's Cloudflare account      |
+| Managed service             | Invitation-only alpha; one isolated data-plane cell per owner            |
+| MDevolved Sync              | Public `0.1.0-alpha.1` npm and unsigned macOS/Windows/Linux prerelease   |
+| MDevolved Sync for Obsidian | Public `0.1.7` alpha release on the unchanged `owd-sync` update path     |
+| Obsidian Community Plugin   | Submission/listing pending                                               |
+| Public OWD Cloud accounts   | Not generally available; billing and service commitments are future work |
 
 Community is the complete product core, not a reduced tier. Managed hosting
 uses the same pinned Community release and adds operational convenience; it
@@ -28,7 +28,7 @@ does not place multiple owners in one vault database.
 ## Working now
 
 - One-owner passkey claim and sign-in
-- Multiple explicitly paired Obsidian vaults
+- Multiple explicitly paired Markdown Sources, including Obsidian workspaces
 - Source-neutral Markdown-folder sync without requiring Obsidian
 - Automatic searchable libraries from current durable sync state
 - Bounded browsing, search, Markdown creation, and version-checked editing
@@ -61,7 +61,8 @@ does not place multiple owners in one vault database.
 - Web mutation is limited to Markdown text creation/editing. Rename, deletion,
   attachment writes, and arbitrary `.obsidian` writes are not supported.
 - Snapshot attachment and `.obsidian` sections are disabled.
-- OWD Sync is not yet discoverable through Obsidian Community Plugins.
+- MDevolved Sync for Obsidian is not yet discoverable through Obsidian Community
+  Plugins; its compatibility plugin ID remains `owd-sync`.
 - Local multi-agent writer coordination is advisory guidance, not a filesystem
   lock.
 - A protocol-compatible client is not automatically a client-specific
@@ -73,9 +74,9 @@ does not place multiple owners in one vault database.
 
 The most important external exercise is intentionally simple:
 
-1. pair a disposable vault;
+1. pair a disposable Markdown folder or Obsidian workspace;
 2. connect two agents independently;
-3. say **Connect this project to OWD**;
+3. say **Connect this project to MDevolved**;
 4. carry a cited Handoff from one agent to the other;
 5. create an independent Review;
 6. record the owner's Decision;
@@ -83,7 +84,7 @@ The most important external exercise is intentionally simple:
 8. revoke access; and
 9. recover the approved record into an isolated deployment.
 
-Issues that create Project duplication, repeated authorization, cross-vault
+Issues that create Project duplication, repeated authorization, cross-Source
 visibility, stale context, hidden internal data, or recovery ambiguity are
 release blockers.
 

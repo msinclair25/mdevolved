@@ -29,11 +29,11 @@ describe("snapshot timeline UI", () => {
 
   it("reports the actual snapshot scope and selected count", () => {
     expect(snapshotScopeSummary("all-active", 4, 1)).toEqual({
-      label: "All active vaults",
+      label: "All active Sources",
       vaultCount: 4,
     });
     expect(snapshotScopeSummary("selected", 4, 1)).toEqual({
-      label: "Only selected vaults",
+      label: "Only selected Sources",
       vaultCount: 1,
     });
   });
