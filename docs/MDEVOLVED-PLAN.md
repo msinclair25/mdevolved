@@ -1,15 +1,14 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1, MD2, and MD3 are complete. MD4 requires a fresh milestone task.<br />
+**Status:** MD1, MD2, MD3, and MD4 are complete. MD5 requires a fresh milestone task.<br />
 **Date:** 2026-08-26
 
 ## Milestone boundary
 
-MD0 planning is complete: the source-neutral architecture, compatibility rules,
-rollout order, security boundaries, and independent acceptance decisions below
-are explicit. MD1 completed the source-neutral core without changing the wire
-schema, public protocol names, stored identifiers, or deployment. MD2 is the
-next independently acceptable milestone.
+MD0 planning and MD1 through MD4 delivery are complete. The source-neutral
+architecture, compatibility rules, rollout order, security boundaries, and
+independent acceptance decisions below remain explicit. MD5 is the next
+independently acceptable milestone and requires a fresh task.
 
 ## Product promise
 
@@ -422,3 +421,36 @@ direct-installer, updater, and release-regression gate. MD3 changes no Worker
 contract, migration, deployed resource, published package version, plugin ID,
 wire name, stored identifier, or user data. It requires no deployment or
 package publication; no production or personal source is used for validation.
+
+## MD4 delivery receipt
+
+MD4 closed on 2026-08-26 in PR #41 at merge commit `801aede`. The additive
+`owd-source-device-v1` contract and forward-only migration
+`0037_source_devices.sql` make source/device state explicit, bind every device
+to the exact source root and boundary, require owner approval for additional
+devices, prevent duplicate Project creation and stale publication, and record
+last-publisher provenance without granting or expanding Project authority.
+Existing clients retain their prior pairing path and capability negotiation.
+
+Two disposable synthetic devices reconciled one source through enrollment,
+publication, restart, offline retry, conflict, expiry, revocation, and rejoin
+without duplicate Projects, cross-source access, stale overwrite, or credential
+reuse. A fresh compatible agent resumed the same durable Project while both
+local clients were offline. Focused MD4 acceptance covered 112 tests; the exact
+candidate also passed 89 repository test files with 537 tests, 74 browser E2E
+tests, clean CLI installation, the Obsidian product/installer/updater gates,
+and desktop/CLI packaging on macOS, Windows, and Linux. Required PR checks and
+post-merge `main` checks were green.
+
+Export and encrypted snapshot/restore preserve the new device history only as
+inert recovery evidence and quarantine it without restoring device credentials,
+grants, sessions, leases, connections, actors, OAuth state, or live authority.
+Critic rework added durable fully bound replay receipts, atomic concurrency and
+stale-write guards, explicit source-root persistence across CLI, desktop, and
+Obsidian clients, snapshot-to-quarantine forwarding, restrictive device-history
+foreign keys, and repaired migration-fixture coverage; all findings were
+retested before merge.
+
+Validation used only synthetic and disposable data. MD4 required no deployment,
+package publication, release, paid service, or external cost. MD5 and MD6 were
+not started; MD5 requires a fresh milestone task.
