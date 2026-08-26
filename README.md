@@ -52,7 +52,7 @@ Obsidian an optional first-class adapter. See the
 
 The MD2 source candidate adds a native folder adapter, a protected Electron
 shell, and the thin install path below. The package is not published from this
-repository automatically; until its signed alpha release, use the workspace
+repository automatically; until its public alpha release, use the workspace
 build and synthetic fixtures rather than a personal folder.
 
 ```bash

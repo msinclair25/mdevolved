@@ -4,6 +4,7 @@
   "description": "MDevolved source-neutral Markdown folder sync client.",
   "license": "Apache-2.0",
   "type": "module",
+  "main": "dist/index.js",
   "files": [
     "dist"
   ],
@@ -11,29 +12,7 @@
     "node": ">=22.18.0"
   },
   "bin": {
-    "mdevolved": "./dist/cli-entry.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
-    },
-    "./cli": {
-      "types": "./src/cli.ts",
-      "default": "./dist/index.js"
-    },
-    "./custody": {
-      "types": "./src/custody.ts",
-      "default": "./dist/index.js"
-    },
-    "./pairing": {
-      "types": "./src/pairing.ts",
-      "default": "./dist/index.js"
-    },
-    "./runtime": {
-      "types": "./src/runtime.ts",
-      "default": "./dist/index.js"
-    }
+    "mdevolved": "dist/cli-entry.js"
   },
   "scripts": {
     "test": "vitest run --config vitest.config.ts",

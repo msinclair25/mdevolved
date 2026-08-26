@@ -32,7 +32,7 @@ if (
   rootPackage.scripts?.["deploy:manual"] !== "pnpm deploy" ||
   rootPackage.scripts?.build !== "pnpm package:plugin && pnpm build:web" ||
   rootPackage.scripts?.["release:check"] !==
-    "node --test scripts/plugin-release-tag-policy.test.mjs && pnpm package:plugin && node scripts/check-release-contract.mjs && node scripts/check-release-regressions.mjs"
+    "node --test scripts/plugin-release-tag-policy.test.mjs scripts/mdevolved-release-contract.test.mjs && pnpm package:plugin && node scripts/check-release-contract.mjs && node scripts/check-release-regressions.mjs"
 ) {
   throw new Error(
     "Release scripts must rebuild the exact web/plugin source, apply every D1 migration, and only then deploy the Worker.",
