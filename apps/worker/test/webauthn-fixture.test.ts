@@ -9,7 +9,7 @@ describe("synthetic WebAuthn signatures", () => {
     const derSignature = toDerSignature(rawSignature);
 
     expect(derSignature).not.toEqual(rawSignature);
-    expect([...derSignature.slice(0, 4)]).toEqual([0x30, 68, 0x02, 32]);
+    expect(Array.from(derSignature.slice(0, 4))).toEqual([0x30, 68, 0x02, 32]);
     expect(derSignature).toHaveLength(70);
   });
 });
