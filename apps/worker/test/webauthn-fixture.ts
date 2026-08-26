@@ -110,8 +110,28 @@ function derInteger(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
   return concatenate(new Uint8Array([0x02, value.length]), value);
 }
 
-function toDerSignature(signature: Uint8Array): Uint8Array<ArrayBuffer> {
-  if (signature[0] === 0x30) {
+function isDerSignature(signature: Uint8Array): boolean {
+  if (
+    signature.length < 8 ||
+    signature[0] !== 0x30 ||
+    signature[1] !== signature.length - 2 ||
+    signature[2] !== 0x02
+  ) {
+    return false;
+  }
+
+  const rLength = signature[3] ?? -1;
+  const sTagOffset = 4 + rLength;
+  const sLength = signature[sTagOffset + 1] ?? -1;
+
+  return (
+    signature[sTagOffset] === 0x02 &&
+    sTagOffset + 2 + sLength === signature.length
+  );
+}
+
+export function toDerSignature(signature: Uint8Array): Uint8Array<ArrayBuffer> {
+  if (isDerSignature(signature)) {
     return Uint8Array.from(signature);
   }
 
