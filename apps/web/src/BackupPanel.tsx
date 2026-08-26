@@ -321,7 +321,7 @@ export function BackupPanel({
     setError(null);
     setGenerated({ ...generated, downloadRequested: true });
     setMessage(
-      `Download requested for ${generated.filename}. Choose that exact file below; setup remains locked until OWD verifies it.`,
+      `Download requested for ${generated.filename}. Choose that exact file below; setup remains locked until MDevolved verifies it.`,
     );
   }
 
@@ -426,7 +426,7 @@ export function BackupPanel({
           );
         },
         prepare: async () => {
-          setWorking("Preparing a fresh vault library for this backup…");
+          setWorking("Preparing a fresh Source library for this backup…");
           const started = materializationJobSchema.parse(
             await apiJson(
               `/api/vaults/${encodeURIComponent(backupVaultId)}/materializations`,
@@ -438,7 +438,7 @@ export function BackupPanel({
             maxAttempts: 360,
             onProgress: (job) =>
               setWorking(
-                `Preparing a fresh vault library · ${job.processedNoteCount.toLocaleString()} of ${job.totalNoteCount.toLocaleString()} notes…`,
+                `Preparing a fresh Source library · ${job.processedNoteCount.toLocaleString()} of ${job.totalNoteCount.toLocaleString()} notes…`,
               ),
             poll: async (job) =>
               materializationJobSchema.parse(
@@ -518,9 +518,9 @@ export function BackupPanel({
 
       {activeVaults.length === 0 ? (
         <p className="recovery-task-guidance" role="status">
-          No active vault is connected. You can still download or check an
-          existing backup. Pair an Obsidian vault before creating a new backup
-          or applying a restore.
+          No active Source is connected. You can still download or check an
+          existing backup. Pair a folder or Obsidian Source before creating a
+          new backup or applying a restore.
         </p>
       ) : null}
 

@@ -1,7 +1,8 @@
 # Release compatibility
 
-This page records the explicit compatibility boundary for OWD Platform
-`1.0.0-alpha.7` and OWD Sync `0.1.7`. A newer upstream release is not supported
+This page records the explicit compatibility boundary for MDevolved Community
+`1.0.0-alpha.7` and MDevolved Sync for Obsidian on the unchanged `owd-sync`
+`0.1.7` identity. A newer upstream release is not supported
 merely because it exists.
 
 ## Supported contracts

@@ -1,26 +1,26 @@
-# MD Evolved marketing site
+# MDevolved marketing site
 
-This static site is the public front door for MD Evolved. It promotes the OWD
-project without sharing a hostname, authentication boundary, storage binding,
-or runtime dependency with an owner's private OWD deployment.
+This static site is the public front door for MDevolved. It promotes the
+source-independent product without sharing a hostname, authentication boundary,
+storage binding, or runtime dependency with an owner's private deployment.
 
-The canonical product promise is **Make one AI's work the next AI's head
-start.** Public copy should explain deliberate, cited handoffs and durable
-Project continuity. It must not collapse OWD into a generic "AI team" or agent
+The canonical product promise is **Every AI. One durable Project memory.**
+Public copy should explain source-independent onboarding, deliberate cited
+handoffs, and durable Project continuity. It must not collapse MDevolved into a generic "AI team" or agent
 orchestration product.
 
 Most of the site is intentionally evergreen. It describes durable product
 capabilities, ownership boundaries, and the end-to-end collaboration model
 without phase names, release numbers, or launch dates. A small availability
-label may distinguish private acceptance cells from the future public OWD
+label may distinguish private acceptance cells from the future public managed
 Cloud service and Community release; review that label whenever the delivery
 model changes. Private acceptance is not a public managed-service launch.
 
 The site explains the guided setup path before asking a visitor to request
 private-alpha access. The source section links the invited
-[OWD Platform repository](https://github.com/msinclair25/mdevolved) with an
+[MDevolved repository](https://github.com/msinclair25/mdevolved) with an
 explicit availability label and the public
-[OWD Sync repository](https://github.com/msinclair25/owd-sync). Detailed release
+[Obsidian adapter compatibility repository](https://github.com/msinclair25/owd-sync). Detailed release
 and installation status belongs in those GitHub READMEs.
 
 The Eve.dev integration section markets the source-verified Eve `0.29.4`
@@ -31,7 +31,7 @@ transport, bundled Eve runtime, or app-scoped shortcut.
 
 The site does not imply team accounts, autonomous truth promotion, model
 training, shared hidden sessions, a bundled agent runtime, or a required graph
-workflow. Agent harnesses retain their own tools and subscriptions; MD Evolved
+workflow. Agent harnesses retain their own tools and subscriptions; MDevolved
 is positioned as their durable, owner-governed record.
 
 ## Local development

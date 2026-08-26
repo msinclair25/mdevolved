@@ -14,12 +14,12 @@ type NavigationGroup = {
 const navigationGroups: NavigationGroup[] = [
   {
     label: "Guide",
-    items: [{ id: "architecture", label: "How OWD works" }],
+    items: [{ id: "architecture", label: "How MDevolved works" }],
   },
   {
     label: "Workspace",
     items: [
-      { id: "vaults", label: "Vaults" },
+      { id: "vaults", label: "Sources" },
       { id: "library", label: "Notes" },
       { id: "agents", label: "Agents" },
       { id: "collaboration", label: "Projects" },
@@ -51,6 +51,7 @@ export function isWorkspaceSectionId(
 export function workspaceSectionFromHash(hash: string): WorkspaceSectionId {
   const candidate = hash.trim().replace(/^#/u, "").toLowerCase();
   if (candidate === "start") return "architecture";
+  if (candidate === "sources") return "vaults";
   return isWorkspaceSectionId(candidate) ? candidate : "architecture";
 }
 
@@ -72,7 +73,7 @@ export function WorkspaceNavigation({
   const mobileMenuRef = useRef<HTMLDetailsElement>(null);
   const activeLabel =
     navigationItems.find((item) => item.id === active)?.label ??
-    "How OWD works";
+    "How MDevolved works";
   const closeMobileMenu = () => {
     if (mobileMenuRef.current !== null) {
       mobileMenuRef.current.open = false;
@@ -84,7 +85,7 @@ export function WorkspaceNavigation({
       <a
         className="workspace-root"
         href="#architecture"
-        aria-label="Open My OWD home"
+        aria-label="Open My MDevolved home"
         onClick={(event) => {
           event.preventDefault();
           onNavigate("architecture");
@@ -95,12 +96,15 @@ export function WorkspaceNavigation({
           aria-hidden="true"
         />
         <div>
-          <strong>My OWD</strong>
+          <strong>My MDevolved</strong>
           <span>{deploymentLabel} workspace</span>
         </div>
       </a>
 
-      <nav className="workspace-navigation" aria-label="OWD workspace sections">
+      <nav
+        className="workspace-navigation"
+        aria-label="MDevolved workspace sections"
+      >
         {navigationGroups.map((group) => (
           <section className="workspace-nav-group" key={group.label}>
             <div className="workspace-nav-group-label">
@@ -154,7 +158,7 @@ export function WorkspaceNavigation({
         <a
           className="workspace-mobile-root"
           href="#architecture"
-          aria-label="Open My OWD home"
+          aria-label="Open My MDevolved home"
           onClick={(event) => {
             event.preventDefault();
             closeMobileMenu();
@@ -165,7 +169,7 @@ export function WorkspaceNavigation({
             className="workspace-root-icon workspace-root-icon--open"
             aria-hidden="true"
           />
-          <strong>My OWD</strong>
+          <strong>My MDevolved</strong>
         </a>
 
         <details className="workspace-mobile-menu" ref={mobileMenuRef}>
@@ -181,7 +185,7 @@ export function WorkspaceNavigation({
           </summary>
 
           <div className="workspace-mobile-menu-panel">
-            <nav aria-label="OWD workspace menu">
+            <nav aria-label="MDevolved workspace menu">
               {navigationGroups.map((group) => (
                 <section
                   className="workspace-mobile-nav-group"

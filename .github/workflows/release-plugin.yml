@@ -1,4 +1,4 @@
-name: Release OWD Sync plugin
+name: Release MDevolved Sync for Obsidian
 
 on:
   push:
@@ -45,4 +45,4 @@ jobs:
           packages/obsidian-plugin/release/checksums.txt
           packages/obsidian-plugin/release/owd-sync-*.zip
           --generate-notes
-          --title "OWD Sync $GITHUB_REF_NAME"
+          --title "MDevolved Sync for Obsidian $GITHUB_REF_NAME"

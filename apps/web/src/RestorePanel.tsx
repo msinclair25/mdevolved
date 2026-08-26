@@ -371,7 +371,7 @@ export function RestorePanel({
     } catch {
       setIdentityText("");
       setError(
-        "The pasted text is not an OWD recovery key. Copy the complete .txt file contents.",
+        "The pasted text is not a MDevolved recovery key. Copy the complete .txt file contents.",
       );
     }
   }
@@ -492,7 +492,7 @@ export function RestorePanel({
           ? null
           : { ...current, backupFile: null, identity: null },
       );
-      setMessage("Preview ready. The destination vault has not been changed.");
+      setMessage("Preview ready. The destination Source has not been changed.");
     } catch (reason: unknown) {
       setJob(null);
       setError(
@@ -602,7 +602,7 @@ export function RestorePanel({
       setError(
         reason instanceof Error
           ? reason.message
-          : "The vault could not be restored.",
+          : "The Source could not be restored.",
       );
     } finally {
       setWorking(null);
@@ -630,7 +630,7 @@ export function RestorePanel({
     <div className="restore-panel" data-recovery-stage={workflowStage}>
       <div className="restore-heading">
         <div>
-          <span className="backup-step">Restore a vault</span>
+          <span className="backup-step">Restore a Source workspace</span>
           <h3>Follow one step at a time.</h3>
         </div>
         <span>Nothing changes before final approval</span>
@@ -643,7 +643,7 @@ export function RestorePanel({
       {job?.status === "applied" ? (
         <div className="recovery-complete">
           <span>Restore checked</span>
-          <h4>Your vault was restored safely.</h4>
+          <h4>Your Source workspace was restored safely.</h4>
           <p>
             Notes from the backup were added or updated. Notes that were already
             in the destination were kept.
@@ -674,7 +674,7 @@ export function RestorePanel({
                   type="button"
                   onClick={() => chooseSourceMode("stored")}
                 >
-                  Saved in OWD
+                  Saved in MDevolved
                 </button>
                 <button
                   aria-pressed={sourceMode === "portable"}
@@ -689,12 +689,12 @@ export function RestorePanel({
                 <div className="stored-backup-source">
                   <p>
                     <strong>{archiveVaultName}</strong>
-                    <span>Vault selected above</span>
+                    <span>Source selected above</span>
                   </p>
                   {availableBackups.length === 0 ? (
                     <div className="recovery-empty-source">
-                      No backup exists for this vault yet. Choose another vault
-                      above or create a backup first.
+                      No backup exists for this Source yet. Choose another
+                      Source above or create a backup first.
                     </div>
                   ) : (
                     <>
@@ -743,7 +743,7 @@ export function RestorePanel({
                 </div>
               ) : (
                 <div
-                  aria-label="Portable encrypted OWD backup"
+                  aria-label="Portable encrypted MDevolved backup"
                   className={
                     backupFile === null
                       ? "restore-file-picker"
@@ -778,7 +778,7 @@ export function RestorePanel({
                   />
                   <small className="restore-file-selection" aria-live="polite">
                     {backupFile === null
-                      ? "Choose or drop a backup file you downloaded from OWD."
+                      ? "Choose or drop a backup file you downloaded from MDevolved."
                       : describeRecoveryFile(backupFile)}
                   </small>
                 </div>
@@ -796,12 +796,12 @@ export function RestorePanel({
               <div className="recovery-key-explainer">
                 <strong>The backup and its recovery key belong together</strong>
                 <p>
-                  The key unlocks the backup only inside this browser. OWD never
-                  receives or stores its private contents.
+                  The key unlocks the backup only inside this browser. MDevolved
+                  never receives or stores its private contents.
                 </p>
               </div>
               <div
-                aria-label="Private OWD recovery key"
+                aria-label="Private MDevolved recovery key"
                 className={
                   identityReady
                     ? "restore-file-picker restore-file-picker--ready"
@@ -846,10 +846,11 @@ export function RestorePanel({
               <details className="recovery-key-help">
                 <summary>Where do I get this file?</summary>
                 <p>
-                  OWD asked you to save it before creating the backup. Its name
-                  looks like <code>owd-recovery-key-date.txt</code>. An older
-                  OWD backup may use <code>owd-recovery-identity-date.txt</code>
-                  .
+                  MDevolved asked you to save it before creating the backup. New
+                  files look like <code>mdevolved-recovery-key-date.txt</code>.
+                  A legacy OWD backup may use{" "}
+                  <code>owd-recovery-key-date.txt</code> or{" "}
+                  <code>owd-recovery-identity-date.txt</code>.
                 </p>
                 <p>
                   <strong>Can’t find it?</strong> Stop here. A replacement key
@@ -909,8 +910,8 @@ export function RestorePanel({
 
           <div className="recovery-validate-row">
             <p>
-              OWD checks everything in this browser first. No vault is changed
-              during this step.
+              MDevolved checks everything in this browser first. No Source is
+              changed during this step.
             </p>
             <button
               className="primary-action"
@@ -949,7 +950,7 @@ export function RestorePanel({
                 }}
               >
                 {activeVaults.length === 0 ? (
-                  <option value="">No active vault connected</option>
+                  <option value="">No active Source connected</option>
                 ) : null}
                 {activeVaults.map((vault) => (
                   <option value={vault.id} key={vault.id}>
@@ -967,7 +968,7 @@ export function RestorePanel({
           {activeVaults.length === 0 ? (
             <p className="recovery-task-guidance" role="status">
               The backup and key can be checked without a destination. Pair an
-              active vault before reviewing or applying a restore.
+              active Source before reviewing or applying a restore.
             </p>
           ) : null}
 
@@ -981,8 +982,8 @@ export function RestorePanel({
                 }
               />
               <span>
-                I checked both vault names above and want to restore this backup
-                into a different vault.
+                I checked both Source names above and want to restore this
+                backup into a different Source.
               </span>
             </label>
           ) : null}
@@ -1039,7 +1040,7 @@ export function RestorePanel({
           <label className="restore-name-confirmation">
             <span>
               Type <strong>{targetName}</strong> to confirm the destination
-              vault.
+              Source.
             </span>
             <input
               autoComplete="off"
@@ -1053,7 +1054,7 @@ export function RestorePanel({
             type="button"
             onClick={() => void confirmAndApply()}
           >
-            Restore this vault
+            Restore this Source
           </button>
         </div>
       ) : null}
@@ -1061,8 +1062,8 @@ export function RestorePanel({
       {job?.status === "applying" && working === null ? (
         <div className="recovery-interrupted">
           <p>
-            The connection was interrupted. It is safe to continue; OWD will not
-            duplicate notes that were already restored.
+            The connection was interrupted. It is safe to continue; MDevolved
+            will not duplicate notes that were already restored.
           </p>
           <div>
             <button

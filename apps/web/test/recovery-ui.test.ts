@@ -40,8 +40,8 @@ describe("recovery UI", () => {
       }),
     );
 
-    expect(html).toContain("Saved in OWD");
-    expect(html).toContain("Vault selected above");
+    expect(html).toContain("Saved in MDevolved");
+    expect(html).toContain("Source selected above");
     expect(html).toContain("Choose the key for this backup");
     expect(html).toContain("Choose recovery key file");
     expect(html).toContain("Check backup and key");

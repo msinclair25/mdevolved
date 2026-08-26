@@ -94,9 +94,9 @@ class OwdPairingModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "Pair this vault with OWD?" });
+    contentEl.createEl("h2", { text: "Pair this vault with MDevolved?" });
     contentEl.createEl("p", {
-      text: `OWD Sync will connect “${this.consent.vaultName}” to ${this.consent.deploymentHost}.`,
+      text: `MDevolved Sync will connect “${this.consent.vaultName}” to ${this.consent.deploymentHost}.`,
     });
 
     const disclosure = contentEl.createEl("ul", {

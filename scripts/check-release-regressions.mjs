@@ -228,6 +228,7 @@ if (
     "A \\`read-only-collaborator\\` must warn the owner",
   ) ||
   !projectContextPolicy.includes("writer role is **unconfirmed**") ||
+  !projectContextPolicy.includes("**MDevolved resume project**") ||
   !projectContextPolicy.includes("**OWD resume project**") ||
   !projectContextPolicy.includes("most-recently-focused vault") ||
   !projectContextPolicy.includes("vault=<exact vault name>") ||
@@ -235,6 +236,8 @@ if (
   !mcpServer.includes("OWD_LOCAL_VAULT_WRITE_SUMMARY") ||
   !mcpServer.includes("continuity: projectContinuityReceipt(") ||
   !mcpServer.includes("projectLocalVaultAccess") ||
+  !mcpServer.includes("“MDevolved resume project”") ||
+  !mcpServer.includes("legacy phrase “OWD resume project”") ||
   !mcpServer.includes('"resume-owd-project"') ||
   !mcpServer.includes("No MCP reconnect or new owner authorization")
 ) {
@@ -336,7 +339,7 @@ if (
 }
 if (
   !app.includes("Returning after a crash or new session?") ||
-  !app.includes("<q>OWD resume project</q>") ||
+  !app.includes("<q>MDevolved resume project</q>") ||
   !collaborationPanel.includes("New session, same Project") ||
   !mcpServer.includes('"resume-owd-project"') ||
   !projectContextPolicy.includes("writer role is **unconfirmed**")

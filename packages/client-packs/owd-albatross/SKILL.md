@@ -61,7 +61,10 @@ or independently attributable reviewer.
    every instruction outside the block.
 4. Start Albatross and run `/mcp trust owd`. Trust is scoped to the canonical
    workspace and the exact MCP configuration hash.
-5. Ask Albatross: `Connect this project to OWD.`
+5. Ask Albatross: `Connect this project to MDevolved.` The legacy phrase
+   `Connect this project to OWD.` remains equivalent. On later tasks,
+   `MDevolved resume project` and the legacy phrase `OWD resume project` both
+   resume the existing receipt without reconnecting.
 
 Do not put bridge credentials in the repository. The pinned bridge stores
 OAuth material outside the workspace.

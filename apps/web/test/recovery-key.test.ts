@@ -12,9 +12,9 @@ describe("recovery key handling", () => {
   it("creates a calm, recognizable recovery-key file", () => {
     expect(
       createRecoveryKeyFilename(new Date("2026-07-22T12:34:56.789Z")),
-    ).toBe("owd-recovery-key-2026-07-22T12-34-56Z.txt");
+    ).toBe("mdevolved-recovery-key-2026-07-22T12-34-56Z.txt");
     expect(createRecoveryKeyDocument("AGE-SECRET-KEY-1EXAMPLE")).toContain(
-      "# OWD recovery key",
+      "# MDevolved recovery key (OWD-compatible format)",
     );
     expect(createRecoveryKeyDocument("AGE-SECRET-KEY-1EXAMPLE")).toContain(
       "only key",

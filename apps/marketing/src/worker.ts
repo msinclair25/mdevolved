@@ -266,15 +266,15 @@ export function buildAlphaAccessEmail(
     to: SUPPORT_EMAIL,
     from: {
       email: SENDER_EMAIL,
-      name: "MD Evolved Alpha",
+      name: "MDevolved Alpha",
     },
     replyTo: {
       email: submission.email,
       name: submission.name,
     },
-    subject: `OWD alpha request — ${submission.name}`,
+    subject: `MDevolved alpha request — ${submission.name}`,
     text: [
-      "New OWD alpha access request",
+      "New MDevolved alpha access request",
       "",
       `Name: ${submission.name}`,
       `Email: ${submission.email}`,
@@ -284,7 +284,7 @@ export function buildAlphaAccessEmail(
       submission.testPlan,
     ].join("\n"),
     html: [
-      "<h1>New OWD alpha access request</h1>",
+      "<h1>New MDevolved alpha access request</h1>",
       `<p><strong>Name:</strong> ${name}</p>`,
       `<p><strong>Email:</strong> ${email}</p>`,
       `<p><strong>AI tools:</strong> ${tools}</p>`,
@@ -326,7 +326,7 @@ export async function handleAlphaAccessRequest(
     return errorResponse(
       403,
       "origin_not_allowed",
-      "This request must come from the MD Evolved site.",
+      "This request must come from the MDevolved site.",
     );
   }
 

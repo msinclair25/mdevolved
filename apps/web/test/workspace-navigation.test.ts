@@ -11,6 +11,8 @@ describe("workspace navigation", () => {
     expect(workspaceSectionFromHash("#library")).toBe("library");
     expect(workspaceSectionFromHash(" #COLLABORATION ")).toBe("collaboration");
     expect(workspaceSectionFromHash("#start")).toBe("architecture");
+    expect(workspaceSectionFromHash("#sources")).toBe("vaults");
+    expect(workspaceSectionFromHash("#vaults")).toBe("vaults");
     expect(workspaceSectionFromHash("#unknown-internal-tool")).toBe(
       "architecture",
     );
@@ -34,8 +36,8 @@ describe("workspace navigation", () => {
     );
 
     const labels = [
-      "How OWD works",
-      "Vaults",
+      "How MDevolved works",
+      "Sources",
       "Notes",
       "Agents",
       "Projects",
@@ -51,16 +53,16 @@ describe("workspace navigation", () => {
         .sort((left, right) => left - right),
     );
     expect(html).toContain('aria-current="page"');
-    expect(html).toContain('aria-label="Open My OWD home"');
+    expect(html).toContain('aria-label="Open My MDevolved home"');
     expect(html).toContain('class="workspace-root" href="#architecture"');
     expect(html).toContain('href="#architecture"');
     expect(html).not.toContain('href="#start"');
     expect(html).toContain("One next action");
     expect(html).toContain("Managed pilot workspace");
     expect(html).toContain('class="workspace-mobile-bar"');
-    expect(html).toContain('aria-label="OWD workspace menu"');
+    expect(html).toContain('aria-label="MDevolved workspace menu"');
     expect(html).toContain(
-      'aria-label="Open workspace menu. Current: How OWD works"',
+      'aria-label="Open workspace menu. Current: How MDevolved works"',
     );
   });
 

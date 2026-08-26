@@ -2,7 +2,7 @@
   "name": "@owd/marketing",
   "version": "0.1.0",
   "private": true,
-  "description": "The MD Evolved promotional website.",
+  "description": "The MDevolved source-independent Project-memory website.",
   "type": "module",
   "scripts": {
     "build": "vite build",

@@ -39,36 +39,36 @@ export function getLabelFromConnectionState(
 	let base: string;
 	switch (state.kind) {
 		case "disconnected":
-			base = "OWD Sync: Disconnected";
+			base = "MDevolved Sync: Disconnected";
 			break;
 		case "loading_cache":
-			base = "OWD Sync: Loading...";
+			base = "MDevolved Sync: Loading...";
 			break;
 		case "connecting":
-			base = "OWD Sync: Connecting...";
+			base = "MDevolved Sync: Connecting...";
 			break;
 		case "online":
-			base = "OWD Sync: Connected";
+			base = "MDevolved Sync: Connected";
 			break;
 		case "offline":
-			base = "OWD Sync: Offline";
+			base = "MDevolved Sync: Offline";
 			break;
 		case "auth_failed":
 			switch (state.code) {
 				case "unclaimed":
-					base = "OWD Sync: Server unclaimed";
+					base = "MDevolved Sync: Server unclaimed";
 					break;
 				case "server_misconfigured":
-					base = "OWD Sync: Server misconfigured";
+					base = "MDevolved Sync: Server misconfigured";
 					break;
 				case "unauthorized":
 				default:
-					base = "OWD Sync: Auth rejected";
+					base = "MDevolved Sync: Auth rejected";
 					break;
 			}
 			break;
 		case "server_update_required":
-			base = "OWD Sync: Update required";
+			base = "MDevolved Sync: Update required";
 			break;
 	}
 	if (transferStatus) base = `${base} (${transferStatus})`;

@@ -1,11 +1,15 @@
-# OWD Sync
+# MDevolved Sync for Obsidian
 
-OWD Sync is the companion Obsidian plugin for
-[OWD Platform](https://github.com/msinclair25/mdevolved). It connects the
-vault you explicitly opened to an owner-controlled OWD deployment for sync,
+MDevolved Sync for Obsidian is the optional Obsidian source adapter for
+[MDevolved](https://github.com/msinclair25/mdevolved). It connects the
+vault you explicitly opened to an owner-controlled MDevolved deployment for sync,
 search, encrypted snapshots, and recovery.
 
-> **Invited family test:** OWD Sync `0.1.7` is available through OWD's
+Existing installations keep the `owd-sync` plugin ID, settings, `owd-pair`
+deep link, BRAT repository, release tags, archive names, and updater path. The
+display-name transition requires no reinstall or re-pairing.
+
+> **Invited family test:** the compatibility package `0.1.7` is available through MDevolved's
 > temporary direct desktop installer because it is not yet listed in Obsidian
 > Community Plugins. The invited tester opens their private cell invitation;
 > the pre-provisioned OWD dashboard provides the version-matched installer.
@@ -18,11 +22,11 @@ search, encrypted snapshots, and recovery.
    community plugins** in Obsidian.
 3. Fully quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q**.
    Closing the macOS window is not enough.
-4. Open **Vault connections**, choose **Choose vault and install OWD Sync
+4. Open **Sources**, choose **Choose vault and install MDevolved Sync for Obsidian
    0.1.7**, and select the intended vault root containing `.obsidian` in Chrome
    or Edge's native folder picker. Do not select `.obsidian` itself; choose
    **Allow** if the browser asks for write access.
-5. Reopen Obsidian and confirm the selected vault shows OWD Sync `0.1.7`
+5. Reopen Obsidian and confirm the selected vault shows MDevolved Sync for Obsidian `0.1.7`
    enabled. Stop if the version differs.
 
 The dashboard verifies the published release, writes only the OWD Sync files
@@ -39,17 +43,18 @@ clean-install gates pass.
 
 ## Pair one vault safely
 
-1. In the authenticated OWD dashboard, create a private pairing request.
+1. In the authenticated MDevolved dashboard, create a private pairing request.
 2. Open the exact vault you intend to connect.
-3. Return to OWD and choose **Open Obsidian and pair**.
+3. Return to MDevolved and choose **Open Obsidian and pair**.
 4. Confirm the displayed current vault name, deployment host, and access
    disclosure.
 
 The protocol handoff never chooses a vault silently: the plugin displays the
 currently open vault and waits for approval. Pairing uses a ten-minute
 single-use grant and does not expose the stored vault credential in the
-dashboard. If the handoff is blocked, use OWD's **Manual fallback**, copy the
-request, run **OWD Sync: Pair this vault with OWD**, and paste it.
+dashboard. If the handoff is blocked, use MDevolved's **Manual fallback**, copy
+the request, run **MDevolved Sync: Pair this vault with MDevolved**, and paste
+it. Existing `owd-pair` links remain accepted.
 
 ## Diagnostic package
 

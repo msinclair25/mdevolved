@@ -21,8 +21,8 @@ const expectedExtension: Record<RecoveryFileKind, string> = {
 };
 
 const fileDescription: Record<RecoveryFileKind, string> = {
-  backup: "encrypted OWD backup",
-  identity: "private OWD recovery key",
+  backup: "encrypted MDevolved backup",
+  identity: "private MDevolved recovery key",
 };
 
 export function readNativeFilePicker(): NativeFilePicker | null {
@@ -41,7 +41,7 @@ export function recoveryFilePickerOptions(kind: RecoveryFileKind, id: string) {
         types: [
           {
             accept: { "application/octet-stream": [".age"] },
-            description: "Encrypted OWD backup",
+            description: "Encrypted MDevolved backup",
           },
         ],
       }
@@ -52,7 +52,7 @@ export function recoveryFilePickerOptions(kind: RecoveryFileKind, id: string) {
         types: [
           {
             accept: { "text/plain": [".txt"] },
-            description: "Private OWD recovery key",
+            description: "Private MDevolved recovery key",
           },
         ],
       };

@@ -77,7 +77,7 @@ async function setupStatus(): Promise<SetupStatus> {
   const response = await fetch("/api/setup/status", {
     headers: { Accept: "application/json" },
   });
-  if (!response.ok) throw new Error("OWD setup status is unavailable.");
+  if (!response.ok) throw new Error("MDevolved setup status is unavailable.");
   return setupStatusSchema.parse(await response.json());
 }
 
@@ -258,11 +258,11 @@ export function ProjectInitialize() {
   return (
     <div className="consent-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="OWD Platform home">
+        <a className="brand" href="/" aria-label="MDevolved home">
           <span className="brand-mark" aria-hidden="true">
-            O
+            M
           </span>
-          <span>OWD Platform</span>
+          <span>MDevolved</span>
         </a>
         <span className="consent-readonly">Exact Project consent</span>
       </header>
@@ -275,7 +275,7 @@ export function ProjectInitialize() {
             <h1>This request cannot be approved.</h1>
             <p>{page.message}</p>
             <a className="secondary-action consent-link" href="/">
-              Return to OWD
+              Return to MDevolved
             </a>
           </section>
         ) : page.kind === "rejected" ? (
@@ -287,10 +287,10 @@ export function ProjectInitialize() {
                 ? "The exact Work Item stayed closed and the existing Project was not changed. Return to your agent to choose again or continue without this connection."
                 : page.requestKind === "join"
                   ? "The existing Project was not changed. Return to your agent to choose again or continue without this connection."
-                  : "Return to your agent to revise this request draft or continue without OWD collaboration."}
+                  : "Return to your agent to revise this request draft or continue without MDevolved collaboration."}
             </p>
             <a className="secondary-action consent-link" href="/">
-              Return to OWD
+              Return to MDevolved
             </a>
           </section>
         ) : page.kind === "approved" ? (
@@ -308,27 +308,28 @@ export function ProjectInitialize() {
               Continue in your agent—nothing to copy.
             </p>
             <div className="client-warning" role="note">
-              <strong>You remain the vault owner</strong>
+              <strong>You remain the Source owner</strong>
               <span>
-                OWD will tell this agent whether it is the Project&apos;s
-                primary vault writer or a read-only collaborator. That warning
-                coordinates local Obsidian and filesystem tools; it does not
+                MDevolved will tell this agent whether it is the Project&apos;s
+                primary Source writer or a read-only collaborator. That warning
+                coordinates local workspace and filesystem tools; it does not
                 give an agent owner authority or create a filesystem lock.
               </span>
             </div>
             <div className="client-warning" role="note">
               <strong>No MCP reconnect is required</strong>
               <span>
-                Keep using the current agent connection. OWD will finish this
-                exact approved Project flow without another owner selection.
+                Keep using the current agent connection. MDevolved will finish
+                this exact approved Project flow without another owner
+                selection.
               </span>
             </div>
             <div className="client-warning" role="note">
               <strong>Later sessions resume the same Project</strong>
               <span>
-                OWD should resume from the local <code>.owdignore</code> receipt
-                automatically. If a fresh session misses that step, say{" "}
-                <q>OWD resume project</q>. No reconnect or new approval is
+                MDevolved should resume from the local <code>.owdignore</code>{" "}
+                receipt automatically. If a fresh session misses that step, say{" "}
+                <q>MDevolved resume project</q>. No reconnect or new approval is
                 required.
               </span>
             </div>
@@ -342,16 +343,16 @@ export function ProjectInitialize() {
               </dl>
             </details>
             <a className="secondary-action consent-link" href="/">
-              Return to OWD
+              Return to MDevolved
             </a>
           </section>
         ) : page.kind === "authenticate" ? (
           <section className="consent-card">
             <span className="section-kicker">Owner verification</span>
-            <h1>Use your passkey before OWD grants Project access.</h1>
+            <h1>Use your passkey before MDevolved grants Project access.</h1>
             <p>
-              The exact client, vault, Project choice, context, and capabilities
-              appear after owner verification.
+              The exact client, Source, Project choice, context, and
+              capabilities appear after owner verification.
             </p>
             <button
               className="primary-action"
@@ -367,7 +368,7 @@ export function ProjectInitialize() {
             >
               {page.setup.claimed
                 ? "Sign in with your passkey"
-                : "Claim OWD with a passkey"}
+                : "Claim MDevolved with a passkey"}
               <span aria-hidden="true">↗</span>
             </button>
           </section>
@@ -401,27 +402,27 @@ export function ProjectInitialize() {
               <div className="client-warning" role="note">
                 <strong>Confirm this request came from your agent</strong>
                 <span>
-                  OWD will use only the vault and Project context shown below.
-                  The agent cannot approve this for you.
+                  MDevolved will use only the Source and Project context shown
+                  below. The agent cannot approve this for you.
                 </span>
               </div>
             )}
             <div className="client-warning" role="note">
               <strong>You stay the owner; one agent coordinates writes</strong>
               <span>
-                The first agent that establishes an OWD Project for this vault
-                becomes its primary writer across Projects. Later agents are
-                warned to treat local Obsidian, CLI, shell, and filesystem
-                access as read-only. A restarted session using the same OWD
-                client keeps the role. A different authorization remains
-                read-only; OWD never promotes it from the global Agents screen.
-                OWD warns compliant agents but does not block local filesystem
-                access.
+                The first agent that establishes a MDevolved Project for this
+                Source becomes its primary writer across Projects. Later agents
+                are warned to treat local Obsidian, CLI, shell, and filesystem
+                access as read-only. A restarted session using the same
+                MDevolved client keeps the role. A different authorization
+                remains read-only; MDevolved never promotes it from the global
+                Agents screen. MDevolved warns compliant agents but does not
+                block local filesystem access.
               </span>
             </div>
             <dl className="consent-details">
               <div>
-                <dt>Vault</dt>
+                <dt>Source</dt>
                 <dd>{page.context.vault.name}</dd>
               </div>
               <div>
@@ -439,20 +440,20 @@ export function ProjectInitialize() {
                 <dd>{page.context.objective}</dd>
               </div>
               <div>
-                <dt>Vault access</dt>
+                <dt>Source access</dt>
                 <dd>
                   {page.context.requestKind === "join"
                     ? page.context.vaultPathPrefixes.length === 0
-                      ? "Entire selected vault"
+                      ? "Entire selected Source"
                       : page.context.vaultPathPrefixes.join(", ")
-                    : page.context.folderBoundary || "Entire selected vault"}
+                    : page.context.folderBoundary || "Entire selected Source"}
                 </dd>
               </div>
               <div>
                 <dt>Project knowledge</dt>
                 <dd>
                   {page.context.contextPolicy.includePaths
-                    .map((path) => path || "Entire vault")
+                    .map((path) => path || "Entire Source")
                     .join(", ")}
                   {page.context.contextPolicy.excludePaths.length === 0
                     ? ""
@@ -480,21 +481,21 @@ export function ProjectInitialize() {
                   <dd>{page.context.client.origin}</dd>
                 </div>
                 <div>
-                  <dt>Vault</dt>
+                  <dt>Source</dt>
                   <dd>{page.context.vault.name}</dd>
                 </div>
                 <div>
                   <dt>
                     {page.context.requestKind === "join"
-                      ? "Authorized vault folders"
+                      ? "Authorized Source folders"
                       : "Project folder boundary"}
                   </dt>
                   <dd>
                     {page.context.requestKind === "join"
                       ? page.context.vaultPathPrefixes.length === 0
-                        ? "Entire selected vault"
+                        ? "Entire selected Source"
                         : page.context.vaultPathPrefixes.join(", ")
-                      : page.context.folderBoundary || "Entire selected vault"}
+                      : page.context.folderBoundary || "Entire selected Source"}
                   </dd>
                 </div>
                 <div>
@@ -565,7 +566,7 @@ export function ProjectInitialize() {
                 </div>
               </dl>
               <div className="client-warning" role="note">
-                <strong>OWD does not move local repository files</strong>
+                <strong>MDevolved does not move local repository files</strong>
                 <span>
                   This records the plan you already approved with the agent.
                   After this browser approval, the agent must apply only these
@@ -615,10 +616,10 @@ export function ProjectInitialize() {
                       Choose legitimate Project context
                     </h2>
                     <p>
-                      OWD does not guess which Markdown belongs to this Project.
-                      Include only the note or folder paths agents may use.
-                      Exclusions win, including for future notes created under
-                      an included folder.
+                      MDevolved does not guess which Markdown belongs to this
+                      Project. Include only the note or folder paths agents may
+                      use. Exclusions win, including for future notes created
+                      under an included folder.
                     </p>
                     <label className="consent-field">
                       <span>Included note or folder paths · one per line</span>
@@ -631,7 +632,7 @@ export function ProjectInitialize() {
                         }
                       />
                       <small>
-                        Use / only when the entire selected vault is
+                        Use / only when the entire selected Source is
                         intentional. Every path must stay inside the folder
                         boundary above.
                       </small>
@@ -656,9 +657,10 @@ export function ProjectInitialize() {
                 )}
               </div>
               <p>
-                OWD will preserve the cited packet, durable contributions, owner
-                actions, and provenance. It will not preserve private agent
-                conversations, chain-of-thought, tokens, or model identity.
+                MDevolved will preserve the cited packet, durable contributions,
+                owner actions, and provenance. It will not preserve private
+                agent conversations, chain-of-thought, tokens, or model
+                identity.
               </p>
             </details>
             {error !== null ? (

@@ -55,7 +55,7 @@ const marketingManifest = await readFile(
   "apps/marketing/public/site.webmanifest",
   "utf8",
 );
-await readFile("apps/marketing/public/og-head-start.png");
+await readFile("apps/marketing/public/og-mdevolved.png");
 const releaseCompatibility = await readFile(
   "docs/RELEASE-COMPATIBILITY.md",
   "utf8",
@@ -69,17 +69,15 @@ const normalizedMarketingReadme = marketingReadme.replace(/\s+/gu, " ");
 const normalizedMarketingSite = marketingSite
   .replace(/<[^>]+>/gu, " ")
   .replace(/\s+/gu, " ");
-const canonicalPromise = "Make one AI's work the next AI's head start.";
+const canonicalPromise = "Every AI. One durable Project memory.";
 
 if (
   !normalizedRootReadme.includes(canonicalPromise) ||
-  !normalizedMarketingSite.includes(
-    "Make one AI’s work the next AI’s head start.",
-  ) ||
+  !normalizedMarketingSite.includes(canonicalPromise) ||
   !normalizedMarketingReadme.includes(canonicalPromise) ||
-  !marketingSite.includes("/og-head-start.png") ||
+  !marketingSite.includes("/og-mdevolved.png") ||
   !marketingManifest.includes(
-    "Carry cited work and owner Decisions from one AI agent to the next",
+    "Source-independent, owner-controlled Project memory",
   ) ||
   normalizedMarketingSite.includes(
     "Turn the agents you already use into a team",
@@ -87,7 +85,7 @@ if (
   marketingManifest.includes("into a team")
 ) {
   throw new Error(
-    "OWD public copy must preserve the approved head-start promise and must not regress to generic AI-team positioning.",
+    "MDevolved public copy must preserve the approved source-independent Project-memory promise and must not regress to generic AI-team positioning.",
   );
 }
 if (
@@ -99,7 +97,7 @@ if (
   ) ||
   !marketingSite.includes('id="eve"') ||
   !normalizedMarketingSite.includes(
-    "Eve runs the agent. OWD makes the work portable.",
+    "Eve runs the agent. MDevolved makes the work portable.",
   ) ||
   !normalizedMarketingSite.includes("Source-verified Eve.dev integration") ||
   !normalizedMarketingSite.includes("No custom transport")

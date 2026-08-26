@@ -13,13 +13,13 @@ export function createRecoveryKeyFilename(now = new Date()): string {
     .toISOString()
     .replaceAll(":", "-")
     .replace(/\.\d{3}Z$/u, "Z");
-  return `owd-recovery-key-${stamp}.txt`;
+  return `mdevolved-recovery-key-${stamp}.txt`;
 }
 
 export function createRecoveryKeyDocument(identity: string): string {
   return [
-    "# OWD recovery key",
-    "# Keep this file private. OWD never receives this secret.",
+    "# MDevolved recovery key (OWD-compatible format)",
+    "# Keep this file private. MDevolved never receives this secret.",
     "# This is the only key that can open matching encrypted backups.",
     identity,
     "",
@@ -49,7 +49,7 @@ export async function verifyRecoveryKeyFile(
   const recipient = await identityToRecipient(identity);
   if (recipient !== expectedRecipient) {
     throw new Error(
-      "That recovery key does not match this backup setup. Choose the key saved for this OWD deployment.",
+      "That recovery key does not match this backup setup. Choose the key saved for this MDevolved deployment.",
     );
   }
   return recipient;

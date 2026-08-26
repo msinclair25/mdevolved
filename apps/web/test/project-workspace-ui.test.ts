@@ -272,7 +272,8 @@ describe("owner Project workspace UI", () => {
         expect(html).toContain('role="alert"');
         expect(html).toContain("Try again");
       }
-      if (state === "empty") expect(html).toContain("No active OWD Projects");
+      if (state === "empty")
+        expect(html).toContain("No active MDevolved Projects");
     },
   );
 });

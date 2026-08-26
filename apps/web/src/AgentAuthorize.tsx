@@ -44,19 +44,19 @@ function authorizationErrorCopy(code: string | null): {
     case "vault_setup_required":
       return {
         guidance:
-          "Return to OWD, finish Connect vault, then come back to your agent and choose Authenticate again.",
-        title: "Connect an Obsidian vault first.",
+          "Return to MDevolved, finish Connect Source, then come back to your agent and choose Authenticate again.",
+        title: "Connect a Markdown source first.",
       };
     case "vault_protection_required":
       return {
         guidance:
-          "Keep Obsidian open until first sync and the searchable library finish, then return to your agent and retry Authenticate.",
-        title: "Finish this vault's first sync first.",
+          "Keep the folder app or Obsidian adapter open until first sync and the searchable library finish, then return to your agent and retry Authenticate.",
+        title: "Finish this source's first sync first.",
       };
     case "project_authorization_required":
       return {
         guidance:
-          "Return to OWD and approve the exact pending Project request. Then continue the same authentication from your agent; do not create another Project.",
+          "Return to MDevolved and approve the exact pending Project request. Then continue the same authentication from your agent; do not create another Project.",
         title: "Approve the exact Project request first.",
       };
     case "authorization_request_invalid":
@@ -68,8 +68,8 @@ function authorizationErrorCopy(code: string | null): {
     default:
       return {
         guidance:
-          "No access was granted. Return to OWD to check setup, then retry Authenticate from the same agent connection.",
-        title: "OWD stopped this connection before approval.",
+          "No access was granted. Return to MDevolved to check setup, then retry Authenticate from the same agent connection.",
+        title: "MDevolved stopped this connection before approval.",
       };
   }
 }
@@ -78,15 +78,15 @@ function vaultPermission(scopes: readonly string[]): string {
   const canCreate = scopes.includes("project.initialize.request");
   const canConnect = scopes.includes("project.connect.request");
   if (canCreate && canConnect) {
-    return "Read one selected vault, discover compatible Projects, and request owner-confirmed new or existing Project access";
+    return "Read one selected Source, discover compatible Projects, and request owner-confirmed new or existing Project access";
   }
   if (canConnect) {
-    return "Read one selected vault, discover compatible Projects, and request owner-confirmed access to one";
+    return "Read one selected Source, discover compatible Projects, and request owner-confirmed access to one";
   }
   if (canCreate) {
-    return "Read one selected vault and request owner-confirmed new Project initialization";
+    return "Read one selected Source and request owner-confirmed new Project initialization";
   }
-  return "Read notes from one selected vault";
+  return "Read notes from one selected Source";
 }
 
 async function csrfToken(): Promise<string> {
@@ -124,7 +124,7 @@ async function setupStatus(): Promise<SetupStatus> {
   const response = await fetch("/api/setup/status", {
     headers: { Accept: "application/json" },
   });
-  if (!response.ok) throw new Error("OWD setup status is unavailable.");
+  if (!response.ok) throw new Error("MDevolved setup status is unavailable.");
   return setupStatusSchema.parse(await response.json());
 }
 
@@ -242,7 +242,7 @@ export function AgentAuthorize() {
         page.context.authorizationKind === "vault" &&
         selectedVaultId === ""
       ) {
-        setError("Pair an active vault before approving this connection.");
+        setError("Pair an active Source before approving this connection.");
         return;
       }
       if (
@@ -313,11 +313,11 @@ export function AgentAuthorize() {
   return (
     <div className="consent-shell">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="OWD Platform home">
+        <a className="brand" href="/" aria-label="MDevolved home">
           <span className="brand-mark" aria-hidden="true">
-            O
+            M
           </span>
-          <span>OWD Platform</span>
+          <span>MDevolved</span>
         </a>
         <span className="consent-readonly">Scoped authorization</span>
       </header>
@@ -332,7 +332,7 @@ export function AgentAuthorize() {
             <p>{page.message}</p>
             <p>{authorizationFailure?.guidance}</p>
             <a className="secondary-action consent-link" href="/">
-              Check OWD setup
+              Check MDevolved setup
             </a>
           </section>
         ) : page.kind === "authenticate" ? (
@@ -340,8 +340,8 @@ export function AgentAuthorize() {
             <span className="section-kicker">Owner verification</span>
             <h1>Use your passkey to continue this connection.</h1>
             <p>
-              OWD will show the requesting client and its exact access boundary
-              before anything is approved.
+              MDevolved will show the requesting client and its exact access
+              boundary before anything is approved.
             </p>
             <button
               className="primary-action"
@@ -357,7 +357,7 @@ export function AgentAuthorize() {
             >
               {page.setup.claimed
                 ? "Sign in with your passkey"
-                : "Claim OWD with a passkey"}
+                : "Claim MDevolved with a passkey"}
               <span aria-hidden="true">↗</span>
             </button>
             {!supportsPasskeys ? (
@@ -379,7 +379,7 @@ export function AgentAuthorize() {
               <strong>Unverified OAuth client</strong>
               <span>
                 Confirm you started this connection from the client shown below.
-                OWD never trusts its display name as identity.
+                MDevolved never trusts its display name as identity.
               </span>
             </div>
 
@@ -409,7 +409,7 @@ export function AgentAuthorize() {
             {page.context.authorizationKind === "vault" ? (
               <>
                 <label className="consent-field">
-                  <span>Vault</span>
+                  <span>Source workspace</span>
                   <select
                     value={selectedVaultId}
                     onChange={(event) => {
@@ -427,10 +427,10 @@ export function AgentAuthorize() {
                     }}
                   >
                     <option value="" disabled>
-                      Choose the vault for this project…
+                      Choose the Source for this Project…
                     </option>
                     {vaults.length === 0 ? (
-                      <option value="">No active vaults</option>
+                      <option value="">No active Sources</option>
                     ) : null}
                     {vaults.map((vault) => (
                       <option value={vault.id} key={vault.id}>
@@ -447,7 +447,8 @@ export function AgentAuthorize() {
                       detected
                     </strong>
                     <span>
-                      OWD prefilled Mind&apos;s ordinary content roots. Its{" "}
+                      MDevolved prefilled Mind&apos;s ordinary content roots.
+                      Its{" "}
                       <code>{selectedVault.runtimeProfile.memoryRoot}/</code>,
                       private notes, and never-expose filenames remain blocked
                       even if this list is broadened.
@@ -462,7 +463,7 @@ export function AgentAuthorize() {
                   <fieldset className="consent-field">
                     <legend>Restored content · blocked by default</legend>
                     <small>
-                      This vault contains notes copied from a recovery restore.
+                      This Source contains notes copied from a recovery restore.
                       Select a named source only if this agent may read that
                       restored content. Leaving every source unchecked keeps it
                       outside search, recent changes, note reads, and Project
@@ -506,7 +507,7 @@ export function AgentAuthorize() {
                   <textarea
                     maxLength={8_192}
                     placeholder={
-                      "Leave empty for the entire vault\nOr enter one folder per line, such as Projects/Active"
+                      "Leave empty for the entire Source\nOr enter one folder per line, such as Projects/Active"
                     }
                     value={folders}
                     onChange={(event) => setFolders(event.target.value)}

@@ -263,7 +263,7 @@ async function loadVaultList(signal?: AbortSignal): Promise<VaultSummary[]> {
     throw new Error(
       parsedError.success
         ? parsedError.data.error.message
-        : "Vaults could not be loaded.",
+        : "Sources could not be loaded.",
     );
   }
 
@@ -350,8 +350,8 @@ function VaultRow({
         <span className={`vault-status vault-status--${vault.status}`}>
           {vault.status}
         </span>
-        <span className="vault-kind">Obsidian vault</span>
-        <h3>{vault.displayName ?? "Waiting for Obsidian"}</h3>
+        <span className="vault-kind">Source</span>
+        <h3>{vault.displayName ?? "Waiting for Source adapter"}</h3>
         <span className="vault-id">{vault.id}</span>
       </div>
       <dl className="vault-details">
@@ -419,7 +419,7 @@ function VaultRow({
             disabled={isWorking}
             onClick={() => void onReconnect(vault)}
           >
-            Reconnect same vault
+            Reconnect same Source
           </button>
           <button
             className="danger-action"
@@ -482,7 +482,7 @@ const AGENT_CLIENTS: Array<{ id: AgentClientId; label: string }> = [
 
 function authorizedFolderLabel(connection: AgentConnection): string {
   return connection.pathPrefixes.length === 0
-    ? "Entire vault"
+    ? "Entire Source"
     : connection.pathPrefixes.join(", ");
 }
 
@@ -677,7 +677,7 @@ function AuthorizedClientInventory({
           </div>
           <dl className="authorized-client-details">
             <div>
-              <dt>Vault</dt>
+              <dt>Source</dt>
               <dd>{selectedConnection.vaultName}</dd>
             </div>
             <div>
@@ -714,7 +714,7 @@ function AuthorizedClientInventory({
               </div>
               <SmartCopyField
                 label="Copy resume instruction"
-                value="OWD resume project"
+                value="MDevolved resume project"
               />
             </div>
           ) : selectedConnection.writerRole === "unassigned" &&
@@ -726,7 +726,7 @@ function AuthorizedClientInventory({
               </div>
               <SmartCopyField
                 label="Copy Project instruction"
-                value="Connect this project to OWD"
+                value="Connect this project to MDevolved"
               />
             </div>
           ) : selectedConnection.writerRole === "unassigned" ? (
@@ -882,7 +882,7 @@ function AgentConnectionsPanel({
       await refresh();
       requestSetupReadinessRefresh();
       setMessage(
-        "Agent access revoked. Existing tokens can no longer read vault data.",
+        "Agent access revoked. Existing tokens can no longer read Source data.",
       );
       return true;
     } catch (error: unknown) {
@@ -972,9 +972,9 @@ function AgentConnectionsPanel({
         : prerequisite === "checking"
           ? "Checking agent prerequisites…"
           : prerequisite === "vault-required"
-            ? "Pair a vault before connecting agents"
+            ? "Pair a Source before connecting agents"
             : prerequisite === "library-required"
-              ? "OWD is preparing the vault for agents"
+              ? "MDevolved is preparing the Source for agents"
               : active.length === 0
                 ? "No authorized clients"
                 : `${active.length.toLocaleString()} authorized client${
@@ -1045,7 +1045,7 @@ function AgentConnectionsPanel({
                       <span>2</span> Install
                     </li>
                     <li>
-                      <span>3</span> Approve vault
+                      <span>3</span> Approve Source
                     </li>
                   </ol>
                 </div>
@@ -1081,8 +1081,8 @@ function AgentConnectionsPanel({
                         value={createCodexSetupCommands(state.mcpUrl)}
                       />
                       <p>
-                        Run both lines. Approve the exact vault in the page that
-                        opens, restart Codex, then use <code>/mcp</code> to
+                        Run both lines. Approve the exact Source in the page
+                        that opens, restart Codex, then use <code>/mcp</code> to
                         verify.
                       </p>
                       <details className="agent-client-help">
@@ -1115,11 +1115,11 @@ function AgentConnectionsPanel({
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Add OWD to Cursor ↗
+                        Add MDevolved to Cursor ↗
                       </a>
                       <p>
-                        Cursor receives only this public MCP URL. OWD still asks
-                        you to approve the exact vault.
+                        Cursor receives only this public MCP URL. MDevolved
+                        still asks you to approve the exact Source.
                       </p>
                     </>
                   ) : selectedClient === "antigravity" ? (
@@ -1149,10 +1149,10 @@ function AgentConnectionsPanel({
                           <span className="pairing-label">
                             Obsidian Mind 8.x
                           </span>
-                          <h3>Add OWD beside qmd</h3>
+                          <h3>Add MDevolved beside qmd</h3>
                         </div>
                         <span className="client-path">
-                          Vault root → terminal
+                          Workspace root → terminal
                         </span>
                       </div>
                       <SmartCopyField
@@ -1162,8 +1162,9 @@ function AgentConnectionsPanel({
                         )}
                       />
                       <p>
-                        Run once from the vault root. Claude merges OWD into{" "}
-                        <code>.mcp.json</code> without replacing qmd.
+                        Run once from the workspace root. Claude merges
+                        MDevolved into <code>.mcp.json</code> without replacing
+                        qmd.
                       </p>
                     </>
                   ) : selectedClient === "eve" ? (
@@ -1183,7 +1184,7 @@ function AgentConnectionsPanel({
                       />
                       <p>
                         Save the complete module at the path above. Eve pauses
-                        for your vault approval, then resumes.
+                        for your Source approval, then resumes.
                       </p>
                     </>
                   ) : selectedClient === "albatross" ? (
@@ -1236,7 +1237,7 @@ function AgentConnectionsPanel({
                       />
                       <p>
                         Add the URL, start authentication, then approve one
-                        vault and its folder boundary in OWD.
+                        Source and its folder boundary in MDevolved.
                       </p>
                     </>
                   )}
@@ -1247,11 +1248,11 @@ function AgentConnectionsPanel({
             <article className="agent-connect-card agent-setup-blocked">
               <div>
                 <span className="pairing-label">Library preparing</span>
-                <h3>OWD is preparing the searchable library</h3>
+                <h3>MDevolved is preparing the searchable library</h3>
                 <p>
-                  OWD automatically publishes the current vault after sync
-                  settles. Agent authorization opens when that atomic build is
-                  ready, so a connection never starts with unusable context.
+                  MDevolved automatically publishes the current Source after
+                  sync settles. Agent authorization opens when that atomic build
+                  is ready, so a connection never starts with unusable context.
                 </p>
               </div>
               <button
@@ -1265,12 +1266,12 @@ function AgentConnectionsPanel({
           ) : prerequisite === "vault-required" ? (
             <article className="agent-connect-card agent-setup-blocked">
               <div>
-                <span className="pairing-label">Vault required first</span>
-                <h3>Pair the vault for this workspace before adding agents</h3>
+                <span className="pairing-label">Source required first</span>
+                <h3>Pair a Source for this workspace before adding agents</h3>
                 <p>
-                  Agent setup stays closed until OWD has an active vault. This
-                  prevents a reused workspace from silently offering an older
-                  vault or its Project history during authorization.
+                  Agent setup stays closed until MDevolved has an active Source.
+                  This prevents a reused workspace from silently offering an
+                  older Source or its Project history during authorization.
                 </p>
               </div>
               <button
@@ -1278,7 +1279,7 @@ function AgentConnectionsPanel({
                 type="button"
                 onClick={() => revealOperationalRegion("vaults")}
               >
-                Set up a vault
+                Set up a Source
               </button>
             </article>
           ) : (
@@ -1289,7 +1290,7 @@ function AgentConnectionsPanel({
             <div className="empty-vaults agent-empty">
               <h3>No authorized clients.</h3>
               <p>
-                Nothing can read a vault through MCP until you complete the
+                Nothing can read a Source through MCP until you complete the
                 passkey approval screen from an agent client.
               </p>
             </div>
@@ -1351,13 +1352,13 @@ function AgentConnectionsPanel({
                           {connection.clientName}
                         </span>
                         <span>
-                          <b>Vault</b>
+                          <b>Source</b>
                           {connection.vaultName}
                         </span>
                         <span>
                           <b>Folder</b>
                           {connection.preparedProjectHandoff?.folderBoundary ||
-                            "Entire approved vault"}
+                            "Entire approved Source"}
                         </span>
                       </div>
                       <p className="agent-project-next-step">
@@ -1379,7 +1380,7 @@ function AgentConnectionsPanel({
                     <div className="agent-project-first-step">
                       <p>
                         {hasEstablishedProject
-                          ? `${firstProjectVaults.length.toLocaleString()} connected vault${firstProjectVaults.length === 1 ? "" : "s"} still ${firstProjectVaults.length === 1 ? "needs" : "need"} a separate Project 1 setup.`
+                          ? `${firstProjectVaults.length.toLocaleString()} connected Source${firstProjectVaults.length === 1 ? "" : "s"} still ${firstProjectVaults.length === 1 ? "needs" : "need"} a separate Project 1 setup.`
                           : "Choose the first Project's agent, name, and folder in the guided setup. After that, this card becomes the repeatable Project 2, 3, and later launcher."}
                       </p>
                       {hasEstablishedProject ? (
@@ -1421,7 +1422,7 @@ function AgentConnectionsPanel({
       autoOpen={state.kind === "error" && state.initial}
       heading="Agent access"
       id="agents"
-      kicker="OWD MCP"
+      kicker="MDevolved MCP"
       summary={connectionSummary}
     >
       {content}
@@ -1458,9 +1459,9 @@ function LaterProjectLauncher({
   const request =
     selectedConnection === null || trimmedName === ""
       ? "Name the Project to build the request."
-      : `Start a new OWD Project named ${JSON.stringify(trimmedName)} for this vault.${
+      : `Start a new MDevolved Project named ${JSON.stringify(trimmedName)} for this Source.${
           trimmedGoal === "" ? "" : ` Goal: ${trimmedGoal}`
-        } Use OWD and keep this connection open while I approve the exact request.`;
+        } Use MDevolved and keep this connection open while I approve the exact request.`;
 
   if (eligible.length === 0) {
     return (
@@ -1475,7 +1476,7 @@ function LaterProjectLauncher({
     <div className="later-project-flow">
       <div className="later-project-fields">
         <label>
-          <span>Agent and vault</span>
+          <span>Agent and Source</span>
           <select
             value={selectedAgentId}
             onChange={(event) => setSelectedAgentId(event.target.value)}
@@ -1515,9 +1516,9 @@ function LaterProjectLauncher({
           value={request}
         />
         <small>
-          Paste this into {selectedConnection?.clientName ?? "the agent"}. OWD
-          will return one exact approval here, then the agent continues on the
-          same connection.
+          Paste this into {selectedConnection?.clientName ?? "the agent"}.
+          MDevolved will return one exact approval here, then the agent
+          continues on the same connection.
         </small>
       </div>
     </div>
@@ -1650,8 +1651,8 @@ function ProjectHandoffSetup({
   if (state.connections.length === 0) {
     return (
       <p className="action-error" role="alert">
-        No active agent for this vault has both Project permissions. Connect one
-        above, then return here.
+        No active agent for this Source has both Project permissions. Connect
+        one above, then return here.
       </p>
     );
   }
@@ -1665,7 +1666,7 @@ function ProjectHandoffSetup({
       }}
     >
       <label>
-        <span>Agent and vault</span>
+        <span>Agent and Source</span>
         <select
           value={selectedAgentId}
           onChange={(event) => {
@@ -1713,7 +1714,7 @@ function ProjectHandoffSetup({
           maxLength={1_024}
           placeholder={
             approvedFolderRoots.length === 0
-              ? "Leave blank for the entire approved vault"
+              ? "Leave blank for the entire approved Source"
               : approvedFolderRoots[0]
           }
           value={folderBoundary}
@@ -1729,7 +1730,7 @@ function ProjectHandoffSetup({
         </datalist>
         <small>
           {approvedFolderRoots.length === 0
-            ? "Leave blank for the whole approved vault, or enter a narrower folder such as docs."
+            ? "Leave blank for the whole approved Source, or enter a narrower folder such as docs."
             : `Use ${approvedFolderRoots.join(
                 " or ",
               )}, or a narrower folder inside one of those approved roots.`}
@@ -1766,15 +1767,15 @@ function setupGuidance(
   switch (step) {
     case "connect-vault":
       return {
-        actionLabel: "Connect an Obsidian vault",
+        actionLabel: "Connect a source",
         description:
-          "Install OWD Sync in the exact vault you want to use, then approve its one-time pairing request.",
+          "Choose a Markdown folder in MDevolved Sync, or install MDevolved Sync for Obsidian in the exact vault you want to use. Then approve its one-time pairing request.",
         title: "Connect the first content source",
       };
     case "sync-vault":
       return {
-        actionLabel: "Open vault connection help",
-        description: `${vaultName} is paired, but its first durable sync is still finishing. Keep that exact vault open with OWD Sync enabled; this page updates automatically. A brief Disconnected status can appear during startup. Wait 30 seconds, then switch OWD Sync off and back on once if it has not connected—do not reinstall it.`,
+        actionLabel: "Open Source connection help",
+        description: `${vaultName} is paired, but its first durable sync is still finishing. Keep that exact Source open in the folder app or Obsidian adapter; this page updates automatically. A brief Disconnected status can appear during startup. Wait 30 seconds, then restart that adapter once if it has not connected—do not reinstall it.`,
         title: `Finish ${vaultName}'s first sync`,
       };
     case "build-library":
@@ -1787,25 +1788,25 @@ function setupGuidance(
       }
       return {
         actionLabel: "View library status",
-        description: `OWD automatically rebuilds ${vaultName}'s searchable library after sync settles. Keep Obsidian open; no owner action is required.`,
+        description: `MDevolved automatically rebuilds ${vaultName}'s searchable library after sync settles. Keep its sync client open; no owner action is required.`,
         title: `Preparing ${vaultName}'s searchable library`,
       };
     case "create-recovery-point":
       return {
         actionLabel: "Connect an agent",
-        description: `${vaultName} has a searchable library. Connect the agent you want coordinating vault edits first, then establish its first Project with that agent. You remain the owner; later agents are warned to stay read-only. A recovery point is recommended, not required.`,
+        description: `${vaultName} has a searchable library. Connect the agent you want coordinating Source edits first, then establish its first Project with that agent. You remain the owner; later agents are warned to stay read-only. A recovery point is recommended, not required.`,
         title: `Connect an agent to ${vaultName}`,
       };
     case "connect-agent":
       return {
         actionLabel: "Connect an agent",
-        description: `Authorize the agent you want coordinating ${vaultName}'s edits first. You will choose its exact first Project here during the next onboarding step. You remain the owner, and later agents are warned to stay read-only. The consent screen must name this exact vault and folder boundary.`,
+        description: `Authorize the agent you want coordinating ${vaultName}'s edits first. You will choose its exact first Project here during the next onboarding step. You remain the owner, and later agents are warned to stay read-only. The consent screen must name this exact Source and folder boundary.`,
         title: `Connect an agent to ${vaultName}`,
       };
     case "prepare-project-handoff":
       return {
         actionLabel: null,
-        description: `Choose the agent, exact Project name, and approved folder once. OWD will prepare that single first Project so the matching agent request can finish without another website approval.`,
+        description: `Choose the agent, exact Project name, and approved folder once. MDevolved will prepare that single first Project so the matching agent request can finish without another website approval.`,
         title: `Prepare ${vaultName}'s first Project`,
       };
     case "approve-project":
@@ -1820,11 +1821,11 @@ function setupGuidance(
         actionLabel: null,
         description:
           preparedProjectHandoff === null
-            ? `In your selected agent, say “Connect this project to OWD.” OWD will use the exact first Project prepared during onboarding.`
+            ? `In your selected agent, say “Connect this project to MDevolved.” MDevolved will use the exact first Project prepared during onboarding.`
             : `${preparedProjectHandoff.projectLabel} is prepared for ${preparedProjectHandoff.clientName} using ${
                 preparedProjectHandoff.folderBoundary ||
-                "the entire approved vault"
-              }. Go to that agent and say “Connect this project to OWD.” The matching first request finishes there—no return to this website, copied prompt, reconnect, or daily renewal.`,
+                "the entire approved Source"
+              }. Go to that agent and say “Connect this project to MDevolved.” The matching first request finishes there—no return to this website, copied prompt, reconnect, or daily renewal.`,
         title:
           preparedProjectHandoff === null
             ? "Tell your agent to connect this Project"
@@ -1840,14 +1841,14 @@ function setupGuidance(
     case "ready":
       return {
         actionLabel: null,
-        description: `${vaultName} has a current library, an approved agent connection, and an approved Project. Continue in your agent. In a new session, OWD should resume the exact Project and writer role automatically.`,
+        description: `${vaultName} has a current library, an approved agent connection, and an approved Project. Continue in your agent. In a new session, MDevolved should resume the exact Project and writer role automatically.`,
         title: `${vaultName} is Project-ready`,
       };
     default:
       return {
         actionLabel: "Checking readiness…",
         description:
-          "OWD is checking each prerequisite against one coherent vault boundary.",
+          "MDevolved is checking each prerequisite against one coherent source boundary.",
         title: "Checking the next truthful step",
       };
   }
@@ -1982,7 +1983,7 @@ function StateAwareSetup({
   const completedMilestones = [
     {
       complete: selectedVault !== null,
-      label: "Vault credential created",
+      label: "Source credential created",
     },
     {
       complete: selectedVault?.syncConfirmed === true,
@@ -2006,7 +2007,7 @@ function StateAwareSetup({
     },
     {
       complete: (selectedVault?.activeProjectCount ?? 0) > 0,
-      label: "OWD Project selected",
+      label: "MDevolved Project selected",
     },
     {
       complete: (selectedVault?.activeProjectGrantCount ?? 0) > 0,
@@ -2015,7 +2016,7 @@ function StateAwareSetup({
   ].filter((milestone) => milestone.complete);
   const guidance = setupGuidance(
     selectedStep,
-    selectedVault?.displayName ?? "This vault",
+    selectedVault?.displayName ?? "This Source",
     selectedVault?.libraryState ?? null,
     selectedVault?.preparedProjectHandoff ?? null,
   );
@@ -2033,10 +2034,11 @@ function StateAwareSetup({
     >
       <div className="section-heading">
         <div>
-          <span className="section-kicker">Set up OWD</span>
+          <span className="section-kicker">Set up MDevolved</span>
           <h2 id="setup-heading">
-            Connect your Obsidian vault, then let your existing AI agents
-            collaborate without moving your work into OWD.
+            Connect a Markdown folder or Obsidian workspace, then let your
+            existing AI agents collaborate without moving your work into
+            MDevolved.
           </h2>
         </div>
         <span className="time-target">
@@ -2045,9 +2047,9 @@ function StateAwareSetup({
       </div>
       {readiness !== null && readiness.vaults.length > 0 ? (
         <label className="setup-vault-selector">
-          <span>Set up this Obsidian vault</span>
+          <span>Set up this Source workspace</span>
           <select
-            aria-label="Set up this Obsidian vault"
+            aria-label="Set up this Source workspace"
             value={selectedVaultId}
             onChange={(event) => {
               setSelectedVaultId(event.target.value);
@@ -2062,8 +2064,8 @@ function StateAwareSetup({
             ))}
           </select>
           <small>
-            Each vault completes this journey independently. Progress from
-            another vault never fills these steps.
+            Each Source completes this journey independently. Progress from
+            another Source never fills these steps.
           </small>
         </label>
       ) : null}
@@ -2076,10 +2078,10 @@ function StateAwareSetup({
             <div className="project-resume-cue" role="note">
               <strong>Returning after a crash or new session?</strong>
               <span>
-                OWD should resume automatically. If it does not, say{" "}
-                <q>OWD resume project</q>. OWD restores the exact Project and
-                writer role from <code>.owdignore</code>—no reconnect, copied
-                prompt, or new approval.
+                MDevolved should resume automatically. If it does not, say{" "}
+                <q>MDevolved resume project</q>. MDevolved restores the exact
+                Project and writer role from <code>.owdignore</code>—no
+                reconnect, copied prompt, or new approval.
               </span>
             </div>
           ) : null}
@@ -2110,12 +2112,12 @@ function StateAwareSetup({
                   <dt>Folder</dt>
                   <dd>
                     {selectedVault.preparedProjectHandoff.folderBoundary ||
-                      "Entire approved vault"}
+                      "Entire approved Source"}
                   </dd>
                 </div>
                 <div>
                   <dt>Say this</dt>
-                  <dd>Connect this project to OWD</dd>
+                  <dd>Connect this project to MDevolved</dd>
                 </div>
               </dl>
               <details className="project-handoff-advanced">
@@ -2134,7 +2136,7 @@ function StateAwareSetup({
             <div className="setup-pending-projects">
               <p>
                 More than one agent is waiting. Choose the named Project and
-                client you are currently using; OWD will not guess.
+                client you are currently using; MDevolved will not guess.
               </p>
               {pendingProjectRequests.map((request) => (
                 <button
@@ -2203,7 +2205,7 @@ function StateAwareSetup({
                 ? `confirmed ${formatTimestamp(selectedVault.initialSyncAt)}`
                 : "waiting for Obsidian"}
               {" · "}Library: {selectedVault.libraryState}
-              {" · "}Last vault change:{" "}
+              {" · "}Last Source change:{" "}
               {formatTimestamp(selectedVault.lastSyncAt)}
             </p>
           </details>
@@ -2262,21 +2264,21 @@ function EmptyRecoveryRegion() {
       heading="Backup and recovery"
       id="recovery"
       kicker="Owner-controlled recovery"
-      summary="Connect a vault first"
+      summary="Connect a source first"
     >
       <section className="workspace-empty-folder">
         <span className="section-kicker">Nothing to protect yet</span>
-        <h3>Connect a vault before creating a recovery point.</h3>
+        <h3>Connect a source before creating a recovery point.</h3>
         <p>
-          Recovery is independent from onboarding, but OWD still needs one
-          paired vault before it can create or inspect a backup.
+          Recovery is independent from onboarding, but MDevolved still needs one
+          paired source before it can create or inspect a backup.
         </p>
         <button
           className="primary-action"
           type="button"
           onClick={() => revealOperationalRegion("vaults")}
         >
-          Open Vaults <span aria-hidden="true">↗</span>
+          Open Sources <span aria-hidden="true">↗</span>
         </button>
       </section>
     </OperationalRegion>
@@ -2451,7 +2453,7 @@ function Dashboard() {
       if (error instanceof DOMException && error.name === "AbortError") return;
       if (mode === "initial") setAutoOpenVaultRegion(true);
       const message =
-        error instanceof Error ? error.message : "Vaults could not be loaded.";
+        error instanceof Error ? error.message : "Sources could not be loaded.";
       setVaultState((current) => failVaultRefresh(current, message));
     } finally {
       if (vaultRefreshControllerRef.current === controller) {
@@ -2715,7 +2717,7 @@ function Dashboard() {
         setActionState({
           kind: "success",
           message:
-            "Clipboard access was blocked, so OWD downloaded the redacted diagnostics instead.",
+            "Clipboard access was blocked, so MDevolved downloaded the redacted diagnostics instead.",
         });
       }
     } catch (error: unknown) {
@@ -2790,7 +2792,7 @@ function Dashboard() {
   async function createReconnectLink(vault: VaultSummary): Promise<void> {
     setActionState({
       kind: "working",
-      label: `Creating a reconnect request for ${vault.displayName ?? "this vault"}…`,
+      label: `Creating a reconnect request for ${vault.displayName ?? "this Source"}…`,
     });
     try {
       const csrfToken = await loadCsrf();
@@ -2805,7 +2807,7 @@ function Dashboard() {
       setActionState({
         kind: "success",
         message:
-          "Reconnect request ready. It preserves this vault ID and rotates the old credential only after the new sync is confirmed.",
+          "Reconnect request ready. It preserves this Source identity and rotates the old credential only after the new sync is confirmed.",
       });
     } catch (error: unknown) {
       setActionState({
@@ -2813,7 +2815,7 @@ function Dashboard() {
         message:
           error instanceof Error
             ? error.message
-            : "The vault reconnect request could not be created.",
+            : "The Source reconnect request could not be created.",
       });
     }
   }
@@ -2883,7 +2885,7 @@ function Dashboard() {
   }
 
   async function revokeVaultAccess(vault: VaultSummary): Promise<void> {
-    const vaultName = vault.displayName ?? "this pending vault";
+    const vaultName = vault.displayName ?? "this pending Source";
     if (
       !window.confirm(
         `Revoke sync access for ${vaultName}? Any active connection will close immediately. Your stored vault data will not be deleted.`,
@@ -2892,7 +2894,7 @@ function Dashboard() {
       return;
     }
 
-    setActionState({ kind: "working", label: "Revoking vault access…" });
+    setActionState({ kind: "working", label: "Revoking Source access…" });
 
     try {
       const csrfToken = await loadCsrf();
@@ -2909,7 +2911,7 @@ function Dashboard() {
         message:
           error instanceof Error
             ? error.message
-            : "Vault access could not be revoked.",
+            : "Source access could not be revoked.",
       });
     }
   }
@@ -3274,7 +3276,7 @@ function Dashboard() {
       label:
         noteState.kind === "creating"
           ? "Creating the live note…"
-          : "Saving to the live vault…",
+          : "Saving to the live Source…",
     });
 
     try {
@@ -3299,7 +3301,7 @@ function Dashboard() {
       setActionState({
         kind: "success",
         message:
-          "Saved durably to the live vault. Browse and search will move to a new snapshot in the background.",
+          "Saved durably to the live Source. Browse and search will move to a new snapshot in the background.",
       });
     } catch (error: unknown) {
       setActionState({
@@ -3338,16 +3340,16 @@ function Dashboard() {
     null;
   const vaultSummary =
     vaultState.kind === "loading"
-      ? "Checking vault connections…"
+      ? "Checking Source connections…"
       : vaultState.kind === "error"
-        ? "Vault connections need attention"
+        ? "Source connections need attention"
         : vaultState.kind === "ready"
           ? `${activeVaults.length.toLocaleString()} active · ${(
               connectedVaults.length - activeVaults.length
             ).toLocaleString()} pending · ${disconnectedVaults.length.toLocaleString()} disconnected`
-          : "Vault connections not loaded";
+          : "Source connections not loaded";
   const librarySummary = !libraryHasOpened
-    ? "Selected vault · open to load"
+    ? "Selected Source · open to load"
     : libraryState.kind === "ready"
       ? `${libraryState.generation.noteCount.toLocaleString()} notes · checked ${formatTimestamp(libraryState.generation.completedAt)}${
           libraryState.refreshing ? " · refreshing" : ""
@@ -3387,7 +3389,7 @@ function Dashboard() {
     onboardingReadiness === null
       ? "Checking your next action…"
       : onboardingReadiness.activeVaultCount === 0
-        ? "Connect your first vault"
+        ? "Connect your first source"
         : onboardingReadiness.vaults.every(
               (vault) => vault.nextStep === "ready",
             )
@@ -3404,7 +3406,7 @@ function Dashboard() {
         : agentSetupPrerequisite === "library-required"
           ? "Waiting for the library"
           : agentSetupPrerequisite === "vault-required"
-            ? "Pair a vault first"
+            ? "Pair a Source first"
             : "Checking access…",
     architecture: setupSummary,
     collaboration: "Projects and owner decisions",
@@ -3412,7 +3414,7 @@ function Dashboard() {
     library: librarySummary,
     recovery: vaults.some((vault) => vault.status !== "pending")
       ? "Backups and recovery"
-      : "Pair a vault first",
+      : "Pair a Source first",
     vaults: vaultSummary,
   };
 
@@ -3423,11 +3425,11 @@ function Dashboard() {
       }`}
     >
       <header className="topbar">
-        <a className="brand" href="/" aria-label="OWD Platform home">
+        <a className="brand" href="/" aria-label="MDevolved home">
           <span className="brand-mark" aria-hidden="true">
-            O
+            M
           </span>
-          <span>OWD Platform</span>
+          <span>MDevolved</span>
         </a>
         <div className="environment" aria-label={apiState}>
           <span
@@ -3457,34 +3459,35 @@ function Dashboard() {
             <div className="eyebrow">
               {managedPilot
                 ? "Private founding pilot · isolated workspace"
-                : "Your notes. Your infrastructure."}
+                : "Your Project memory. Your infrastructure."}
             </div>
             <h1>
               {managedPilot && setup?.claimed === false ? (
-                <>Your OWD workspace is ready.</>
+                <>Your MDevolved workspace is ready.</>
               ) : (
                 <>
-                  One quiet place for
+                  Durable Project memory for
                   <br />
-                  every Obsidian vault.
+                  every AI and Source.
                 </>
               )}
             </h1>
             <p className="hero-copy">
               {managedPilot && setup?.claimed === false
-                ? `Create one passkey, then connect your first Obsidian vault. This private trial starts when you claim it and includes two active vaults with no agent-seat limit.`
-                : "Sync, search, and recover your vaults from a private Cloudflare deployment—with encrypted backups that remain yours."}
+                ? `Create one passkey, then connect your first Markdown folder or Obsidian workspace. This private trial starts when you claim it and includes two active Sources with no agent-seat limit.`
+                : "Sync a Markdown folder or Obsidian workspace, give agents bounded Project memory, and keep encrypted recovery under your control."}
             </p>
             {managedPilot && setup?.claimed === false ? (
               <div className="managed-claim-disclosure" role="note">
                 <strong>Before you start</strong>
                 <span>
-                  OWD Sync reads only the vaults you explicitly pair. Agents get
-                  only the access you approve. During this managed technical
-                  pilot, the operator can technically access live service data
-                  through Cloudflare administration, but OWD has no routine
-                  content-access or owner-impersonation tool. Usage limits apply
-                  during the {setup.trialDays ?? 30}-day pilot.
+                  MDevolved Sync reads only the Sources you explicitly pair.
+                  Agents get only the access you approve. During this managed
+                  technical pilot, the operator can technically access live
+                  service data through Cloudflare administration, but MDevolved
+                  has no routine content-access or owner-impersonation tool.
+                  Usage limits apply during the {setup.trialDays ?? 30}-day
+                  pilot.
                 </span>
               </div>
             ) : null}
@@ -3569,12 +3572,14 @@ function Dashboard() {
               {onboardingComplete ? "Workspace guide" : "Start here"}
             </span>
             <h1>
-              {onboardingComplete ? "How OWD works." : "Set up your workspace."}
+              {onboardingComplete
+                ? "How MDevolved works."
+                : "Set up your workspace."}
             </h1>
             <p>
               {onboardingComplete
                 ? "Your onboarding checks are complete. Keep the verified setup receipt here, then use the advanced architecture below whenever you want the deeper model."
-                : "OWD shows one verified next action. Finish it, then return here until the vault is Project-ready."}
+                : "MDevolved shows one verified next action. Finish it, then return here until the selected source is Project-ready."}
             </p>
           </header>
         ) : null}
@@ -3591,7 +3596,7 @@ function Dashboard() {
             <p>
               {onboardingComplete
                 ? "You are Project-ready. The deeper architecture and trust model are now available immediately below your setup receipt."
-                : "Everything else lives in the folders at left: manage vaults, review Projects, connect agents, browse notes, or open recovery tools only when you need them."}
+                : "Everything else lives in the folders at left: manage Sources, review Projects, connect agents, browse notes, or open recovery tools only when you need them."}
             </p>
           </aside>
         ) : null}
@@ -3605,16 +3610,16 @@ function Dashboard() {
                 : "none"
             }
             autoOpen={pairingGrant !== null || autoOpenVaultRegion}
-            heading="Vault connections"
+            heading="Source connections"
             id="vaults"
-            kicker="OWD Sync"
+            kicker="Folders or Obsidian"
             summary={vaultSummary}
           >
             <section className="vault-panel" aria-labelledby="vault-heading">
               <div className="section-heading">
                 <div>
-                  <span className="section-kicker">Obsidian connection</span>
-                  <h2 id="vault-heading">Your paired vaults.</h2>
+                  <span className="section-kicker">Connected workspaces</span>
+                  <h2 id="vault-heading">Your Sources.</h2>
                 </div>
                 <button
                   className="text-action"
@@ -3643,18 +3648,20 @@ function Dashboard() {
                       Install and enable first
                     </span>
                     <h3 id="pairing-ready-heading">
-                      Ready in the exact vault you want to pair?
+                      Ready with the exact Source you want to pair?
                     </h3>
                     <p>
-                      Open that vault in Obsidian and confirm OWD Sync{" "}
+                      Choose a Markdown folder in MDevolved Sync, or open an
+                      Obsidian workspace and confirm MDevolved Sync for Obsidian{" "}
                       {OWD_SYNC_REQUIRED_VERSION} is enabled. Then create the
                       private, ten-minute pairing request.
                     </p>
                     <p className="pairing-install-note">
-                      Each vault has its own plugin installation. If this vault
-                      shows an older version,{" "}
+                      Obsidian keeps one plugin installation per vault. If this
+                      vault shows an older version,{" "}
                       <a href="#owd-sync-installer">
-                        install or update OWD Sync {OWD_SYNC_REQUIRED_VERSION}
+                        install or update the Obsidian adapter{" "}
+                        {OWD_SYNC_REQUIRED_VERSION}
                       </a>{" "}
                       here before continuing.
                     </p>
@@ -3665,7 +3672,7 @@ function Dashboard() {
                     disabled={isWorking}
                     onClick={() => void createPairingLink()}
                   >
-                    I see OWD Sync {OWD_SYNC_REQUIRED_VERSION} — create request
+                    My folder app or Obsidian adapter is ready — create request
                   </button>
                 </aside>
               ) : null}
@@ -3679,26 +3686,27 @@ function Dashboard() {
                 >
                   <div>
                     <span className="pairing-label">Private · single use</span>
-                    <h3 id="pairing-heading">Pair from the selected vault</h3>
+                    <h3 id="pairing-heading">Pair the selected Source</h3>
                     <p>
-                      Obsidian will show the exact current vault and workspace
-                      before anything changes. This request expires{" "}
+                      MDevolved Sync will show the exact current folder or
+                      workspace before anything changes. This request expires{" "}
                       {formatTimestamp(pairingGrant.expiresAt)}.
                     </p>
                     <ol className="pairing-steps">
                       <li>
-                        Open the exact vault you want to pair and enable OWD
-                        Sync {OWD_SYNC_REQUIRED_VERSION}.
+                        Open the exact folder or Obsidian workspace you want to
+                        pair in its MDevolved Sync adapter.
                       </li>
                       <li>
-                        Click below. In Obsidian, verify the current vault name
-                        and OWD workspace, then choose{" "}
+                        Click below. Verify the current Source name and
+                        workspace, then choose{" "}
                         <strong>Pair and start sync</strong>.
                       </li>
                     </ol>
                     <p className="pairing-install-note">
-                      The link never chooses a vault silently. OWD refreshes
-                      this page automatically after the one-time exchange.
+                      The link never chooses a Source silently. MDevolved
+                      refreshes this page automatically after the one-time
+                      exchange.
                     </p>
                   </div>
                   <div className="pairing-launch-controls">
@@ -3729,8 +3737,8 @@ function Dashboard() {
                     )}
                     {pairingExpired ? (
                       <p className="action-error" role="status">
-                        This request expired without changing any vault. Create
-                        a fresh request; OWD has stopped polling it.
+                        This request expired without changing any Source. Create
+                        a fresh request; MDevolved has stopped polling it.
                       </p>
                     ) : null}
                     <details>
@@ -3742,9 +3750,11 @@ function Dashboard() {
                         vault Obsidian opened. Install or update and enable OWD
                         Sync there, then reopen this request. If the direct
                         handoff is still blocked, copy the request, run{" "}
-                        <strong>OWD Sync: Pair this vault with OWD</strong>, and
-                        paste it. This request remains usable until its expiry
-                        above.
+                        <strong>
+                          MDevolved Sync: Pair this vault with MDevolved
+                        </strong>
+                        , and paste it. This request remains usable until its
+                        expiry above.
                       </p>
                       <PairingCopyControl
                         state={pairingCopyState}
@@ -3761,7 +3771,7 @@ function Dashboard() {
 
               {vaultState.kind === "loading" ? (
                 <p className="vault-message" aria-live="polite">
-                  Loading vaults…
+                  Loading Sources…
                 </p>
               ) : vaultState.kind === "error" ? (
                 <p className="action-error" role="alert">
@@ -3771,7 +3781,7 @@ function Dashboard() {
                 <>
                   {connectedVaults.length === 0 ? (
                     <div className="empty-vaults">
-                      <h3>No active or pending vaults.</h3>
+                      <h3>No active or pending Sources.</h3>
                       <p>
                         Create a private pairing link when you are ready.
                         Disconnected records remain available below as retained
@@ -3852,7 +3862,7 @@ function Dashboard() {
                 </div>
                 <div className="library-controls">
                   <label>
-                    <span>Active vault</span>
+                    <span>Active Source</span>
                     <select
                       disabled={editorActive}
                       value={selectedVaultId}
@@ -3904,13 +3914,13 @@ function Dashboard() {
                     This displayed generation is retained history.
                   </strong>
                   <span>
-                    The vault has newer or incomplete sync state, so agents and
+                    The Source has newer or incomplete sync state, so agents and
                     Projects cannot use this generation.{" "}
                     {selectedVaultReadiness.libraryState === "building"
                       ? "Wait for the current library build to finish."
                       : selectedVaultReadiness.libraryState === "failed"
                         ? "The automatic build stopped safely. Select Build now to retry, then copy redacted diagnostics if it fails again."
-                        : "OWD rebuilds automatically after sync settles. Keep Obsidian open; Build now is only an immediate retry."}
+                        : "MDevolved rebuilds automatically after sync settles. Keep the Source client open; Build now is only an immediate retry."}
                   </span>
                 </div>
               ) : null}
@@ -3927,9 +3937,9 @@ function Dashboard() {
                 <div className="empty-vaults library-empty">
                   <h3>No searchable library yet.</h3>
                   <p>
-                    OWD builds one automatically from the vault’s durable sync
-                    state. It becomes visible only after every note and search
-                    row succeeds.
+                    MDevolved builds one automatically from the Source’s durable
+                    sync state. It becomes visible only after every note and
+                    search row succeeds.
                   </p>
                 </div>
               ) : libraryState.kind === "ready" ? (
@@ -4074,7 +4084,7 @@ function Dashboard() {
                         <>
                           <header>
                             <h3>Create a Markdown note</h3>
-                            <span>Live vault</span>
+                            <span>Live Source</span>
                           </header>
                           <form
                             className="note-editor"
@@ -4121,7 +4131,7 @@ function Dashboard() {
                               aria-live="polite"
                             >
                               {noteState.path === ""
-                                ? "Choose a name. OWD adds .md automatically. Use / to place it in a folder."
+                                ? "Choose a name. MDevolved adds .md automatically. Use / to place it in a folder."
                                 : createPathPreparation?.ok === true
                                   ? "Will create: "
                                   : createPathPreparation?.message}
@@ -4184,7 +4194,7 @@ function Dashboard() {
                             <div className="note-reader-actions">
                               <span>
                                 {noteState.generationId === null
-                                  ? "Live vault"
+                                  ? "Live Source"
                                   : "Generation " +
                                     noteState.generationId.slice(0, 8)}
                               </span>
@@ -4218,7 +4228,7 @@ function Dashboard() {
                                   {selectedVault?.displayName ??
                                     selectedVaultId}
                                 </strong>
-                                . Path and vault cannot change in this editor.
+                                . Path and Source cannot change in this editor.
                               </p>
                               <label className="markdown-field">
                                 <span>Markdown source</span>
@@ -4366,7 +4376,7 @@ function Dashboard() {
             heading="System health"
             id="health"
             kicker="Owner-safe status"
-            summary={`${activeVaults.length.toLocaleString()} active vault${
+            summary={`${activeVaults.length.toLocaleString()} active Source${
               activeVaults.length === 1 ? "" : "s"
             } · ${deploymentLabel} ${
               loadState.kind === "ready"
@@ -4392,7 +4402,7 @@ function Dashboard() {
               </div>
               <div className="foundation-health-grid">
                 <article>
-                  <span>Vault access</span>
+                  <span>Source access</span>
                   <strong>
                     {activeVaults.length.toLocaleString()} active ·{" "}
                     {(vaults.length - activeVaults.length).toLocaleString()}{" "}
@@ -4400,7 +4410,7 @@ function Dashboard() {
                   </strong>
                   <p>
                     {vaultState.kind === "error"
-                      ? "Vault status failed to refresh. Retry before creating a recovery point."
+                      ? "Source status failed to refresh. Retry before creating a recovery point."
                       : "Names, note paths, credentials, and content are excluded from this summary."}
                   </p>
                 </article>
@@ -4424,7 +4434,7 @@ function Dashboard() {
                 <article>
                   <span>Operation budgets</span>
                   <strong>
-                    {MAX_SNAPSHOT_VAULTS} vaults ·{" "}
+                    {MAX_SNAPSHOT_VAULTS} Sources ·{" "}
                     {MAX_SNAPSHOT_ITEMS.toLocaleString()} items ·{" "}
                     {(
                       MAX_SNAPSHOT_LOGICAL_BYTES /
@@ -4461,7 +4471,7 @@ function Dashboard() {
                 <div>
                   <strong>Safe troubleshooting receipt</strong>
                   <p>
-                    Copy exact release, vault, sync, library, and Project state
+                    Copy exact release, Source, sync, library, and Project state
                     without names, note paths, note content, credentials, or
                     Project text.
                   </p>
