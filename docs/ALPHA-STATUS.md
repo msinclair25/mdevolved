@@ -1,6 +1,6 @@
 # OWD alpha status
 
-**Updated:** August 25, 2026<br />
+**Updated:** August 26, 2026<br />
 **OWD Platform:** `1.0.0-alpha.7`<br />
 **OWD Sync:** `0.1.7`
 
@@ -16,6 +16,7 @@ durability evidence is still being accumulated.
 | Community source          | Public Apache-2.0 alpha                                                  |
 | Community self-hosting    | Available for technical alpha use in the owner's Cloudflare account      |
 | Managed service           | Invitation-only alpha; one isolated data-plane cell per owner            |
+| MDevolved Sync            | Public `0.1.0-alpha.1` npm and unsigned macOS/Windows/Linux prerelease   |
 | OWD Sync                  | Public `0.1.7` alpha release and version-matched desktop installer       |
 | Obsidian Community Plugin | Submission/listing pending                                               |
 | Public OWD Cloud accounts | Not generally available; billing and service commitments are future work |
@@ -28,6 +29,7 @@ does not place multiple owners in one vault database.
 
 - One-owner passkey claim and sign-in
 - Multiple explicitly paired Obsidian vaults
+- Source-neutral Markdown-folder sync without requiring Obsidian
 - Automatic searchable libraries from current durable sync state
 - Bounded browsing, search, Markdown creation, and version-checked editing
 - Remote MCP with Streamable HTTP, OAuth 2.1/PKCE, and revocable vault/folder
