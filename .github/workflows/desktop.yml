@@ -29,5 +29,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:md2:acceptance
-      - run: pnpm --filter @owd/desktop package
+      - name: Run the MD6 client gate
+        if: runner.os != 'Linux'
+        run: pnpm test:md6:acceptance
+      - name: Run the MD6 client gate on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pnpm test:md6:acceptance

@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createFolderSource,
   createMemoryCredentialCustody,
@@ -57,6 +57,18 @@ async function write(
 ): Promise<void> {
   await fs.mkdir(join(root, path, ".."), { recursive: true });
   await fs.writeFile(join(root, path), text, "utf8");
+}
+
+async function waitFor(
+  predicate: () => boolean,
+  timeoutMs = 3_000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() >= deadline)
+      throw new Error("timed out waiting for fixture");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
 }
 
 async function closeAll(): Promise<void> {
@@ -324,6 +336,117 @@ describe("native folder source", () => {
     await new Promise((resolve) => setTimeout(resolve, 60));
     expect(hints.length).toBe(count);
     expect(hints.length).toBeGreaterThan(0);
+    await source.close();
+  });
+
+  it("survives rapid rename/write bursts through the periodic correctness rescan", async () => {
+    const root = await fixture();
+    const source = await createFolderSource({
+      root,
+      credentials: createMemoryCredentialCustody(await scopedCredential(root)),
+      stateDirectory: join(root, "..", `.mdevolved-state-${randomUUID()}`),
+      debounceMs: 10,
+    });
+    stateDirectories.push(source.stateDirectory);
+    await source.core.start();
+    const hints: string[] = [];
+    const stop = source.watch((path) => hints.push(path));
+    await fs.writeFile(join(root, "burst.md"), "v0", "utf8");
+    for (let index = 1; index <= 12; index += 1) {
+      await fs.writeFile(join(root, "burst.md"), `v${index}`, "utf8");
+    }
+    await fs.rename(join(root, "burst.md"), join(root, "burst-renamed.md"));
+    await fs.writeFile(join(root, "burst-renamed.md"), "final", "utf8");
+    await waitFor(() => hints.includes(""));
+    stop();
+
+    const result = await source.core.rescan();
+    expect(result.files.map((file) => file.path)).toEqual(["burst-renamed.md"]);
+    expect(new TextDecoder().decode(result.files[0]?.contents)).toBe("final");
+    await source.close();
+  });
+
+  it("preserves the prior file and removes its temp after an interrupted atomic write", async () => {
+    const root = await fixture();
+    await write(root, "note.md", "complete");
+    const source = await openSource(root);
+    await source.core.start();
+    const rename = vi
+      .spyOn(fs, "rename")
+      .mockRejectedValueOnce(new Error("synthetic interrupted rename"));
+    await expect(
+      source.core.write("note.md", encoder.encode("partial contents")),
+    ).rejects.toMatchObject({
+      code: "read_failed",
+      message: "could not write source file",
+    });
+    rename.mockRestore();
+    expect(new TextDecoder().decode(await source.core.read("note.md"))).toBe(
+      "complete",
+    );
+    expect((await fs.readdir(root)).some((name) => name.endsWith(".tmp"))).toBe(
+      false,
+    );
+    await source.close();
+  });
+
+  it("restarts after an offline interval and discovers durable folder changes", async () => {
+    const root = await fixture();
+    await write(root, "before.md", "before");
+    const stateDirectory = join(root, "..", `.mdevolved-state-${randomUUID()}`);
+    stateDirectories.push(stateDirectory);
+    const custody = createMemoryCredentialCustody(await scopedCredential(root));
+    const first = await createFolderSource({
+      root,
+      credentials: custody,
+      stateDirectory,
+    });
+    await first.core.start();
+    await first.core.rescan();
+    await first.close();
+
+    await fs.rm(join(root, "before.md"));
+    await write(root, "after.md", "written while offline");
+    const second = await createFolderSource({
+      root,
+      credentials: custody,
+      stateDirectory,
+    });
+    await second.core.start();
+    const result = await second.core.rescan();
+    expect(result.files.map((file) => file.path)).toEqual(["after.md"]);
+    expect(new TextDecoder().decode(await second.core.read("after.md"))).toBe(
+      "written while offline",
+    );
+    await second.close();
+  });
+
+  it("scans a 2,000-file tree at the default ceiling and rejects its successor", async () => {
+    const root = await fixture();
+    const directoryCount = 50;
+    const filesPerDirectory = 40;
+    const fileBytes = 1_024;
+    const contents = "x".repeat(fileBytes);
+    for (let directory = 0; directory < directoryCount; directory += 1) {
+      const path = join(root, `tree-${directory.toString().padStart(2, "0")}`);
+      await fs.mkdir(path, { recursive: true });
+      for (let file = 0; file < filesPerDirectory; file += 1) {
+        await fs.writeFile(
+          join(path, `note-${file.toString().padStart(2, "0")}.md`),
+          contents,
+          "utf8",
+        );
+      }
+    }
+    const source = await openSource(root);
+    await source.core.start();
+    const result = await source.core.rescan();
+    expect(result.files).toHaveLength(2_000);
+    expect(result.totalBytes).toBe(2_048_000);
+    await write(root, "one-too-many.md", contents);
+    await expect(source.core.rescan()).rejects.toMatchObject({
+      code: "scan_limit",
+    });
     await source.close();
   });
 
