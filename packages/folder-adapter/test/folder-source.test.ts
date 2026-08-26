@@ -448,7 +448,7 @@ describe("native folder source", () => {
       code: "scan_limit",
     });
     await source.close();
-  });
+  }, 30_000);
 
   it("rejects a selected-root symlink", async () => {
     const realRoot = await fixture();

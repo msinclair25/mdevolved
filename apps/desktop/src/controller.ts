@@ -1,4 +1,8 @@
-import type { SyncController, SyncStatus } from "./ipc.js";
+import {
+  assertFolderPath,
+  type SyncController,
+  type SyncStatus,
+} from "./ipc.js";
 import { basename } from "node:path";
 import { createHash } from "node:crypto";
 import { createSourceDescriptor, type CredentialRecord } from "@owd/yaos-core";
@@ -105,6 +109,7 @@ export class MemorySyncController implements SyncController {
 
 interface StoredDesktopConnection {
   sourceId: string;
+  folderPath?: string;
   connection: PairingConnection;
 }
 
@@ -127,6 +132,15 @@ function isSafeDeploymentOrigin(value: string): boolean {
   }
 }
 
+function isValidFolderPath(value: unknown): value is string {
+  try {
+    assertFolderPath(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function decodeConnection(
   value: string | undefined,
 ): StoredDesktopConnection | null {
@@ -137,6 +151,8 @@ export function decodeConnection(
     if (
       typeof parsed.sourceId !== "string" ||
       !/^folder-[0-9a-f]{32}$/u.test(parsed.sourceId) ||
+      (parsed.folderPath !== undefined &&
+        !isValidFolderPath(parsed.folderPath)) ||
       !connection ||
       typeof connection.host !== "string" ||
       !isSafeDeploymentOrigin(connection.host) ||
@@ -162,7 +178,13 @@ export function decodeConnection(
         !/^[0-9a-f]{64}$/u.test(connection.rootFingerprintSha256))
     )
       return null;
-    return { sourceId: parsed.sourceId, connection };
+    return {
+      sourceId: parsed.sourceId,
+      ...(parsed.folderPath === undefined
+        ? {}
+        : { folderPath: parsed.folderPath }),
+      connection,
+    };
   } catch {
     return null;
   }
@@ -182,6 +204,21 @@ export class FolderSyncController implements SyncController {
 
   getStatus(): SyncStatus {
     return this.status;
+  }
+
+  async restore(): Promise<SyncStatus> {
+    try {
+      const stored = decodeConnection(await this.custody()?.load());
+      if (!stored?.folderPath) return this.status;
+      return await this.selectFolder(stored.folderPath);
+    } catch {
+      return this.set({
+        phase: "error",
+        message: "Protected connection could not be restored. Reconnect it.",
+        canRetry: false,
+        canRepair: false,
+      });
+    }
   }
 
   async selectFolder(folderPath: string): Promise<SyncStatus> {
@@ -205,7 +242,8 @@ export class FolderSyncController implements SyncController {
         });
       }
     }
-    const stored = decodeConnection(await this.custody()?.load());
+    const custody = this.custody();
+    const stored = decodeConnection(await custody?.load());
     const expectedRootFingerprintSha256 = createHash("sha256")
       .update(sourceId, "utf8")
       .digest("hex");
@@ -226,7 +264,20 @@ export class FolderSyncController implements SyncController {
         revoked: false,
       });
     }
-    return await this.start(stored);
+    if (stored.folderPath !== folderPath) {
+      await custody?.save(JSON.stringify({ ...stored, folderPath }));
+    }
+    try {
+      return await this.start({ ...stored, folderPath });
+    } catch {
+      return this.set({
+        phase: "error",
+        folderPath,
+        message: "Connection failed. Try again or choose the folder again.",
+        canRetry: this.runtime !== undefined,
+        canRepair: this.runtime !== undefined,
+      });
+    }
   }
 
   async pair(pairingLink: string): Promise<SyncStatus> {
@@ -262,7 +313,9 @@ export class FolderSyncController implements SyncController {
           .digest("hex"),
       },
     );
-    await this.custody()?.save(JSON.stringify({ sourceId, connection }));
+    await this.custody()?.save(
+      JSON.stringify({ sourceId, folderPath: this.folderPath, connection }),
+    );
     return await this.start({ sourceId, connection });
   }
 

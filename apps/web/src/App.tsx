@@ -2919,8 +2919,9 @@ function Dashboard() {
   async function refreshLibrary(
     vaultId = selectedVaultId,
     mode: LibraryRefreshMode = "background",
-  ): Promise<void> {
-    if (vaultId === "") return;
+    requireGeneration = false,
+  ): Promise<boolean> {
+    if (vaultId === "") return false;
     libraryRefreshControllerRef.current?.abort();
     const controller = new AbortController();
     libraryRefreshControllerRef.current = controller;
@@ -2937,12 +2938,12 @@ function Dashboard() {
           controller.signal,
         ),
       );
-      if (libraryRefreshControllerRef.current !== controller) return;
+      if (libraryRefreshControllerRef.current !== controller) return false;
       if (status.generation === null) {
         setLibraryState(completeEmptyLibraryRefresh());
         setSearchState({ kind: "idle" });
         setNoteState({ kind: "idle" });
-        return;
+        return !requireGeneration;
       }
       const page = materializedNotesResponseSchema.parse(
         await postApiJson(
@@ -2951,7 +2952,7 @@ function Dashboard() {
           controller.signal,
         ),
       );
-      if (libraryRefreshControllerRef.current !== controller) return;
+      if (libraryRefreshControllerRef.current !== controller) return false;
       if (page.generation.generationId !== status.generation.generationId) {
         throw new Error(
           "The library changed while notes were loading. Refresh it.",
@@ -2967,13 +2968,16 @@ function Dashboard() {
         setSearchState({ kind: "idle" });
         setNoteState({ kind: "idle" });
       }
+      return true;
     } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (error instanceof DOMException && error.name === "AbortError")
+        return false;
       const message =
         error instanceof Error
           ? error.message
           : "The searchable library could not be loaded.";
       setLibraryState((current) => failLibraryRefresh(current, message));
+      return false;
     } finally {
       if (libraryRefreshControllerRef.current === controller) {
         libraryRefreshControllerRef.current = null;
@@ -3027,7 +3031,11 @@ function Dashboard() {
         );
       }
       const generation = materializationGenerationSchema.parse(job.generation);
-      await refreshLibrary(vaultId);
+      if (!(await refreshLibrary(vaultId, "background", true))) {
+        throw new Error(
+          "The library was published but could not be loaded. Refresh it before continuing.",
+        );
+      }
       if (shouldAdvanceToAgents) {
         setPendingAgentAdvanceVaultId(vaultId);
       }
@@ -4349,11 +4357,11 @@ function Dashboard() {
                 activeVaults={activeVaults}
                 autoOpen={activeWorkspaceSection === "recovery"}
                 initialVaultId={selectedVaultId}
-                onRestoreApplied={(vaultId) =>
-                  vaultId === selectedVaultId
-                    ? refreshLibrary(vaultId)
-                    : undefined
-                }
+                onRestoreApplied={async (vaultId) => {
+                  if (vaultId === selectedVaultId) {
+                    await refreshLibrary(vaultId);
+                  }
+                }}
                 vaults={vaults}
               />
             </Suspense>

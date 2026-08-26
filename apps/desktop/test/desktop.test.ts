@@ -139,6 +139,14 @@ describe("controller lifecycle", () => {
     expect(decodeConnection(JSON.stringify(valid))).toEqual(valid);
     expect(
       decodeConnection(
+        JSON.stringify({ ...valid, folderPath: "/tmp/synthetic-project" }),
+      ),
+    ).toEqual({ ...valid, folderPath: "/tmp/synthetic-project" });
+    expect(
+      decodeConnection(JSON.stringify({ ...valid, folderPath: "bad\npath" })),
+    ).toBeNull();
+    expect(
+      decodeConnection(
         JSON.stringify({
           ...valid,
           connection: { ...valid.connection, host: "http://evil.example" },

@@ -222,6 +222,7 @@ export function createDesktopMain(
     tray.on("click", () => void openWindow());
     controller.onStatusChange?.(publish);
     await openWindow();
+    if (controller.restore) publish(await controller.restore());
     const startupUrl = process.argv.find((value) =>
       value.startsWith("mdevolved://connect?"),
     );
