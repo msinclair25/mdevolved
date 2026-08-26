@@ -21,6 +21,7 @@ import {
   createSourceDescriptor,
   SourceNeutralSyncCore,
   SourceScanError,
+  validateMarkdownPath,
   validateRelativePath,
   type CredentialCustodyPort,
   type CredentialRecord,
@@ -132,6 +133,17 @@ function assertAllowedPath(path: string): void {
       "hidden, generated, dependency, or secret-shaped paths are outside the source boundary",
       path,
     );
+  }
+}
+
+function assertMarkdownPath(path: string): string {
+  try {
+    return validateMarkdownPath(path);
+  } catch (error) {
+    if (error instanceof SourceScanError) {
+      throw new FolderSourceError("path_invalid", error.message, path);
+    }
+    throw error;
   }
 }
 
@@ -519,15 +531,7 @@ class NodeFolderFiles implements WorkspaceFilesPort {
   }
 
   async read(relativePath: string): Promise<Uint8Array> {
-    const path = assertPortablePath(relativePath);
-    assertAllowedPath(path);
-    if (!/\.md$/iu.test(path)) {
-      throw new FolderSourceError(
-        "path_invalid",
-        "only Markdown files may be read",
-        path,
-      );
-    }
+    const path = assertMarkdownPath(relativePath);
     const absolute = this.absolute(path);
     const stats = await lstatWorkspace(
       absolute,
@@ -559,14 +563,7 @@ class NodeFolderFiles implements WorkspaceFilesPort {
   }
 
   async write(relativePath: string, contents: Uint8Array): Promise<void> {
-    const path = assertPortablePath(relativePath);
-    assertAllowedPath(path);
-    if (!/\.md$/iu.test(path))
-      throw new FolderSourceError(
-        "path_invalid",
-        "only Markdown files may be written",
-        path,
-      );
+    const path = assertMarkdownPath(relativePath);
     if (contents.byteLength > this.maxFileBytes)
       throw new SourceScanError(
         "scan_limit",

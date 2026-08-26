@@ -272,6 +272,19 @@ function shouldExclude(path: string, kind: WorkspaceEntry["kind"]): boolean {
   return leaf.startsWith(".") || isSecretShaped(path) || !/\.md$/iu.test(leaf);
 }
 
+/** Apply the shared Markdown-only source policy to a direct I/O path. */
+export function validateMarkdownPath(path: string): string {
+  const validated = validateRelativePath(path);
+  if (shouldExclude(validated, "file")) {
+    throw new SourceScanError(
+      "invalid_path",
+      "path is outside the Markdown source boundary",
+      validated,
+    );
+  }
+  return validated;
+}
+
 function scanFingerprint(files: readonly MarkdownFile[]): string {
   let hash = 2166136261;
   for (const file of files) {

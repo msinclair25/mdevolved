@@ -1,5 +1,5 @@
 import { decideClosedFileConflict } from "./closedFileConflict";
-import { validateRelativePath } from "./sourceBoundary";
+import { validateMarkdownPath } from "./sourceBoundary";
 import type {
   LocalStatePort,
   SourceNeutralSyncCore,
@@ -136,7 +136,7 @@ export async function reconcileFolder(
     disk.set(entry.path, { contents, entry });
   }
   const remotePaths = new Set(
-    remote.listPaths().map((path) => validateRelativePath(path)),
+    remote.listPaths().map((path) => validateMarkdownPath(path)),
   );
   const paths = new Set([...disk.keys(), ...remotePaths]);
   const occupiedPaths = new Set(paths);

@@ -1,6 +1,6 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1 and MD2 are complete. MD3 requires a fresh milestone task.<br />
+**Status:** MD1, MD2, and MD3 are complete. MD4 requires a fresh milestone task.<br />
 **Date:** 2026-08-26
 
 ## Milestone boundary
@@ -400,3 +400,25 @@ signing/notarization, repository renaming, trademark/store clearance, and paid
 services remain later delivery gates; they are not MD2 acceptance criteria. No
 production or personal source was used during validation, and no external cost
 was incurred.
+
+## MD3 delivery receipt
+
+The Obsidian source implementation now lives in the product adapter at
+`packages/obsidian-plugin/src/obsidian-adapter.ts`. The pinned YAOS
+orchestration requests that implementation through a source-neutral port and
+continues to retain Obsidian editor bindings, commands, notices, status,
+runtime-profile discovery, attachment behavior, plugin identity, pairing deep
+links, settings storage, direct-installer assets, and updater compatibility.
+
+The frozen MD3 synthetic fixture runs through both the folder and Obsidian
+adapters and proves identical Markdown library contents and SHA-256 durable
+baseline hashes while excluding hidden, generated, and credential-shaped
+paths. A populated legacy plugin-state fixture proves the existing host,
+credential, `vaultId`, disk index, and source-core state upgrade in place and
+start without re-pairing.
+
+`pnpm test:md3:acceptance` is the named adapter, plugin-product, packaging,
+direct-installer, updater, and release-regression gate. MD3 changes no Worker
+contract, migration, deployed resource, published package version, plugin ID,
+wire name, stored identifier, or user data. It requires no deployment or
+package publication; no production or personal source is used for validation.

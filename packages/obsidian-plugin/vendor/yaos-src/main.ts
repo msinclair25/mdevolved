@@ -70,10 +70,10 @@ import { AttachmentOrchestrator } from "./runtime/attachmentOrchestrator";
 import { EditorWorkspaceOrchestrator } from "./runtime/editorWorkspaceOrchestrator";
 import { SetupLinkController } from "./runtime/setupLinkController";
 import { TraceRuntimeController } from "./runtime/traceRuntimeController";
-import {
-	createObsidianSourceBoundary,
-	type ObsidianSourceBoundary,
-} from "./runtime/obsidianSourceBoundary";
+import type {
+	SourceAdapterBoundary,
+	SourceAdapterOptions,
+} from "./runtime/sourceAdapterPort";
 import { registerCommands } from "./commands";
 import {
 	getSyncStatusLabel,
@@ -188,7 +188,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 	private preservedUnresolvedEntries: PreservedUnresolvedEntry[] = [];
 	private persistedState: PersistedPluginState = {};
 	private sourceCoreState: Record<string, unknown> = {};
-	private sourceBoundary: ObsidianSourceBoundary | null = null;
+	private sourceBoundary: SourceAdapterBoundary | null = null;
 	private persistWriteChain: Promise<void> = Promise.resolve();
 
 	/** Pending stability checks for newly created/dropped files. */
@@ -275,9 +275,14 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		return this.runtimeConfig;
 	}
 
+	protected createSourceAdapter(
+		_options: SourceAdapterOptions,
+	): SourceAdapterBoundary {
+		throw new Error("source_adapter_unavailable");
+	}
+
 	private rebuildSourceBoundary(): void {
-		this.sourceBoundary = createObsidianSourceBoundary({
-			app: this.app,
+		this.sourceBoundary = this.createSourceAdapter({
 			clientVersion: this.manifest.version,
 			syncSchemaVersion: SCHEMA_VERSION,
 			getConnection: () => ({
@@ -295,6 +300,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				this.sourceCoreState = next;
 				await this.persistPluginState();
 			},
+			getMaxWriteBytes: () => this.getRuntimeConfig().maxFileSizeBytes,
 			onStatus: (status) => {
 				if (status === "revoked" || status === "expired") {
 					this.updateStatusBar("unauthorized");

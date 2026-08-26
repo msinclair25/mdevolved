@@ -27,6 +27,7 @@
   "devDependencies": {
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
+    "@owd/folder-adapter": "workspace:*",
     "esbuild": "0.25.5",
     "obsidian": "1.13.1",
     "tslib": "2.4.0"
