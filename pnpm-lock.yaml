@@ -242,6 +242,9 @@ importers:
       '@codemirror/view':
         specifier: 6.38.6
         version: 6.38.6
+      '@owd/folder-adapter':
+        specifier: workspace:*
+        version: link:../folder-adapter
       esbuild:
         specifier: 0.25.5
         version: 0.25.5

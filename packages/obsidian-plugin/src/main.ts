@@ -9,10 +9,21 @@ import {
 } from "./pairing-contract";
 import { confirmOwdPairing, promptForOwdPairingLink } from "./pairing-modal";
 import { parseObsidianMindRuntimeProfile } from "./vault-runtime-profile";
+import { createObsidianSourceAdapter } from "./obsidian-adapter";
+import type {
+  SourceAdapterBoundary,
+  SourceAdapterOptions,
+} from "../vendor/yaos-src/runtime/sourceAdapterPort";
 
 export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
   private upstreamLoad: Promise<void> = Promise.resolve();
   private confirmationTail: Promise<void> = Promise.resolve();
+
+  protected override createSourceAdapter(
+    options: SourceAdapterOptions,
+  ): SourceAdapterBoundary {
+    return createObsidianSourceAdapter({ app: this.app, ...options });
+  }
 
   override async onload(): Promise<void> {
     this.addCommand({

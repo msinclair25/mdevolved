@@ -18,7 +18,7 @@ const obsidian = vi.hoisted(() => {
 
 vi.mock("obsidian", () => obsidian);
 
-import { createObsidianSourceBoundary } from "../vendor/yaos-src/runtime/obsidianSourceBoundary";
+import { createObsidianSourceAdapter } from "../src/obsidian-adapter";
 import { planClosedFileReconcile } from "../vendor/yaos-src/runtime/reconcile/closedFilePlanner";
 
 function fixture() {
@@ -74,7 +74,7 @@ describe("Obsidian source-neutral adapter", () => {
       sourceId: "vault-1",
       token: "synthetic_pairing_credential",
     };
-    const boundary = createObsidianSourceBoundary({
+    const boundary = createObsidianSourceAdapter({
       app,
       clientVersion: "0.1.7",
       syncSchemaVersion: 3,
@@ -86,6 +86,7 @@ describe("Obsidian source-neutral adapter", () => {
       removeState: async (key: string) => {
         delete state[key];
       },
+      getMaxWriteBytes: () => 1024 * 1024,
       onStatus: (status) => statuses.push(status),
     });
 
@@ -122,17 +123,18 @@ describe("Obsidian source-neutral adapter", () => {
       removeState: async (key: string) => {
         delete state[key];
       },
+      getMaxWriteBytes: () => 1024 * 1024,
       onStatus: () => undefined,
     };
-    const first = createObsidianSourceBoundary(options);
+    const first = createObsidianSourceAdapter(options);
     await first.core.start();
     await first.core.revoke();
     await expect(
-      createObsidianSourceBoundary(options).core.start(),
+      createObsidianSourceAdapter(options).core.start(),
     ).resolves.toBe("revoked");
 
     token = "replacement_credential";
-    const repaired = createObsidianSourceBoundary(options);
+    const repaired = createObsidianSourceAdapter(options);
     const credential = await repaired.currentCredential();
     expect(credential).not.toBeNull();
     await expect(repaired.core.replaceCredentials(credential!)).resolves.toBe(

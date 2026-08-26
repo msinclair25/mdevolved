@@ -18,10 +18,13 @@ sends an already-validated OWD exchange result through YAOS's existing setup
 controller after OWD's consent prompt (without a second post-exchange vault-ID
 prompt); the legacy credential-bearing YAOS link/device-sharing paths and
 upstream updater calls are disabled; the settings deploy link points to OWD;
-and primary visible labels say OWD Sync. The production build keeps YAOS's QA
-mutation harness disabled. Upstream telemetry is excluded from the vendored
-source and release artifact; OWD retains only minimal no-op diagnostic ports
-needed by the sync engine's command interfaces.
+and primary visible labels say OWD Sync. The vendored orchestration requests a
+source adapter through `runtime/sourceAdapterPort.ts`; the Obsidian vault,
+notice, local-state, and credential-custody implementation lives in
+`src/obsidian-adapter.ts` over the shared `@owd/yaos-core` contract. The
+production build keeps YAOS's QA mutation harness disabled. Upstream telemetry
+is excluded from the vendored source and release artifact; OWD retains only
+minimal no-op diagnostic ports needed by the sync engine's command interfaces.
 
 The OWD adapter validates an untrusted copied `owd-pair://` value and exchange
 response, starts pairing only from the command or settings UI inside the
