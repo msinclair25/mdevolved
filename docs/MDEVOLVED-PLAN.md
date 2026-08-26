@@ -1,9 +1,7 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1 is complete. MD2 implementation and its three-OS package matrix
-are verified; registry publication, release assets, migration, and deployment
-remain open.<br />
-**Date:** 2026-08-25
+**Status:** MD1 and MD2 are complete. MD3 requires a fresh milestone task.<br />
+**Date:** 2026-08-26
 
 ## Milestone boundary
 
@@ -60,9 +58,8 @@ from the current repository.
 
 The later external gates are deliberately narrow:
 
-- reserve and publish the `mdevolved` npm name before the MD2 command is public;
-  the registry returned `404 Not Found` on 2026-08-25, which suggests the name
-  is unclaimed but does not reserve it;
+- preserve owner control of the published `mdevolved` npm package and require
+  publishing 2FA for every release;
 - obtain ordinary trademark and store-listing clearance before paid promotion
   or app-store publication;
 - obtain signing credentials and approve any fees before distributing signed
@@ -362,7 +359,7 @@ plugin identity, updater identifier, credential store, deployment, or live data
 changed. Focused core, plugin, Worker compatibility, production bundle, and
 full repository gates are recorded in the milestone handoff.
 
-## MD2 candidate receipt
+## MD2 delivery receipt
 
 The generic Markdown-folder vertical slice is implemented locally. It includes
 the source-neutral folder adapter, the real Yjs/receipt runtime, protected
@@ -388,10 +385,18 @@ archives with SHA-256 checksums; its tag workflow refuses commits not already
 on `main` and requires all three platform artifacts before creating a
 prerelease.
 
-MD2 is not closed yet. The public `npx mdevolved@latest sync .` path still
-requires owner-authenticated npm publication and a real clean-environment
-install check. Forward-only migration `0036`, the exact Worker deployment, and
-the tag-triggered GitHub prerelease also require live verification. Desktop
-code signing/notarization, repository renaming, and paid services remain later
-delivery gates and are not required for this unsigned public alpha. No
-production or personal source was used during validation.
+MD2 closed on 2026-08-26. Forward-only migration `0036` was applied with no
+remaining migrations, its schema-only verification wrote no records, and the
+exact tagged `main` commit was deployed healthy. The tag-triggered GitHub
+workflow passed the named MD2 gate and packaged checksum-verified unsigned
+archives on macOS, Windows, and Linux before publishing the prerelease.
+
+`mdevolved@0.1.0-alpha.1` is published to npm under `latest` with publishing
+2FA. A real `npx mdevolved@latest sync . --json` run from a fresh synthetic
+directory returned the bounded `provide_pairing` next action, accepted no
+credential argument, requested the pairing link through protected stdin, and
+printed no secret. The disposable directory was removed. Desktop code
+signing/notarization, repository renaming, trademark/store clearance, and paid
+services remain later delivery gates; they are not MD2 acceptance criteria. No
+production or personal source was used during validation, and no external cost
+was incurred.

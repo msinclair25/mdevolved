@@ -50,10 +50,11 @@ plane while making a plain Markdown folder the universal sync source and
 Obsidian an optional first-class adapter. See the
 [source-independent product plan](docs/MDEVOLVED-PLAN.md).
 
-The MD2 source candidate adds a native folder adapter, a protected Electron
-shell, and the thin install path below. The package is not published from this
-repository automatically; until its public alpha release, use the workspace
-build and synthetic fixtures rather than a personal folder.
+The MD2 public alpha adds a native folder adapter, a protected Electron shell,
+and the thin install path below. The package is published on
+[npm](https://www.npmjs.com/package/mdevolved); unsigned macOS, Windows, and
+Linux builds with SHA-256 checksums are available from the
+[GitHub prerelease](https://github.com/msinclair25/mdevolved/releases/tag/mdevolved-v0.1.0-alpha.1).
 
 ```bash
 npx mdevolved@latest sync .
