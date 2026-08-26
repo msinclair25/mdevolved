@@ -60,6 +60,17 @@ for (const width of [760, 360]) {
       await expect(
         window.getByRole("checkbox", { name: "Start MDevolved when I log in" }),
       ).toBeVisible();
+      await expect
+        .poll(() =>
+          window.evaluate(async () => {
+            const api = (window as Window & { mdevolved?: unknown }).mdevolved;
+            if (typeof api !== "object" || api === null) return undefined;
+            return (api as { getStatus: () => Promise<{ phase: string }> })
+              .getStatus()
+              .then((status) => status.phase);
+          }),
+        )
+        .toBe("unconfigured");
 
       const overflow = await window.evaluate(() => ({
         body: document.body.scrollWidth,

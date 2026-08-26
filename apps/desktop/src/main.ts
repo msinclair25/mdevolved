@@ -160,7 +160,7 @@ export function createDesktopMain(
       width: 760,
       height: 720,
       webPreferences: {
-        preload: join(moduleDirectory, "preload.js"),
+        preload: join(moduleDirectory, "preload.cjs"),
         contextIsolation: true,
         sandbox: true,
         nodeIntegration: false,

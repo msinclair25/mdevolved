@@ -32,7 +32,8 @@ function render(status: SyncStatus): void {
   if (messageLabel) messageLabel.textContent = status.message ?? "";
   if (retryButton) retryButton.disabled = !status.canRetry;
   if (repairButton) repairButton.disabled = !status.canRepair;
-  if (revokeButton) revokeButton.disabled = status.revoked;
+  if (revokeButton)
+    revokeButton.disabled = status.revoked || status.phase === "unconfigured";
 }
 
 chooseButton?.addEventListener("click", async () =>

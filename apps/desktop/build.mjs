@@ -4,10 +4,20 @@ import { build } from "esbuild";
 await mkdir("dist", { recursive: true });
 await build({
   bundle: true,
-  entryPoints: ["src/main.ts", "src/preload.ts"],
+  entryPoints: ["src/main.ts"],
   external: ["electron"],
   format: "esm",
   outdir: "dist",
+  platform: "node",
+  sourcemap: true,
+  target: "node22",
+});
+await build({
+  bundle: true,
+  entryPoints: ["src/preload.ts"],
+  external: ["electron"],
+  format: "cjs",
+  outfile: "dist/preload.cjs",
   platform: "node",
   sourcemap: true,
   target: "node22",
