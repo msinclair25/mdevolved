@@ -3,6 +3,8 @@ import { VaultSync } from "../../obsidian-plugin/vendor/yaos-src/sync/vaultSync.
 import type { VaultSyncSettings } from "../../obsidian-plugin/vendor/yaos-src/settings/settingsStore.js";
 import type { PairingConnection } from "./pairing.js";
 import type { VaultSyncLike } from "./runtime.js";
+import * as Y from "yjs";
+import { OWD_SYNC_COMPAT_VERSION } from "./pairing.js";
 
 interface SocketTicket {
   value: string;
@@ -60,7 +62,9 @@ export async function createPortableVaultSync(
     host: connection.host,
     token: connection.token,
     vaultId: connection.vaultId,
-    deviceName: "MDevolved folder",
+    deviceName: connection.deviceId ?? "MDevolved folder",
+    sourceDeviceId: connection.deviceId ?? "",
+    sourceRootFingerprintSha256: connection.rootFingerprintSha256 ?? "",
     debug: false,
     frontmatterGuardEnabled: true,
     excludePatterns: "",
@@ -85,5 +89,35 @@ export async function createPortableVaultSync(
   await vault.initializeServerAckTracking(settings, "mdevolved-cli-alpha.1", {
     localYjsPersistenceLoaded,
   });
+  Object.defineProperty(vault, "getStateVector", {
+    value: () => Y.encodeStateVector(vault.ydoc),
+  });
   return vault;
+}
+
+export async function confirmSourcePublication(
+  connection: PairingConnection,
+  stateVector: Uint8Array | null,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  if (connection.deviceId === undefined || stateVector === null) return;
+  const response = await fetchImpl(
+    `${connection.host.replace(/\/$/u, "")}/api/vaults/${encodeURIComponent(connection.vaultId)}/sync-confirmation`,
+    {
+      body: JSON.stringify({
+        pluginVersion: OWD_SYNC_COMPAT_VERSION,
+        schemaVersion: 3,
+        stateVector: Buffer.from(stateVector).toString("base64url"),
+      }),
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${connection.token}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    },
+  );
+  if (response.status !== 200 && response.status !== 202) {
+    throw new Error(`source_publication_http_${response.status}`);
+  }
 }

@@ -1,13 +1,14 @@
 import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseCliArguments, runCli } from "../src/cli.js";
 import {
   MemoryProtectedCredentialBackend,
   ProtectedCredentialCustody,
 } from "../src/custody.js";
-import { parsePairingLink } from "../src/pairing.js";
+import { pairFolder, parsePairingLink } from "../src/pairing.js";
 
 const temporaryDirectories: string[] = [];
 
@@ -96,6 +97,55 @@ describe("mdevolved CLI safety", () => {
     await custody.revoke();
     expect((await custody.get())?.status).toBe("revoked");
     expect(await custody.getSecret()).toBeNull();
+  });
+
+  it("sends only a credential hash for an enrolled source device", async () => {
+    const deviceId = "8b37b0c3-9d90-4c42-9373-b659472583a1";
+    const captured: unknown[] = [];
+    const connection = await pairFolder(
+      { deploymentUrl: "https://example.com", grant: "g".repeat(24) },
+      {
+        sourceKind: "folder",
+        label: "Disposable folder",
+        capabilities: ["markdown", "watch"],
+        clientVersion: "mdevolved-cli-alpha.1",
+        syncSchemaVersion: 1,
+        descriptorVersion: 1,
+        provenance: { pairedAt: 1 },
+      },
+      "Disposable folder",
+      "mdevolved-cli-alpha.1",
+      {
+        exchange: async (request) => {
+          captured.push(structuredClone(request));
+          if (captured.length === 1) throw new Error("response_lost");
+          return {
+            credentialAccepted: true,
+            deploymentUrl: request.deploymentUrl,
+            serverVersion: "0.3.0",
+            sourceDevice: { deviceId },
+            supportedSchemaVersions: { min: 1, max: 3 },
+            vaultId: "00000000-0000-4000-8000-000000000001",
+          };
+        },
+      },
+      {
+        deviceId,
+        displayName: "Disposable device",
+        rootFingerprintSha256: "b".repeat(64),
+      },
+    );
+    const wire = captured[1] as {
+      sourceDevice?: { credentialSha256: string };
+    };
+    expect(wire.sourceDevice?.credentialSha256).toBe(
+      createHash("sha256").update(connection.token, "utf8").digest("hex"),
+    );
+    expect(captured).toHaveLength(2);
+    expect(captured[1]).toEqual(captured[0]);
+    expect(JSON.stringify(captured)).not.toContain(connection.token);
+    expect(connection.deviceId).toBe(deviceId);
+    expect(connection.rootFingerprintSha256).toBe("b".repeat(64));
   });
 
   it("pairs once, publishes a folder, and reconnects idempotently on the second run", async () => {

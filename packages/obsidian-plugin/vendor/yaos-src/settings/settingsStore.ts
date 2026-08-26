@@ -24,6 +24,10 @@ export interface VaultSyncSettings {
 	vaultId: string;
 	/** Human-readable device name shown in awareness/cursors. */
 	deviceName: string;
+	/** Source-scoped MDevolved device identity; never a Project authority. */
+	sourceDeviceId: string;
+	/** Hash of the exact local source root approved for this device. */
+	sourceRootFingerprintSha256: string;
 	/** Enable verbose console.log output for debugging. */
 	debug: boolean;
 	/** Pause propagation of suspicious YAML frontmatter transitions. */
@@ -68,6 +72,8 @@ export const DEFAULT_SETTINGS: VaultSyncSettings = {
 	token: "",
 	vaultId: "",
 	deviceName: "",
+	sourceDeviceId: "",
+	sourceRootFingerprintSha256: "",
 	debug: false,
 	frontmatterGuardEnabled: true,
 	excludePatterns: "",

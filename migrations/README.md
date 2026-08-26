@@ -324,3 +324,15 @@ working-profile restore inventory is bounded to 14 objects under the Community
 subrequest floor and is rejected before staging when exceeded. Rollback leaves
 the migration and immutable R2 bodies in place; repair forward, never
 down-migrate or delete them.
+
+The MD4 source-device migration is additive and forward-only. Existing
+credentials keep a null device link and retain the legacy single-device
+replacement contract. New clients store one exact provider-neutral boundary
+per source and one locally rooted, owner-approved device record; raw device
+credentials never enter D1. Device presence and last-publisher receipts are
+sync provenance only and cannot satisfy a Project, agent, owner, lease, actor,
+OAuth, or recovery-authority check. Encrypted recovery may preserve bounded
+device history only in `quarantined_source_devices`, whose database checks keep
+authority, credential, and connection restoration false. Application rollback
+leaves the columns, rows, and indexes intact; never down-migrate, revive a
+device, copy a credential, or turn quarantined history into a live device.

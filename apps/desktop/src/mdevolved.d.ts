@@ -20,6 +20,8 @@ declare module "mdevolved" {
     fingerprint: string;
     issuedAt: number;
     expiresAt?: number;
+    deviceId?: string;
+    rootFingerprintSha256?: string;
   }
 
   export interface PairingTransport {
@@ -48,6 +50,7 @@ declare module "mdevolved" {
     };
     readonly remote: MarkdownRemotePort;
     start(): Promise<SyncRuntimeStatus>;
+    getStateVector(): Uint8Array | null;
     syncOnce(): Promise<FolderReconciliationResult>;
     stop(): Promise<void>;
   }
@@ -62,10 +65,20 @@ declare module "mdevolved" {
     sourceName: string,
     clientVersion: string,
     transport: PairingTransport,
+    device?: {
+      deviceId?: string;
+      displayName: string;
+      rootFingerprintSha256: string;
+    },
   ): Promise<PairingConnection>;
   export function createPortableVaultSync(
     connection: PairingConnection,
   ): Promise<VaultSyncLike>;
+  export function confirmSourcePublication(
+    connection: PairingConnection,
+    stateVector: Uint8Array | null,
+    fetchImpl?: typeof fetch,
+  ): Promise<void>;
   export function createSyncRuntime(options: {
     sourceRoot: string;
     custody: CredentialCustodyPort;

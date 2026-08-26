@@ -7,7 +7,7 @@
     {
       "cellRef": "synthetic-cell-01",
       "workerName": "owd-cell-synthetic01",
-      "manifestSha256": "ba140849267c629ffcc92a241f7d3f51e0134d1d6c964b647415323d1227256e",
+      "manifestSha256": "944a233857c9e5d0c3aa261bdde510e8feda3ab994ca0ee6cf272211e80e71d1",
       "namespaceIds": ["710001", "710002", "710003", "710004", "710005"],
       "status": "reserved"
     }

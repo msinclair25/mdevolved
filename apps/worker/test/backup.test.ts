@@ -581,6 +581,44 @@ describe("age-encrypted backups", () => {
     );
     await publishSnapshot(targetVaultId, session);
 
+    const sourceBoundaryBase = {
+      version: 1,
+      root: ".",
+      pathPolicy: "mdevolved-markdown-v1",
+      sourceKind: "folder",
+      capabilities: ["markdown", "watch"],
+    } as const;
+    const sourceBoundarySha256 = await sha256Hex(
+      JSON.stringify(sourceBoundaryBase),
+    );
+    const portableDeviceId = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO source_devices (
+        id, vault_id, display_name, root_fingerprint_sha256,
+        boundary_json, boundary_sha256, client_version,
+        sync_schema_version, enrollment_idempotency_key,
+        enrollment_request_sha256, enrollment_grant_sha256,
+        enrollment_origin_sha256, enrolled_at
+      ) VALUES (?, ?, 'Disposable recovery device', ?, ?, ?,
+        'mdevolved-cli-alpha.1', 1, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        portableDeviceId,
+        sourceVaultId,
+        "b".repeat(64),
+        JSON.stringify({
+          ...sourceBoundaryBase,
+          boundarySha256: sourceBoundarySha256,
+        }),
+        sourceBoundarySha256,
+        crypto.randomUUID(),
+        "c".repeat(64),
+        "d".repeat(64),
+        "e".repeat(64),
+        Math.floor(Date.now() / 1_000),
+      )
+      .run();
+
     const identity = await generateX25519Identity();
     const recipient = await identityToRecipient(identity);
     expect((await configureRecipient(session, recipient)).status).toBe(200);
@@ -603,6 +641,15 @@ describe("age-encrypted backups", () => {
       ),
     );
     const archive = parsePlaintext(plaintext);
+    expect(archive.manifest.sourceDevices).toEqual([
+      expect.objectContaining({
+        authorityRestored: false,
+        connectionRestored: false,
+        credentialRestored: false,
+        deviceId: portableDeviceId,
+        restoreDisposition: "quarantined",
+      }),
+    ]);
 
     const unsafeManifest = structuredClone(archive.manifest);
     unsafeManifest.notes[0]!.path = ".obsidian/plugins/secret.md";
@@ -656,6 +703,39 @@ describe("age-encrypted backups", () => {
       targetVaultId,
       uploadedNoteCount: 0,
     });
+    const quarantinedDevice = await env.DB.prepare(
+      `SELECT restore_id, target_vault_id, authority_restored,
+        credential_restored, connection_restored, body_json
+       FROM quarantined_source_devices WHERE restore_id = ?`,
+    )
+      .bind(job.restoreId)
+      .first<{
+        authority_restored: number;
+        body_json: string;
+        connection_restored: number;
+        credential_restored: number;
+        restore_id: string;
+        target_vault_id: string;
+      }>();
+    expect(quarantinedDevice).toMatchObject({
+      authority_restored: 0,
+      connection_restored: 0,
+      credential_restored: 0,
+      restore_id: job.restoreId,
+      target_vault_id: targetVaultId,
+    });
+    expect(JSON.parse(quarantinedDevice?.body_json ?? "{}")).toMatchObject({
+      deviceId: portableDeviceId,
+      restoreDisposition: "quarantined",
+    });
+    const targetAuthority = await env.DB.prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM vault_credentials WHERE vault_id = ?) AS credentials,
+        (SELECT COUNT(*) FROM agent_grants WHERE vault_id = ?) AS grants`,
+    )
+      .bind(targetVaultId, targetVaultId)
+      .first<{ credentials: number; grants: number }>();
+    expect(targetAuthority).toEqual({ credentials: 0, grants: 0 });
 
     for (const note of archive.manifest.notes) {
       const response = await fetchWorker(
@@ -874,6 +954,14 @@ describe("age-encrypted backups", () => {
       .bind(job.restoreId, job.restoreId)
       .first<{ entries: number; lineage: number }>();
     expect(cleanupCounts).toEqual({ entries: 0, lineage: 23 });
+    expect(
+      await env.DB.prepare(
+        `SELECT COUNT(*) AS count FROM quarantined_source_devices
+         WHERE restore_id = ?`,
+      )
+        .bind(job.restoreId)
+        .first<number>("count"),
+    ).toBe(1);
 
     const stagedObjects = await env.VAULT_STORAGE.list({
       prefix: `restores/${job.restoreId}/`,

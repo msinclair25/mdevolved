@@ -4,7 +4,9 @@ import type {
   ObsidianMindRuntimeProfile,
   PairingExchangeRequest,
   PairingExchangeResponse,
+  SourceDevicePairingExchangeResponse,
   PairingGrantResponse,
+  SourceDeviceEnrollment,
   SourceDescriptor,
   VaultSummary,
 } from "@owd/contracts";
@@ -19,6 +21,13 @@ import {
   SERVER_VERSION,
 } from "@owd/yaos-core";
 import { randomToken, sha256Hex } from "./security";
+import {
+  SourceDeviceError,
+  listAllSourceDevices,
+  markSourceDevicePublished,
+  readSourceDeviceByEnrollmentKey,
+  verifySourceBoundary,
+} from "./source-device-service";
 
 const PAIRING_GRANT_LIFETIME_SECONDS = 10 * 60;
 
@@ -29,6 +38,7 @@ export interface VaultCredentialRecord {
   schema_version: number;
   token_hash: string;
   vault_id: string;
+  source_device_id: string | null;
 }
 
 interface VaultSummaryRow {
@@ -140,6 +150,118 @@ export async function ensurePairingSchema(db: D1Database): Promise<void> {
       )
       .run();
   }
+  // Isolated test/bootstrap databases use the same additive MD4 shape.
+  // Production applies 0037 as a release prerequisite; requests never call
+  // this helper or discover schema.
+  const addColumnIfMissing = async (
+    table: string,
+    column: string,
+    statement: string,
+  ): Promise<void> => {
+    const present = await db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM pragma_table_info(?) WHERE name = ?`,
+      )
+      .bind(table, column)
+      .first<{ count: number }>();
+    if (present?.count !== 1) await db.prepare(statement).run();
+  };
+  await addColumnIfMissing(
+    "vaults",
+    "source_boundary_json",
+    `ALTER TABLE vaults ADD COLUMN source_boundary_json TEXT
+     CHECK (source_boundary_json IS NULL OR json_valid(source_boundary_json))`,
+  );
+  await addColumnIfMissing(
+    "vaults",
+    "source_boundary_sha256",
+    `ALTER TABLE vaults ADD COLUMN source_boundary_sha256 TEXT
+     CHECK (source_boundary_sha256 IS NULL OR length(source_boundary_sha256) = 64)`,
+  );
+  await addColumnIfMissing(
+    "pairing_grants",
+    "device_enrollment",
+    `ALTER TABLE pairing_grants ADD COLUMN device_enrollment INTEGER NOT NULL
+     DEFAULT 0 CHECK (device_enrollment IN (0, 1))`,
+  );
+  await addColumnIfMissing(
+    "pairing_grants",
+    "device_expires_at",
+    `ALTER TABLE pairing_grants ADD COLUMN device_expires_at INTEGER
+     CHECK (device_expires_at IS NULL OR device_expires_at > created_at)`,
+  );
+  await db.exec(
+    executableMigration(`CREATE TABLE IF NOT EXISTS source_devices (
+      id TEXT PRIMARY KEY NOT NULL,
+      vault_id TEXT NOT NULL,
+      display_name TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 120),
+      root_fingerprint_sha256 TEXT NOT NULL CHECK (length(root_fingerprint_sha256) = 64),
+      boundary_json TEXT NOT NULL CHECK (json_valid(boundary_json)),
+      boundary_sha256 TEXT NOT NULL CHECK (length(boundary_sha256) = 64),
+      client_version TEXT NOT NULL CHECK (length(client_version) BETWEEN 1 AND 64),
+      sync_schema_version INTEGER NOT NULL CHECK (sync_schema_version > 0),
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'revoked')),
+      enrollment_idempotency_key TEXT NOT NULL UNIQUE,
+      enrollment_request_sha256 TEXT NOT NULL CHECK (length(enrollment_request_sha256) = 64),
+      enrollment_grant_sha256 TEXT NOT NULL CHECK (length(enrollment_grant_sha256) = 64),
+      enrollment_origin_sha256 TEXT NOT NULL CHECK (length(enrollment_origin_sha256) = 64),
+      enrolled_at INTEGER NOT NULL CHECK (enrolled_at >= 0),
+      expires_at INTEGER CHECK (expires_at IS NULL OR expires_at > enrolled_at),
+      revoked_at INTEGER CHECK (revoked_at IS NULL OR revoked_at >= enrolled_at),
+      last_seen_at INTEGER CHECK (last_seen_at IS NULL OR last_seen_at >= enrolled_at),
+      last_published_at INTEGER CHECK (last_published_at IS NULL OR last_published_at >= enrolled_at),
+      last_published_state_vector_sha256 TEXT CHECK (
+        last_published_state_vector_sha256 IS NULL OR length(last_published_state_vector_sha256) = 64
+      ),
+      last_published_credential_id TEXT,
+      last_published_sequence INTEGER CHECK (
+        last_published_sequence IS NULL OR last_published_sequence > 0
+      ),
+      FOREIGN KEY (vault_id) REFERENCES vaults (id) ON DELETE CASCADE
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS source_devices_vault_status_idx
+      ON source_devices (vault_id, status, enrolled_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS source_devices_active_root_idx
+      ON source_devices (vault_id, root_fingerprint_sha256)
+      WHERE status = 'active';`),
+  );
+  await addColumnIfMissing(
+    "source_devices",
+    "last_published_sequence",
+    `ALTER TABLE source_devices ADD COLUMN last_published_sequence INTEGER
+     CHECK (last_published_sequence IS NULL OR last_published_sequence > 0)`,
+  );
+  await addColumnIfMissing(
+    "vault_credentials",
+    "source_device_id",
+    `ALTER TABLE vault_credentials ADD COLUMN source_device_id TEXT
+     REFERENCES source_devices (id) ON DELETE RESTRICT`,
+  );
+  await db.exec(
+    executableMigration(`CREATE UNIQUE INDEX IF NOT EXISTS vault_credentials_source_device_active_idx
+      ON vault_credentials (source_device_id)
+      WHERE source_device_id IS NOT NULL AND revoked_at IS NULL;
+    CREATE TABLE IF NOT EXISTS quarantined_source_devices (
+      portable_id TEXT PRIMARY KEY NOT NULL,
+      restore_id TEXT,
+      target_vault_id TEXT NOT NULL,
+      source_vault_id TEXT,
+      body_json TEXT NOT NULL CHECK (json_valid(body_json)),
+      body_sha256 TEXT NOT NULL CHECK (length(body_sha256) = 64),
+      restored_at INTEGER NOT NULL CHECK (restored_at >= 0),
+      authority_restored INTEGER NOT NULL DEFAULT 0 CHECK (authority_restored = 0),
+      credential_restored INTEGER NOT NULL DEFAULT 0 CHECK (credential_restored = 0),
+      connection_restored INTEGER NOT NULL DEFAULT 0 CHECK (connection_restored = 0),
+      FOREIGN KEY (target_vault_id) REFERENCES vaults (id) ON DELETE CASCADE
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS quarantined_source_devices_target_idx
+      ON quarantined_source_devices (target_vault_id, restored_at);`),
+  );
+  await addColumnIfMissing(
+    "quarantined_source_devices",
+    "restore_id",
+    `ALTER TABLE quarantined_source_devices ADD COLUMN restore_id TEXT`,
+  );
 }
 
 async function storedSourceDescriptor(
@@ -163,6 +285,377 @@ async function storedSourceDescriptor(
   });
 }
 
+interface DeviceGrantRow {
+  vault_id: string;
+  vault_status: "active" | "pending" | "revoked";
+  device_enrollment: number;
+  device_expires_at: number | null;
+  source_boundary_json: string | null;
+  source_boundary_sha256: string | null;
+  source_descriptor_json: string | null;
+}
+
+async function exchangeSourceDeviceGrant(
+  db: D1Database,
+  input: PairingExchangeRequest & {
+    deploymentUrl: string;
+    now: number;
+    requestId: string;
+  },
+  enrollment: SourceDeviceEnrollment,
+  descriptor: SourceDescriptor | null,
+  grantHash: string,
+): Promise<SourceDevicePairingExchangeResponse | null> {
+  const boundary = await verifySourceBoundary(enrollment.boundary);
+  const originSha256 = await sha256Hex(input.deploymentUrl);
+  const requestSha256 = await sha256Hex(
+    JSON.stringify({
+      grantSha256: grantHash,
+      originSha256,
+      vaultName: input.vaultName,
+      pluginVersion: input.pluginVersion,
+      schemaVersion: input.schemaVersion,
+      sourceDescriptor: input.sourceDescriptor,
+      sourceDevice: enrollment,
+    }),
+  );
+  const replay = await readSourceDeviceByEnrollmentKey(
+    db,
+    enrollment.idempotencyKey,
+    input.now,
+  );
+  if (replay !== null) {
+    if (
+      replay.grantSha256 !== grantHash ||
+      replay.originSha256 !== originSha256 ||
+      replay.requestSha256 !== requestSha256
+    ) {
+      throw new SourceDeviceError("idempotency_conflict");
+    }
+    return {
+      credentialAccepted: true,
+      deploymentUrl: input.deploymentUrl,
+      serverVersion: SERVER_VERSION,
+      sourceDevice: replay.summary,
+      supportedSchemaVersions: {
+        min: SERVER_MIN_SCHEMA_VERSION,
+        max: SERVER_MAX_SCHEMA_VERSION,
+      },
+      vaultId: replay.vaultId,
+    };
+  }
+
+  const grant = await db
+    .prepare(
+      `SELECT grants.vault_id, vault.status AS vault_status,
+        grants.device_enrollment, grants.device_expires_at,
+        vault.source_boundary_json, vault.source_boundary_sha256,
+        vault.source_descriptor_json
+       FROM pairing_grants grants
+       JOIN pairing_grant_origins origins
+         ON origins.grant_hash = grants.grant_hash
+       JOIN vaults vault ON vault.id = grants.vault_id
+       WHERE grants.grant_hash = ?
+         AND origins.deployment_origin = ?
+         AND grants.used_at IS NULL
+         AND grants.expires_at > ?`,
+    )
+    .bind(grantHash, input.deploymentUrl, input.now)
+    .first<DeviceGrantRow>();
+  if (grant === null || grant.vault_status === "revoked") return null;
+  if (grant.vault_status === "active" && grant.device_enrollment !== 1) {
+    throw new SourceDeviceError("source_device_denied");
+  }
+  if (
+    descriptor === null ||
+    descriptor.sourceKind !== boundary.sourceKind ||
+    JSON.stringify(descriptor.capabilities) !==
+      JSON.stringify(boundary.capabilities)
+  ) {
+    throw new SourceDeviceError("source_boundary_mismatch");
+  }
+  if (grant.source_descriptor_json !== null) {
+    let storedDescriptor: SourceDescriptor;
+    try {
+      storedDescriptor = sourceDescriptorSchema.parse(
+        JSON.parse(grant.source_descriptor_json) as unknown,
+      );
+    } catch {
+      throw new SourceDeviceError("source_boundary_invalid");
+    }
+    if (
+      storedDescriptor.sourceKind !== descriptor.sourceKind ||
+      JSON.stringify(storedDescriptor.capabilities) !==
+        JSON.stringify(descriptor.capabilities)
+    ) {
+      throw new SourceDeviceError("source_boundary_mismatch");
+    }
+  }
+  if (
+    grant.source_boundary_sha256 !== null &&
+    grant.source_boundary_sha256 !== boundary.boundarySha256
+  ) {
+    throw new SourceDeviceError("source_boundary_mismatch");
+  }
+  if (grant.source_boundary_json !== null) {
+    let storedBoundary: unknown;
+    try {
+      storedBoundary = JSON.parse(grant.source_boundary_json);
+    } catch {
+      throw new SourceDeviceError("source_boundary_invalid");
+    }
+    if (!sourceDescriptorSchema.safeParse(descriptor).success) {
+      throw new SourceDeviceError("source_boundary_invalid");
+    }
+    const parsedStored = await verifySourceBoundary(
+      storedBoundary as SourceDeviceEnrollment["boundary"],
+    );
+    if (parsedStored.boundarySha256 !== boundary.boundarySha256) {
+      throw new SourceDeviceError("source_boundary_mismatch");
+    }
+  }
+
+  const exchangeId = crypto.randomUUID();
+  const credentialId = crypto.randomUUID();
+  const boundaryJson = JSON.stringify(boundary);
+  const deviceConflict = await db
+    .prepare(
+      `SELECT id FROM source_devices
+       WHERE id = ? OR enrollment_idempotency_key = ?`,
+    )
+    .bind(enrollment.deviceId, enrollment.idempotencyKey)
+    .first<{ id: string }>();
+  if (deviceConflict !== null) {
+    throw new SourceDeviceError("source_device_conflict");
+  }
+  const historyCount = await db
+    .prepare(`SELECT COUNT(*) AS count FROM source_devices WHERE vault_id = ?`)
+    .bind(grant.vault_id)
+    .first<{ count: number }>();
+  if ((historyCount?.count ?? 0) >= 64) {
+    throw new SourceDeviceError("source_device_limit");
+  }
+
+  let results: D1Result<{ vault_id: string }>[];
+  try {
+    results = await db.batch<{ vault_id: string }>([
+      db
+        .prepare(
+          `UPDATE pairing_grants
+           SET used_at = ?, exchange_id = ?
+           WHERE grant_hash = ? AND used_at IS NULL AND expires_at > ?
+             AND EXISTS (
+               SELECT 1 FROM vaults vault
+               WHERE vault.id = pairing_grants.vault_id
+                 AND vault.status != 'revoked'
+                 AND (vault.source_boundary_sha256 IS NULL OR vault.source_boundary_sha256 = ?)
+             )
+             AND NOT EXISTS (
+               SELECT 1 FROM source_devices device
+               WHERE device.id = ? OR device.enrollment_idempotency_key = ?
+             )
+             AND NOT EXISTS (
+               SELECT 1 FROM source_devices device
+               WHERE device.vault_id = pairing_grants.vault_id
+                 AND device.root_fingerprint_sha256 = ?
+                 AND device.status = 'active'
+             )
+             AND (
+               SELECT COUNT(*) FROM source_devices device
+               WHERE device.vault_id = pairing_grants.vault_id
+             ) < 64
+             AND (
+               SELECT COUNT(*) FROM source_devices device
+               WHERE device.vault_id = pairing_grants.vault_id
+                 AND device.status = 'active'
+                 AND (device.expires_at IS NULL OR device.expires_at > ?)
+             ) < 16
+             AND EXISTS (
+               SELECT 1 FROM pairing_grant_origins origins
+               WHERE origins.grant_hash = pairing_grants.grant_hash
+                 AND origins.deployment_origin = ?
+             )
+           RETURNING vault_id`,
+        )
+        .bind(
+          input.now,
+          exchangeId,
+          grantHash,
+          input.now,
+          boundary.boundarySha256,
+          enrollment.deviceId,
+          enrollment.idempotencyKey,
+          enrollment.rootFingerprintSha256,
+          input.now,
+          input.deploymentUrl,
+        ),
+      db
+        .prepare(
+          `INSERT INTO source_devices (
+            id, vault_id, display_name, root_fingerprint_sha256,
+            boundary_json, boundary_sha256, client_version,
+            sync_schema_version, enrollment_idempotency_key,
+            enrollment_request_sha256, enrollment_grant_sha256,
+            enrollment_origin_sha256, enrolled_at, expires_at
+          )
+          SELECT ?, grants.vault_id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, grants.device_expires_at
+          FROM pairing_grants grants
+          JOIN vaults vault ON vault.id = grants.vault_id
+          WHERE grant_hash = ? AND exchange_id = ?
+            AND (vault.source_boundary_sha256 IS NULL OR vault.source_boundary_sha256 = ?)
+            AND (
+              SELECT COUNT(*) FROM source_devices
+              WHERE source_devices.vault_id = grants.vault_id
+                AND source_devices.status = 'active'
+                AND (
+                  source_devices.expires_at IS NULL
+                  OR source_devices.expires_at > ?
+                )
+            ) < 16
+          RETURNING vault_id`,
+        )
+        .bind(
+          enrollment.deviceId,
+          enrollment.displayName,
+          enrollment.rootFingerprintSha256,
+          boundaryJson,
+          boundary.boundarySha256,
+          input.pluginVersion,
+          input.schemaVersion,
+          enrollment.idempotencyKey,
+          requestSha256,
+          grantHash,
+          originSha256,
+          input.now,
+          grantHash,
+          exchangeId,
+          boundary.boundarySha256,
+          input.now,
+        ),
+      db
+        .prepare(
+          `INSERT INTO vault_credentials (
+            id, vault_id, token_hash, plugin_version, schema_version,
+            created_at, source_device_id
+          )
+          SELECT ?, vault_id, ?, ?, ?, ?, ?
+          FROM pairing_grants
+          WHERE grant_hash = ? AND exchange_id = ?
+            AND EXISTS (
+              SELECT 1 FROM source_devices device
+              WHERE device.id = ? AND device.vault_id = pairing_grants.vault_id
+            )
+          RETURNING vault_id`,
+        )
+        .bind(
+          credentialId,
+          enrollment.credentialSha256,
+          input.pluginVersion,
+          input.schemaVersion,
+          input.now,
+          enrollment.deviceId,
+          grantHash,
+          exchangeId,
+          enrollment.deviceId,
+        ),
+      db
+        .prepare(
+          `UPDATE vaults
+           SET display_name = COALESCE(display_name, ?),
+               status = 'active', paired_at = COALESCE(paired_at, ?),
+               source_descriptor_json = COALESCE(source_descriptor_json, ?),
+               source_boundary_json = COALESCE(source_boundary_json, ?),
+               source_boundary_sha256 = COALESCE(source_boundary_sha256, ?)
+           WHERE id = ?
+             AND (source_boundary_sha256 IS NULL OR source_boundary_sha256 = ?)
+           RETURNING id AS vault_id`,
+        )
+        .bind(
+          input.vaultName,
+          input.now,
+          descriptor === null ? null : JSON.stringify(descriptor),
+          boundaryJson,
+          boundary.boundarySha256,
+          grant.vault_id,
+          boundary.boundarySha256,
+        ),
+      db
+        .prepare(
+          `INSERT INTO audit_events (id, event_type, request_id, created_at)
+           SELECT ?, 'source.device_enrolled', ?, ?
+           WHERE EXISTS (
+             SELECT 1 FROM source_devices WHERE id = ? AND vault_id = ?
+           )`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          input.requestId,
+          input.now,
+          enrollment.deviceId,
+          grant.vault_id,
+        ),
+    ]);
+  } catch (error) {
+    if (error instanceof SourceDeviceError) throw error;
+    if (
+      error instanceof Error &&
+      error.message.includes("UNIQUE constraint failed")
+    ) {
+      throw new SourceDeviceError("source_device_conflict");
+    }
+    throw error;
+  }
+  if (
+    results[0]?.results[0]?.vault_id !== grant.vault_id ||
+    results[1]?.results[0]?.vault_id !== grant.vault_id ||
+    results[2]?.results[0]?.vault_id !== grant.vault_id ||
+    results[3]?.results[0]?.vault_id !== grant.vault_id
+  ) {
+    const racedReplay = await readSourceDeviceByEnrollmentKey(
+      db,
+      enrollment.idempotencyKey,
+      input.now,
+    );
+    if (racedReplay === null) return null;
+    if (
+      racedReplay.vaultId !== grant.vault_id ||
+      racedReplay.grantSha256 !== grantHash ||
+      racedReplay.originSha256 !== originSha256 ||
+      racedReplay.requestSha256 !== requestSha256
+    ) {
+      throw new SourceDeviceError("idempotency_conflict");
+    }
+    return {
+      credentialAccepted: true,
+      deploymentUrl: input.deploymentUrl,
+      serverVersion: SERVER_VERSION,
+      sourceDevice: racedReplay.summary,
+      supportedSchemaVersions: {
+        min: SERVER_MIN_SCHEMA_VERSION,
+        max: SERVER_MAX_SCHEMA_VERSION,
+      },
+      vaultId: racedReplay.vaultId,
+    };
+  }
+  const enrolled = await readSourceDeviceByEnrollmentKey(
+    db,
+    enrollment.idempotencyKey,
+    input.now,
+  );
+  if (enrolled === null) return null;
+  return {
+    credentialAccepted: true,
+    deploymentUrl: input.deploymentUrl,
+    serverVersion: SERVER_VERSION,
+    sourceDevice: enrolled.summary,
+    supportedSchemaVersions: {
+      min: SERVER_MIN_SCHEMA_VERSION,
+      max: SERVER_MAX_SCHEMA_VERSION,
+    },
+    vaultId: grant.vault_id,
+  };
+}
+
 export async function createPairingGrant(
   db: D1Database,
   input: {
@@ -171,6 +664,8 @@ export async function createPairingGrant(
     requestId: string;
     maxVaults?: number;
     vaultId?: string;
+    deviceEnrollment?: boolean;
+    deviceExpiresAt?: number;
   },
 ): Promise<PairingGrantResponse | null> {
   const vaultId = input.vaultId ?? crypto.randomUUID();
@@ -231,13 +726,22 @@ export async function createPairingGrant(
     db
       .prepare(
         `INSERT INTO pairing_grants (
-          grant_hash, vault_id, created_at, expires_at
+          grant_hash, vault_id, created_at, expires_at,
+          device_enrollment, device_expires_at
         )
-        SELECT ?, ?, ?, ?
+        SELECT ?, ?, ?, ?, ?, ?
         WHERE EXISTS (SELECT 1 FROM vaults WHERE id = ?)
         RETURNING vault_id`,
       )
-      .bind(grantHash, vaultId, input.now, expiresAt, vaultId),
+      .bind(
+        grantHash,
+        vaultId,
+        input.now,
+        expiresAt,
+        input.deviceEnrollment === true ? 1 : 0,
+        input.deviceExpiresAt ?? null,
+        vaultId,
+      ),
     db
       .prepare(
         `INSERT INTO pairing_grant_origins (grant_hash, deployment_origin)
@@ -284,7 +788,9 @@ export async function exchangePairingGrant(
     now: number;
     requestId: string;
   },
-): Promise<PairingExchangeResponse | null> {
+): Promise<
+  PairingExchangeResponse | SourceDevicePairingExchangeResponse | null
+> {
   const descriptor = await storedSourceDescriptor(
     input.sourceDescriptor,
     input.now,
@@ -298,6 +804,15 @@ export async function exchangePairingGrant(
       return { token, hash: await sha256Hex(token) };
     })(),
   ]);
+  if (input.sourceDevice !== undefined) {
+    return exchangeSourceDeviceGrant(
+      db,
+      input,
+      input.sourceDevice,
+      descriptor,
+      grantHash,
+    );
+  }
   const currentVault = await db
     .prepare(
       `SELECT v.source_descriptor_json
@@ -465,15 +980,24 @@ export async function readVaultCredential(
   return db
     .prepare(
       `SELECT c.id, c.token_hash, c.vault_id, c.plugin_version,
-        c.schema_version, c.created_at
+        c.schema_version, c.created_at, c.source_device_id
        FROM vault_credentials c
        JOIN vaults v ON v.id = c.vault_id
        WHERE c.vault_id = ?
          AND c.token_hash = ?
          AND c.revoked_at IS NULL
+         AND (
+           c.source_device_id IS NULL OR EXISTS (
+             SELECT 1 FROM source_devices device
+             WHERE device.id = c.source_device_id
+               AND device.vault_id = c.vault_id
+               AND device.status = 'active'
+               AND (device.expires_at IS NULL OR device.expires_at > ?)
+           )
+         )
          AND v.status = 'active'`,
     )
-    .bind(vaultId, tokenHash)
+    .bind(vaultId, tokenHash, Math.floor(Date.now() / 1_000))
     .first<VaultCredentialRecord>();
 }
 
@@ -511,15 +1035,24 @@ export async function readVaultCredentialById(
   return db
     .prepare(
       `SELECT c.id, c.token_hash, c.vault_id, c.plugin_version,
-        c.schema_version, c.created_at
+        c.schema_version, c.created_at, c.source_device_id
        FROM vault_credentials c
        JOIN vaults v ON v.id = c.vault_id
        WHERE c.vault_id = ?
          AND c.id = ?
          AND c.revoked_at IS NULL
+         AND (
+           c.source_device_id IS NULL OR EXISTS (
+             SELECT 1 FROM source_devices device
+             WHERE device.id = c.source_device_id
+               AND device.vault_id = c.vault_id
+               AND device.status = 'active'
+               AND (device.expires_at IS NULL OR device.expires_at > ?)
+           )
+         )
          AND v.status = 'active'`,
     )
-    .bind(vaultId, credentialId)
+    .bind(vaultId, credentialId, Math.floor(Date.now() / 1_000))
     .first<VaultCredentialRecord>();
 }
 
@@ -561,6 +1094,18 @@ export async function markVaultConnected(
           updated_at = excluded.updated_at`,
       )
       .bind(now, now, credentialId, vaultId),
+    db
+      .prepare(
+        `UPDATE source_devices
+         SET last_seen_at = ?
+         WHERE id = (
+           SELECT source_device_id FROM vault_credentials
+           WHERE id = ? AND vault_id = ? AND revoked_at IS NULL
+         )
+           AND status = 'active'
+           AND (expires_at IS NULL OR expires_at > ?)`,
+      )
+      .bind(now, credentialId, vaultId, now),
   ]);
 }
 
@@ -659,13 +1204,15 @@ export async function confirmVaultSync(
         `UPDATE vault_credentials
          SET revoked_at = COALESCE(revoked_at, ?)
          WHERE vault_id = ? AND id != ? AND revoked_at IS NULL
-           AND created_at < ?`,
+           AND created_at < ?
+           AND ? IS NULL`,
       )
       .bind(
         input.now,
         input.vaultId,
         input.credential.id,
         input.credential.created_at,
+        input.credential.source_device_id,
       ),
     db
       .prepare(
@@ -685,10 +1232,22 @@ export async function confirmVaultSync(
       ),
   ]);
 
-  return results[0]?.results[0]?.vault_id === input.vaultId;
+  const confirmed = results[0]?.results[0]?.vault_id === input.vaultId;
+  if (!confirmed) return false;
+  if (input.credential.source_device_id === null) return true;
+  return markSourceDevicePublished(db, {
+    credentialId: input.credential.id,
+    deviceId: input.credential.source_device_id,
+    now: input.now,
+    requestId: input.requestId,
+    stateVectorSha256: input.stateVectorSha256,
+    vaultId: input.vaultId,
+  });
 }
 
 export async function listVaults(db: D1Database): Promise<VaultSummary[]> {
+  const now = Math.floor(Date.now() / 1_000);
+  const sourceDevices = await listAllSourceDevices(db, now);
   const result = await db
     .prepare(
       `SELECT id, display_name, status, created_at, paired_at,
@@ -716,6 +1275,14 @@ export async function listVaults(db: D1Database): Promise<VaultSummary[]> {
       parsedProfile !== null && parsedProfile.success
         ? parsedProfile.data
         : null;
+    const devices = sourceDevices.get(row.id) ?? [];
+    const lastPublisher =
+      devices
+        .filter((device) => device.lastPublishedAt !== null)
+        .sort(
+          (left, right) =>
+            (right.lastPublishedAt ?? 0) - (left.lastPublishedAt ?? 0),
+        )[0] ?? null;
     return {
       id: row.id,
       displayName: row.display_name,
@@ -724,6 +1291,8 @@ export async function listVaults(db: D1Database): Promise<VaultSummary[]> {
       pairedAt: row.paired_at,
       lastConnectedAt: row.last_connected_at,
       ...(runtimeProfile === null ? {} : { runtimeProfile }),
+      sourceDevices: devices,
+      lastPublisher,
     };
   });
 }
@@ -745,6 +1314,13 @@ export async function revokeVault(
       .prepare(
         `UPDATE vault_credentials
          SET revoked_at = COALESCE(revoked_at, ?)
+         WHERE vault_id = ?`,
+      )
+      .bind(input.now, input.vaultId),
+    db
+      .prepare(
+        `UPDATE source_devices
+         SET status = 'revoked', revoked_at = COALESCE(revoked_at, ?)
          WHERE vault_id = ?`,
       )
       .bind(input.now, input.vaultId),

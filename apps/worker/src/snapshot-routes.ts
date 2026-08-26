@@ -19,6 +19,7 @@ import { enforceRateLimit } from "./auth-store";
 import { readUsableMaterialization } from "./materialization-store";
 import { requireOwnerSession } from "./owner-session";
 import { readVaultSourceDescriptor } from "./pairing-store";
+import { listSourceDevices } from "./source-device-service";
 import { parseJsonBody, sha256Hex } from "./security";
 import {
   enforceSnapshotRetention,
@@ -207,11 +208,23 @@ async function currentCaptureSources(
     if (generation === null || vault.displayName === null) {
       throw new SnapshotError("snapshot_source_unavailable");
     }
+    const devices = await listSourceDevices(
+      context.env.DB,
+      vault.id,
+      Math.floor(Date.now() / 1_000),
+    );
     sources.push({
       generation,
       sourceDescriptor:
         (await readVaultSourceDescriptor(context.env.DB, vault.id)) ??
         undefined,
+      sourceDevices: devices.map((device) => ({
+        ...device,
+        authorityRestored: false as const,
+        connectionRestored: false as const,
+        credentialRestored: false as const,
+        restoreDisposition: "quarantined" as const,
+      })),
       vaultName: vault.displayName,
     });
   }
@@ -251,6 +264,15 @@ async function freshCaptureSources(
         sourceDescriptor:
           (await readVaultSourceDescriptor(context.env.DB, vault.id)) ??
           undefined,
+        sourceDevices: (
+          await listSourceDevices(context.env.DB, vault.id, now)
+        ).map((device) => ({
+          ...device,
+          authorityRestored: false as const,
+          connectionRestored: false as const,
+          credentialRestored: false as const,
+          restoreDisposition: "quarantined" as const,
+        })),
         vaultName: vault.displayName as string,
       };
     }),

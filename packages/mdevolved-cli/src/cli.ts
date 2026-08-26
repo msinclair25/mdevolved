@@ -1,4 +1,5 @@
 import { basename } from "node:path";
+import { createHash } from "node:crypto";
 import {
   canonicalizeFolderRoot,
   createFolderSource,
@@ -22,7 +23,10 @@ import {
   type SyncRuntime,
   type VaultSyncLike,
 } from "./runtime.js";
-import { createPortableVaultSync } from "./vaultFactory.js";
+import {
+  confirmSourcePublication,
+  createPortableVaultSync,
+} from "./vaultFactory.js";
 
 export const CLIENT_VERSION = "mdevolved-cli-alpha.1";
 
@@ -145,6 +149,12 @@ export async function runCli(
         basename(canonicalRoot),
         CLIENT_VERSION,
         dependencies.pairingTransport ?? createFetchPairingTransport(),
+        {
+          displayName: `MDevolved folder on ${process.platform}`,
+          rootFingerprintSha256: createHash("sha256")
+            .update(sourceId, "utf8")
+            .digest("hex"),
+        },
       );
       await custody.install(
         {
@@ -157,7 +167,18 @@ export async function runCli(
             : { expiresAt: connection.expiresAt }),
         },
         connection.token,
-        { host: connection.host, vaultId: connection.vaultId },
+        {
+          host: connection.host,
+          vaultId: connection.vaultId,
+          ...(connection.deviceId === undefined
+            ? {}
+            : { deviceId: connection.deviceId }),
+          ...(connection.rootFingerprintSha256 === undefined
+            ? {}
+            : {
+                rootFingerprintSha256: connection.rootFingerprintSha256,
+              }),
+        },
       );
       credential = await custody.get();
     } catch (error) {
@@ -194,6 +215,22 @@ export async function runCli(
       return result;
     }
   }
+  const expectedRootFingerprintSha256 = createHash("sha256")
+    .update(sourceId, "utf8")
+    .digest("hex");
+  if (
+    connection.rootFingerprintSha256 !== undefined &&
+    connection.rootFingerprintSha256 !== expectedRootFingerprintSha256
+  ) {
+    const result = {
+      ok: false,
+      action: "pairing_failed" as const,
+      sourceId,
+      message: "source_root_mismatch",
+    };
+    emit(result, dependencies);
+    return result;
+  }
   const descriptor = await descriptorFor(
     canonicalRoot,
     custody,
@@ -213,10 +250,12 @@ export async function runCli(
         ? {}
         : { stateDirectory: dependencies.stateDirectory }),
       clientVersion: CLIENT_VERSION,
+      deviceName: connection.deviceId ?? "MDevolved folder",
       watch: false,
     });
     await runtime.start();
     const synced = await runtime.syncOnce();
+    await confirmSourcePublication(connection, runtime.getStateVector());
     const result = {
       ok: true,
       action: "sync_complete" as const,

@@ -12,6 +12,8 @@ const DEPLOYMENT = "https://owd.example";
 const GRANT = "grant_token_12345678901234567890";
 const CREDENTIAL = "credential_12345678901234567890";
 const VAULT_ID = "946009ef-ad0e-43e4-bd7e-3552d559a9ab";
+const DEVICE_ID = "a4cfebbb-1c37-4fea-a30b-894e0d909911";
+const IDEMPOTENCY_KEY = "bad2c67d-d80f-40b2-a4c0-49070ed1a25c";
 const PAIRING_LINK = `owd-pair://connect?deployment=${encodeURIComponent(DEPLOYMENT)}&grant=${GRANT}`;
 
 function dependencies(
@@ -20,11 +22,17 @@ function dependencies(
   return {
     applyConnection: vi.fn(async () => undefined),
     confirm: vi.fn(async () => true),
+    createDeviceMaterial: vi.fn(async () => ({
+      credential: CREDENTIAL,
+      deviceId: DEVICE_ID,
+      idempotencyKey: IDEMPOTENCY_KEY,
+    })),
     request: vi.fn(async () => ({
       json: {
-        credential: CREDENTIAL,
+        credentialAccepted: true,
         deploymentUrl: DEPLOYMENT,
         serverVersion: "0.3.0",
+        sourceDevice: { deviceId: DEVICE_ID },
         supportedSchemaVersions: { max: 3, min: 1 },
         vaultId: VAULT_ID,
       },
@@ -110,6 +118,7 @@ describe("OWD Obsidian pairing contract", () => {
       pairOwdVault(
         { deploymentUrl: DEPLOYMENT, grant: GRANT },
         "Private notes",
+        "app://local/private-notes",
         "0.1.1",
         deps,
       ),
@@ -125,6 +134,7 @@ describe("OWD Obsidian pairing contract", () => {
       pairOwdVault(
         { deploymentUrl: DEPLOYMENT, grant: GRANT },
         "Private notes",
+        "app://local/private-notes",
         "0.1.1",
         deps,
       ),
@@ -136,17 +146,65 @@ describe("OWD Obsidian pairing contract", () => {
       }),
     );
     const request = vi.mocked(deps.request).mock.calls[0]?.[0];
-    expect(JSON.parse(request?.body ?? "{}")).toEqual({
+    const body = JSON.parse(request?.body ?? "{}") as Record<string, unknown>;
+    expect(body).toMatchObject({
       grant: GRANT,
       pluginVersion: "0.1.1",
       schemaVersion: 3,
       vaultName: "Private notes",
+      sourceDescriptor: {
+        capabilities: ["markdown", "editor-integration", "watch"],
+        clientVersion: "0.1.1",
+        label: "Private notes",
+        sourceKind: "obsidian",
+        syncSchemaVersion: 3,
+      },
+      sourceDevice: {
+        contractVersion: 1,
+        credentialSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
+        deviceId: DEVICE_ID,
+        idempotencyKey: IDEMPOTENCY_KEY,
+        rootFingerprintSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
+      },
     });
+    expect(JSON.stringify(body)).not.toContain(CREDENTIAL);
     expect(deps.applyConnection).toHaveBeenCalledWith({
+      deviceId: DEVICE_ID,
       host: DEPLOYMENT,
+      rootFingerprintSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
       token: CREDENTIAL,
       vaultId: VAULT_ID,
     });
+  });
+
+  it("retries a lost exchange response with byte-identical device material", async () => {
+    const successful = {
+      json: {
+        credentialAccepted: true,
+        deploymentUrl: DEPLOYMENT,
+        serverVersion: "0.3.0",
+        sourceDevice: { deviceId: DEVICE_ID },
+        supportedSchemaVersions: { max: 3, min: 1 },
+        vaultId: VAULT_ID,
+      },
+      status: 200,
+    };
+    const request = vi
+      .fn<OwdPairingDependencies["request"]>()
+      .mockRejectedValueOnce(new Error("response_lost"))
+      .mockResolvedValueOnce(successful);
+    const deps = dependencies({ request });
+    await expect(
+      pairOwdVault(
+        { deploymentUrl: DEPLOYMENT, grant: GRANT },
+        "Private notes",
+        "app://local/private-notes",
+        "0.1.1",
+        deps,
+      ),
+    ).resolves.toBe("paired");
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request.mock.calls[1]?.[0]).toEqual(request.mock.calls[0]?.[0]);
   });
 
   it("rejects mismatched or malformed server responses without saving", async () => {
@@ -169,6 +227,7 @@ describe("OWD Obsidian pairing contract", () => {
       pairOwdVault(
         { deploymentUrl: DEPLOYMENT, grant: GRANT },
         "Private notes",
+        "app://local/private-notes",
         "0.1.1",
         deps,
       ),
@@ -185,6 +244,7 @@ describe("OWD Obsidian pairing contract", () => {
       pairOwdVault(
         { deploymentUrl: DEPLOYMENT, grant: GRANT },
         "Private notes",
+        "app://local/private-notes",
         "0.1.1",
         deps,
       ),

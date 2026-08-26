@@ -1126,6 +1126,37 @@ describe("workspace snapshots", () => {
     )
       .bind(JSON.stringify(folderDescriptor), firstVault)
       .run();
+    const boundaryBase = {
+      version: 1,
+      root: ".",
+      pathPolicy: "mdevolved-markdown-v1",
+      sourceKind: "folder",
+      capabilities: ["markdown", "watch"],
+    } as const;
+    const boundarySha256 = await sha256Hex(JSON.stringify(boundaryBase));
+    const sourceDeviceId = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO source_devices (
+        id, vault_id, display_name, root_fingerprint_sha256,
+        boundary_json, boundary_sha256, client_version,
+        sync_schema_version, enrollment_idempotency_key,
+        enrollment_request_sha256, enrollment_grant_sha256,
+        enrollment_origin_sha256, enrolled_at
+      ) VALUES (?, ?, 'Portable disposable device', ?, ?, ?,
+        'mdevolved-cli-alpha.1', 1, ?, ?, ?, ?, 1)`,
+    )
+      .bind(
+        sourceDeviceId,
+        firstVault,
+        "d".repeat(64),
+        JSON.stringify({ ...boundaryBase, boundarySha256 }),
+        boundarySha256,
+        crypto.randomUUID(),
+        "e".repeat(64),
+        "f".repeat(64),
+        "0".repeat(64),
+      )
+      .run();
     await Promise.all([
       env.VAULTS.getByName(firstVault).applyUpdate(
         createVaultUpdate([
@@ -1208,8 +1239,18 @@ describe("workspace snapshots", () => {
           restoreDisposition: "quarantined",
           authorityRestored: false,
         });
+        expect(portableVault.sourceDevices).toEqual([
+          expect.objectContaining({
+            authorityRestored: false,
+            connectionRestored: false,
+            credentialRestored: false,
+            deviceId: sourceDeviceId,
+            restoreDisposition: "quarantined",
+          }),
+        ]);
       } else {
         expect(portableVault.sourceDescriptor).toBeUndefined();
+        expect(portableVault.sourceDevices).toBeUndefined();
       }
     }
     expect(restored).toEqual(

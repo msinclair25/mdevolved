@@ -8,7 +8,10 @@ import {
 
 describe("D1 source descriptor migration", () => {
   beforeAll(async () => {
-    await applyMigrations(env.DB, migrations.slice(0, -1));
+    await applyMigrations(
+      env.DB,
+      migrations.slice(0, migrations.indexOf(sourceDescriptorsMigrationEntry)),
+    );
     await env.DB.prepare(
       "INSERT INTO app_metadata (key, value) VALUES ('md2_descriptor_fixture', 'preserved')",
     ).run();

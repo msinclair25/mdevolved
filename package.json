@@ -58,6 +58,7 @@
     "test:marketing": "pnpm --filter @owd/marketing test",
     "test:md2:acceptance": "pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @owd/desktop test && vitest run apps/worker/test/source-descriptor-pairing.test.ts apps/worker/test/migrations-source-descriptor-upgrade.test.ts apps/worker/test/snapshot.test.ts packages/contracts/test/source-descriptor.test.ts --config vitest.config.ts && pnpm test:clean-install:mdevolved",
     "test:md3:acceptance": "pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter @owd/obsidian-plugin test && pnpm release:check",
+    "test:md4:acceptance": "pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @owd/desktop test && pnpm --filter @owd/desktop build && pnpm --filter @owd/obsidian-plugin test && vitest run apps/worker/test/pairing.test.ts apps/worker/test/collaboration.test.ts apps/worker/test/backup.test.ts apps/worker/test/snapshot.test.ts apps/worker/test/migrations-source-devices-upgrade.test.ts packages/contracts/test/source-device.test.ts --config vitest.config.ts",
     "test:e2e": "playwright test",
     "test:integration": "vitest run --config vitest.config.ts",
     "test:migrations": "vitest run apps/worker/test/migrations-*.test.ts",

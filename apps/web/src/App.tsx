@@ -32,6 +32,7 @@ import {
   type SetupReadiness,
   type SetupStatus,
   type SetupVaultReadiness,
+  type SourceDeviceSummary,
   type VaultSummary,
 } from "@owd/contracts";
 import {
@@ -328,11 +329,18 @@ function formatTimestamp(value: number | null): string {
 function VaultRow({
   isWorking,
   onReconnect,
+  onEnrollDevice,
+  onRevokeDevice,
   onRevoke,
   vault,
 }: {
   isWorking: boolean;
   onReconnect?: (vault: VaultSummary) => Promise<void>;
+  onEnrollDevice?: (vault: VaultSummary) => Promise<void>;
+  onRevokeDevice?: (
+    vault: VaultSummary,
+    device: SourceDeviceSummary,
+  ) => Promise<void>;
   onRevoke: (vault: VaultSummary) => Promise<void>;
   vault: VaultSummary;
 }) {
@@ -355,9 +363,56 @@ function VaultRow({
           <dt>Last connected</dt>
           <dd>{formatTimestamp(vault.lastConnectedAt)}</dd>
         </div>
+        <div>
+          <dt>Source devices</dt>
+          <dd>{vault.sourceDevices?.length ?? 0}</dd>
+        </div>
+        <div>
+          <dt>Last published by</dt>
+          <dd>
+            {vault.lastPublisher === null || vault.lastPublisher === undefined
+              ? "Not yet"
+              : `${vault.lastPublisher.displayName} · ${formatTimestamp(vault.lastPublisher.lastPublishedAt)}`}
+          </dd>
+        </div>
       </dl>
+      {(vault.sourceDevices?.length ?? 0) > 0 ? (
+        <ul className="source-device-list" aria-label="Approved source devices">
+          {vault.sourceDevices?.map((device) => (
+            <li key={device.deviceId}>
+              <span>
+                <strong>{device.displayName}</strong>
+                <small>
+                  {device.status} · boundary {device.boundary.root} · last seen{" "}
+                  {formatTimestamp(device.lastSeenAt)}
+                </small>
+              </span>
+              {device.status === "active" && onRevokeDevice !== undefined ? (
+                <button
+                  className="danger-action"
+                  type="button"
+                  disabled={isWorking}
+                  onClick={() => void onRevokeDevice(vault, device)}
+                >
+                  Revoke device
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {vault.status !== "revoked" && onReconnect !== undefined ? (
         <div className="vault-row-actions">
+          {onEnrollDevice !== undefined ? (
+            <button
+              className="secondary-action"
+              type="button"
+              disabled={isWorking}
+              onClick={() => void onEnrollDevice(vault)}
+            >
+              Add approved device
+            </button>
+          ) : null}
           <button
             className="secondary-action"
             type="button"
@@ -2763,6 +2818,70 @@ function Dashboard() {
     }
   }
 
+  async function createDeviceEnrollmentLink(
+    vault: VaultSummary,
+  ): Promise<void> {
+    setActionState({
+      kind: "working",
+      label: `Approving another device for ${vault.displayName ?? "this source"}…`,
+    });
+    try {
+      const csrfToken = await loadCsrf();
+      const grant = pairingGrantResponseSchema.parse(
+        await requestJson(
+          `/api/vaults/${encodeURIComponent(vault.id)}/device-enrollment-grants`,
+          csrfToken,
+          {},
+        ),
+      );
+      setPairingGrant(grant);
+      setPairingCopyState({ kind: "idle" });
+      setActionState({
+        kind: "success",
+        message:
+          "A single-use device approval is ready. It preserves the existing source boundary and does not grant Project authority.",
+      });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The source device approval could not be created.",
+      });
+    }
+  }
+
+  async function revokeSourceDeviceAccess(
+    vault: VaultSummary,
+    device: SourceDeviceSummary,
+  ): Promise<void> {
+    if (
+      !window.confirm(
+        `Revoke ${device.displayName}? Its sync credential will stop working immediately. Durable Project data is unchanged.`,
+      )
+    )
+      return;
+    setActionState({ kind: "working", label: "Revoking source device…" });
+    try {
+      const csrfToken = await loadCsrf();
+      await requestJson(
+        `/api/vaults/${encodeURIComponent(vault.id)}/devices/${encodeURIComponent(device.deviceId)}/revoke`,
+        csrfToken,
+      );
+      await refreshVaults();
+      setActionState({ kind: "idle" });
+    } catch (error: unknown) {
+      setActionState({
+        kind: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The device could not be revoked.",
+      });
+    }
+  }
+
   async function revokeVaultAccess(vault: VaultSummary): Promise<void> {
     const vaultName = vault.displayName ?? "this pending vault";
     if (
@@ -3666,7 +3785,9 @@ function Dashboard() {
                           isWorking={isWorking}
                           key={vault.id}
                           vault={vault}
+                          onEnrollDevice={createDeviceEnrollmentLink}
                           onReconnect={createReconnectLink}
+                          onRevokeDevice={revokeSourceDeviceAccess}
                           onRevoke={revokeVaultAccess}
                         />
                       ))}

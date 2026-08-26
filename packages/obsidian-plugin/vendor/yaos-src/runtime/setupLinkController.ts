@@ -73,6 +73,16 @@ export class SetupLinkController {
 			if (incomingVaultId) {
 				settings.vaultId = incomingVaultId;
 			}
+			if (typeof params.sourceDeviceId === "string" && params.sourceDeviceId.trim()) {
+				settings.sourceDeviceId = params.sourceDeviceId.trim();
+				settings.deviceName = settings.sourceDeviceId;
+			}
+			if (
+				typeof params.sourceRootFingerprintSha256 === "string" &&
+				/^[0-9a-f]{64}$/u.test(params.sourceRootFingerprintSha256)
+			) {
+				settings.sourceRootFingerprintSha256 = params.sourceRootFingerprintSha256;
+			}
 		}, "setup-link");
 		await this.deps.refreshServerCapabilities();
 		new Notice(

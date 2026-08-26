@@ -14,6 +14,8 @@ export interface OwdConnection {
   host: string;
   token: string;
   vaultId: string;
+  deviceId?: string;
+  rootFingerprintSha256?: string;
 }
 
 export interface OwdPairingRequest {
@@ -32,6 +34,11 @@ export interface OwdPairingDependencies {
   applyConnection(connection: OwdConnection): Promise<void>;
   confirm(consent: OwdPairingConsent): Promise<boolean>;
   request(request: OwdPairingRequest): Promise<OwdPairingResponse>;
+  createDeviceMaterial?(): Promise<{
+    credential: string;
+    deviceId: string;
+    idempotencyKey: string;
+  }>;
 }
 
 export type OwdPairingOutcome = "cancelled" | "paired";
@@ -62,6 +69,39 @@ function isUuid(value: unknown): value is string {
       value,
     )
   );
+}
+
+function base64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/u, "");
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function sourceRootFingerprintSha256(
+  rootIdentity: string,
+): Promise<string> {
+  return sha256Hex(rootIdentity);
+}
+
+async function defaultDeviceMaterial() {
+  return {
+    credential: base64Url(crypto.getRandomValues(new Uint8Array(32))),
+    deviceId: crypto.randomUUID(),
+    idempotencyKey: crypto.randomUUID(),
+  };
 }
 
 function hasControlCharacters(value: string): boolean {
@@ -191,6 +231,9 @@ export function parseOwdPairingLink(value: string): OwdPairingParameters {
 function parseConnection(
   value: unknown,
   expectedDeployment: string,
+  localCredential?: string,
+  expectedDeviceId?: string,
+  expectedRootFingerprintSha256?: string,
 ): OwdConnection {
   if (!isRecord(value)) {
     throw new OwdPairingError(
@@ -204,7 +247,9 @@ function parseConnection(
     typeof deploymentUrl !== "string" ||
     normalizeDeployment(deploymentUrl).origin !== expectedDeployment ||
     !isUuid(value.vaultId) ||
-    !isBase64Url(value.credential) ||
+    !isBase64Url(
+      value.credentialAccepted === true ? localCredential : value.credential,
+    ) ||
     typeof value.serverVersion !== "string" ||
     value.serverVersion.length === 0 ||
     value.serverVersion.length > 64 ||
@@ -219,16 +264,37 @@ function parseConnection(
     );
   }
 
+  const deviceId = isRecord(value.sourceDevice)
+    ? value.sourceDevice.deviceId
+    : undefined;
+  if (
+    value.credentialAccepted === true &&
+    (!isUuid(deviceId) || deviceId !== expectedDeviceId)
+  ) {
+    throw new OwdPairingError(
+      "The OWD deployment returned an invalid pairing response.",
+    );
+  }
+
   return {
     host: expectedDeployment,
-    token: value.credential,
+    token:
+      value.credentialAccepted === true
+        ? (localCredential as string)
+        : (value.credential as string),
     vaultId: value.vaultId,
+    ...(typeof deviceId === "string" ? { deviceId } : {}),
+    ...(typeof deviceId === "string" &&
+    typeof expectedRootFingerprintSha256 === "string"
+      ? { rootFingerprintSha256: expectedRootFingerprintSha256 }
+      : {}),
   };
 }
 
 export async function pairOwdVault(
   pairing: OwdPairingParameters,
   vaultNameValue: string,
+  rootIdentityValue: string,
   pluginVersion: string,
   dependencies: OwdPairingDependencies,
 ): Promise<OwdPairingOutcome> {
@@ -248,12 +314,65 @@ export async function pairOwdVault(
     return "cancelled";
   }
 
-  const response = await dependencies.request({
+  const rootIdentity = rootIdentityValue.trim();
+  if (
+    rootIdentity.length === 0 ||
+    rootIdentity.length > 4_096 ||
+    hasControlCharacters(rootIdentity)
+  ) {
+    throw new OwdPairingError(
+      "This vault root cannot be used for OWD pairing.",
+    );
+  }
+  const capabilities = ["markdown", "editor-integration", "watch"] as const;
+  const boundaryCanonical = JSON.stringify({
+    version: 1,
+    root: ".",
+    pathPolicy: "mdevolved-markdown-v1",
+    sourceKind: "obsidian",
+    capabilities,
+  });
+  const material = await (
+    dependencies.createDeviceMaterial ?? defaultDeviceMaterial
+  )();
+  if (
+    !isBase64Url(material.credential) ||
+    !isUuid(material.deviceId) ||
+    !isUuid(material.idempotencyKey)
+  ) {
+    throw new OwdPairingError("OWD could not create a safe device identity.");
+  }
+
+  const rootFingerprintSha256 = await sourceRootFingerprintSha256(rootIdentity);
+  const request: OwdPairingRequest = {
     body: JSON.stringify({
       grant: pairing.grant,
       pluginVersion,
       schemaVersion: OWD_SCHEMA_VERSION,
       vaultName,
+      sourceDescriptor: {
+        sourceKind: "obsidian",
+        label: vaultName,
+        capabilities,
+        clientVersion: pluginVersion,
+        syncSchemaVersion: OWD_SCHEMA_VERSION,
+      },
+      sourceDevice: {
+        contractVersion: 1,
+        deviceId: material.deviceId,
+        displayName: `Obsidian on ${globalThis.navigator?.platform || "this device"}`,
+        rootFingerprintSha256,
+        boundary: {
+          version: 1,
+          root: ".",
+          pathPolicy: "mdevolved-markdown-v1",
+          sourceKind: "obsidian",
+          capabilities,
+          boundarySha256: await sha256Hex(boundaryCanonical),
+        },
+        credentialSha256: await sha256Hex(material.credential),
+        idempotencyKey: material.idempotencyKey,
+      },
     }),
     headers: {
       Accept: "application/json",
@@ -261,7 +380,15 @@ export async function pairOwdVault(
     },
     method: "POST",
     url: `${pairing.deploymentUrl}/api/pairing/exchange`,
-  });
+  };
+  let response: OwdPairingResponse;
+  try {
+    response = await dependencies.request(request);
+  } catch {
+    // Retry once with byte-identical client-generated material if the exchange
+    // may have committed but its response was lost.
+    response = await dependencies.request(request);
+  }
   if (response.status !== 200) {
     throw new OwdPairingError(
       response.status === 400
@@ -271,7 +398,13 @@ export async function pairOwdVault(
   }
 
   await dependencies.applyConnection(
-    parseConnection(response.json, pairing.deploymentUrl),
+    parseConnection(
+      response.json,
+      pairing.deploymentUrl,
+      material.credential,
+      material.deviceId,
+      rootFingerprintSha256,
+    ),
   );
   return "paired";
 }

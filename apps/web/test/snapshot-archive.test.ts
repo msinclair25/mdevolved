@@ -6,6 +6,7 @@ import {
   canonicalizeCollaborationJson,
   decisionSchema,
   snapshotManifestSchema,
+  type PortableSourceDevice,
   type SnapshotExportIndex,
   type SnapshotManifest,
 } from "@owd/contracts";
@@ -357,10 +358,33 @@ describe("portable snapshot archive", () => {
     const fixture = await createSyntheticPortableSnapshot();
     const sourceVault = fixture.manifest.vaults[0];
     if (sourceVault === undefined) throw new Error("Synthetic vault missing.");
-    const restoreManifest = snapshotVaultRestoreManifest(
-      fixture.manifest,
-      sourceVault,
-    );
+    const portableDevice: PortableSourceDevice = {
+      deviceId: "10000000-0000-4000-8000-000000000001",
+      displayName: "Disposable device",
+      status: "revoked" as const,
+      boundary: {
+        version: 1 as const,
+        root: "." as const,
+        pathPolicy: "mdevolved-markdown-v1" as const,
+        sourceKind: "folder" as const,
+        capabilities: ["markdown", "watch"],
+        boundarySha256: "a".repeat(64),
+      },
+      enrolledAt: 1,
+      expiresAt: null,
+      revokedAt: 2,
+      lastSeenAt: 2,
+      lastPublishedAt: 2,
+      lastPublishedStateVectorSha256: "b".repeat(64),
+      restoreDisposition: "quarantined" as const,
+      authorityRestored: false as const,
+      credentialRestored: false as const,
+      connectionRestored: false as const,
+    };
+    const restoreManifest = snapshotVaultRestoreManifest(fixture.manifest, {
+      ...sourceVault,
+      sourceDevices: [portableDevice],
+    });
     expect(restoreManifest).toMatchObject({
       backupId: fixture.manifest.snapshotId,
       includedSections: ["notes"],
@@ -369,5 +393,6 @@ describe("portable snapshot archive", () => {
     expect(restoreManifest.notes).toEqual([
       expect.objectContaining({ path: "Notes/Hello.md" }),
     ]);
+    expect(restoreManifest.sourceDevices).toEqual([portableDevice]);
   });
 });

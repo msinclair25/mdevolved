@@ -17,6 +17,12 @@ import {
   sourceDescriptorCapabilitySchema,
   sourceDescriptorInputSchema,
 } from "./source-descriptor";
+import {
+  portableSourceDeviceSchema,
+  sourceDeviceCapabilitySchema,
+  sourceDeviceEnrollmentSchema,
+  sourceDeviceSummarySchema,
+} from "./source-device";
 
 export * from "./vault-path";
 export * from "./collaboration";
@@ -29,6 +35,7 @@ export * from "./working-profile";
 export * from "./compounding";
 export * from "./project-outcomes";
 export * from "./source-descriptor";
+export * from "./source-device";
 
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
@@ -306,6 +313,7 @@ export const pairingExchangeRequestSchema = z
     pluginVersion: pluginVersionSchema,
     schemaVersion: z.number().int().min(1).max(3),
     sourceDescriptor: sourceDescriptorInputSchema.optional(),
+    sourceDevice: sourceDeviceEnrollmentSchema.optional(),
   })
   .strict();
 
@@ -417,6 +425,8 @@ export const vaultSummarySchema = z
     pairedAt: z.number().int().nonnegative().nullable(),
     lastConnectedAt: z.number().int().nonnegative().nullable(),
     runtimeProfile: obsidianMindRuntimeProfileSchema.nullable().optional(),
+    sourceDevices: z.array(sourceDeviceSummarySchema).max(64).optional(),
+    lastPublisher: sourceDeviceSummarySchema.nullable().optional(),
   })
   .strict();
 
@@ -872,6 +882,7 @@ export const backupArchiveManifestSchema = z
     generation: materializationGenerationSchema,
     includedSections: z.tuple([z.literal("notes")]),
     notes: z.array(backupArchiveNoteSchema).max(MAX_BACKUP_NOTES),
+    sourceDevices: z.array(portableSourceDeviceSchema).max(64).optional(),
     reservedSections: z.tuple([
       z.literal("attachments"),
       z.literal("obsidian-allowlist"),
@@ -1019,6 +1030,7 @@ export const snapshotVaultManifestSchema = z
     sourceVaultId: z.string().uuid().nullable().optional(),
     sourceGeneration: snapshotSourceGenerationSchema.nullable(),
     sourceDescriptor: portableSourceDescriptorSchema.optional(),
+    sourceDevices: z.array(portableSourceDeviceSchema).max(64).optional(),
     vaultName: vaultDisplayNameSchema,
   })
   .strict();
@@ -1552,6 +1564,7 @@ export const serverCapabilitiesSchema = z
     updateRepoUrl: z.string().url().nullable(),
     updateRepoBranch: z.string().min(1).max(255).nullable(),
     sourceDescriptors: sourceDescriptorCapabilitySchema.optional(),
+    sourceDevices: sourceDeviceCapabilitySchema.optional(),
   })
   .strict();
 

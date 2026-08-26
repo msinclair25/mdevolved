@@ -39,12 +39,16 @@ describe("OWD connection application", () => {
 
     await controller.applyOwdConnection({
       host: "https://owd.example",
+      sourceDeviceId: "a4cfebbb-1c37-4fea-a30b-894e0d909911",
+      sourceRootFingerprintSha256: "a".repeat(64),
       token: "credential_12345678901234567890",
       vaultId: "946009ef-ad0e-43e4-bd7e-3552d559a9ab",
     });
 
     expect(settings).toMatchObject({
       host: "https://owd.example",
+      sourceDeviceId: "a4cfebbb-1c37-4fea-a30b-894e0d909911",
+      sourceRootFingerprintSha256: "a".repeat(64),
       token: "credential_12345678901234567890",
       vaultId: "946009ef-ad0e-43e4-bd7e-3552d559a9ab",
     });

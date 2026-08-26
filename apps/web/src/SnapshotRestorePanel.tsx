@@ -184,6 +184,9 @@ export function snapshotVaultRestoreManifest(
     },
     includedSections: ["notes"],
     notes,
+    ...(vault.sourceDevices === undefined
+      ? {}
+      : { sourceDevices: vault.sourceDevices }),
     reservedSections: [
       "attachments",
       "obsidian-allowlist",
