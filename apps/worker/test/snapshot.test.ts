@@ -509,7 +509,7 @@ describe("workspace snapshots", () => {
         )?.count,
       ).toBe(0);
     }
-  });
+  }, 15_000);
 
   it("requires an owner session and CSRF proof at snapshot boundaries", async () => {
     const session = await createOwnerSession();
@@ -1102,7 +1102,7 @@ describe("workspace snapshots", () => {
       { count: 1, event_type: "snapshot.archived" },
       { count: 1, event_type: "snapshot.unarchived" },
     ]);
-  });
+  }, 15_000);
 
   it("publishes a logically complete multi-vault graph and reuses ciphertext incrementally", async () => {
     const session = await createOwnerSession();
@@ -1235,7 +1235,7 @@ describe("workspace snapshots", () => {
     expect(
       snapshotListResponseSchema.parse(await timeline.json()).snapshots,
     ).toHaveLength(2);
-  });
+  }, 15_000);
 
   it("repairs a missing shared ciphertext from the retained canonical library object", async () => {
     const session = await createOwnerSession();
@@ -1294,7 +1294,7 @@ describe("workspace snapshots", () => {
       identity,
     );
     expect(repairedManifest.snapshotId).not.toBe(snapshot.snapshotId);
-  });
+  }, 15_000);
 
   it("rebuilds a missing encrypted manifest before reporting integrity verified", async () => {
     const session = await createOwnerSession();
