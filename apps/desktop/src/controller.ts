@@ -18,7 +18,11 @@ import {
   type PairingConnection,
   type SyncRuntime,
 } from "mdevolved";
-import type { ProtectedCredentialCustody } from "./custody.js";
+
+interface DesktopCredentialCustody {
+  load(): Promise<string | undefined>;
+  save(value: string): Promise<void>;
+}
 
 export function initialStatus(): SyncStatus {
   return {
@@ -199,7 +203,7 @@ export class FolderSyncController implements SyncController {
   private connection: PairingConnection | undefined;
 
   constructor(
-    private readonly custody: () => ProtectedCredentialCustody | undefined,
+    private readonly custody: () => DesktopCredentialCustody | undefined,
   ) {}
 
   getStatus(): SyncStatus {
@@ -208,8 +212,18 @@ export class FolderSyncController implements SyncController {
 
   async restore(): Promise<SyncStatus> {
     try {
-      const stored = decodeConnection(await this.custody()?.load());
-      if (!stored?.folderPath) return this.status;
+      const value = await this.custody()?.load();
+      if (value === undefined) return this.status;
+      const stored = decodeConnection(value);
+      if (!stored) {
+        return this.set({
+          phase: "error",
+          message: "Protected connection could not be restored. Reconnect it.",
+          canRetry: false,
+          canRepair: false,
+        });
+      }
+      if (!stored.folderPath) return this.status;
       return await this.selectFolder(stored.folderPath);
     } catch {
       return this.set({
@@ -222,58 +236,56 @@ export class FolderSyncController implements SyncController {
   }
 
   async selectFolder(folderPath: string): Promise<SyncStatus> {
-    await this.runtime?.stop();
-    this.runtime = undefined;
-    this.folderPath = folderPath;
-    const sourceId = await folderSourceIdentity(folderPath);
-    if (this.pendingPairingLink) {
-      const pending = this.pendingPairingLink;
-      this.pendingPairingLink = undefined;
-      try {
+    let selectedFolderPath: string | undefined;
+    const pairingPending = this.pendingPairingLink !== undefined;
+    try {
+      selectedFolderPath = assertFolderPath(folderPath);
+      await this.runtime?.stop();
+      this.runtime = undefined;
+      this.folderPath = selectedFolderPath;
+      const sourceId = await folderSourceIdentity(selectedFolderPath);
+      if (this.pendingPairingLink) {
+        const pending = this.pendingPairingLink;
+        this.pendingPairingLink = undefined;
         return await this.pair(pending);
-      } catch {
+      }
+      const custody = this.custody();
+      const stored = decodeConnection(await custody?.load());
+      const expectedRootFingerprintSha256 = createHash("sha256")
+        .update(sourceId, "utf8")
+        .digest("hex");
+      if (
+        !stored ||
+        stored.sourceId !== sourceId ||
+        (stored.connection.rootFingerprintSha256 !== undefined &&
+          stored.connection.rootFingerprintSha256 !==
+            expectedRootFingerprintSha256)
+      ) {
         return this.set({
-          phase: "error",
-          folderPath,
+          phase: "unconfigured",
+          folderPath: selectedFolderPath,
           message:
-            "Pairing failed. Create a fresh private request and try again.",
+            "Folder selected. Create a private pairing request in your MDevolved dashboard.",
           canRetry: false,
           canRepair: false,
+          revoked: false,
         });
       }
-    }
-    const custody = this.custody();
-    const stored = decodeConnection(await custody?.load());
-    const expectedRootFingerprintSha256 = createHash("sha256")
-      .update(sourceId, "utf8")
-      .digest("hex");
-    if (
-      !stored ||
-      stored.sourceId !== sourceId ||
-      (stored.connection.rootFingerprintSha256 !== undefined &&
-        stored.connection.rootFingerprintSha256 !==
-          expectedRootFingerprintSha256)
-    ) {
-      return this.set({
-        phase: "unconfigured",
-        folderPath,
-        message:
-          "Folder selected. Create a private pairing request in your MDevolved dashboard.",
-        canRetry: false,
-        canRepair: false,
-        revoked: false,
-      });
-    }
-    if (stored.folderPath !== folderPath) {
-      await custody?.save(JSON.stringify({ ...stored, folderPath }));
-    }
-    try {
-      return await this.start({ ...stored, folderPath });
+      if (stored.folderPath !== selectedFolderPath) {
+        await custody?.save(
+          JSON.stringify({ ...stored, folderPath: selectedFolderPath }),
+        );
+      }
+      return await this.start({ ...stored, folderPath: selectedFolderPath });
     } catch {
       return this.set({
         phase: "error",
-        folderPath,
-        message: "Connection failed. Try again or choose the folder again.",
+        ...(selectedFolderPath === undefined
+          ? {}
+          : { folderPath: selectedFolderPath }),
+        message: pairingPending
+          ? "Pairing failed. Create a fresh private request and try again."
+          : "Connection failed. Try again or choose the folder again.",
         canRetry: this.runtime !== undefined,
         canRepair: this.runtime !== undefined,
       });

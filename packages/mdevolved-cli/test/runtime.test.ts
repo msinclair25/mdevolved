@@ -150,7 +150,24 @@ describe("generic VaultSync bridge", () => {
       "remote_receipt_unconfirmed",
     );
     expect(initializationCount).toBe(3);
+
+    Object.assign(vault, {
+      connected: true,
+      providerSynced: true,
+      serverAppliedLocalState: true,
+    });
+    await expect(restarted.syncOnce()).resolves.toMatchObject({
+      durable: true,
+    });
+    expect(files.get("offline.md")?.toString()).toBe("not confirmed");
+    expect(initializationCount).toBe(4);
     await restarted.stop();
+
+    Object.assign(vault, {
+      connected: false,
+      providerSynced: false,
+      serverAppliedLocalState: false,
+    });
 
     const offlineRestart = await createSyncRuntime({
       sourceRoot: root,
