@@ -1,0 +1,62 @@
+{
+  "fixtureVersion": 1,
+  "markdown": {
+    "README.md": "# Adapter contract\n\nShared memory.\n",
+    "notes/alpha.md": "---\ntags: [md3]\n---\n\nAlpha café.\n",
+    "notes/deep/βeta.md": "# βeta\n\nUnicode stays NFC.\n"
+  },
+  "excluded": {
+    ".env": "SYNTHETIC_ONLY=excluded\n",
+    ".obsidian/workspace.json": "{\"synthetic\":true}\n",
+    "node_modules/ignored.md": "# ignored\n",
+    "notes/pairing-token.md": "synthetic credential-shaped fixture\n"
+  },
+  "libraryHashes": {
+    "README.md": "062f833d2795345578ef842bdef8e885a2203769accfc5d817e6f77231026287",
+    "notes/alpha.md": "5a3703b59445b7af869bf4284e24c93cb7ad17e6f0aca547bc928186619ddc17",
+    "notes/deep/βeta.md": "e5bd41b97397f0421cb6ae189168cdd95a7a6df30d39da0c1fcfa2e17f1ff73a"
+  },
+  "legacyPluginState": {
+    "host": "https://synthetic.invalid",
+    "token": "synthetic_existing_pairing_credential",
+    "vaultId": "00000000-0000-4000-8000-000000000003",
+    "deviceName": "Existing Obsidian device",
+    "debug": false,
+    "frontmatterGuardEnabled": true,
+    "excludePatterns": "private/**",
+    "maxFileSizeKB": 1024,
+    "externalEditPolicy": "always",
+    "enableAttachmentSync": true,
+    "maxAttachmentSizeKB": 2048,
+    "attachmentConcurrency": 1,
+    "showRemoteCursors": true,
+    "qaTraceEnabled": false,
+    "qaTraceMode": "safe",
+    "qaTraceSecret": "",
+    "updateRepoUrl": "",
+    "updateRepoBranch": "main",
+    "qaDebugMode": false,
+    "_diskIndex": {
+      "README.md": {
+        "mtime": 1720000000000,
+        "size": 35,
+        "contentHash": "062f833d2795345578ef842bdef8e885a2203769accfc5d817e6f77231026287"
+      }
+    },
+    "_sourceCore": {
+      "mdevolved/source-core/v1": {
+        "descriptor": {
+          "descriptorVersion": 1,
+          "sourceKind": "obsidian",
+          "label": "Existing synthetic vault",
+          "capabilities": ["markdown", "editor-integration", "watch"],
+          "clientVersion": "0.1.7",
+          "syncSchemaVersion": 3,
+          "provenance": { "pairedAt": 0 }
+        },
+        "status": "running",
+        "lastScanId": "frozen-synthetic-scan"
+      }
+    }
+  }
+}
