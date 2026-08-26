@@ -338,6 +338,7 @@ export class FolderSyncController implements SyncController {
     };
     this.set({
       phase: "connecting",
+      folderPath: this.folderPath,
       message: "Connecting",
       canRetry: true,
       revoked: false,
