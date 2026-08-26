@@ -5586,6 +5586,97 @@ describe("Phase 9B agent-first collaboration walking path", () => {
     );
   });
 
+  it("resumes one durable Project with both disposable source devices offline and no device-derived authority", async () => {
+    const fixture = await createEvidenceFixture();
+    const boundaryBase = {
+      version: 1,
+      root: ".",
+      pathPolicy: "mdevolved-markdown-v1",
+      sourceKind: "folder",
+      capabilities: ["markdown", "watch"],
+    } as const;
+    const boundarySha256 = await sha256Hex(JSON.stringify(boundaryBase));
+    const boundary = JSON.stringify({
+      ...boundaryBase,
+      boundarySha256,
+    });
+    const authorityBefore = await env.DB.prepare(
+      `SELECT COUNT(*) AS count FROM agent_grants WHERE vault_id = ?`,
+    )
+      .bind(fixture.vaultId)
+      .first<{ count: number }>();
+    await env.DB.batch(
+      ["device-a", "device-b"].map((label, index) =>
+        env.DB.prepare(
+          `INSERT INTO source_devices (
+              id, vault_id, display_name, root_fingerprint_sha256,
+              boundary_json, boundary_sha256, client_version,
+              sync_schema_version, enrollment_idempotency_key,
+              enrollment_request_sha256, enrollment_grant_sha256,
+              enrollment_origin_sha256, enrolled_at, last_seen_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'mdevolved-cli-alpha.1', 1, ?, ?, ?, ?, ?, ?)`,
+        ).bind(
+          crypto.randomUUID(),
+          fixture.vaultId,
+          label,
+          `${index + 5}`.repeat(64),
+          boundary,
+          boundarySha256,
+          crypto.randomUUID(),
+          `${index + 7}`.repeat(64),
+          `${index + 1}`.repeat(64),
+          `${index + 3}`.repeat(64),
+          NOW,
+          NOW,
+        ),
+      ),
+    );
+    await env.DB.prepare(
+      `UPDATE vault_sync_states
+       SET library_stale = 1, last_sync_at = ?, updated_at = ?
+       WHERE vault_id = ?`,
+    )
+      .bind(NOW + 2, NOW + 2, fixture.vaultId)
+      .run();
+
+    const firstFreshAgent = await resumeAuthorizedProject(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        authorization: fixture.authorization,
+        contextPolicy: fixtureContextPolicy(fixture),
+        now: NOW + 3,
+        projectId: fixture.projectId,
+      },
+    );
+    const secondFreshAgent = await resumeAuthorizedProject(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        authorization: fixture.authorization,
+        contextPolicy: fixtureContextPolicy(fixture),
+        now: NOW + 4,
+        projectId: fixture.projectId,
+      },
+    );
+    const counts = await env.DB.prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM collaboration_projects WHERE project_id = ?) AS projects,
+        (SELECT COUNT(*) FROM source_devices WHERE vault_id = ?) AS devices,
+        (SELECT COUNT(*) FROM agent_grants WHERE vault_id = ?) AS grants`,
+    )
+      .bind(fixture.projectId, fixture.vaultId, fixture.vaultId)
+      .first<{ devices: number; grants: number; projects: number }>();
+
+    expect(firstFreshAgent.packet.packetId).toBe(fixture.packet.packetId);
+    expect(secondFreshAgent.packet.packetId).toBe(fixture.packet.packetId);
+    expect(counts).toEqual({
+      devices: 2,
+      grants: authorityBefore?.count ?? 0,
+      projects: 1,
+    });
+  });
+
   it("fails closed when an expired packet cannot refresh from current evidence", async () => {
     const fixture = await createEvidenceFixture();
     await env.DB.prepare(

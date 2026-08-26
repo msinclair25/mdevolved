@@ -1,10 +1,12 @@
 import type { SyncController, SyncStatus } from "./ipc.js";
 import { basename } from "node:path";
+import { createHash } from "node:crypto";
 import { createSourceDescriptor, type CredentialRecord } from "@owd/yaos-core";
 import { folderSourceIdentity } from "@owd/folder-adapter";
 import {
   CLIENT_VERSION,
   createFetchPairingTransport,
+  confirmSourcePublication,
   createPortableVaultSync,
   createSyncRuntime,
   pairFolder,
@@ -152,7 +154,12 @@ export function decodeConnection(
       (connection.expiresAt !== undefined &&
         (typeof connection.expiresAt !== "number" ||
           !Number.isFinite(connection.expiresAt) ||
-          connection.expiresAt < connection.issuedAt))
+          connection.expiresAt < connection.issuedAt)) ||
+      (connection.deviceId !== undefined &&
+        (typeof connection.deviceId !== "string" ||
+          !/^[0-9a-f-]{36}$/iu.test(connection.deviceId))) ||
+      (connection.rootFingerprintSha256 !== undefined &&
+        !/^[0-9a-f]{64}$/u.test(connection.rootFingerprintSha256))
     )
       return null;
     return { sourceId: parsed.sourceId, connection };
@@ -167,6 +174,7 @@ export class FolderSyncController implements SyncController {
   private runtime: SyncRuntime | undefined;
   private folderPath: string | undefined;
   private pendingPairingLink: string | undefined;
+  private connection: PairingConnection | undefined;
 
   constructor(
     private readonly custody: () => ProtectedCredentialCustody | undefined,
@@ -198,7 +206,16 @@ export class FolderSyncController implements SyncController {
       }
     }
     const stored = decodeConnection(await this.custody()?.load());
-    if (!stored || stored.sourceId !== sourceId) {
+    const expectedRootFingerprintSha256 = createHash("sha256")
+      .update(sourceId, "utf8")
+      .digest("hex");
+    if (
+      !stored ||
+      stored.sourceId !== sourceId ||
+      (stored.connection.rootFingerprintSha256 !== undefined &&
+        stored.connection.rootFingerprintSha256 !==
+          expectedRootFingerprintSha256)
+    ) {
       return this.set({
         phase: "unconfigured",
         folderPath,
@@ -238,6 +255,12 @@ export class FolderSyncController implements SyncController {
       basename(this.folderPath),
       CLIENT_VERSION,
       createFetchPairingTransport(),
+      {
+        displayName: "MDevolved desktop",
+        rootFingerprintSha256: createHash("sha256")
+          .update(sourceId, "utf8")
+          .digest("hex"),
+      },
     );
     await this.custody()?.save(JSON.stringify({ sourceId, connection }));
     return await this.start({ sourceId, connection });
@@ -249,6 +272,12 @@ export class FolderSyncController implements SyncController {
       await this.runtime.syncOnce();
       if (!(await this.runtime.remote.confirmDurable())) {
         throw new Error("remote_receipt_unconfirmed");
+      }
+      if (this.connection) {
+        await confirmSourcePublication(
+          this.connection,
+          this.runtime.getStateVector(),
+        );
       }
       return this.set({
         phase: "ready",
@@ -272,6 +301,7 @@ export class FolderSyncController implements SyncController {
     await this.runtime?.source.core.revoke();
     await this.runtime?.stop();
     this.runtime = undefined;
+    this.connection = undefined;
     return this.set({
       phase: "revoked",
       message: "Disconnected",
@@ -297,6 +327,7 @@ export class FolderSyncController implements SyncController {
         ? {}
         : { expiresAt: stored.connection.expiresAt }),
     };
+    this.connection = stored.connection;
     const credentials = {
       get: async () => record,
       confirmReplacement: async (next: CredentialRecord) => {
@@ -316,6 +347,7 @@ export class FolderSyncController implements SyncController {
       custody: credentials,
       vault: await createPortableVaultSync(stored.connection),
       clientVersion: CLIENT_VERSION,
+      deviceName: stored.connection.deviceId ?? "MDevolved desktop",
       onStatus: (phase) => {
         if (phase === "offline")
           this.set({
@@ -334,6 +366,10 @@ export class FolderSyncController implements SyncController {
         canRepair: true,
       });
     }
+    await confirmSourcePublication(
+      stored.connection,
+      this.runtime.getStateVector(),
+    );
     return this.set({
       phase: "ready",
       message: "Up to date",

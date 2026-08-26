@@ -1,6 +1,8 @@
 import {
   pairingExchangeRequestSchema,
   serverCapabilitiesSchema,
+  sourceDeviceEnrollmentGrantRequestSchema,
+  sourceDeviceListResponseSchema,
   vaultSyncConfirmationRequestSchema,
   vaultSyncConfirmationResponseSchema,
   vaultIdSchema,
@@ -24,6 +26,11 @@ import {
   readVaultCredential,
   revokeVault,
 } from "./pairing-store";
+import {
+  SourceDeviceError,
+  listSourceDevices,
+  revokeSourceDevice,
+} from "./source-device-service";
 import {
   decodeBase64Url,
   parseJsonBody,
@@ -96,6 +103,12 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
         version: 1,
         kinds: ["folder", "obsidian"],
       },
+      sourceDevices: {
+        version: 1,
+        capability: "owd.source-devices-v1",
+        credentialMode: "client-generated-sha256",
+        maxDevicesPerSource: 16,
+      },
     });
 
     context.header("Cache-Control", "no-store");
@@ -147,12 +160,31 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
       );
     }
 
-    const response = await exchangePairingGrant(context.env.DB, {
-      ...parsed.data,
-      deploymentUrl: requestOrigin(context).origin,
-      now: nowSeconds(),
-      requestId: context.get("requestId"),
-    });
+    let response;
+    try {
+      response = await exchangePairingGrant(context.env.DB, {
+        ...parsed.data,
+        deploymentUrl: requestOrigin(context).origin,
+        now: nowSeconds(),
+        requestId: context.get("requestId"),
+      });
+    } catch (error) {
+      if (error instanceof SourceDeviceError) {
+        const status = error.code === "source_device_denied" ? 403 : 409;
+        throw new ApiProblem(
+          status,
+          error.code,
+          error.code === "source_device_denied"
+            ? "This source device was not approved by the owner."
+            : error.code === "idempotency_conflict"
+              ? "This device enrollment key was already used with different details."
+              : error.code === "source_device_limit"
+                ? "This source has reached its retained device-history limit."
+                : "The source device does not match the approved source boundary.",
+        );
+      }
+      throw error;
+    }
     if (!response) {
       throw new ApiProblem(
         400,
@@ -197,6 +229,92 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
     }
     context.header("Cache-Control", "no-store");
     return context.json(response, 201);
+  });
+
+  app.post("/api/vaults/:vaultId/device-enrollment-grants", async (context) => {
+    await requireOwnerSession(context, { csrf: true });
+    await enforcePairingRateLimit(context, "source_device_grant", 20);
+    const parsedVaultId = vaultIdSchema.safeParse(context.req.param("vaultId"));
+    const parsed = sourceDeviceEnrollmentGrantRequestSchema.safeParse(
+      await parseJsonBody(context, 1_024),
+    );
+    if (!parsedVaultId.success || !parsed.success) {
+      throw new ApiProblem(
+        400,
+        "source_device_grant_invalid",
+        "The source device request is invalid.",
+      );
+    }
+    const now = nowSeconds();
+    const response = await createPairingGrant(context.env.DB, {
+      deploymentUrl: requestOrigin(context).origin,
+      now,
+      requestId: context.get("requestId"),
+      vaultId: parsedVaultId.data,
+      deviceEnrollment: true,
+      ...(parsed.data.expiresInDays === undefined
+        ? {}
+        : {
+            deviceExpiresAt: now + parsed.data.expiresInDays * 24 * 60 * 60,
+          }),
+    });
+    if (response === null) {
+      throw new ApiProblem(
+        409,
+        "source_device_enrollment_unavailable",
+        "Only an active source can approve another device.",
+      );
+    }
+    context.header("Cache-Control", "no-store");
+    return context.json(response, 201);
+  });
+
+  app.get("/api/vaults/:vaultId/devices", async (context) => {
+    await requireOwnerSession(context, { csrf: false });
+    const parsedVaultId = vaultIdSchema.safeParse(context.req.param("vaultId"));
+    if (!parsedVaultId.success) {
+      throw new ApiProblem(404, "vault_not_found", "The vault was not found.");
+    }
+    context.header("Cache-Control", "no-store");
+    return context.json(
+      sourceDeviceListResponseSchema.parse({
+        devices: await listSourceDevices(
+          context.env.DB,
+          parsedVaultId.data,
+          nowSeconds(),
+        ),
+      }),
+    );
+  });
+
+  app.post("/api/vaults/:vaultId/devices/:deviceId/revoke", async (context) => {
+    await requireOwnerSession(context, { csrf: true });
+    const parsedVaultId = vaultIdSchema.safeParse(context.req.param("vaultId"));
+    const parsedDeviceId = vaultIdSchema.safeParse(
+      context.req.param("deviceId"),
+    );
+    if (!parsedVaultId.success || !parsedDeviceId.success) {
+      throw new ApiProblem(
+        404,
+        "source_device_not_found",
+        "The source device was not found.",
+      );
+    }
+    const revoked = await revokeSourceDevice(context.env.DB, {
+      deviceId: parsedDeviceId.data,
+      now: nowSeconds(),
+      requestId: context.get("requestId"),
+      vaultId: parsedVaultId.data,
+    });
+    if (!revoked) {
+      throw new ApiProblem(
+        404,
+        "source_device_not_found",
+        "The source device was not found.",
+      );
+    }
+    context.header("Cache-Control", "no-store");
+    return context.body(null, 204);
   });
 
   app.post("/api/vaults/:vaultId/sync-confirmation", async (context) => {

@@ -131,6 +131,7 @@ describe("controller lifecycle", () => {
         token: "a".repeat(24),
         vaultId: "00000000-0000-4000-8000-000000000001",
         fingerprint: "b".repeat(64),
+        rootFingerprintSha256: "c".repeat(64),
         issuedAt: 1,
         expiresAt: 2,
       },
@@ -141,6 +142,17 @@ describe("controller lifecycle", () => {
         JSON.stringify({
           ...valid,
           connection: { ...valid.connection, host: "http://evil.example" },
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      decodeConnection(
+        JSON.stringify({
+          ...valid,
+          connection: {
+            ...valid.connection,
+            rootFingerprintSha256: "wrong",
+          },
         }),
       ),
     ).toBeNull();

@@ -231,6 +231,26 @@ export async function createRestoreJob(
         ),
       );
     }
+    for (const device of input.manifest.sourceDevices ?? []) {
+      const bodyJson = JSON.stringify(device);
+      await db
+        .prepare(
+          `INSERT INTO quarantined_source_devices (
+            portable_id, restore_id, target_vault_id, source_vault_id,
+            body_json, body_sha256, restored_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          restoreId,
+          input.targetVaultId,
+          input.manifest.generation.vaultId,
+          bodyJson,
+          await sha256Hex(bodyJson),
+          input.now,
+        )
+        .run();
+    }
     await db
       .prepare(
         `INSERT INTO audit_events (id, event_type, request_id, created_at)

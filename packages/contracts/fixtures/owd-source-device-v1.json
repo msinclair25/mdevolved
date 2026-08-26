@@ -1,0 +1,23 @@
+{
+  "deviceId": "10000000-0000-4000-8000-000000000001",
+  "displayName": "Disposable device B",
+  "status": "active",
+  "boundary": {
+    "version": 1,
+    "root": ".",
+    "pathPolicy": "mdevolved-markdown-v1",
+    "sourceKind": "folder",
+    "capabilities": ["markdown", "watch"],
+    "boundarySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "enrolledAt": 1787700000,
+  "expiresAt": null,
+  "revokedAt": null,
+  "lastSeenAt": 1787700060,
+  "lastPublishedAt": 1787700060,
+  "lastPublishedStateVectorSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "restoreDisposition": "quarantined",
+  "authorityRestored": false,
+  "credentialRestored": false,
+  "connectionRestored": false
+}

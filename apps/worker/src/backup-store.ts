@@ -7,6 +7,7 @@ import {
   type BackupArtifact,
   type BackupRecipientStatus,
   type MaterializationGeneration,
+  type PortableSourceDevice,
 } from "@owd/contracts";
 import { Encrypter } from "age-encryption";
 import {
@@ -353,6 +354,7 @@ export async function createEncryptedBackup(
     generation: MaterializationGeneration;
     now: number;
     requestId: string;
+    sourceDevices: PortableSourceDevice[];
     vaultName: string;
   },
 ): Promise<BackupArtifact> {
@@ -403,6 +405,7 @@ export async function createEncryptedBackup(
       modifiedAt: note.modifiedAt,
       path: note.path,
     })),
+    sourceDevices: input.sourceDevices,
     reservedSections: [
       "attachments",
       "obsidian-allowlist",

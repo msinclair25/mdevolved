@@ -5,6 +5,7 @@ import {
   pairOwdVault,
   parseObsidianPairingProtocol,
   parseOwdPairingLink,
+  sourceRootFingerprintSha256,
   type OwdConnection,
 } from "./pairing-contract";
 import { confirmOwdPairing, promptForOwdPairingLink } from "./pairing-modal";
@@ -23,6 +24,20 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
     options: SourceAdapterOptions,
   ): SourceAdapterBoundary {
     return createObsidianSourceAdapter({ app: this.app, ...options });
+  }
+
+  protected override async validateSourceContinuity(): Promise<boolean> {
+    const expected = this.settings.sourceRootFingerprintSha256.trim();
+    if (expected === "") return true;
+    const actual = await sourceRootFingerprintSha256(
+      this.app.vault.adapter.getResourcePath("").trim(),
+    );
+    if (actual === expected) return true;
+    new Notice(
+      "OWD Sync is paused because this device's approved vault root changed. Pair this vault again to resume safely.",
+      10000,
+    );
+    return false;
   }
 
   override async onload(): Promise<void> {
@@ -62,6 +77,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       const outcome = await pairOwdVault(
         readPairing(),
         this.app.vault.getName(),
+        this.app.vault.adapter.getResourcePath(""),
         this.manifest.version,
         {
           applyConnection: (connection) => this.applyConnection(connection),
@@ -94,6 +110,14 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       host: connection.host,
       token: connection.token,
       vaultId: connection.vaultId,
+      ...(connection.deviceId === undefined
+        ? {}
+        : { sourceDeviceId: connection.deviceId }),
+      ...(connection.rootFingerprintSha256 === undefined
+        ? {}
+        : {
+            sourceRootFingerprintSha256: connection.rootFingerprintSha256,
+          }),
     });
     await this.confirmCurrentSync(true);
   }

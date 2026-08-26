@@ -256,7 +256,12 @@ export function createSystemProtectedCredentialBackend(
 interface StoredCredential {
   record: CredentialRecord;
   secret: string;
-  connection?: { host: string; vaultId: string };
+  connection?: {
+    host: string;
+    vaultId: string;
+    deviceId?: string;
+    rootFingerprintSha256?: string;
+  };
 }
 
 function decodeStored(value: string | null): StoredCredential | null {
@@ -282,7 +287,12 @@ function decodeStored(value: string | null): StoredCredential | null {
       connection !== undefined &&
       (!isSafeDeploymentOrigin(connection.host) ||
         typeof connection.vaultId !== "string" ||
-        !/^[0-9a-f-]{36}$/iu.test(connection.vaultId))
+        !/^[0-9a-f-]{36}$/iu.test(connection.vaultId) ||
+        (connection.deviceId !== undefined &&
+          (typeof connection.deviceId !== "string" ||
+            !/^[0-9a-f-]{36}$/iu.test(connection.deviceId))) ||
+        (connection.rootFingerprintSha256 !== undefined &&
+          !/^[0-9a-f]{64}$/u.test(connection.rootFingerprintSha256)))
     ) {
       return null;
     }
@@ -365,13 +375,24 @@ export class ProtectedCredentialCustody implements CredentialCustodyPort {
       ...(stored.record.expiresAt === undefined
         ? {}
         : { expiresAt: stored.record.expiresAt }),
+      ...(stored.connection.deviceId === undefined
+        ? {}
+        : { deviceId: stored.connection.deviceId }),
+      ...(stored.connection.rootFingerprintSha256 === undefined
+        ? {}
+        : {
+            rootFingerprintSha256: stored.connection.rootFingerprintSha256,
+          }),
     };
   }
 
   async install(
     record: CredentialRecord,
     secret: string,
-    connection?: Pick<PairingConnection, "host" | "vaultId">,
+    connection?: Pick<
+      PairingConnection,
+      "host" | "vaultId" | "deviceId" | "rootFingerprintSha256"
+    >,
   ): Promise<void> {
     if (record.sourceId !== this.sourceId || record.status !== "active") {
       throw new Error("credential_source_or_status_invalid");
@@ -385,7 +406,11 @@ export class ProtectedCredentialCustody implements CredentialCustodyPort {
     if (
       connection !== undefined &&
       (!isSafeDeploymentOrigin(connection.host) ||
-        !/^[0-9a-f-]{36}$/iu.test(connection.vaultId))
+        !/^[0-9a-f-]{36}$/iu.test(connection.vaultId) ||
+        (connection.deviceId !== undefined &&
+          !/^[0-9a-f-]{36}$/iu.test(connection.deviceId)) ||
+        (connection.rootFingerprintSha256 !== undefined &&
+          !/^[0-9a-f]{64}$/u.test(connection.rootFingerprintSha256)))
     ) {
       throw new Error("credential_connection_invalid");
     }

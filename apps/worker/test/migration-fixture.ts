@@ -29,6 +29,7 @@ import policyAutopilotR4Migration from "../../../migrations/0033_policy_autopilo
 import workingProfileSkillsMigration from "../../../migrations/0034_working_profile_skills.sql";
 import compoundingDraftsMigration from "../../../migrations/0035_compounding_drafts.sql";
 import sourceDescriptorsMigration from "../../../migrations/0036_source_descriptors.sql";
+import sourceDevicesMigration from "../../../migrations/0037_source_devices.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -122,6 +123,7 @@ export const migrations = [
     file: "0036_source_descriptors.sql",
     source: sourceDescriptorsMigration,
   },
+  { file: "0037_source_devices.sql", source: sourceDevicesMigration },
 ] as const;
 
 export const priorReleaseMigrations = migrations.slice(0, 10);
@@ -148,6 +150,7 @@ export const policyAutopilotR4MigrationEntry = migrations[27]!;
 export const workingProfileSkillsMigrationEntry = migrations[28]!;
 export const compoundingDraftsMigrationEntry = migrations[29]!;
 export const sourceDescriptorsMigrationEntry = migrations[30]!;
+export const sourceDevicesMigrationEntry = migrations[31]!;
 
 export function executableMigration(source: string): string {
   return source

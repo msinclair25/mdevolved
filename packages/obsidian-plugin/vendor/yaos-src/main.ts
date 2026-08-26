@@ -339,6 +339,8 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		host: string;
 		token: string;
 		vaultId: string;
+		sourceDeviceId?: string;
+		sourceRootFingerprintSha256?: string;
 	}): Promise<void> {
 		if (!this.setupLinkController) {
 			throw new Error("Sync setup is not ready.");
@@ -358,6 +360,11 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		const credential = await sourceBoundary.currentCredential();
 		if (credential) await sourceBoundary.core.replaceCredentials(credential);
 		this.settingsTab?.display();
+	}
+
+	/** Product adapters may fail closed before starting sync for a moved source. */
+	protected async validateSourceContinuity(): Promise<boolean> {
+		return true;
 	}
 
 	/**
@@ -565,6 +572,11 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 
 		if (this.settings.host) {
 			void this.refreshServerCapabilities("startup-background");
+		}
+
+		if (!(await this.validateSourceContinuity())) {
+			finishOnload("source-root-mismatch");
+			return;
 		}
 
 		if (!this.settings.host) {

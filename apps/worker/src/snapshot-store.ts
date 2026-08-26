@@ -11,11 +11,13 @@ import {
   QUARANTINED_INTELLIGENCE_CAPABILITY,
   WORKING_PROFILE_SNAPSHOT_CAPABILITY,
   portableSourceDescriptorSchema,
+  portableSourceDeviceSchema,
   snapshotExportIndexSchema,
   snapshotManifestSchema,
   snapshotSectionSchema,
   type MaterializationGeneration,
   type PortableSourceDescriptor,
+  type PortableSourceDevice,
   type SnapshotEstimate,
   type SnapshotExportIndex,
   type SnapshotManifest,
@@ -96,6 +98,7 @@ type SnapshotVaultRow = {
   snapshot_vault_id: string;
   source_state_vector_sha256: string | null;
   source_descriptor_json: string | null;
+  source_devices_json: string | null;
   source_vault_id: string | null;
   source_vault_name: string;
 };
@@ -191,6 +194,7 @@ type CapturePlan = {
     notes: BackupMaterializedNote[];
     snapshotVaultId: string;
     sourceDescriptor?: SourceDescriptor;
+    sourceDevices: PortableSourceDevice[];
     vaultName: string;
   }>;
 };
@@ -198,6 +202,7 @@ type CapturePlan = {
 export type SnapshotCaptureSource = {
   generation: MaterializationGeneration;
   sourceDescriptor?: SourceDescriptor;
+  sourceDevices?: PortableSourceDevice[];
   vaultName: string;
 };
 
@@ -277,6 +282,21 @@ export async function ensureSnapshotSchema(db: D1Database): Promise<void> {
       .prepare(
         `ALTER TABLE snapshot_vaults ADD COLUMN source_descriptor_json TEXT
          CHECK (source_descriptor_json IS NULL OR json_valid(source_descriptor_json))`,
+      )
+      .run();
+  }
+  const devicesColumn = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM pragma_table_info('snapshot_vaults')
+       WHERE name = 'source_devices_json'`,
+    )
+    .first<{ count: number }>();
+  if (devicesColumn?.count !== 1) {
+    await db
+      .prepare(
+        `ALTER TABLE snapshot_vaults ADD COLUMN source_devices_json TEXT
+         CHECK (source_devices_json IS NULL OR json_valid(source_devices_json))`,
       )
       .run();
   }
@@ -362,6 +382,7 @@ async function buildCapturePlan(
       ...(source.sourceDescriptor === undefined
         ? {}
         : { sourceDescriptor: source.sourceDescriptor }),
+      sourceDevices: source.sourceDevices ?? [],
       vaultName: source.vaultName,
     });
   }
@@ -621,10 +642,11 @@ export async function startWorkspaceSnapshot(
             snapshot_id, snapshot_vault_id, source_vault_id,
             source_vault_name, generation_id, source_state_vector_sha256,
             generation_created_at, generation_completed_at, item_count,
-            logical_bytes, ordinal, source_descriptor_json
+            logical_bytes, ordinal, source_descriptor_json,
+            source_devices_json
           )
           SELECT ?, ?, v.id, ?, g.id, g.source_state_vector_sha256,
-            g.created_at, g.completed_at, ?, ?, ?, ?
+            g.created_at, g.completed_at, ?, ?, ?, ?, ?
           FROM vaults v
           JOIN materialization_generations g ON g.vault_id = v.id
           WHERE v.id = ? AND v.status = 'active' AND g.id = ?
@@ -641,6 +663,7 @@ export async function startWorkspaceSnapshot(
           vault.sourceDescriptor === undefined
             ? null
             : JSON.stringify(vault.sourceDescriptor),
+          JSON.stringify(vault.sourceDevices),
           vault.generation.vaultId,
           vault.generation.generationId,
         )
@@ -721,7 +744,7 @@ async function vaultRowsForSnapshots(
       `SELECT snapshot_id, snapshot_vault_id, source_vault_id,
         source_vault_name, generation_id, source_state_vector_sha256,
         generation_created_at, generation_completed_at, item_count,
-        logical_bytes, ordinal, source_descriptor_json
+        logical_bytes, ordinal, source_descriptor_json, source_devices_json
        FROM snapshot_vaults WHERE snapshot_id IN (${placeholders})
        ORDER BY snapshot_id, ordinal`,
     )
@@ -1231,6 +1254,25 @@ async function buildWorkspaceSnapshotManifest(
     unavailableSections: parseSections(row.unavailable_sections),
     vaults: vaultRows.map((vault) => {
       const descriptor = portableDescriptor(vault.source_descriptor_json);
+      let devices: PortableSourceDevice[];
+      try {
+        const parsed = JSON.parse(vault.source_devices_json ?? "[]") as unknown;
+        devices = Array.isArray(parsed)
+          ? parsed.map((device) =>
+              portableSourceDeviceSchema.parse({
+                ...(typeof device === "object" && device !== null
+                  ? device
+                  : {}),
+                authorityRestored: false,
+                connectionRestored: false,
+                credentialRestored: false,
+                restoreDisposition: "quarantined",
+              }),
+            )
+          : [];
+      } catch {
+        throw new SnapshotError("snapshot_state_invalid");
+      }
       return {
         entries: entries
           .filter(
@@ -1247,6 +1289,7 @@ async function buildWorkspaceSnapshotManifest(
         snapshotVaultId: vault.snapshot_vault_id,
         sourceVaultId: vault.source_vault_id,
         ...(descriptor === undefined ? {} : { sourceDescriptor: descriptor }),
+        ...(devices.length === 0 ? {} : { sourceDevices: devices }),
         sourceGeneration:
           vault.generation_id === null ||
           vault.source_state_vector_sha256 === null ||

@@ -3,14 +3,17 @@ import {
   pairingExchangeResponseSchema,
   pairingGrantResponseSchema,
   serverCapabilitiesSchema,
+  sourceDevicePairingExchangeResponseSchema,
   socketTicketResponseSchema,
   vaultListResponseSchema,
   type PairingExchangeResponse,
   type PairingGrantResponse,
+  type SourceDevicePairingExchangeResponse,
 } from "@owd/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as Y from "yjs";
 import worker from "../src/index";
 import { ensureAgentAccessSchema } from "../src/agent-access-store";
 import {
@@ -18,7 +21,12 @@ import {
   createSessionMaterial,
   ensureAuthSchema,
 } from "../src/auth-store";
-import { createPairingGrant, ensurePairingSchema } from "../src/pairing-store";
+import {
+  createPairingGrant,
+  ensurePairingSchema,
+  readVaultCredential,
+} from "../src/pairing-store";
+import { ensureMaterializationSchema } from "../src/materialization-store";
 import { sha256Hex } from "../src/security";
 import {
   applyPhase9aCollaborationMigration,
@@ -43,6 +51,7 @@ async function fetchWorker(
 async function cleanPairingTables(): Promise<void> {
   await ensureAuthSchema(env.DB);
   await ensurePairingSchema(env.DB);
+  await ensureMaterializationSchema(env.DB);
   await ensureAgentAccessSchema(env.DB);
   await applyPhase9aCollaborationMigration(env.DB);
   await applyPhase9bAgentFirstMigration(env.DB);
@@ -146,6 +155,78 @@ async function exchangeGrant(
   };
 }
 
+async function deviceBoundary() {
+  const canonical = {
+    version: 1 as const,
+    root: "." as const,
+    pathPolicy: "mdevolved-markdown-v1" as const,
+    sourceKind: "folder" as const,
+    capabilities: ["markdown", "watch"] as const,
+  };
+  return {
+    ...canonical,
+    boundarySha256: await sha256Hex(JSON.stringify(canonical)),
+  };
+}
+
+async function exchangeDeviceGrant(
+  grant: PairingGrantResponse,
+  input: {
+    credential: string;
+    deviceId?: string;
+    displayName?: string;
+    idempotencyKey?: string;
+    rootFingerprintSha256?: string;
+    boundarySha256?: string;
+    vaultName?: string;
+  },
+): Promise<{
+  response: Response;
+  result: SourceDevicePairingExchangeResponse | null;
+  body: unknown;
+}> {
+  const boundary = await deviceBoundary();
+  const response = await fetchWorker(`${ORIGIN}/api/pairing/exchange`, {
+    body: JSON.stringify({
+      grant: grantFromUrl(grant.pairingUrl),
+      pluginVersion: "0.1.7",
+      schemaVersion: 3,
+      vaultName: input.vaultName ?? "Synthetic cross-computer source",
+      sourceDescriptor: {
+        sourceKind: "folder",
+        label: "Synthetic cross-computer source",
+        capabilities: ["markdown", "watch"],
+        clientVersion: "mdevolved-cli-alpha.1",
+        syncSchemaVersion: 1,
+      },
+      sourceDevice: {
+        contractVersion: 1,
+        deviceId: input.deviceId ?? crypto.randomUUID(),
+        displayName: input.displayName ?? "Disposable device",
+        rootFingerprintSha256: input.rootFingerprintSha256 ?? "c".repeat(64),
+        boundary: {
+          ...boundary,
+          ...(input.boundarySha256 === undefined
+            ? {}
+            : { boundarySha256: input.boundarySha256 }),
+        },
+        credentialSha256: await sha256Hex(input.credential),
+        idempotencyKey: input.idempotencyKey ?? crypto.randomUUID(),
+      },
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+  const body: unknown = await response.json();
+  return {
+    response,
+    result: response.ok
+      ? sourceDevicePairingExchangeResponseSchema.parse(body)
+      : null,
+    body,
+  };
+}
+
 async function issueTicket(
   pairing: PairingExchangeResponse,
   vaultId = pairing.vaultId,
@@ -195,6 +276,11 @@ describe("vault pairing and authorization", () => {
       maxSchemaVersion: 3,
       minPluginVersion: "0.1.7",
       recommendedPluginVersion: "0.1.7",
+      sourceDevices: {
+        capability: "owd.source-devices-v1",
+        credentialMode: "client-generated-sha256",
+        version: 1,
+      },
     });
 
     await createOwnerSession();
@@ -202,6 +288,355 @@ describe("vault pairing and authorization", () => {
       await (await fetchWorker(`${ORIGIN}/api/capabilities`)).json(),
     );
     expect(claimed).toMatchObject({ claimed: true, authMode: "claim" });
+  });
+
+  it("enrolls an owner-approved second device without revoking the first", async () => {
+    const session = await createOwnerSession();
+    const firstCredential = "first-device-credential-aaaaaaaa";
+    const first = await exchangeDeviceGrant(await createGrant(session), {
+      credential: firstCredential,
+      displayName: "Disposable device A",
+      rootFingerprintSha256: "1".repeat(64),
+    });
+    if (!first.result) throw new Error("First device enrollment failed.");
+
+    const deniedGrantResponse = await fetchWorker(
+      `${ORIGIN}/api/vaults/${first.result.vaultId}/reconnect-grant`,
+      { headers: ownerMutationHeaders(session), method: "POST" },
+    );
+    const deniedGrant = pairingGrantResponseSchema.parse(
+      await deniedGrantResponse.json(),
+    );
+    const denied = await exchangeDeviceGrant(deniedGrant, {
+      credential: "unapproved-device-credential-aaaa",
+      displayName: "Unapproved device",
+      rootFingerprintSha256: "2".repeat(64),
+    });
+    expect(denied.response.status).toBe(403);
+    expect(apiErrorSchema.parse(denied.body).error.code).toBe(
+      "source_device_denied",
+    );
+
+    const approvedGrantResponse = await fetchWorker(
+      `${ORIGIN}/api/vaults/${first.result.vaultId}/device-enrollment-grants`,
+      {
+        body: JSON.stringify({ expiresInDays: 30 }),
+        headers: {
+          ...ownerMutationHeaders(session),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+    expect(approvedGrantResponse.status).toBe(201);
+    const approvedGrant = pairingGrantResponseSchema.parse(
+      await approvedGrantResponse.json(),
+    );
+    const secondCredential = "second-device-credential-aaaaaaa";
+    const second = await exchangeDeviceGrant(approvedGrant, {
+      credential: secondCredential,
+      displayName: "Disposable device B",
+      rootFingerprintSha256: "2".repeat(64),
+    });
+    expect(second.response.status).toBe(200);
+    expect(second.result?.vaultId).toBe(first.result.vaultId);
+
+    const [firstTicket, secondTicket] = await Promise.all([
+      fetchWorker(`${ORIGIN}/vault/${first.result.vaultId}/auth/ticket`, {
+        headers: { Authorization: `Bearer ${firstCredential}` },
+        method: "POST",
+      }),
+      fetchWorker(`${ORIGIN}/vault/${first.result.vaultId}/auth/ticket`, {
+        headers: { Authorization: `Bearer ${secondCredential}` },
+        method: "POST",
+      }),
+    ]);
+    expect(firstTicket.status).toBe(200);
+    expect(secondTicket.status).toBe(200);
+
+    const listed = vaultListResponseSchema.parse(
+      await (
+        await fetchWorker(`${ORIGIN}/api/vaults`, {
+          headers: { Cookie: session.cookie },
+        })
+      ).json(),
+    );
+    expect(listed.vaults[0]?.sourceDevices).toHaveLength(2);
+    expect(
+      listed.vaults[0]?.sourceDevices
+        ?.map((device) => device.displayName)
+        .sort(),
+    ).toEqual(["Disposable device A", "Disposable device B"]);
+  });
+
+  it("separates exact replay from conflicting replay and boundary mismatch", async () => {
+    const session = await createOwnerSession();
+    const grant = await createGrant(session);
+    const credential = "idempotent-device-credential-aaaa";
+    const deviceId = crypto.randomUUID();
+    const idempotencyKey = crypto.randomUUID();
+    const first = await exchangeDeviceGrant(grant, {
+      credential,
+      deviceId,
+      idempotencyKey,
+    });
+    // Grant cleanup must not erase the receipt needed for exact replay.
+    await createGrant(session);
+    const replay = await exchangeDeviceGrant(grant, {
+      credential,
+      deviceId,
+      idempotencyKey,
+    });
+    const conflict = await exchangeDeviceGrant(grant, {
+      credential,
+      deviceId,
+      idempotencyKey,
+      vaultName: "Changed outer request",
+    });
+    expect(first.response.status).toBe(200);
+    expect(replay.response.status).toBe(200);
+    expect(replay.result?.sourceDevice.deviceId).toBe(
+      first.result?.sourceDevice.deviceId,
+    );
+    expect(conflict.response.status).toBe(409);
+    expect(apiErrorSchema.parse(conflict.body).error.code).toBe(
+      "idempotency_conflict",
+    );
+
+    const mismatch = await exchangeDeviceGrant(await createGrant(session), {
+      credential: "boundary-mismatch-credential-aaaa",
+      boundarySha256: "f".repeat(64),
+      rootFingerprintSha256: "9".repeat(64),
+    });
+    expect(mismatch.response.status).toBe(409);
+    expect(apiErrorSchema.parse(mismatch.body).error.code).toBe(
+      "source_boundary_invalid",
+    );
+  });
+
+  it("returns one durable enrollment for concurrent exact retries", async () => {
+    const session = await createOwnerSession();
+    const grant = await createGrant(session);
+    const request = {
+      credential: "concurrent-idempotent-credential-aaaa",
+      deviceId: crypto.randomUUID(),
+      idempotencyKey: crypto.randomUUID(),
+    };
+    const [left, right] = await Promise.all([
+      exchangeDeviceGrant(grant, request),
+      exchangeDeviceGrant(grant, request),
+    ]);
+    expect([left.response.status, right.response.status]).toEqual([200, 200]);
+    expect(left.result?.sourceDevice.deviceId).toBe(
+      right.result?.sourceDevice.deviceId,
+    );
+    const count = await env.DB.prepare(
+      `SELECT COUNT(*) AS count FROM source_devices
+       WHERE enrollment_idempotency_key = ?`,
+    )
+      .bind(request.idempotencyKey)
+      .first<{ count: number }>();
+    expect(count?.count).toBe(1);
+  });
+
+  it("bounds retained device history before consuming another owner grant", async () => {
+    const session = await createOwnerSession();
+    const first = await exchangeDeviceGrant(await createGrant(session), {
+      credential: "history-device-credential-aaaa",
+    });
+    if (!first.result) throw new Error("Initial device enrollment failed.");
+    const vaultId = first.result.vaultId;
+    const boundary = await deviceBoundary();
+    const now = Math.floor(Date.now() / 1_000);
+    await env.DB.batch(
+      Array.from({ length: 63 }, (_, index) =>
+        env.DB.prepare(
+          `INSERT INTO source_devices (
+              id, vault_id, display_name, root_fingerprint_sha256,
+              boundary_json, boundary_sha256, client_version,
+              sync_schema_version, status, enrollment_idempotency_key,
+              enrollment_request_sha256, enrollment_grant_sha256,
+              enrollment_origin_sha256, enrolled_at, revoked_at
+            ) VALUES (?, ?, ?, ?, ?, ?, '0.1.7', 3, 'revoked', ?, ?, ?, ?, ?, ?)`,
+        ).bind(
+          crypto.randomUUID(),
+          vaultId,
+          `Retained device ${index}`,
+          index.toString(16).padStart(64, "0"),
+          JSON.stringify(boundary),
+          boundary.boundarySha256,
+          crypto.randomUUID(),
+          `${index + 1}`.repeat(64).slice(0, 64),
+          `${index + 2}`.repeat(64).slice(0, 64),
+          `${index + 3}`.repeat(64).slice(0, 64),
+          now,
+          now,
+        ),
+      ),
+    );
+    const grant = await createPairingGrant(env.DB, {
+      deploymentUrl: ORIGIN,
+      deviceEnrollment: true,
+      now,
+      requestId: crypto.randomUUID(),
+      vaultId,
+    });
+    if (!grant) throw new Error("Owner device grant was not created.");
+    const denied = await exchangeDeviceGrant(grant, {
+      credential: "history-overflow-credential-aaaa",
+      rootFingerprintSha256: "f".repeat(64),
+    });
+    expect(denied.response.status).toBe(409);
+    expect(apiErrorSchema.parse(denied.body).error.code).toBe(
+      "source_device_limit",
+    );
+    const unusedGrant = await env.DB.prepare(
+      `SELECT used_at FROM pairing_grants WHERE grant_hash = ?`,
+    )
+      .bind(await sha256Hex(grantFromUrl(grant.pairingUrl)))
+      .first<{ used_at: number | null }>();
+    expect(unusedGrant?.used_at).toBeNull();
+  });
+
+  it("tracks durable publication provenance and immediately enforces source-scoped revocation and expiry", async () => {
+    const session = await createOwnerSession();
+    const firstCredential = "publication-device-a-credential-aaaa";
+    const first = await exchangeDeviceGrant(await createGrant(session), {
+      credential: firstCredential,
+      displayName: "Publisher A",
+      rootFingerprintSha256: "3".repeat(64),
+    });
+    if (!first.result) throw new Error("First publisher enrollment failed.");
+    const grantResponse = await fetchWorker(
+      `${ORIGIN}/api/vaults/${first.result.vaultId}/device-enrollment-grants`,
+      {
+        body: "{}",
+        headers: {
+          ...ownerMutationHeaders(session),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+    const secondCredential = "publication-device-b-credential-aaaa";
+    const second = await exchangeDeviceGrant(
+      pairingGrantResponseSchema.parse(await grantResponse.json()),
+      {
+        credential: secondCredential,
+        displayName: "Publisher B",
+        rootFingerprintSha256: "4".repeat(64),
+      },
+    );
+    if (!second.result) throw new Error("Second publisher enrollment failed.");
+
+    const document = new Y.Doc();
+    document.getMap("sys").set("schemaVersion", 3);
+    const metadata = new Y.Map<unknown>();
+    metadata.set("path", "Synthetic.md");
+    metadata.set("mtime", 1);
+    document.getMap("meta").set("synthetic-file", metadata);
+    const text = new Y.Text();
+    text.insert(0, "durable publication");
+    document.getMap<Y.Text>("idToText").set("synthetic-file", text);
+    const update = Y.encodeStateAsUpdate(document);
+    await env.VAULTS.getByName(first.result.vaultId).applyUpdate(
+      update.slice().buffer,
+    );
+    const durableStateVector = Y.encodeStateVector(document);
+    const encodedStateVector = btoa(String.fromCharCode(...durableStateVector))
+      .replaceAll("+", "-")
+      .replaceAll("/", "_")
+      .replace(/=+$/u, "");
+
+    for (const credential of [firstCredential, secondCredential]) {
+      const confirmation = await fetchWorker(
+        `${ORIGIN}/api/vaults/${first.result.vaultId}/sync-confirmation`,
+        {
+          body: JSON.stringify({
+            pluginVersion: "0.1.7",
+            schemaVersion: 3,
+            stateVector: encodedStateVector,
+          }),
+          headers: {
+            Authorization: `Bearer ${credential}`,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        },
+      );
+      expect([200, 202]).toContain(confirmation.status);
+    }
+
+    const listed = vaultListResponseSchema.parse(
+      await (
+        await fetchWorker(`${ORIGIN}/api/vaults`, {
+          headers: { Cookie: session.cookie },
+        })
+      ).json(),
+    );
+    expect(listed.vaults[0]?.lastPublisher?.deviceId).toBe(
+      second.result.sourceDevice.deviceId,
+    );
+
+    const foreign = await exchangeGrant(
+      await createGrant(session),
+      "Foreign source",
+    );
+    if (!foreign.result) throw new Error("Foreign source pairing failed.");
+    expect(
+      (
+        await fetchWorker(
+          `${ORIGIN}/vault/${foreign.result.vaultId}/auth/ticket`,
+          {
+            headers: { Authorization: `Bearer ${secondCredential}` },
+            method: "POST",
+          },
+        )
+      ).status,
+    ).toBe(401);
+
+    const revoked = await fetchWorker(
+      `${ORIGIN}/api/vaults/${first.result.vaultId}/devices/${second.result.sourceDevice.deviceId}/revoke`,
+      { headers: ownerMutationHeaders(session), method: "POST" },
+    );
+    expect(revoked.status).toBe(204);
+    expect(
+      (
+        await fetchWorker(
+          `${ORIGIN}/vault/${first.result.vaultId}/auth/ticket`,
+          {
+            headers: { Authorization: `Bearer ${secondCredential}` },
+            method: "POST",
+          },
+        )
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await fetchWorker(
+          `${ORIGIN}/vault/${first.result.vaultId}/auth/ticket`,
+          {
+            headers: { Authorization: `Bearer ${firstCredential}` },
+            method: "POST",
+          },
+        )
+      ).status,
+    ).toBe(200);
+
+    await env.DB.prepare(
+      `UPDATE source_devices SET enrolled_at = 1, expires_at = 2
+       WHERE id = ?`,
+    )
+      .bind(first.result.sourceDevice.deviceId)
+      .run();
+    expect(
+      await readVaultCredential(
+        env.DB,
+        first.result.vaultId,
+        await sha256Hex(firstCredential),
+      ),
+    ).toBeNull();
+    document.destroy();
   });
 
   it("requires an owner session, exact origin, and CSRF for grant creation", async () => {

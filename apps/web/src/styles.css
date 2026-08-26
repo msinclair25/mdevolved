@@ -770,7 +770,9 @@ a:focus-visible {
 
 .vault-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1fr) auto;
+  grid-template-columns:
+    minmax(220px, 1fr) minmax(300px, 1fr) minmax(260px, 1fr)
+    auto;
   align-items: center;
   gap: 28px;
   padding: 24px 26px;
@@ -834,6 +836,33 @@ a:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   margin: 0;
+}
+
+.source-device-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.source-device-list li,
+.source-device-list span,
+.source-device-list small {
+  display: grid;
+  gap: 4px;
+}
+
+.source-device-list li {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.source-device-list small {
+  color: var(--muted);
+  font-size: 0.7rem;
 }
 
 .vault-details dt {

@@ -19,6 +19,7 @@ import {
 } from "./backup-store";
 import { requireOwnerSession } from "./owner-session";
 import { parseJsonBody, sha256Hex } from "./security";
+import { listSourceDevices } from "./source-device-service";
 import type { AppBindings } from "./types";
 
 const backupIdSchema = z.string().uuid();
@@ -149,7 +150,8 @@ export function registerBackupRoutes(app: Hono<AppBindings>): void {
       );
     }
     const vaultId = parseVaultId(context);
-    const [recipient, vault] = await Promise.all([
+    const now = nowSeconds();
+    const [recipient, vault, sourceDevices] = await Promise.all([
       readBackupRecipient(context.env.DB),
       context.env.DB.prepare(
         `SELECT display_name FROM vaults
@@ -157,6 +159,7 @@ export function registerBackupRoutes(app: Hono<AppBindings>): void {
       )
         .bind(vaultId)
         .first<{ display_name: string | null }>(),
+      listSourceDevices(context.env.DB, vaultId, now),
     ]);
     if (!recipient.configured) {
       return throwBackupProblem(new BackupError("backup_recipient_missing"));
@@ -203,6 +206,13 @@ export function registerBackupRoutes(app: Hono<AppBindings>): void {
           generation: materialization.job.generation,
           now: nowSeconds(),
           requestId: context.get("requestId"),
+          sourceDevices: sourceDevices.map((device) => ({
+            ...device,
+            authorityRestored: false as const,
+            connectionRestored: false as const,
+            credentialRestored: false as const,
+            restoreDisposition: "quarantined" as const,
+          })),
           vaultName: vault.display_name,
         },
       );

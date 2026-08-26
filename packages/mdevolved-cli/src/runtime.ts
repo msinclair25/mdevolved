@@ -31,6 +31,7 @@ export interface VaultSyncLike {
   readonly providerSynced?: boolean;
   readonly serverAppliedLocalState?: boolean | null;
   destroy?(): Promise<void> | void;
+  getStateVector?(): Uint8Array;
 }
 
 export interface VaultSyncRuntimeOptions {
@@ -54,6 +55,7 @@ export interface SyncRuntime {
   readonly source: FolderSource;
   readonly remote: MarkdownRemotePort;
   start(): Promise<SyncRuntimeStatus>;
+  getStateVector(): Uint8Array | null;
   syncOnce(): Promise<FolderReconciliationResult>;
   stop(): Promise<void>;
 }
@@ -146,6 +148,9 @@ export async function createSyncRuntime(
   const runtime: SyncRuntime = {
     source,
     remote,
+    getStateVector(): Uint8Array | null {
+      return options.vault.getStateVector?.() ?? null;
+    },
     async start(): Promise<SyncRuntimeStatus> {
       if (stopped) throw new Error("sync_runtime_stopped");
       emit("starting");
