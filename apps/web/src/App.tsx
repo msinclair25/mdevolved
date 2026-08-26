@@ -3040,9 +3040,11 @@ function Dashboard() {
       setActionState({
         kind: "error",
         message:
-          error instanceof Error
-            ? error.message
-            : "The searchable library could not be built.",
+          error instanceof ApiRequestError
+            ? `${error.message} (${error.code})`
+            : error instanceof Error
+              ? error.message
+              : "The searchable library could not be built.",
       });
     }
   }
