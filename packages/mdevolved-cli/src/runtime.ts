@@ -18,6 +18,7 @@ export interface VaultSyncLike {
   getActiveMarkdownPaths(): readonly string[];
   getTextForPath(path: string): SyncText | null;
   ensureFile(path: string, contents: string, device?: string): SyncText | null;
+  markInitialized?(): void;
   writeMarkdownText?(path: string, contents: string, device?: string): boolean;
   isMarkdownTombstoned?(path: string): boolean;
   waitForLocalPersistence?(): Promise<boolean>;
@@ -192,6 +193,7 @@ export async function createSyncRuntime(
       if (stopped) throw new Error("sync_runtime_stopped");
       emit("syncing");
       try {
+        options.vault.markInitialized?.();
         const result = await reconcileFolder(
           source.core,
           source.state,
