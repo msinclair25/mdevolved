@@ -69,17 +69,17 @@
     "upstream:config:check": "node --test scripts/check-upstream-compatibility.test.mjs scripts/check-client-profile-fixtures.test.mjs && node scripts/check-upstream-compatibility.mjs --validate"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.18.7",
-    "@playwright/test": "1.61.1",
-    "@types/node": "26.1.1",
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.2.0",
     "age-encryption": "0.3.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
-    "oxlint": "1.74.0",
-    "prettier": "3.9.5",
+    "oxlint": "1.79.0",
+    "prettier": "3.9.6",
     "typescript": "7.0.2",
-    "vite": "8.1.5",
-    "vitest": "4.1.10",
-    "wrangler": "4.113.0"
+    "vite": "8.2.2",
+    "vitest": "4.1.11",
+    "wrangler": "4.125.0"
   }
 }
