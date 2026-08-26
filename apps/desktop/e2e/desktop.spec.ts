@@ -1,4 +1,6 @@
 import { _electron as electron, expect, test } from "@playwright/test";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -26,7 +28,16 @@ const executablePath =
 
 for (const width of [760, 360]) {
   test(`opens the packaged desktop shell accessibly at ${width}px`, async () => {
+    const temporaryRoot = await mkdtemp(join(tmpdir(), "mdevolved-e2e-"));
+    const sourceRoot = join(temporaryRoot, "Synthetic Project");
+    await mkdir(sourceRoot);
+    await writeFile(
+      join(sourceRoot, "README.md"),
+      "# Synthetic Project\n\nPackaged desktop bridge fixture.\n",
+      "utf8",
+    );
     const application = await electron.launch({
+      args: [`--user-data-dir=${join(temporaryRoot, "profile")}`],
       executablePath,
       cwd: desktopDirectory,
       env: { ...process.env, NODE_ENV: "production" },
@@ -71,6 +82,22 @@ for (const width of [760, 360]) {
           }),
         )
         .toBe("unconfigured");
+      await application.evaluate(({ dialog }, selectedFolder) => {
+        dialog.showOpenDialog = async () => ({
+          canceled: false,
+          filePaths: [selectedFolder],
+        });
+      }, sourceRoot);
+      await window
+        .getByRole("button", { name: "Choose Markdown folder" })
+        .click();
+      await expect(window.getByText(sourceRoot, { exact: true })).toBeVisible();
+      await expect(
+        window.getByText(
+          "Folder selected. Create a private pairing request in your MDevolved dashboard.",
+          { exact: true },
+        ),
+      ).toBeVisible();
 
       const overflow = await window.evaluate(() => ({
         body: document.body.scrollWidth,
@@ -79,6 +106,7 @@ for (const width of [760, 360]) {
       expect(overflow.body).toBeLessThanOrEqual(overflow.viewport);
     } finally {
       await application.close();
+      await rm(temporaryRoot, { force: true, recursive: true });
     }
   });
 }

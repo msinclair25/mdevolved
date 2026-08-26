@@ -3022,7 +3022,7 @@ function Dashboard() {
       if (job.status !== "completed") {
         throw new Error(
           job.status === "failed"
-            ? "The searchable library build stopped safely. The previous library is unchanged."
+            ? `The searchable library build stopped safely (${job.failureCode ?? "unknown_error"}). The previous library is unchanged.`
             : "The searchable library is still building. Refresh its status in a moment.",
         );
       }
@@ -3904,6 +3904,19 @@ function Dashboard() {
                     New note
                   </button>
                 </div>
+                {actionState.kind === "working" ? (
+                  <p className="availability" role="status">
+                    {actionState.label}
+                  </p>
+                ) : actionState.kind === "success" ? (
+                  <p className="availability" role="status">
+                    {actionState.message}
+                  </p>
+                ) : actionState.kind === "error" ? (
+                  <p className="action-error" role="alert">
+                    {actionState.message}
+                  </p>
+                ) : null}
               </div>
 
               {libraryState.kind === "ready" &&
