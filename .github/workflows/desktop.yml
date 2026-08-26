@@ -32,7 +32,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Run the MD6 client gate
         if: runner.os != 'Linux'
-        run: pnpm test:md6:acceptance
+        run: pnpm test:md6:clients
       - name: Run the MD6 client gate on Linux
         if: runner.os == 'Linux'
-        run: xvfb-run -a pnpm test:md6:acceptance
+        run: xvfb-run -a pnpm test:md6:clients
