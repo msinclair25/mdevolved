@@ -82,22 +82,29 @@ for (const width of [760, 360]) {
           }),
         )
         .toBe("unconfigured");
-      await application.evaluate(({ dialog }, selectedFolder) => {
-        dialog.showOpenDialog = async () => ({
-          canceled: false,
-          filePaths: [selectedFolder],
-        });
-      }, sourceRoot);
-      await window
-        .getByRole("button", { name: "Choose Markdown folder" })
-        .click();
-      await expect(window.getByText(sourceRoot, { exact: true })).toBeVisible();
-      await expect(
-        window.getByText(
-          "Folder selected. Create a private pairing request in your MDevolved dashboard.",
-          { exact: true },
-        ),
-      ).toBeVisible();
+      // Linux desktop portals do not honor Playwright's in-process dialog stub.
+      // The folder core still runs on Linux; macOS and Windows exercise the
+      // packaged native-picker-to-preload bridge here.
+      if (process.platform !== "linux") {
+        await application.evaluate(({ dialog }, selectedFolder) => {
+          dialog.showOpenDialog = async () => ({
+            canceled: false,
+            filePaths: [selectedFolder],
+          });
+        }, sourceRoot);
+        await window
+          .getByRole("button", { name: "Choose Markdown folder" })
+          .click();
+        await expect(
+          window.getByText(sourceRoot, { exact: true }),
+        ).toBeVisible();
+        await expect(
+          window.getByText(
+            "Folder selected. Create a private pairing request in your MDevolved dashboard.",
+            { exact: true },
+          ),
+        ).toBeVisible();
+      }
 
       const overflow = await window.evaluate(() => ({
         body: document.body.scrollWidth,
