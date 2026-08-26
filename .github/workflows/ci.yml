@@ -31,6 +31,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
       - run: pnpm public-source:check
+      - name: Run the frozen identity compatibility contract
+        run: node --test scripts/md5-brand-transition.test.mjs
       - run: pnpm check
       - run: pnpm test:migrations
       - run: pnpm test
