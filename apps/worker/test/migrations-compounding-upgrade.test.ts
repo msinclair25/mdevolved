@@ -8,7 +8,10 @@ import {
 
 describe("D1 compounding migration", () => {
   beforeAll(async () => {
-    await applyMigrations(env.DB, migrations.slice(0, -1));
+    await applyMigrations(
+      env.DB,
+      migrations.slice(0, migrations.indexOf(compoundingDraftsMigrationEntry)),
+    );
     await env.DB.prepare(
       "INSERT INTO app_metadata (key, value) VALUES ('m3_fixture', 'preserved')",
     ).run();

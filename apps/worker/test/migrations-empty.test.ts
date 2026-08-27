@@ -9,7 +9,7 @@ import {
 } from "./migration-fixture";
 
 describe("D1 migration chain from empty", () => {
-  it("applies every migration from 0001 through 0036", async () => {
+  it("applies every migration from 0001 through 0038", async () => {
     await applyMigrations(env.DB, migrations);
 
     const rows = await env.DB.prepare(
@@ -107,6 +107,16 @@ describe("D1 migration chain from empty", () => {
     ).first<{ name: string }>();
     expect(runtimeProfileColumn?.name).toBe("runtime_profile_json");
     expect(agentPrivateColumn?.name).toBe("agent_private");
+    const completionModeColumn = await env.DB.prepare(
+      `SELECT dflt_value FROM pragma_table_info('project_runs')
+       WHERE name = 'completion_mode'`,
+    ).first<{ dflt_value: string }>();
+    expect(completionModeColumn?.dflt_value).toBe("'orchestrated-reviewed'");
+    const soloPolicyColumn = await env.DB.prepare(
+      `SELECT dflt_value FROM pragma_table_info('project_policy_bindings')
+       WHERE name = 'solo_verified_allowed'`,
+    ).first<{ dflt_value: string }>();
+    expect(soloPolicyColumn?.dflt_value).toBe("0");
     const historicalGrantIndex = await env.DB.prepare(
       `SELECT name FROM sqlite_master
        WHERE type = 'index'

@@ -31,6 +31,7 @@ import {
   leadContinuityCapabilityProfileSchema,
   leadOperationCapabilitiesSchema,
   listProjectExceptionsRequestSchema,
+  md8CapabilitiesSchema,
   owdCheckpointRequestSchema,
   owdFindRequestSchema,
   owdGetSkillRequestSchema,
@@ -210,6 +211,8 @@ const ELASTIC_OPERATION_CAPABILITIES_RESOURCE_URI =
   "owd://collaboration/lead-operation-capabilities/v2";
 const POLICY_AUTOPILOT_CAPABILITIES_RESOURCE_URI =
   "owd://collaboration/lead-operation-capabilities/v3";
+const AUTONOMOUS_PROJECT_LOOP_CAPABILITIES_RESOURCE_URI =
+  "owd://collaboration/lead-operation-capabilities/v4";
 const POLICY_CONTINUITY_ADAPTER_RESOURCE_URI =
   "owd://adapters/policy-continuity/v1";
 const HERMES_HANDS_OFF_ADAPTER_RESOURCE_URI =
@@ -222,7 +225,7 @@ This adapter is inert, script-free, and provider-neutral. It grants no authority
 
 An external execution harness may call get_policy_operations, fulfill one bounded pending Continuity Point or disposable drill request, and submit its own provider-neutral Run evidence. It may call evaluate_run_policy only under the current fenced Project lead lease. After a distinct replacement lead restores the named Continuity Point into a fresh authority-free Community installation, complete_continuity_drill atomically records the redacted measured receipt and clears that exact scheduled request under the replacement lease fence. The harness remains responsible for agents, scheduling, retries, tools, worktrees, inference, provider state, and cleanup.
 
-An allow Decision is valid only for its exact owner-authored policy binding, Project version, Run, Work Item, Work Packet, accepted bundle count, independent review, Continuity Point, budget state, and integrity result. Never edit or self-approve policy, mint authority, execute exception-only work, treat a Worker cron as a supervisor, or restore grants, leases, actors, credentials, OAuth state, policy authority, or scheduler authority.
+An allow Decision is valid only for its exact owner-authored policy binding, Project version, Run, Work Item, Work Packet, completion mode, accepted bundle count, required review state, Continuity Point, budget state, and integrity result. Never edit or self-approve policy, mint authority, execute exception-only work, treat a Worker cron as a supervisor, or restore grants, leases, actors, credentials, OAuth state, policy authority, or scheduler authority.
 `;
 const HERMES_HANDS_OFF_ADAPTER = `# Hermes hands-off adapter v1
 
@@ -231,14 +234,14 @@ This adapter is inert, script-free guidance over MDevolved's provider-neutral MC
 For an authorized Project lead instructed to “Use MDevolved for this project”:
 
 1. create_work_item
-2. start_run
-3. register_actor for at least three claimed actors with only the scopes each needs
+2. start_run. Omit completionMode for the compatible orchestrated-reviewed default. Request solo-verified only when the owner has explicitly enabled it.
+3. For orchestrated-reviewed, register at least three claimed actors with only the scopes each needs. For solo-verified, register exactly one actor.
 4. get_run_context with the current actorId before actor work
-5. submit_bundle for provisional results
-6. submit_bundle with review.requested routed to an independent registered reviewer
-7. submit_bundle with the independently routed review result
+5. submit_bundle for purpose-specific provisional results and verification evidence
+6. For orchestrated-reviewed, submit_bundle with review.requested routed to an independent registered reviewer, then submit its independent result. Never self-review.
 8. checkpoint_project at a meaningful acknowledged boundary
-9. complete_work_item
+9. evaluate_run_policy under the current lead fence
+10. complete_work_item only after the exact allow Decision
 
 Requested authority expansion, destructive action, protected-path access, exhausted budgets, or conflicting evidence is evidence for an explicit blocking Project exception; it is never permission to execute the request.`;
 const ORCA_CONTINUITY_ADAPTER = `# Orca continuity adapter v1
@@ -1780,6 +1783,44 @@ function createServer(env: Env, context: ExecutionContext): McpServer {
     }),
   );
   server.registerResource(
+    "autonomous-project-loop-capabilities",
+    AUTONOMOUS_PROJECT_LOOP_CAPABILITIES_RESOURCE_URI,
+    {
+      description:
+        "Additive MD8 negotiation for owner-consented solo verification, reviewed orchestration, direct MCP, lead-mediated MCP, and authority-free portable handoff.",
+      mimeType: "application/json",
+      title: "MDevolved autonomous Project loop capabilities",
+    },
+    async () => ({
+      contents: [
+        {
+          mimeType: "application/json",
+          text: JSON.stringify(
+            md8CapabilitiesSchema.parse({
+              authority: {
+                liveAuthorityIncluded: false,
+                restoredAuthorityAllowed: false,
+              },
+              completionModes: ["orchestrated-reviewed", "solo-verified"],
+              completionPolicyFormat: "owd-completion-policy-v1",
+              connectionModes: [
+                "direct-mcp",
+                "lead-mediated-mcp",
+                "portable-handoff",
+              ],
+              format: "owd-lead-operation-capabilities-v4",
+              legacyDefaultMode: "orchestrated-reviewed",
+              mcpProtocolRevision: "2025-11-25",
+              requiredScope: "project.lead",
+              schemaVersion: 4,
+            }),
+          ),
+          uri: AUTONOMOUS_PROJECT_LOOP_CAPABILITIES_RESOURCE_URI,
+        },
+      ],
+    }),
+  );
+  server.registerResource(
     "obsidian-mind-compatibility-profile",
     OBSIDIAN_MIND_PROFILE_RESOURCE_URI,
     {
@@ -2000,6 +2041,8 @@ function createServer(env: Env, context: ExecutionContext): McpServer {
             leadOperationTools: PROJECT_LEAD_OPERATION_TOOLS,
             policyAutopilotCapabilitiesResource:
               POLICY_AUTOPILOT_CAPABILITIES_RESOURCE_URI,
+            autonomousProjectLoopCapabilitiesResource:
+              AUTONOMOUS_PROJECT_LOOP_CAPABILITIES_RESOURCE_URI,
             policyAutopilotTools: POLICY_AUTOPILOT_TOOLS,
             policyContinuityAdapterResource:
               POLICY_CONTINUITY_ADAPTER_RESOURCE_URI,
@@ -3491,7 +3534,7 @@ function createServer(env: Env, context: ExecutionContext): McpServer {
     {
       annotations: appendOnlyAnnotations,
       description:
-        "Create one bounded research or coding Work Item and integrity-pinned Work Packet under the caller's exact current fenced Project lead lease.",
+        "Create one bounded research or coding Work Item and integrity-pinned Work Packet under the caller's exact current fenced Project lead lease. Pass sourceWorkPacketId only to explicitly carry forward that accepted Project packet's bounded evidence and provenance; omission inherits nothing.",
       inputSchema: createWorkItemRequestSchema,
     },
     async (request) =>
@@ -3513,7 +3556,7 @@ function createServer(env: Env, context: ExecutionContext): McpServer {
     {
       annotations: appendOnlyAnnotations,
       description:
-        "Start one provider-neutral bounded Run for the exact open Work Item and newest usable Work Packet under the standing Project-version policy.",
+        "Start one provider-neutral bounded Run for the exact open Work Item and newest usable Work Packet. Omit completionMode for the compatible orchestrated-reviewed default; solo-verified remains inert unless the owner-authored binding explicitly consents before policy evaluation and completion.",
       inputSchema: startRunRequestSchema,
     },
     async (request) =>
@@ -3836,7 +3879,7 @@ function createServer(env: Env, context: ExecutionContext): McpServer {
     {
       annotations: appendOnlyAnnotations,
       description:
-        "Close the exact Run and Work Item only after at least three claimed actors, a routed independent passing review, a fresh fenced checkpoint, no blocking exception, and—when R4 is active—a current immutable deterministic allow Decision over the exact accepted bundle count.",
+        "Close the exact Run and Work Item under its immutable completion mode. The compatible default requires at least three claimed actors and a routed independent passing review. Owner-consented solo-verified requires exactly one actor. Both require purpose-specific evidence, a fresh fenced checkpoint, no blocking exception, and a current immutable allow Decision over the exact accepted bundle count.",
       inputSchema: completeWorkItemRequestSchema,
     },
     async (request) =>

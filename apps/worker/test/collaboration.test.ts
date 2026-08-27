@@ -169,6 +169,7 @@ import {
   startWorkspaceSnapshot,
 } from "../src/snapshot-store";
 import {
+  applyAutonomousCompletionModeMigration,
   applyOnboardingLifecycleMigration,
   applyPhase9aCollaborationMigration,
   applyPhase9bAgentFirstMigration,
@@ -380,6 +381,7 @@ async function resetState(): Promise<void> {
   await applyHandsOffLeadR2Migration(env.DB);
   await applyElasticActorPlaneR3Migration(env.DB);
   await applyPolicyAutopilotR4Migration(env.DB);
+  await applyAutonomousCompletionModeMigration(env.DB);
   await env.DB.exec(
     executableMigration(workingProfileSkillsMigrationEntry.source),
   );
@@ -6243,7 +6245,9 @@ type R2Harness = {
   workItemId: string;
 };
 
-async function createR2Harness(): Promise<R2Harness> {
+async function createR2Harness(
+  completionMode?: "solo-verified",
+): Promise<R2Harness> {
   const fixture = await createFixture();
   const authorization = await createLeadAuthorization(fixture);
   const lease = await claimProjectLead(env.DB, env.VAULT_STORAGE, {
@@ -6283,6 +6287,7 @@ async function createR2Harness(): Promise<R2Harness> {
       authorization,
       now: NOW + 2,
       request: {
+        ...(completionMode === undefined ? {} : { completionMode }),
         fencingToken: lease.fencingToken,
         idempotencyKey: `r2-start-${crypto.randomUUID()}`,
         leaseId: lease.leaseId,
@@ -6462,6 +6467,8 @@ describe("R2 hands-off lead operation", () => {
       format: "owd-run-context-v1",
       run: { status: "active", workItemId: harness.workItemId },
     });
+    expect(context.workPacket.evidenceObjects).toEqual([]);
+    expect(context.workPacket.sourceCitations).toEqual([]);
 
     const provisional = {
       ...r2BundleBase(harness, producerId, NOW + 7),
@@ -7183,7 +7190,7 @@ describe("R2 hands-off lead operation", () => {
   });
 
   it("snapshots every R2 record as Unvetted and restores only quarantined bodies without authority", async () => {
-    const harness = await createR2Harness();
+    const harness = await createR2Harness("solo-verified");
     const producerId = harness.actors[0];
     await submitRunBundle(env.DB, env.VAULT_STORAGE, {
       authorization: harness.authorization,
@@ -7230,6 +7237,9 @@ describe("R2 hands-off lead operation", () => {
     expect(new Set(rows.results.map((row) => row.record_type))).toEqual(
       new Set(["policy", "run", "actor", "event-bundle", "exception"]),
     );
+    expect(
+      await readLeadOperationRecord(env.DB, env.VAULT_STORAGE, harness.runId),
+    ).toMatchObject({ completionMode: "solo-verified" });
     const estimate = await estimateCollaborationSnapshot(
       env.DB,
       "approved-and-unvetted",
@@ -9434,6 +9444,129 @@ async function stageR4AcceptedEvidence(harness: R4Harness): Promise<void> {
   });
 }
 
+async function createSoloCompletionHarness(
+  purpose: "coding" | "research",
+  ownerConsented = true,
+): Promise<R4Harness> {
+  const fixture = await createEvidenceFixture();
+  const authorization = await createLeadAuthorization(fixture);
+  const lease = await claimProjectLead(env.DB, env.VAULT_STORAGE, {
+    authorization,
+    now: NOW + 2,
+    request: {
+      idempotencyKey: `md8-solo-claim-${purpose}-${crypto.randomUUID()}`,
+      leadIdentity: leadIdentity(`Synthetic MD8 solo ${purpose} lead`),
+      leaseExpiresInSeconds: 600,
+      projectId: fixture.projectId,
+    },
+  });
+  const started = await startLeadRun(env.DB, env.VAULT_STORAGE, {
+    authorization,
+    now: NOW + 3,
+    request: {
+      completionMode: "solo-verified",
+      fencingToken: lease.fencingToken,
+      idempotencyKey: `md8-solo-start-${purpose}-${crypto.randomUUID()}`,
+      leaseId: lease.leaseId,
+      projectId: fixture.projectId,
+      purpose,
+      workItemId: fixture.workItemId,
+    },
+  });
+  const run = runSchema.parse(started.run);
+  const actorId = crypto.randomUUID();
+  await registerRunActor(env.DB, env.VAULT_STORAGE, {
+    authorization,
+    now: NOW + 4,
+    request: {
+      actorId,
+      claimedIdentity: `Synthetic MD8 solo ${purpose} actor`,
+      fencingToken: lease.fencingToken,
+      idempotencyKey: `md8-solo-actor-${purpose}-${crypto.randomUUID()}`,
+      leaseId: lease.leaseId,
+      lifetimeSeconds: 300,
+      projectId: fixture.projectId,
+      runId: run.runId,
+      scopes: ["run.context.read", "run.bundle.submit"],
+      workItemId: fixture.workItemId,
+    },
+  });
+  await activateProjectPolicyBinding(
+    env.DB,
+    env.VAULT_STORAGE,
+    {
+      checkpointIntervalSeconds: 3_600,
+      ...(ownerConsented ? { completionMode: "solo-verified" as const } : {}),
+      drillIntervalSeconds: 604_800,
+      projectId: fixture.projectId,
+    },
+    NOW + 5,
+  );
+  return {
+    actors: [actorId, actorId, actorId],
+    authorization,
+    elastic: false,
+    fixture,
+    lease,
+    purpose,
+    runId: run.runId,
+  };
+}
+
+async function stageSoloAcceptedEvidence(harness: R4Harness): Promise<void> {
+  const actorId = harness.actors[0];
+  const evidence = harness.fixture.packet.evidenceObjects[0];
+  if (evidence === undefined) throw new Error("MD8 packet evidence missing.");
+  const keys =
+    harness.purpose === "research"
+      ? ["research.finding", "research.source"]
+      : ["coding.change", "coding.validation"];
+  await submitR4Bundle(
+    harness,
+    {
+      ...r4BundleBase(harness, actorId, NOW + 6),
+      events: [
+        {
+          actorId,
+          claims: keys.map((key, index) => ({
+            evidenceSha256: evidence.contentSha256,
+            key,
+            valueSha256: index === 0 ? "c".repeat(64) : "d".repeat(64),
+          })),
+          eventId: crypto.randomUUID(),
+          eventType: "result.provisional" as const,
+          runId: harness.runId,
+          summary: `Bounded solo ${harness.purpose} evidence is ready.`,
+        },
+      ],
+    },
+    NOW + 6,
+    `md8-solo-evidence-${harness.purpose}-${crypto.randomUUID()}`,
+  );
+  await checkpointProject(env.DB, env.VAULT_STORAGE, {
+    authorization: harness.authorization,
+    now: NOW + 7,
+    request: {
+      acceptedDecisionIds: [],
+      artifactIds: [],
+      blockers: [],
+      citationIds: [],
+      completedWork: ["Bounded evidence includes the harness verification."],
+      fencingToken: harness.lease.fencingToken,
+      idempotencyKey: `md8-solo-checkpoint-${crypto.randomUUID()}`,
+      knownRejectedApproaches: [],
+      leaseId: harness.lease.leaseId,
+      nextAction: "Evaluate the owner-consented solo completion policy.",
+      openWork: [],
+      packetId: harness.fixture.packet.packetId,
+      previousContinuityPointId: null,
+      projectId: harness.fixture.projectId,
+      risks: [],
+      workItemId: harness.fixture.workItemId,
+    },
+  });
+}
+
 function syntheticContinuityReceipt(input: {
   acknowledgedAt: number;
   drillId: string;
@@ -9548,6 +9681,244 @@ async function seedContinuityReceipt(
 }
 
 describe("R4 policy autopilot and operational continuity", () => {
+  it("denies an in-flight solo Run after the owner restores reviewed-only policy", async () => {
+    const harness = await createSoloCompletionHarness("coding");
+    const reviewed = await activateProjectPolicyBinding(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        checkpointIntervalSeconds: 3_600,
+        completionMode: "orchestrated-reviewed",
+        drillIntervalSeconds: 604_800,
+        projectId: harness.fixture.projectId,
+      },
+      NOW + 6,
+    );
+    expect(reviewed.completionPolicy).toBeUndefined();
+    await stageSoloAcceptedEvidence(harness);
+    await expect(
+      evaluateRunPolicy(env.DB, env.VAULT_STORAGE, {
+        authorization: harness.authorization,
+        now: NOW + 8,
+        request: {
+          fencingToken: harness.lease.fencingToken,
+          idempotencyKey: `md8-solo-revoked-${crypto.randomUUID()}`,
+          leaseId: harness.lease.leaseId,
+          normalizedRelativePath: null,
+          projectId: harness.fixture.projectId,
+          requestedOwnerActions: [],
+          runId: harness.runId,
+          workItemId: harness.fixture.workItemId,
+        },
+      }),
+    ).rejects.toMatchObject({ code: "policy_required" });
+    await expect(
+      completeLeadWorkItem(env.DB, env.VAULT_STORAGE, {
+        authorization: harness.authorization,
+        now: NOW + 9,
+        request: {
+          fencingToken: harness.lease.fencingToken,
+          idempotencyKey: `md8-solo-revoked-complete-${crypto.randomUUID()}`,
+          leaseId: harness.lease.leaseId,
+          outcome: "Must remain open after solo consent is superseded.",
+          projectId: harness.fixture.projectId,
+          runId: harness.runId,
+          workItemId: harness.fixture.workItemId,
+        },
+      }),
+    ).rejects.toMatchObject({ code: "policy_required" });
+    expect(
+      await env.DB.prepare(
+        `SELECT status FROM collaboration_work_items WHERE work_item_id = ?`,
+      )
+        .bind(harness.fixture.workItemId)
+        .first(),
+    ).toMatchObject({ status: "open" });
+  });
+
+  it("denies solo completion when more than one actor is claimed", async () => {
+    const harness = await createSoloCompletionHarness("research");
+    await registerRunActor(env.DB, env.VAULT_STORAGE, {
+      authorization: harness.authorization,
+      now: NOW + 6,
+      request: {
+        actorId: crypto.randomUUID(),
+        claimedIdentity: "Unexpected second solo actor",
+        fencingToken: harness.lease.fencingToken,
+        idempotencyKey: "md8-solo-second-actor-0001",
+        leaseId: harness.lease.leaseId,
+        lifetimeSeconds: 300,
+        projectId: harness.fixture.projectId,
+        runId: harness.runId,
+        scopes: ["run.context.read"],
+        workItemId: harness.fixture.workItemId,
+      },
+    });
+    await stageSoloAcceptedEvidence(harness);
+    const denied = evaluateRunPolicyReceiptSchema.parse(
+      await evaluateRunPolicy(env.DB, env.VAULT_STORAGE, {
+        authorization: harness.authorization,
+        now: NOW + 8,
+        request: {
+          fencingToken: harness.lease.fencingToken,
+          idempotencyKey: "md8-solo-actor-count-evaluate-0001",
+          leaseId: harness.lease.leaseId,
+          normalizedRelativePath: null,
+          projectId: harness.fixture.projectId,
+          requestedOwnerActions: [],
+          runId: harness.runId,
+          workItemId: harness.fixture.workItemId,
+        },
+      }),
+    );
+    expect(
+      denied.decision.checks.find((check) => check.key === "run-identity"),
+    ).toMatchObject({ passed: false });
+    await expect(
+      completeLeadWorkItem(env.DB, env.VAULT_STORAGE, {
+        authorization: harness.authorization,
+        now: NOW + 9,
+        request: {
+          fencingToken: harness.lease.fencingToken,
+          idempotencyKey: "md8-solo-actor-count-complete-0001",
+          leaseId: harness.lease.leaseId,
+          outcome: "Must remain open with an invalid actor count.",
+          projectId: harness.fixture.projectId,
+          runId: harness.runId,
+          workItemId: harness.fixture.workItemId,
+        },
+      }),
+    ).rejects.toMatchObject({ code: "review_required" });
+  });
+
+  it("completes coding and research with one actor only after explicit owner consent", async () => {
+    for (const purpose of ["research", "coding"] as const) {
+      const harness = await createSoloCompletionHarness(purpose);
+      await stageSoloAcceptedEvidence(harness);
+      const resumed = await resumeAgentMemory(env.DB, env.VAULT_STORAGE, {
+        authorization: harness.authorization,
+        now: NOW + 8,
+        request: {
+          contextMode: "focused",
+          projectId: harness.fixture.projectId,
+        },
+      });
+      expect(resumed.context.currentState).toMatchObject({
+        nextAction: "Evaluate the owner-consented solo completion policy.",
+      });
+      const evaluation = evaluateRunPolicyReceiptSchema.parse(
+        await evaluateRunPolicy(env.DB, env.VAULT_STORAGE, {
+          authorization: harness.authorization,
+          now: NOW + 8,
+          request: {
+            fencingToken: harness.lease.fencingToken,
+            idempotencyKey: `md8-solo-evaluate-${purpose}-${crypto.randomUUID()}`,
+            leaseId: harness.lease.leaseId,
+            normalizedRelativePath: null,
+            projectId: harness.fixture.projectId,
+            requestedOwnerActions: [],
+            runId: harness.runId,
+            workItemId: harness.fixture.workItemId,
+          },
+        }),
+      );
+      expect(evaluation.decision).toMatchObject({
+        completionMode: "solo-verified",
+        outcome: "allow",
+        purpose,
+      });
+      expect(
+        evaluation.decision.checks.find(
+          (check) => check.key === "independent-review",
+        ),
+      ).toEqual({
+        evidenceRefs: [],
+        key: "independent-review",
+        passed: true,
+      });
+      if (purpose === "research") {
+        const portable = await buildPortableOperationalExport(
+          env.DB,
+          env.VAULT_STORAGE,
+          harness.fixture.projectId,
+        );
+        expect(portable.records).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              record: expect.objectContaining({
+                completionPolicy: expect.objectContaining({
+                  soloVerifiedOwnerConsent: true,
+                }),
+                format: "owd-policy-binding-v1",
+              }),
+            }),
+            expect.objectContaining({
+              record: expect.objectContaining({
+                completionMode: "solo-verified",
+                format: "owd-policy-decision-v1",
+              }),
+            }),
+          ]),
+        );
+        expect(portable.authority).toEqual({
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        });
+        const continuity = await buildPortableContinuityBundle(
+          env.DB,
+          env.VAULT_STORAGE,
+          harness.fixture.projectId,
+        );
+        const pointFile = continuity.files.find(
+          (file) => file.path === "continuity-point.json",
+        );
+        const point = continuityPointSchema.parse(
+          JSON.parse(pointFile?.text ?? "{}"),
+        );
+        expect(point).toMatchObject({
+          context: { workPacketId: harness.fixture.packet.packetId },
+          nextAction: "Evaluate the owner-consented solo completion policy.",
+          project: { projectId: harness.fixture.projectId },
+          workItem: { workItemId: harness.fixture.workItemId },
+        });
+        const packet = await buildPortableWorkPacket(
+          env.DB,
+          env.VAULT_STORAGE,
+          harness.fixture.packet.packetId,
+        );
+        const packetFile = packet.files.find(
+          (file) => file.path === "packet.json",
+        );
+        const portablePacket = workPacketSchema.parse(
+          JSON.parse(packetFile?.text ?? "{}"),
+        );
+        expect(portablePacket).toMatchObject({
+          packetId: harness.fixture.packet.packetId,
+          projectId: harness.fixture.projectId,
+          workItemId: harness.fixture.workItemId,
+        });
+        expect(JSON.stringify({ continuity, packet, portable })).not.toMatch(
+          /"(?:accessToken|refreshToken|oauthState|providerCredential|terminalHistory|transcript)"\s*:/iu,
+        );
+      }
+      await expect(
+        completeLeadWorkItem(env.DB, env.VAULT_STORAGE, {
+          authorization: harness.authorization,
+          now: NOW + 9,
+          request: {
+            fencingToken: harness.lease.fencingToken,
+            idempotencyKey: `md8-solo-complete-${purpose}-${crypto.randomUUID()}`,
+            leaseId: harness.lease.leaseId,
+            outcome: `Synthetic solo ${purpose} Run completed.`,
+            projectId: harness.fixture.projectId,
+            runId: harness.runId,
+            workItemId: harness.fixture.workItemId,
+          },
+        }),
+      ).resolves.toMatchObject({ completed: true });
+    }
+  });
+
   it("completes one synthetic research Run and one coding Run without routine owner action", async () => {
     for (const purpose of ["research", "coding"] as const) {
       const harness = await createR4Harness(purpose);
@@ -9630,7 +10001,7 @@ describe("R4 policy autopilot and operational continuity", () => {
     }
   });
 
-  it("fails policy editing and self-approval closed as explicit Exceptions", async () => {
+  it("keeps interval edits closed, replaces completion mode, and denies self-approval", async () => {
     const harness = await createR4Harness("coding");
     await expect(
       activateProjectPolicyBinding(
@@ -9644,6 +10015,57 @@ describe("R4 policy autopilot and operational continuity", () => {
         NOW + 8,
       ),
     ).rejects.toMatchObject({ code: "policy_edit_forbidden" });
+    const activeBinding = await env.DB.prepare(
+      `SELECT binding_id FROM project_policy_bindings
+       WHERE project_id = ? AND status = 'active'`,
+    )
+      .bind(harness.fixture.projectId)
+      .first<{ binding_id: string }>();
+    if (activeBinding === null) throw new Error("Active binding missing.");
+    const reviewedBindingId = activeBinding.binding_id;
+    const solo = await activateProjectPolicyBinding(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        checkpointIntervalSeconds: 3_600,
+        completionMode: "solo-verified",
+        drillIntervalSeconds: 604_800,
+        projectId: harness.fixture.projectId,
+      },
+      NOW + 8,
+    );
+    expect(solo.completionPolicy?.soloVerifiedOwnerConsent).toBe(true);
+    const reviewed = await activateProjectPolicyBinding(
+      env.DB,
+      env.VAULT_STORAGE,
+      {
+        checkpointIntervalSeconds: 3_600,
+        completionMode: "orchestrated-reviewed",
+        drillIntervalSeconds: 604_800,
+        projectId: harness.fixture.projectId,
+      },
+      NOW + 9,
+    );
+    expect(reviewed.completionPolicy).toBeUndefined();
+    expect(reviewed.bindingId).not.toBe(solo.bindingId);
+    expect(
+      await env.DB.prepare(
+        `SELECT binding_id, status, solo_verified_allowed
+         FROM project_policy_bindings WHERE binding_id IN (?, ?)
+         ORDER BY activated_at`,
+      )
+        .bind(reviewedBindingId, solo.bindingId)
+        .all(),
+    ).toMatchObject({
+      results: [
+        { binding_id: reviewedBindingId, status: "superseded" },
+        {
+          binding_id: solo.bindingId,
+          solo_verified_allowed: 1,
+          status: "superseded",
+        },
+      ],
+    });
     await stageR4AcceptedEvidence(harness);
     const denied = evaluateRunPolicyReceiptSchema.parse(
       await evaluateRunPolicy(env.DB, env.VAULT_STORAGE, {

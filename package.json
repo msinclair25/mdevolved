@@ -64,6 +64,8 @@
     "test:md6:clients": "pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @owd/desktop test && pnpm --filter @owd/obsidian-plugin test && pnpm test:continuity:harness && pnpm test:clean-install:mdevolved && pnpm test:desktop:e2e",
     "test:md7:brand": "node --test scripts/md5-brand-transition.test.mjs scripts/md7-brand-completion.test.mjs",
     "test:md7:acceptance": "pnpm test:md7:brand && pnpm test:md6:acceptance",
+    "test:md8:acceptance": "pnpm test:md8:client-shapes && vitest run packages/contracts/test/policy-operation-fixtures.test.ts packages/contracts/test/lead-operation-fixtures.test.ts apps/web/test/lead-operation-ui.test.ts apps/worker/test/migrations-empty.test.ts apps/worker/test/migrations-autonomous-completion-upgrade.test.ts apps/worker/test/collaboration.test.ts apps/worker/test/agent-access.test.ts apps/worker/test/md8-mcp-loop.test.ts --config vitest.config.ts",
+    "test:md8:client-shapes": "node --test scripts/md8-client-shapes.test.mjs",
     "test:desktop:e2e": "pnpm --filter @owd/desktop package && pnpm --filter @owd/desktop test:e2e",
     "test:e2e": "playwright test",
     "test:integration": "vitest run --config vitest.config.ts",

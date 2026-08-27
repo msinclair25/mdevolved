@@ -8,6 +8,7 @@ import {
   canonicalizeCollaborationJson,
   completeContinuityDrillReceiptSchema,
   completeContinuityDrillRequestSchema,
+  completionPolicySchema,
   evaluateRunPolicyReceiptSchema,
   evaluateRunPolicyRequestSchema,
   getPolicyOperationsReceiptSchema,
@@ -19,6 +20,7 @@ import {
   policyBindingSchema,
   policyDecisionSchema,
   type ContinuityReceipt,
+  type CompletionMode,
   type OperationalEvidence,
   type OperationalOverview,
   type OperationalPortableExport,
@@ -203,9 +205,10 @@ function bindingProjectionStatement(
         binding_id, operational_record_id, project_id, project_version_id,
         policy_id, policy_sha256, owner_policy_input_record_id,
         owner_policy_input_sha256, owner_authored, gate_research, gate_coding,
-        checkpoint_interval_seconds, drill_interval_seconds, status,
+        checkpoint_interval_seconds, drill_interval_seconds,
+        solo_verified_allowed, status,
         activated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'active', ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 'active', ?)`,
     )
     .bind(
       binding.bindingId,
@@ -220,6 +223,7 @@ function bindingProjectionStatement(
       binding.gateProfiles.coding,
       binding.checkpointIntervalSeconds,
       binding.drillIntervalSeconds,
+      binding.completionPolicy?.soloVerifiedOwnerConsent === true ? 1 : 0,
       binding.activatedAt,
     );
 }
@@ -404,7 +408,10 @@ export async function activateProjectPolicyBinding(
   ) {
     throw new PolicyOperationProblem("integrity_mismatch");
   }
+  const requestedSoloCompletion = request.completionMode === "solo-verified";
   if (existing !== null) {
+    const existingSoloCompletion =
+      existing.completionPolicy?.soloVerifiedOwnerConsent === true;
     if (
       existing.checkpointIntervalSeconds !==
         request.checkpointIntervalSeconds ||
@@ -422,7 +429,7 @@ export async function activateProjectPolicyBinding(
         throw new PolicyOperationProblem("integrity_mismatch");
       }
       await verifyBindingPolicyInputs(db, storage, existing);
-      return existing;
+      if (existingSoloCompletion === requestedSoloCompletion) return existing;
     }
   }
   const binding = policyBindingSchema.parse({
@@ -430,6 +437,17 @@ export async function activateProjectPolicyBinding(
     authority: AUTHORITY,
     bindingId: crypto.randomUUID(),
     checkpointIntervalSeconds: request.checkpointIntervalSeconds,
+    ...(requestedSoloCompletion
+      ? {
+          completionPolicy: completionPolicySchema.parse({
+            allowedModes: ["orchestrated-reviewed", "solo-verified"],
+            defaultMode: "orchestrated-reviewed",
+            format: "owd-completion-policy-v1",
+            schemaVersion: 1,
+            soloVerifiedOwnerConsent: true,
+          }),
+        }
+      : {}),
     drillIntervalSeconds: request.drillIntervalSeconds,
     exceptionOnlyActions: [
       "authority-expansion",
@@ -966,6 +984,8 @@ async function collectGateInputs(
 function gateChecks(
   inputs: GateInputs,
   requestedOwnerActions: PolicyExceptionAction[],
+  completionMode: CompletionMode,
+  actorCount: number,
 ) {
   const policyRef = [inputs.binding.bindingId];
   const purposeRefs = [
@@ -978,7 +998,12 @@ function gateChecks(
       key: "owner-authored-policy" as const,
       passed: inputs.binding.ownerAuthored,
     },
-    { evidenceRefs: [], key: "run-identity" as const, passed: true },
+    {
+      evidenceRefs: [],
+      key: "run-identity" as const,
+      passed:
+        completionMode === "solo-verified" ? actorCount === 1 : actorCount >= 3,
+    },
     {
       evidenceRefs: purposeRefs,
       key: "purpose-evidence" as const,
@@ -987,7 +1012,7 @@ function gateChecks(
     {
       evidenceRefs: inputs.reviewRefs.map((reference) => reference.id),
       key: "independent-review" as const,
-      passed: inputs.reviewValid,
+      passed: completionMode === "solo-verified" ? true : inputs.reviewValid,
     },
     {
       evidenceRefs:
@@ -1157,6 +1182,30 @@ export async function evaluateRunPolicy(
   ) {
     throw new PolicyOperationProblem("run_invalid");
   }
+  const completionMode = run.completion_mode;
+  let storedRun: Awaited<ReturnType<typeof readLeadOperationRecord>>;
+  try {
+    storedRun = await readLeadOperationRecord(db, storage, request.runId);
+  } catch {
+    throw new PolicyOperationProblem("integrity_mismatch");
+  }
+  if (
+    storedRun?.format !== "owd-run-v1" ||
+    storedRun.projectId !== request.projectId ||
+    storedRun.workItemId !== request.workItemId ||
+    storedRun.policyId !== binding.policyId ||
+    (storedRun.completionMode ?? "orchestrated-reviewed") !== completionMode
+  ) {
+    throw new PolicyOperationProblem("integrity_mismatch");
+  }
+  if (
+    completionMode === "solo-verified" &&
+    (binding.completionPolicy === undefined ||
+      !binding.completionPolicy.allowedModes.includes(completionMode) ||
+      !binding.completionPolicy.soloVerifiedOwnerConsent)
+  ) {
+    throw new PolicyOperationProblem("policy_required");
+  }
   const gateInputs = await collectGateInputs(db, storage, {
     binding,
     projectId: request.projectId,
@@ -1166,7 +1215,12 @@ export async function evaluateRunPolicy(
     workItemId: request.workItemId,
     workPacketId: run.work_packet_id,
   });
-  const checks = gateChecks(gateInputs, request.requestedOwnerActions);
+  const checks = gateChecks(
+    gateInputs,
+    request.requestedOwnerActions,
+    completionMode,
+    run.actor_count,
+  );
   const reason = exceptionReason(checks, request.requestedOwnerActions);
   const outcome = reason === null ? "allow" : "exception";
   const evidenceRefs: PolicyEvidenceRef[] = [
@@ -1193,6 +1247,7 @@ export async function evaluateRunPolicy(
     canonicalizeCollaborationJson({
       acceptedBundleCount: gateInputs.acceptedBundleCount,
       checks,
+      completionMode,
       evidenceRefs: uniqueEvidence,
       requestedOwnerActions: request.requestedOwnerActions,
     }),
@@ -1201,6 +1256,7 @@ export async function evaluateRunPolicy(
     acceptedBundleCount: gateInputs.acceptedBundleCount,
     authority: AUTHORITY,
     checks,
+    ...(completionMode === "solo-verified" ? { completionMode } : {}),
     continuityPointId: gateInputs.checkpointRef?.id ?? null,
     decisionId: crypto.randomUUID(),
     evaluatedAt: input.now,

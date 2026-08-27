@@ -1703,6 +1703,27 @@ describe("scoped universal agent access", () => {
     );
     expect(resources.result.resources).toContainEqual(
       expect.objectContaining({
+        name: "autonomous-project-loop-capabilities",
+        uri: "owd://collaboration/lead-operation-capabilities/v4",
+      }),
+    );
+    const autonomousProfileResponse = await productionFetch("resources/read", {
+      uri: "owd://collaboration/lead-operation-capabilities/v4",
+    });
+    expect(autonomousProfileResponse.status).toBe(200);
+    const autonomousProfile = mcpResourceReadResponseSchema.parse(
+      await autonomousProfileResponse.json(),
+    );
+    expect(
+      JSON.parse(autonomousProfile.result.contents[0]?.text ?? "{}"),
+    ).toMatchObject({
+      completionModes: ["orchestrated-reviewed", "solo-verified"],
+      connectionModes: ["direct-mcp", "lead-mediated-mcp", "portable-handoff"],
+      format: "owd-lead-operation-capabilities-v4",
+      legacyDefaultMode: "orchestrated-reviewed",
+    });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
         name: "obsidian-mind-compatibility-profile",
         uri: "owd://compatibility-profiles/obsidian-mind/v1",
       }),
@@ -1863,6 +1884,8 @@ describe("scoped universal agent access", () => {
         ],
         policyAutopilotCapabilitiesResource:
           "owd://collaboration/lead-operation-capabilities/v3",
+        autonomousProjectLoopCapabilitiesResource:
+          "owd://collaboration/lead-operation-capabilities/v4",
         policyAutopilotTools: [
           "evaluate_run_policy",
           "get_policy_operations",

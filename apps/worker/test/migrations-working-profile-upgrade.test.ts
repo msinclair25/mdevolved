@@ -8,7 +8,13 @@ import {
 
 describe("D1 working-profile migration", () => {
   beforeAll(async () => {
-    await applyMigrations(env.DB, migrations.slice(0, -1));
+    await applyMigrations(
+      env.DB,
+      migrations.slice(
+        0,
+        migrations.indexOf(workingProfileSkillsMigrationEntry),
+      ),
+    );
     await env.DB.prepare(
       "INSERT INTO app_metadata (key, value) VALUES ('m2_fixture', 'preserved')",
     ).run();

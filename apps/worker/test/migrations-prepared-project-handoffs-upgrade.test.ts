@@ -8,7 +8,13 @@ import {
 
 describe("prepared first-Project handoff migration", () => {
   it("upgrades an existing workspace and enforces one active handoff per vault and agent", async () => {
-    await applyMigrations(env.DB, migrations.slice(0, -1));
+    await applyMigrations(
+      env.DB,
+      migrations.slice(
+        0,
+        migrations.indexOf(preparedProjectHandoffsMigrationEntry),
+      ),
+    );
     const now = Math.floor(Date.now() / 1_000);
     const vaultId = crypto.randomUUID();
     const firstAgentId = crypto.randomUUID();

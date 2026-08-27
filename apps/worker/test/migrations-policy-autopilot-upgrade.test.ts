@@ -148,7 +148,10 @@ async function seedPriorReleaseRows(): Promise<void> {
 
 describe("D1 R4 policy-autopilot migration", () => {
   it("upgrades a populated 0032 database and preserves R1-R3 rows", async () => {
-    await applyMigrations(env.DB, migrations.slice(0, -1));
+    await applyMigrations(
+      env.DB,
+      migrations.slice(0, migrations.indexOf(policyAutopilotR4MigrationEntry)),
+    );
     await seedPriorReleaseRows();
 
     await applyMigrations(env.DB, [policyAutopilotR4MigrationEntry]);

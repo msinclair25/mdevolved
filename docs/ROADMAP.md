@@ -5,7 +5,7 @@ and evidence for Markdown folders, Obsidian, and compatible AI tools. It complem
 harnesses; it does not run, schedule, route, or supervise agents. This roadmap
 describes product outcomes, not deployment schedules or service commitments.
 
-## Current direction — MDevolved brand completion
+## Current direction — autonomous Project continuity
 
 MDevolved's durable protocol and Community data plane become the compatibility
 foundation for **MDevolved**: source-independent Project memory with a plain
@@ -14,14 +14,17 @@ first-class adapter. Existing `owd_*` tools, plugin identity, stored records,
 exports, and deployments remain compatible during the additive brand
 transition.
 
-The source-core, desktop folder, Obsidian adapter, cross-computer, initial brand,
-and lovable-release milestones are complete. The active MD7 milestone removes
-the former product name from normal user and agent workflows while preserving
-the existing compatibility identifiers below.
+The source-core, desktop folder, Obsidian adapter, cross-computer, lovable
+release, and naming-completion milestones are complete. The locally accepted
+MD8 candidate adds the Autonomous Project Loop: one owner-consented agent or an authorized
+lead managing several actors can verify, checkpoint, and continue bounded work
+without routine MDevolved-specific owner coordination. MDevolved still does not
+schedule, execute, or supervise agents.
 The complete architecture, security boundary, migration order, and acceptance
 decisions live in the [MDevolved source-independent product plan](MDEVOLVED-PLAN.md).
-MD7 requires no schema migration, re-pairing, MCP reconnect, plugin reinstall,
-or Cloudflare resource rename.
+Existing users require no re-pairing, MCP reconnect, plugin reinstall, or
+Cloudflare resource rename. Old records and clients retain the reviewed
+completion policy by default.
 
 ## Available now
 
