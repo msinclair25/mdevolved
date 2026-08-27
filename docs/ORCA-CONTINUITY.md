@@ -3,8 +3,8 @@
 ## Status and boundary
 
 The R3 Orca adapter is an inert, script-free compatibility projection. Orca
-ADE is an optional execution workbench, not an OWD runtime, scheduler, owner,
-identity provider, or recovery source. The generic OWD Project, Run, Actor,
+ADE is an optional execution workbench, not an MDevolved runtime, scheduler, owner,
+identity provider, or recovery source. The generic MDevolved Project, Run, Actor,
 EventBundle, Exception, budget, delta, and Continuity Point records remain
 authoritative. This document describes the frozen local R3 contract; it does
 not claim a live Orca exercise has passed. A live disposable exercise requires
@@ -18,21 +18,21 @@ through the generic `project_orca_metadata` service/tool. It carries the exact
 Project and Run, an optional Actor, the literal provider label `orca`, and
 optional evidence references:
 
-| Orca value             | OWD destination  | Meaning                                                          |
-| ---------------------- | ---------------- | ---------------------------------------------------------------- |
-| Worktree reference     | `worktreeRef`    | Claimed location/evidence pointer, not a filesystem grant        |
-| Branch reference       | `branchRef`      | Claimed branch label, not branch control                         |
-| Commit SHA             | `commitSha`      | Immutable-looking source evidence; OWD does not verify Git state |
-| Pull-request reference | `pullRequestRef` | Claimed review pointer; no PR mutation or approval               |
-| Session reference      | `sessionRef`     | Claimed session correlation; no transcript or session authority  |
+| Orca value             | MDevolved destination | Meaning                                                                |
+| ---------------------- | --------------------- | ---------------------------------------------------------------------- |
+| Worktree reference     | `worktreeRef`         | Claimed location/evidence pointer, not a filesystem grant              |
+| Branch reference       | `branchRef`           | Claimed branch label, not branch control                               |
+| Commit SHA             | `commitSha`           | Immutable-looking source evidence; MDevolved does not verify Git state |
+| Pull-request reference | `pullRequestRef`      | Claimed review pointer; no PR mutation or approval                     |
+| Session reference      | `sessionRef`          | Claimed session correlation; no transcript or session authority        |
 
 All fields are bounded metadata. The projection's authority flags are always
 `restoredAuthorityAllowed: false` and `liveAuthorityIncluded: false`. Orca
 names, task IDs, dispatch IDs, agent labels, model labels, terminal output,
 conversation text, tool traces, environment variables, credentials, and OAuth
-state are not accepted as OWD authority or required evidence.
+state are not accepted as MDevolved authority or required evidence.
 
-OWD never launches or stops Orca agents, sends terminal input, creates or
+MDevolved never launches or stops Orca agents, sends terminal input, creates or
 deletes worktrees, creates branches, opens or merges pull requests, schedules
 work, or changes Orca/Codex/Claude permissions. The caller remains responsible
 for verifying its own worktree, branch, commit, pull request, and session
@@ -46,17 +46,17 @@ most 32 active and 64 total actor records, registration batches of 16, bundle
 submissions of 8, and cursor delta pages of 100. Batch retries are idempotent;
 same-key payload changes are explicit replay conflicts. Backpressure returns
 bounded retry metadata but does not move scheduling or retry ownership into
-OWD. `get_run_context` without a mode remains the R2-compatible snapshot path;
+MDevolved. `get_run_context` without a mode remains the R2-compatible snapshot path;
 delta mode is bound to one exact Project/Run and stable sequence cursor.
 
 Budgets are reported by the harness as logical units and cost microunits.
-Exhaustion creates a blocking budget Exception; OWD does not calculate vendor
+Exhaustion creates a blocking budget Exception; MDevolved does not calculate vendor
 pricing. Observations are aggregate counts and latency/retry summaries only.
 
 ## State loss and provider-neutral resumption
 
 Orca state is deliberately disposable. If a worktree, branch, pull request, or
-session disappears, OWD retains only the accepted projection metadata and
+session disappears, MDevolved retains only the accepted projection metadata and
 generic Run evidence that was durably submitted. A separately authorized
 provider-neutral lead resumes by:
 
@@ -70,7 +70,7 @@ provider-neutral lead resumes by:
 No Orca session, lease, actor, grant, credential, OAuth state, worktree,
 branch, pull request, scheduler state, or runtime context is revived. An
 expired or abandoned predecessor remains expired/revoked; a replacement's
-scopes are a strict subset. If the projection later becomes stale, OWD
+scopes are a strict subset. If the projection later becomes stale, MDevolved
 preserves it only as non-authoritative evidence rather than selecting a
 provider-side winner.
 
@@ -109,12 +109,12 @@ until run.
 
 ## M4 user recipe
 
-Connect the same generic OWD MCP endpoint from the owner's chosen client, then
+Connect the same generic MDevolved MCP endpoint from the owner's chosen client, then
 let Orca execute work in its own worktree. At a checkpoint, the client submits
 the bounded outcome and evidence; a fresh Codex, Claude, or Hermes client later
 calls `owd_resume` for the same Project or Run. That handoff does not restore an
 Orca session, terminal, worktree, branch, credentials, or scheduler state.
 
-OWD does not launch Orca, dispatch its agents, manage retries, or certify a
+MDevolved does not launch Orca, dispatch its agents, manage retries, or certify a
 commit or pull request. A worktree reference is evidence supplied by the
 harness and remains subject to the owner's normal review.

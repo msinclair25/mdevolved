@@ -1999,7 +1999,7 @@ describe("scoped universal agent access", () => {
       error: {
         code: "vault_protection_required",
         message:
-          "OWD does not yet have an exact-current searchable library for this vault. Keep Obsidian open and retry shortly; if library status reports a failure, use Build now.",
+          "MDevolved does not yet have an exact-current searchable library for this Source. Keep the Source sync client running and retry shortly; if library status reports a failure, use Build now.",
       },
     });
     await materialize(vaultId, []);
@@ -2212,7 +2212,7 @@ describe("scoped universal agent access", () => {
       error: {
         code: "library_not_ready",
         message:
-          "This vault's current synced library is not ready. Keep Obsidian open, let OWD rebuild it, then retry.",
+          "This Source's current synced library is not ready. Keep the Source sync client running, let MDevolved rebuild it, then retry.",
       },
       ok: false,
     });
@@ -2446,7 +2446,7 @@ describe("scoped universal agent access", () => {
       "call `resume_project`",
     );
     expect(status.continuity?.managedInstructionBlock).toContain(
-      "inspect `localVaultAccess.role`",
+      "current `localVaultAccess.role`",
     );
     expect(status.continuity?.managedInstructionBlock).toContain(
       "writer role is **unconfirmed**",
@@ -2461,7 +2461,7 @@ describe("scoped universal agent access", () => {
         contextFilePath: ".owdignore",
         instructionFilePath: "AGENTS.md",
         managedInstructionBlock: expect.stringContaining(
-          "first agent that establishes an OWD Project for this vault",
+          "first agent that establishes a Project",
         ),
       },
       localVaultAccess: {
@@ -2507,7 +2507,9 @@ describe("scoped universal agent access", () => {
         localWriteDefault: "owner-requested-bounded-task-only",
         role: "primary-writer",
       },
-      nextAction: expect.stringContaining("replace only the marked OWD block"),
+      nextAction: expect.stringContaining(
+        "replace only the marked MDevolved block",
+      ),
       ok: true,
       resume: {
         contextPolicy: request.draft.contextPolicy,
@@ -3168,7 +3170,7 @@ describe("scoped universal agent access", () => {
         pathPrefixes: ["Other/"],
       },
       nextAction:
-        "No compatible OWD Project exists in this exact vault and folder grant. Unavailable Project metadata stays private unless the user explicitly targets its receipt ID. Continue with a New Project draft; do not ask the user to choose between New and Existing.",
+        "No compatible MDevolved Project exists in this exact vault and folder grant. Unavailable Project metadata stays private unless the user explicitly targets its receipt ID. Continue with a New Project draft; do not ask the user to choose between New and Existing.",
       newProjectAllowed: true,
       ok: true,
       projects: [],
@@ -3192,9 +3194,9 @@ describe("scoped universal agent access", () => {
       error: {
         code: "project_not_joinable",
         message:
-          "This existing Project cannot be joined yet (folder-scope-mismatch). This agent's approved folder does not include the Project sources. OWD cannot widen access silently. Approve a folder that includes this exact Project once in the agent's OWD connection, then retry the same Project.",
+          "This existing Project cannot be joined yet (folder-scope-mismatch). This agent's approved folder does not include the Project sources. MDevolved cannot widen access silently. Approve a folder that includes this exact Project once in the agent's MDevolved connection, then retry the same Project.",
         nextAction:
-          "This agent's approved folder does not include the Project sources. OWD cannot widen access silently. Approve a folder that includes this exact Project once in the agent's OWD connection, then retry the same Project.",
+          "This agent's approved folder does not include the Project sources. MDevolved cannot widen access silently. Approve a folder that includes this exact Project once in the agent's MDevolved connection, then retry the same Project.",
         reason: "folder-scope-mismatch",
       },
       ok: false,
@@ -3222,7 +3224,7 @@ describe("scoped universal agent access", () => {
       },
       newProjectAllowed: true,
       nextAction:
-        "No compatible OWD Project exists in this exact vault and folder grant. Unavailable Project metadata stays private unless the user explicitly targets its receipt ID. Continue with a New Project draft; do not ask the user to choose between New and Existing.",
+        "No compatible MDevolved Project exists in this exact vault and folder grant. Unavailable Project metadata stays private unless the user explicitly targets its receipt ID. Continue with a New Project draft; do not ask the user to choose between New and Existing.",
       ok: true,
       projects: [],
       requiresExplicitChoice: false,
@@ -5249,7 +5251,7 @@ describe("scoped universal agent access", () => {
         role: "read-only-collaborator",
         scope: "vault",
         warning: expect.stringContaining(
-          "Another authorized OWD client holds the vault writer role",
+          "Another authorized MDevolved client holds the vault writer role",
         ),
       },
       ok: true,
@@ -5373,7 +5375,7 @@ describe("scoped universal agent access", () => {
         role: "read-only-collaborator",
         scope: "vault",
         warning: expect.stringContaining(
-          "Another authorized OWD client holds the vault writer role",
+          "Another authorized MDevolved client holds the vault writer role",
         ),
       },
       project: { label: secondDraft.project.label },

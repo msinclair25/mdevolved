@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://owd.dev/schemas/managed-cell-build-manifest-v1.json",
-  "title": "OWD managed cell build manifest v1",
-  "description": "Exact non-secret inventory required to provision and later deprovision one isolated OWD cell.",
+  "title": "MDevolved managed cell build manifest v1",
+  "description": "Exact non-secret inventory required to provision and later deprovision one isolated MDevolved cell.",
   "type": "object",
   "additionalProperties": false,
   "required": [

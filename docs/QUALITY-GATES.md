@@ -1,6 +1,6 @@
 # Public quality gates
 
-OWD handles private notes, authorization, and encrypted recovery. A change is
+MDevolved handles private notes, authorization, and encrypted recovery. A change is
 not ready merely because it builds. The public repository keeps the automated
 controls that protect the onboarding, Project, vault, and recovery failures
 found during alpha use; private production receipts and deployment identifiers
@@ -33,16 +33,16 @@ hostname to an issue or test receipt.
 - Start from a fresh Cloudflare account or isolated test resources.
 - Apply the complete migration chain before activating the matching Worker.
 - Claim the owner once and verify a second claim fails.
-- Install the exact OWD Sync version advertised by the platform.
+- Install the exact MDevolved Sync version advertised by the platform.
 - On a clean macOS profile in current Chrome, fully quit Obsidian with ⌘Q,
   cancel the vault picker once, retry, and confirm the page reports both states
   without implying an install. Complete the direct install from the vault root.
 - Separately enable BRAT, wait until its command is registered, and verify the
   pinned deep link opens a form that still requires **Add Plugin** and enabling
-  OWD Sync. Do not run both installation paths in the same check.
+  MDevolved Sync. Do not run both installation paths in the same check.
 - Pair only the open test vault and wait for its library to publish
   automatically.
-- Revoke the disposable vault credential while OWD Sync is running and confirm
+- Revoke the disposable vault credential while MDevolved Sync is running and confirm
   one HTTP 401/403 permanently stops ticket refresh, reconnect, and degraded
   capability polling until the vault is re-paired.
 - Simulate HTTP 429, 500, 503, and an offline network; confirm ticket refresh
@@ -55,7 +55,7 @@ hostname to an issue or test receipt.
   hide a defective client.
 - Confirm read-only agent access does not require a recovery point.
 - Complete the guided order: vault, library, agent, prepared Project.
-- Say **Connect this project to OWD** once and confirm create, join, rejoin, and
+- Say **Connect this project to MDevolved** once and confirm create, join, rejoin, and
   resume converge without duplicate Projects or repeated routine consent.
 - Connect a second independently authorized agent and verify cross-vault,
   private-Artifact, and hidden-conversation isolation.

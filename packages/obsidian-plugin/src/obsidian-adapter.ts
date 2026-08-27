@@ -160,7 +160,7 @@ export function createObsidianSourceAdapter(
         return;
       }
       if (event.kind === "error") {
-        new Notice(`OWD Sync: ${event.message}`, 8000);
+        new Notice(`MDevolved Sync for Obsidian: ${event.message}`, 8000);
         return;
       }
       if (event.kind === "message") {

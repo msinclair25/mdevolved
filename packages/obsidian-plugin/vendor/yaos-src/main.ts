@@ -329,12 +329,12 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		return this.attachmentOrchestrator?.manager ?? null;
 	}
 
-	/** Overridden by the OWD distribution to start vault-explicit pairing. */
+	/** Overridden by the MDevolved distribution to start vault-explicit pairing. */
 	startOwdPairing(): void {
 		new Notice("Pairing is unavailable in this plugin build.", 5000);
 	}
 
-	/** OWD adapter bridge into YAOS's reviewed setup and restart behavior. */
+	/** MDevolved adapter bridge into YAOS's reviewed setup and restart behavior. */
 	async applyOwdConnection(params: {
 		host: string;
 		token: string;
@@ -352,7 +352,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			this.settings.token !== params.token ||
 			this.settings.vaultId !== params.vaultId
 		) {
-			throw new Error("The new OWD vault connection was not applied.");
+			throw new Error("The new MDevolved Source connection was not applied.");
 		}
 		this.rebuildSourceBoundary();
 		const sourceBoundary = this.sourceBoundary;
@@ -368,7 +368,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 	}
 
 	/**
-	 * OWD adapter boundary: return a state vector only after local persistence,
+	 * MDevolved adapter boundary: return a state vector only after local persistence,
 	 * provider sync, reconciliation, and the server's durable receipt all agree.
 	 */
 	protected async getOwdSyncConfirmationState(): Promise<ArrayBuffer> {
@@ -389,7 +389,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			await new Promise((resolve) => setTimeout(resolve, 125));
 		}
 		throw new Error(
-			"OWD has not received a durable, reconciled copy of this vault yet. Keep Obsidian open and retry.",
+			"MDevolved has not received a durable, reconciled copy of this vault yet. Keep Obsidian open and retry.",
 		);
 	}
 
@@ -589,10 +589,10 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		if (!this.settings.token) {
 			this.log("Token not configured — sync disabled");
 			const message = this.serverAuthMode === "env"
-				? "OWD Sync: configure the server token in settings to enable sync."
+				? "MDevolved Sync for Obsidian: configure the server token in settings to enable sync."
 				: this.serverAuthMode === "claim" || this.serverAuthMode === "unclaimed"
-						? "OWD Sync: claim your deployment in a browser, then create an OWD pairing link."
-						: "OWD Sync: configure a token in settings, or claim the server in a browser first.";
+						? "MDevolved Sync for Obsidian: claim your deployment in a browser, then create a MDevolved pairing link."
+						: "MDevolved Sync for Obsidian: configure a token in settings, or claim the server in a browser first.";
 			new Notice(message, 10000);
 			finishOnload("missing-token");
 			return;
@@ -959,7 +959,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			const schemaError = this.vaultSync.checkSchemaVersion();
 			if (schemaError) {
 				console.error(`[yaos] ${schemaError}`);
-				new Notice(`OWD Sync: ${schemaError}`);
+				new Notice(`MDevolved Sync for Obsidian: ${schemaError}`);
 				this.updateStatusBar("error");
 				await this.sourceBoundary?.core.stop();
 				return;
@@ -1039,7 +1039,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		} catch (err) {
 			await this.sourceBoundary?.core.stop();
 			console.error("[yaos] Failed to initialize sync:", err);
-			new Notice(`OWD Sync: failed to initialize — ${formatUnknown(err)}`);
+			new Notice(`MDevolved Sync for Obsidian: failed to initialize — ${formatUnknown(err)}`);
 			this.updateStatusBar("error");
 		}
 	}
@@ -1467,7 +1467,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 				this.log("Nuclear reset: reinitializing (will re-seed from disk)");
 				await this.initSync();
 				new Notice(
-					`OWD Sync: nuclear reset complete. ` +
+					`MDevolved Sync for Obsidian: nuclear reset complete. ` +
 					`Re-seeded ${this.vaultSync?.getActiveMarkdownPaths().length ?? 0} files from disk.`,
 				);
 			},
@@ -1957,7 +1957,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			updateRepoUrl: null,
 			updateActionUrl: null,
 			updateBootstrapUrl: null,
-			updateActionLabel: "OWD Sync settings",
+			updateActionLabel: "MDevolved Sync for Obsidian settings",
 			legacyServerDetected: false,
 			pluginCompatibilityWarning: null,
 		};
@@ -1975,7 +1975,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 			const code = this.vaultSync?.fatalAuthCode;
 			if (code === "unclaimed") {
 				new Notice(
-					"This OWD deployment is unclaimed. Open it in a browser, then create a pairing link.",
+					"This MDevolved deployment is unclaimed. Open it in a browser, then create a pairing link.",
 					10000,
 				);
 				return;
@@ -1992,8 +1992,8 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 					? ` (client=${details.clientSchemaVersion ?? "unknown"}, room=${details.roomSchemaVersion ?? "unknown"})`
 					: "";
 			new Notice(
-				`OWD Sync: this vault was upgraded by a newer plugin schema${detailText}. ` +
-				"Update OWD Sync on this device to continue syncing.",
+				`MDevolved Sync for Obsidian: this vault was upgraded by a newer plugin schema${detailText}. ` +
+				"Update MDevolved Sync for Obsidian on this device to continue syncing.",
 				12000,
 			);
 			return;
@@ -2150,7 +2150,7 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		// In this product build, no mutation API is available — log explicitly
 		// so developers know what happened instead of silently finding no API.
 		this.log("qaDebugMode enabled, but window.__YAOS_DEBUG__ is not mounted by this build. Load the Puppeteer harness from qa/harness/ to get the QA debug API.");
-		new Notice("OWD Sync: qaDebugMode active — QA debug API not available in this build. See qa/harness/.", 8000);
+		new Notice("MDevolved Sync for Obsidian: qaDebugMode active — QA debug API not available in this build. See qa/harness/.", 8000);
 	}
 
 	private async exportFlightTraceForApi(privacy: "safe" | "full"): Promise<string | null> {
@@ -2212,8 +2212,8 @@ export default class VaultCrdtSyncPlugin extends Plugin {
 		void this.attachmentOrchestrator?.stop("idb-degraded");
 
 		const notice = kind === "quota_exceeded"
-			? "OWD Sync: Device storage is full. Sync durability is degraded and attachment transfers are paused. Free up storage, then restart Obsidian."
-			: "OWD Sync: IndexedDB persistence failed. Sync durability is degraded and attachment transfers are paused.";
+			? "MDevolved Sync for Obsidian: Device storage is full. Sync durability is degraded and attachment transfers are paused. Free up storage, then restart Obsidian."
+			: "MDevolved Sync for Obsidian: IndexedDB persistence failed. Sync durability is degraded and attachment transfers are paused.";
 		new Notice(notice, 12000);
 	}
 }

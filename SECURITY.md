@@ -1,6 +1,6 @@
 # Security policy
 
-OWD protects owner-controlled vault data, agent authorization, Project
+MDevolved protects owner-controlled Source data, agent authorization, Project
 continuity, and encrypted recovery. Security reports are handled separately
 from feature requests and general support.
 
@@ -16,7 +16,7 @@ Otherwise, email [support@mdevolved.com](mailto:support@mdevolved.com).
 
 Include:
 
-- the affected OWD surface and version or commit;
+- the affected MDevolved surface and version or commit;
 - the smallest reproducible sequence using synthetic data;
 - the expected and observed authorization boundary;
 - the likely impact; and
@@ -27,7 +27,7 @@ pairing grants, session material, or private user information. Do not open a
 public issue for an undisclosed vulnerability.
 
 Please allow time to reproduce, repair, and deploy a fix before public
-disclosure. OWD does not offer a bug bounty or guaranteed response-time SLA.
+disclosure. MDevolved does not offer a bug bounty or guaranteed response-time SLA.
 
 ## Security scope
 

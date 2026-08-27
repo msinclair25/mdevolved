@@ -286,7 +286,7 @@ async function main() {
       "Referrer-Policy": "no-referrer",
     });
     response.end(
-      "<!doctype html><meta charset=utf-8><title>OWD authorized</title><style>body{font-family:system-ui;max-width:42rem;margin:5rem auto;padding:0 1rem}</style><h1>OWD authorization received</h1><p>Return to Codex while the acceptance client finishes its checks.</p>",
+      "<!doctype html><meta charset=utf-8><title>MDevolved authorized</title><style>body{font-family:system-ui;max-width:42rem;margin:5rem auto;padding:0 1rem}</style><h1>MDevolved authorization received</h1><p>Return to Codex while the acceptance client finishes its checks.</p>",
     );
     if (requestUrl.searchParams.get("state") !== state) {
       callbackReject(new Error("OAuth state validation failed."));
@@ -310,7 +310,7 @@ async function main() {
   const redirectUri = `http://127.0.0.1:${port}/oauth/callback`;
   const registrationResponse = await fetch(new URL("/register", origin), {
     body: JSON.stringify({
-      client_name: "OWD loopback production acceptance",
+      client_name: "MDevolved loopback production acceptance",
       grant_types: ["authorization_code", "refresh_token"],
       redirect_uris: [redirectUri],
       response_types: ["code"],
@@ -437,7 +437,7 @@ async function main() {
           _meta: {
             "io.modelcontextprotocol/clientCapabilities": {},
             "io.modelcontextprotocol/clientInfo": {
-              name: "OWD production acceptance",
+              name: "MDevolved production acceptance",
               version: "0.2.0",
             },
             "io.modelcontextprotocol/protocolVersion": CURRENT_PROTOCOL_VERSION,
@@ -506,7 +506,7 @@ async function main() {
 
   const initialized = await rpc("initialize", {
     capabilities: {},
-    clientInfo: { name: "OWD production acceptance", version: "0.1.0" },
+    clientInfo: { name: "MDevolved production acceptance", version: "0.1.0" },
     protocolVersion: LEGACY_PROTOCOL_VERSION,
   });
   const initializeResult = asRecord(initialized.result, "initialize result");
@@ -936,7 +936,7 @@ async function main() {
   console.log(`OWD_ACCEPTANCE_AUTHORIZATION_ID=${authorizationId}`);
   console.log("OWD_ACCEPTANCE_REVOKE_NOW=1");
   await readInputLine(
-    "Revoke the acceptance agent connection in OWD, then press Enter: ",
+    "Revoke the acceptance agent connection in MDevolved, then press Enter: ",
   );
 
   const afterRevocation = await rpc(

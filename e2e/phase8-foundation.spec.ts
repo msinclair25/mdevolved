@@ -842,7 +842,7 @@ test("reopens a downloaded recovery key before activation", async ({
 
   await openOperationalRegion(page, "vaults");
   await expect(
-    page.getByText("1 disconnected vault", { exact: true }),
+    page.getByText("1 disconnected Source", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Disconnected archive" }),
@@ -2442,7 +2442,7 @@ test("imports and restores a named snapshot in a fresh narrow session", async ({
   await page.goto("/");
   await openOperationalRegion(page, "vaults");
   await expect(
-    page.getByText("1 disconnected vault", { exact: true }),
+    page.getByText("1 disconnected Source", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Disconnected archive" }),

@@ -1,6 +1,6 @@
 # Pinned YAOS core
 
-This package contains the reviewed YAOS subset required for OWD's live Yjs
+This package contains the reviewed YAOS subset required for MDevolved's live Yjs
 compatibility boundary.
 
 - Repository: <https://github.com/kavinsood/yaos>
@@ -28,7 +28,7 @@ required by TypeScript 7's WebCrypto types:
 - `src/sync/stateVectorAck.ts`
 - `src/sync/svEchoMessage.ts`
 
-`src/protocol.ts` and `src/index.ts` are OWD adapters. The protocol adapter
+`src/protocol.ts` and `src/index.ts` are MDevolved adapters. The protocol adapter
 encodes synthetic-client updates using the same y-partyserver/y-protocol frame
 as upstream.
 

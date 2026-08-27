@@ -9,13 +9,13 @@ merely because it exists.
 
 | Surface               | Reviewed contract                                                                                                                                      | Boundary                                                                                                                                                          |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| OWD Sync              | `0.1.7`; vault schema 3; server reads schemas 1–3                                                                                                      | A newer unsupported vault schema fails with update guidance.                                                                                                      |
-| YAOS live sync        | Pinned server `0.3.0`; Yjs schema fixtures 1–3                                                                                                         | OWD preserves the pinned upstream contract and carries explicit local adaptations.                                                                                |
+| MDevolved Sync        | `0.1.7`; vault schema 3; server reads schemas 1–3                                                                                                      | A newer unsupported vault schema fails with update guidance.                                                                                                      |
+| YAOS live sync        | Pinned server `0.3.0`; Yjs schema fixtures 1–3                                                                                                         | MDevolved preserves the pinned upstream contract and carries explicit local adaptations.                                                                          |
 | MCP                   | Authenticated Streamable HTTP against MCP `2026-07-28`, with stateless `2025-11-25` compatibility                                                      | Read-only vault tools are the portable baseline. Project behavior uses ordinary MCP Tools, Resources, and Prompts. See [MCP compatibility](MCP-COMPATIBILITY.md). |
 | Project lifecycle     | `open_project`, `wait_for_project_connection`, and `resume_project`                                                                                    | Create, join, rejoin, and resume converge on one exact Project without a client-specific transport.                                                               |
-| Obsidian Mind profile | `8.3.1` at commit `538522e4ea660cdc1265f8ef71ef43966e1d9a96`                                                                                           | OWD runs beside `qmd`/`om`, preserves native layout, and never turns local profile data into authority.                                                           |
+| Obsidian Mind profile | `8.3.1` at commit `538522e4ea660cdc1265f8ef71ef43966e1d9a96`                                                                                           | MDevolved runs beside `qmd`/`om`, preserves native layout, and never turns local profile data into authority.                                                     |
 | Eve.dev profile       | Eve `0.29.4` at commit `85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d`; `@vercel/connect` `0.6.0`                                                           | Uses Eve's native user-scoped MCP connection. Separate attribution requires a distinct connector identity.                                                        |
-| Albatross profile     | Albatross `2.0.3` at commit `0543226b800ee57659f200c1ef928925868c90c9`; `mcp-remote` `0.1.38`                                                          | Uses a pinned stdio bridge while OWD remains standard remote Streamable HTTP MCP with OAuth.                                                                      |
+| Albatross profile     | Albatross `2.0.3` at commit `0543226b800ee57659f200c1ef928925868c90c9`; `mcp-remote` `0.1.38`                                                          | Uses a pinned stdio bridge while MDevolved remains standard remote Streamable HTTP MCP with OAuth.                                                                |
 | Legacy backup import  | `owd-backup-v1`                                                                                                                                        | Remains readable; unknown or malformed formats fail before staging.                                                                                               |
 | Workspace snapshot    | `owd-snapshot-v2` with `notes-v1`, explicit target mapping, and age-X25519 encrypted objects                                                           | Unknown required capabilities fail before staging. Credentials and live grants never restore.                                                                     |
 | Collaboration records | Knowledge Spaces, Projects, Work Items, Work Packets, Attempts, Artifacts, Handoffs, Reviews, Decisions, provenance, and approved/quarantined recovery | Alpha compatibility does not claim that every third-party client has completed an independent acceptance exercise.                                                |
@@ -28,7 +28,7 @@ It opens a review issue on drift and never auto-upgrades a claim.
 
 ## Platform requirements
 
-- Current desktop Obsidian for OWD Sync alpha use
+- Current desktop Obsidian for MDevolved Sync alpha use
 - A modern browser with WebAuthn/passkey, Web Crypto, and ES module support
 - A Cloudflare account for Community self-hosting
 - Node.js `24` and pnpm `11.9.0` for local development
@@ -36,12 +36,12 @@ It opens a review issue on drift and never auto-upgrades a claim.
   access
 
 Client-specific setup helpers are optional. A compliant client may use the
-universal MCP endpoint even when it ignores OWD Resources, Prompts, or portable
+universal MCP endpoint even when it ignores MDevolved Resources, Prompts, or portable
 skills.
 
 ## Failure and upgrade behavior
 
-- OWD Sync and the Platform must advertise the same compatible release.
+- MDevolved Sync and the Platform must advertise the same compatible release.
 - Unsupported newer schemas fail before mutation.
 - Migrations are append-only and run as a deployment prerequisite, never as
   ordinary request-time discovery or repair.
@@ -64,7 +64,7 @@ skills.
 - Markdown text creation/editing only
 - No rename, deletion, attachment writes, or arbitrary `.obsidian` writes
 - Snapshot attachment and `.obsidian` sections disabled
-- OWD Sync Community Plugin listing pending
+- MDevolved Sync Community Plugin listing pending
 - Local writer coordination is advisory, not a filesystem lock
 - Obsidian Mind, Eve.dev, and Albatross are source-verified profiles; none is a
   vendor certification

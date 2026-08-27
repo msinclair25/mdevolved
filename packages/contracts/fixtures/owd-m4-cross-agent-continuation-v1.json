@@ -6,7 +6,7 @@
     "objective": "Ship a small provider-neutral continuation demo.",
     "definitionOfDone": [
       "Client A records a bounded checkpoint.",
-      "Client B resumes the same Project from OWD without session copying."
+      "Client B resumes the same Project from MDevolved without session copying."
     ],
     "nextAction": "Verify the continuation in a fresh compatible client."
   },

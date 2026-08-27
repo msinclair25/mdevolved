@@ -25,7 +25,7 @@ and installation status belongs in those GitHub READMEs.
 
 The Eve.dev integration section markets the source-verified Eve `0.29.4`
 profile without implying live client acceptance has already passed. It keeps
-Eve's execution runtime distinct from OWD's portable Project authority and
+Eve's execution runtime distinct from MDevolved's portable Project authority and
 must continue to describe standard MCP plus user-scoped OAuth—not a custom
 transport, bundled Eve runtime, or app-scoped shortcut.
 
@@ -88,5 +88,5 @@ pnpm deploy:marketing:dry-run
 The Cloudflare configuration deploys an independent static-assets Worker with
 one narrowly routed form endpoint, one fixed-destination Email Service binding,
 and one Rate Limiting binding. It has no application service binding, database,
-bucket, or secret. The authenticated OWD Worker and its personal `workers.dev`
+bucket, or secret. The authenticated MDevolved Worker and its personal `workers.dev`
 hostname remain completely separate.

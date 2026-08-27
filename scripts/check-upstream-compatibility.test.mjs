@@ -74,5 +74,5 @@ test("renders a single stable review issue with critical source paths", () => {
   });
   assert.match(report, /<!-- owd-upstream:eve -->/u);
   assert.match(report, /Compatibility-critical paths changed/u);
-  assert.match(report, /never auto-advances an OWD compatibility claim/u);
+  assert.match(report, /never auto-advances an MDevolved compatibility claim/u);
 });

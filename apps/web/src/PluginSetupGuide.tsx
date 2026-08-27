@@ -32,9 +32,10 @@ export function PluginSetupGuide() {
         </h3>
         <p>
           Already use Obsidian? This optional adapter installs the pinned,
-          compatibility-preserving OWD Sync {OWD_SYNC_REQUIRED_VERSION} package
-          into the vault you choose. Its <code>owd-sync</code> identity and
-          update path stay unchanged for existing users.
+          compatibility-preserving MDevolved Sync for Obsidian{" "}
+          {OWD_SYNC_REQUIRED_VERSION} package into the vault you choose. Its{" "}
+          <code>owd-sync</code> identity and update path stay unchanged for
+          existing users.
         </p>
       </div>
 
@@ -43,7 +44,7 @@ export function PluginSetupGuide() {
           onFallbackNeeded={() => setFallbackOpen(true)}
         />
         <p className="plugin-path-note">
-          The browser reads only existing OWD Sync files and{" "}
+          The browser reads only existing MDevolved Sync for Obsidian files and{" "}
           <code>.obsidian/community-plugins.json</code> so it can restore them
           if needed. It does not enumerate notes, upload vault data, retain the
           folder, change Obsidian&apos;s general settings, or install an

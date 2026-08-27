@@ -83,7 +83,7 @@ test("normal product surfaces lead with MDevolved and Sources", async () => {
   assert.doesNotMatch(agentAuthorize, /Connect an Obsidian vault first/u);
   assert.match(projectInitialize, /You remain the Source owner/u);
   assert.match(restorePanel, /mdevolved-recovery-key-date\.txt/u);
-  assert.match(restorePanel, /legacy OWD[\s\S]*owd-recovery-key-date\.txt/u);
+  assert.match(restorePanel, /legacy backup[\s\S]*owd-recovery-key-date\.txt/u);
   assert.match(onboarding, /Connect this project to MDevolved/u);
   assert.match(alphaStatus, /Connect this project to MDevolved/u);
   assert.match(product, /Connect this project to MDevolved/u);

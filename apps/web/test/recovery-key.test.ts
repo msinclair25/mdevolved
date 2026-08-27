@@ -14,7 +14,7 @@ describe("recovery key handling", () => {
       createRecoveryKeyFilename(new Date("2026-07-22T12:34:56.789Z")),
     ).toBe("mdevolved-recovery-key-2026-07-22T12-34-56Z.txt");
     expect(createRecoveryKeyDocument("AGE-SECRET-KEY-1EXAMPLE")).toContain(
-      "# MDevolved recovery key (OWD-compatible format)",
+      "# MDevolved recovery key (legacy-compatible format)",
     );
     expect(createRecoveryKeyDocument("AGE-SECRET-KEY-1EXAMPLE")).toContain(
       "only key",

@@ -2,9 +2,9 @@
 
 ## Deployment unit
 
-OWD Platform ships as one Cloudflare Worker project with static assets. The Worker owns browser routes, authenticated APIs, pairing endpoints, YAOS-compatible sync routes, scheduled work, and access to D1, R2, and Durable Objects.
+MDevolved Platform ships as one Cloudflare Worker project with static assets. The Worker owns browser routes, authenticated APIs, pairing endpoints, YAOS-compatible sync routes, scheduled work, and access to D1, R2, and Durable Objects.
 
-The companion Obsidian plugin is built and released separately but pairs only with a user-owned OWD deployment.
+The companion Obsidian plugin is built and released separately but pairs only with a user-owned MDevolved deployment.
 
 ## Distribution architecture
 
@@ -12,7 +12,7 @@ The integrated Worker is the Community data plane and remains a complete,
 independently deployable product. The invitation-only managed alpha
 provisions that pinned release into isolated single-owner cells with dedicated
 storage bindings, Durable Object namespaces, secrets, hostnames, and quota
-policy. It does not convert OWD into one shared multi-tenant Worker.
+policy. It does not convert MDevolved into one shared multi-tenant Worker.
 
 A future control plane will handle account, entitlement, automated
 provisioning, release, and cell-health metadata only. It will not sit on the
@@ -113,7 +113,7 @@ Authentication attempts use D1-backed, pseudonymous fixed-window limits.
 The authenticated dashboard creates a ten-minute, single-use pairing grant and
 stores only its SHA-256 hash plus the exact deployment origin in D1. The
 dashboard exposes a non-launching `owd-pair://` value for explicit copying. The
-user first opens the intended vault, invokes OWD Sync from inside that vault,
+user first opens the intended vault, invokes MDevolved Sync from inside that vault,
 and pastes the grant there. No operating-system URI handler selects a vault.
 After a second confirmation naming the current vault, the plugin sends that
 vault name, plugin version, and schema version to the same origin. One atomic D1
@@ -133,7 +133,7 @@ persists Yjs updates in order before acknowledging them.
 The wire protocol is pinned to YAOS server `0.3.0`, y-partyserver `2.1.2`, and
 Yjs `13.6.20`, with schema versions 1 through 3 accepted. y-partyserver may
 broadcast an applied update to connected clients immediately; that broadcast
-is not a durability receipt. OWD emits YAOS's state-vector echo only after the
+is not a durability receipt. MDevolved emits YAOS's state-vector echo only after the
 serialized checkpoint/journal persistence chain succeeds. A failed write
 closes the originating socket without a receipt. Sync admission reads the
 client schema version and explicitly rejects unsupported clients, unsupported
@@ -204,7 +204,7 @@ write or replace the prior generation.
 ### Agent connection and read access
 
 The owner adds the dashboard's MCP URL to a compatible client. OAuth then opens
-OWD, where the owner reviews the unverified client identity, chooses an exact
+MDevolved, where the owner reviews the unverified client identity, chooses an exact
 vault and optional folder boundaries, and authenticates consent with the
 existing passkey session. Protocol artifacts use a dedicated OAuth KV
 namespace. An
@@ -219,7 +219,7 @@ vault name and ID, canonical path, generation, content hash, and state layer.
 There is no implicit current vault and no full-vault content tool.
 
 A recognized vault-runtime profile is an additional server-side ceiling, not
-authority. OWD Sync reports a validated descriptor; D1 stores it with sync
+authority. MDevolved Sync reports a validated descriptor; D1 stores it with sync
 state, and materialization projects a private-frontmatter flag without putting
 note bodies in D1. The Worker intersects profile roots with the OAuth folder
 grant and applies the result to search, recent changes, direct reads, Project
@@ -253,9 +253,9 @@ supersession, and integrity hash. The first collaboration records enter
 backup/recovery through explicit Approved and Unvetted capabilities; later
 record types must pass the same gate before activation.
 
-Harness working context remains outside OWD. Codex, Claude Code, Grok Build,
+Harness working context remains outside MDevolved. Codex, Claude Code, Grok Build,
 Antigravity/Gemini, Cursor, Hermes, and other clients execute their native tools
-and skills. OWD supplies bounded knowledge, lineage, policy, proposals, and
+and skills. MDevolved supplies bounded knowledge, lineage, policy, proposals, and
 owner-reviewed stable versions rather than becoming a universal agent runtime.
 
 The complete collaboration domain, portable packet/submission envelopes,
@@ -326,15 +326,15 @@ starts only after fresh authorization and a new live claim.
 
 An external application such as Hoplon is an ordinary OAuth/MCP client. It gets
 no YAOS credential, Durable Object binding, vault credential, storage binding,
-or control-plane role. Its access is constrained and revoked by the same OWD
+or control-plane role. Its access is constrained and revoked by the same MDevolved
 grant checks as a coding-agent client.
 
 For Hoplon, the default path is live federation: Hoplon authorizes its user and
-private Project, performs bounded OWD search/read calls, and freezes one cited
-evidence packet before provider fan-out. OWD never receives Hoplon provider
+private Project, performs bounded MDevolved search/read calls, and freezes one cited
+evidence packet before provider fan-out. MDevolved never receives Hoplon provider
 credentials or organization policy, and Hoplon does not mirror the whole vault
 by default. An explicit later Project import is a separate Hoplon artifact; it
-does not make Project membership equivalent to the owner's live OWD grant.
+does not make Project membership equivalent to the owner's live MDevolved grant.
 
 ### Recovery snapshots and legacy backups
 
@@ -473,10 +473,10 @@ The UI always shows which layer and generation it is displaying.
   its explicit vault, path, and scope grant.
 - External application to Worker: an ordinary MCP client whose own user,
   organization, Project, provider, and conversation authority is not accepted
-  as OWD authority.
+  as MDevolved authority.
 - Worker to model provider: no direct relationship. After an authorized client
   sends returned content to a model provider, that downstream use is outside
-  OWD's enforcement boundary and must be disclosed.
+  MDevolved's enforcement boundary and must be disclosed.
 - Managed control plane to data-plane cell: provisioning and health metadata
   only; the control plane has no vault-content API or implicit owner session.
 - Managed operator to Cloudflare account: trusted infrastructure operator with
@@ -493,7 +493,7 @@ Work Packet, lead lease, exact grant, and fence checks. It permits at most 32
 active actors and 64 actor records in one Run. Registration is bounded to 16
 actors per call and bundle submission to 8 bundles per call. The harness still
 owns scheduling, supervision, retries, worktrees, branches, and process
-concurrency; OWD stores only bounded identity, evidence, continuity, budget,
+concurrency; MDevolved stores only bounded identity, evidence, continuity, budget,
 exception, recovery, and observation metadata.
 
 `get_run_context` remains compatible with R2 clients and returns the existing
@@ -509,7 +509,7 @@ Mutation idempotency is keyed by the caller-supplied operation key and a hash of
 the complete canonical request. An exact retry returns the original receipt;
 the same key with different payload is an explicit `idempotency_conflict` and
 never appends a second record. Capacity limits return bounded backpressure with
-stable retry metadata; OWD does not enqueue work or choose a retry schedule for
+stable retry metadata; MDevolved does not enqueue work or choose a retry schedule for
 the execution harness. Batch operations are all-or-nothing at the durable
 record boundary, and a replayed batch reports its prior receipt.
 
@@ -525,7 +525,7 @@ protected-path authority. Recovery and replacement are visible through Run
 deltas and are safe to retry by idempotency key.
 
 The harness reports logical units and cost microunits through
-`owd-run-budget-v1` and `owd-budget-entry-v1`. OWD validates monotonic bounded
+`owd-run-budget-v1` and `owd-budget-entry-v1`. MDevolved validates monotonic bounded
 accounting through immutable version rows and records a blocking
 `budget-exhausted` Exception when a limit is met; it does not estimate provider
 spend or schedule execution. Observations

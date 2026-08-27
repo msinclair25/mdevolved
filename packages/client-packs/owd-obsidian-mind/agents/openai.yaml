@@ -1,4 +1,4 @@
 interface:
-  display_name: "OWD + Obsidian Mind"
-  short_description: "Connect Obsidian Mind to OWD safely"
-  default_prompt: "Use $owd-obsidian-mind to connect or resume this Obsidian Mind vault with OWD."
+  display_name: "MDevolved + Obsidian Mind"
+  short_description: "Connect Obsidian Mind to MDevolved safely"
+  default_prompt: "Use $owd-obsidian-mind to connect or resume this Obsidian Mind vault with MDevolved."

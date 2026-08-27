@@ -61,7 +61,7 @@ export async function projectLocalVaultAccess(
       role: "read-only-collaborator",
       scope: "vault",
       warning:
-        "OWD cannot identify a primary vault writer for this legacy Project connection. Treat local Obsidian, CLI, shell, and filesystem access as read-only and warn the human owner before any direct vault change.",
+        "MDevolved cannot identify a primary vault writer for this legacy Project connection. Treat local Obsidian, CLI, shell, and filesystem access as read-only and warn the human owner before any direct vault change.",
     };
   }
 
@@ -79,8 +79,8 @@ export async function projectLocalVaultAccess(
       scope: "vault",
       warning:
         primaryWriter.transferred === 1
-          ? "You are the primary vault writer because the human owner explicitly moved the vault-wide role to this OWD client. A session restart does not change this assignment. OWD MCP remains read-only. Use local Obsidian, CLI, shell, or filesystem writes only for an owner-requested bounded task, with the exact vault and paths and no overlapping writer."
-          : "You are the primary vault writer because this OWD client was the first agent to establish a Project for this vault. A session restart using the same client does not change this assignment. The human remains the owner, and OWD MCP remains read-only. Use local Obsidian, CLI, shell, or filesystem writes only for an owner-requested bounded task, with the exact vault and paths and no overlapping writer.",
+          ? "You are the primary vault writer because the human owner explicitly moved the vault-wide role to this MDevolved client. A session restart does not change this assignment. MDevolved MCP remains read-only. Use local Obsidian, CLI, shell, or filesystem writes only for an owner-requested bounded task, with the exact vault and paths and no overlapping writer."
+          : "You are the primary vault writer because this MDevolved client was the first agent to establish a Project for this vault. A session restart using the same client does not change this assignment. The human remains the owner, and MDevolved MCP remains read-only. Use local Obsidian, CLI, shell, or filesystem writes only for an owner-requested bounded task, with the exact vault and paths and no overlapping writer.",
     };
   }
 
@@ -94,6 +94,6 @@ export async function projectLocalVaultAccess(
     role: "read-only-collaborator",
     scope: "vault",
     warning:
-      "Another authorized OWD client holds the vault writer role. Treat local Obsidian, CLI, shell, and filesystem access as read-only and hand proposed changes to the human owner. OWD does not promote a different client from the global Agents screen or infer a transfer from tool availability.",
+      "Another authorized MDevolved client holds the vault writer role. Treat local Obsidian, CLI, shell, and filesystem access as read-only and hand proposed changes to the human owner. MDevolved does not promote a different client from the global Agents screen or infer a transfer from tool availability.",
   };
 }

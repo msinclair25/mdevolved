@@ -15,5 +15,5 @@ export function partitionVaults(vaults: readonly VaultSummary[]): {
 }
 
 export function disconnectedHistoryLabel(count: number): string {
-  return `${count.toLocaleString()} disconnected vault${count === 1 ? "" : "s"}`;
+  return `${count.toLocaleString()} disconnected Source${count === 1 ? "" : "s"}`;
 }

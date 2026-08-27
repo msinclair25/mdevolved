@@ -216,7 +216,7 @@ export class CapabilityUpdateService {
 		this.compatibilityBlockReason = blockReason;
 		this.deps.log(`Compatibility guard (${reason}): ${blockReason}`);
 		if (firstBlock) {
-			new Notice(`OWD Sync: ${blockReason}`, 12000);
+			new Notice(`MDevolved Sync for Obsidian: ${blockReason}`, 12000);
 		}
 
 		this.deps.stopSyncRuntimeForCompatibility();
@@ -273,7 +273,7 @@ export class CapabilityUpdateService {
 		const minPluginVersion = this.serverCapabilities?.minPluginVersion ?? null;
 		if (minPluginVersion && compareSemver(this.deps.pluginVersion, minPluginVersion) === -1) {
 			pluginCompatibilityWarning =
-				`This server requires OWD Sync plugin ${minPluginVersion} or newer.`;
+				`This server requires MDevolved Sync for Obsidian ${minPluginVersion} or newer.`;
 		} else {
 			const minSchemaVersion = this.serverCapabilities?.minSchemaVersion ?? null;
 			const maxSchemaVersion = this.serverCapabilities?.maxSchemaVersion ?? null;
@@ -302,7 +302,7 @@ export class CapabilityUpdateService {
 				? effectiveProvider === "gitlab"
 					? "your GitLab pipeline"
 					: "your GitHub workflow"
-				: "OWD Sync settings",
+				: "MDevolved Sync for Obsidian settings",
 			legacyServerDetected: this.legacyServerDetected,
 			pluginCompatibilityWarning,
 		};
@@ -366,7 +366,7 @@ export class CapabilityUpdateService {
 
 		const minPluginVersion = this.serverCapabilities.minPluginVersion;
 		if (minPluginVersion && compareSemver(this.deps.pluginVersion, minPluginVersion) === -1) {
-			return `This server requires OWD Sync plugin ${minPluginVersion} or newer. Update this plugin before syncing.`;
+			return `This server requires MDevolved Sync for Obsidian ${minPluginVersion} or newer. Update this plugin before syncing.`;
 		}
 
 		const minSchemaVersion = this.serverCapabilities.minSchemaVersion;
@@ -508,8 +508,8 @@ export class CapabilityUpdateService {
 		if (gainedR2) {
 			new Notice(
 				this.deps.getSettings().enableAttachmentSync
-					? "OWD Sync: R2 backend detected. Attachments and snapshots are now available."
-					: "OWD Sync: R2 backend detected. Attachments and snapshots are available if you enable them in settings.",
+					? "MDevolved Sync for Obsidian: R2 backend detected. Attachments and snapshots are now available."
+					: "MDevolved Sync for Obsidian: R2 backend detected. Attachments and snapshots are available if you enable them in settings.",
 				7000,
 			);
 			if (this.deps.isSyncConnectedAndProviderSynced() && this.supportsSnapshots) {
@@ -636,16 +636,16 @@ export class CapabilityUpdateService {
 			if (this.lastServerUpdateNoticeVersion !== updateState.latestServerVersion) {
 				if (!updateState.updateActionUrl) {
 					new Notice(
-						`OWD Sync: server update ${updateState.latestServerVersion} is available. ` +
-						"Set your deployment repo URL in OWD Sync settings to enable 1-click updates.",
+						`MDevolved Sync for Obsidian: server update ${updateState.latestServerVersion} is available. ` +
+						"Set your deployment repo URL in MDevolved Sync for Obsidian settings to enable 1-click updates.",
 						12000,
 					);
 				} else {
 					const actionLabel = updateState.updateActionLabel;
 					new Notice(
 						updateState.migrationRequired
-							? `OWD Sync: a server migration update (${updateState.latestServerVersion}) is available. Open ${actionLabel} before updating.`
-							: `OWD Sync: a server update (${updateState.latestServerVersion}) is available. Open ${actionLabel} to update when ready.`,
+							? `MDevolved Sync for Obsidian: a server migration update (${updateState.latestServerVersion}) is available. Open ${actionLabel} before updating.`
+							: `MDevolved Sync for Obsidian: a server update (${updateState.latestServerVersion}) is available. Open ${actionLabel} to update when ready.`,
 						10000,
 					);
 				}
@@ -659,7 +659,7 @@ export class CapabilityUpdateService {
 		if (updateState.pluginUpdateRecommended && updateState.latestPluginVersion) {
 			if (this.lastPluginUpdateNoticeVersion !== updateState.latestPluginVersion) {
 				new Notice(
-					`OWD Sync: plugin update recommended (${updateState.latestPluginVersion}). Update this device to stay current with server compatibility guidance.`,
+					`MDevolved Sync for Obsidian: plugin update recommended (${updateState.latestPluginVersion}). Update this device to stay current with server compatibility guidance.`,
 					10000,
 				);
 				this.lastPluginUpdateNoticeVersion = updateState.latestPluginVersion;

@@ -411,7 +411,7 @@ export function WorkingProfilePanel({ projectId, projectLabel }: Props) {
       <summary>Memory &amp; Skills</summary>
       <p className="working-profile-intro">
         Project preferences override personal defaults. Skills are stored and
-        delivered as inert files, never executed by OWD. Attaching a skill
+        delivered as inert files, never executed by MDevolved. Attaching a skill
         grants no authority or tools.
       </p>
 
@@ -603,7 +603,7 @@ export function WorkingProfilePanel({ projectId, projectLabel }: Props) {
             <small id={`skill-import-help-${projectId}`}>
               Exact JSON only. Include SKILL.md and supporting regular files as
               base64. Unsafe paths and credentials are rejected; every stored
-              file remains inert. OWD keeps up to 256 reusable skills and
+              file remains inert. MDevolved keeps up to 256 reusable skills and
               preferences so resume context stays bounded.
             </small>
           </label>

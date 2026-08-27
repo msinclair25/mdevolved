@@ -1,6 +1,6 @@
 # Hermes lead-continuity instructions
 
-These thin instructions use the generic OWD MCP contract. Hermes-specific
+These thin instructions use the generic MDevolved MCP contract. Hermes-specific
 scripts, conversation export, provider credentials, hidden reasoning, terminal
 history, and runtime state are neither required nor accepted.
 
@@ -19,7 +19,7 @@ history, and runtime state are neither required nor accepted.
    and one concrete next action. Retry only with the identical idempotency
    payload.
 5. On `lead_lease_invalid`, `continuity_point_conflict`, packet staleness, or
-   authorization failure, stop and resume/reclaim from authoritative OWD state.
+   authorization failure, stop and resume/reclaim from authoritative MDevolved state.
    Never reuse a stale fence or infer authority from the historical point.
 
 A replacement Hermes instance follows the same steps as any other client:

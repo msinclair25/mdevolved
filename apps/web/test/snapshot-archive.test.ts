@@ -333,7 +333,7 @@ describe("portable snapshot archive", () => {
     });
     await expect(
       inspectSnapshotArchive(fixture.file, fixture.identity),
-    ).rejects.toThrow("newer compatible OWD version");
+    ).rejects.toThrow("newer compatible MDevolved version");
   });
 
   it("rejects modified ciphertext before exposing an entry", async () => {

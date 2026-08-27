@@ -137,7 +137,7 @@ function friendlyPathError(reason: VaultPathFailureReason): string {
     case "not_markdown":
       return "Use a Markdown note name ending in .md, or omit the extension.";
     case "obsidian":
-      return "OWD cannot create notes inside the vault's .obsidian folder.";
+      return "MDevolved cannot create notes inside the vault's .obsidian folder.";
     case "path_too_long":
       return "Shorten the note name or folder location.";
     case "reserved_character":

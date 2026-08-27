@@ -95,9 +95,7 @@ async function parsePortableIndex(file: Blob): Promise<{
   }
   const magic = `${decoder.decode(prefix.slice(0, firstLineEnd))}\n`;
   if (magic !== OWD_SNAPSHOT_EXPORT_MAGIC) {
-    throw new Error(
-      "This is not a MDevolved-compatible OWD portable snapshot.",
-    );
+    throw new Error("This is not a MDevolved portable snapshot.");
   }
   const index = snapshotExportIndexSchema.parse(
     JSON.parse(
@@ -109,7 +107,7 @@ async function parsePortableIndex(file: Blob): Promise<{
   );
   if (unsupported.length > 0) {
     throw new Error(
-      `This snapshot requires a newer compatible OWD version (${unsupported.join(", ")}).`,
+      `This snapshot requires a newer compatible MDevolved version (${unsupported.join(", ")}).`,
     );
   }
   let offset = secondLineEnd + 1;
@@ -192,7 +190,7 @@ export async function inspectSnapshotArchive(
   );
   if (unsupported.length > 0) {
     throw new Error(
-      `This snapshot requires a newer compatible OWD version (${unsupported.join(", ")}).`,
+      `This snapshot requires a newer compatible MDevolved version (${unsupported.join(", ")}).`,
     );
   }
   const contentPartIds = new Set(

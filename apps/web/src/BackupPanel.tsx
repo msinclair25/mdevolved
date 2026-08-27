@@ -645,9 +645,9 @@ export function BackupPanel({
                 </select>
               </label>
               <p>
-                OWD makes a private, encrypted copy of this vault’s Markdown
-                notes. Passwords, account access, and agent connections are
-                never included.
+                MDevolved makes a private, encrypted copy of this vault’s
+                Markdown notes. Passwords, account access, and agent connections
+                are never included.
               </p>
               <button
                 className="primary-action"
@@ -679,11 +679,12 @@ export function BackupPanel({
                 </small>
               ) : snapshotState.kind === "ready" && !snapshotState.available ? (
                 <small>
-                  You can continue—OWD will prepare this vault automatically.
+                  You can continue—MDevolved will prepare this vault
+                  automatically.
                 </small>
               ) : (
                 <small>
-                  Ready. OWD will confirm a fresh vault library before
+                  Ready. MDevolved will confirm a fresh vault library before
                   encrypting.
                 </small>
               )}

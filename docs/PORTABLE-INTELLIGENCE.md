@@ -1,6 +1,6 @@
 # Portable intelligence and agent collaboration
 
-OWD helps one owner use independent AI clients as a continuous,
+MDevolved helps one owner use independent AI clients as a continuous,
 owner-governed Project record without becoming another model runtime. The
 canonical contracts live in `packages/contracts`; this document explains the
 product model around them.
@@ -10,7 +10,7 @@ product model around them.
 An owner can:
 
 1. stay in the project folder, Obsidian vault, and agent client already in use;
-2. say **Connect this project to OWD**;
+2. say **Connect this project to MDevolved**;
 3. give the agent one bounded, source-cited Work Packet;
 4. retain an immutable Artifact, Handoff, or Review from that agent;
 5. share selected work with a second independently authorized agent;
@@ -18,17 +18,17 @@ An owner can:
 7. resume that Decision and its evidence in a later task or client; and
 8. export and recover the accepted Project record without restoring authority.
 
-OWD does not call model-provider APIs, route prompts, prescribe agent roles,
+MDevolved does not call model-provider APIs, route prompts, prescribe agent roles,
 record hidden conversations, or treat model confidence as owner approval.
 
 ## Responsibility boundary
 
-| Surface     | Owns                                                                                       | Does not own                                   |
-| ----------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| OWD Sync    | Transport for the explicitly paired Obsidian vault                                         | Agent authorization or Project collaboration   |
-| OWD MCP     | Scoped vault reads and append-only Project collaboration                                   | A model runtime or local filesystem authority  |
-| OWD website | Setup, consent, provenance, owner Decisions, revocation, recovery, and advanced inspection | The owner's daily project workspace            |
-| OWD Project | Durable scope, evidence, attempts, handoffs, reviews, Decisions, and portable continuity   | An agent's hidden session or provider identity |
+| Surface           | Owns                                                                                       | Does not own                                   |
+| ----------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| MDevolved Sync    | Transport for the explicitly paired Obsidian vault                                         | Agent authorization or Project collaboration   |
+| MDevolved MCP     | Scoped vault reads and append-only Project collaboration                                   | A model runtime or local filesystem authority  |
+| MDevolved website | Setup, consent, provenance, owner Decisions, revocation, recovery, and advanced inspection | The owner's daily project workspace            |
+| MDevolved Project | Durable scope, evidence, attempts, handoffs, reviews, Decisions, and portable continuity   | An agent's hidden session or provider identity |
 
 The website prepares one exact first-Project handoff. The agent then calls
 `open_project`, which creates, joins, rejoins, or resumes the matching Project.
@@ -58,7 +58,7 @@ available as untrusted work; only an owner event changes its accepted state.
 
 ## Identity and authorization
 
-OWD attributes activity to the OAuth client identity it authorized. Friendly
+MDevolved attributes activity to the OAuth client identity it authorized. Friendly
 harness, model, and role labels are claimed metadata unless a future client can
 attest them independently.
 
@@ -79,8 +79,8 @@ become another participant automatically.
 
 ## Local vault writes
 
-OWD Project tools do not grant Obsidian CLI, shell, skill, or filesystem write
-access. If connected agents already have local write tools, OWD returns an
+MDevolved Project tools do not grant Obsidian CLI, shell, skill, or filesystem write
+access. If connected agents already have local write tools, MDevolved returns an
 advisory `localVaultAccess` role:
 
 - the first Project agent for a vault is the default `primary-writer`;
@@ -115,7 +115,7 @@ Restore preserves provenance and classification but never recreates:
 
 - sessions or passkeys;
 - OAuth clients, tokens, grants, or authorization codes;
-- OWD Sync credentials;
+- MDevolved Sync credentials;
 - live packet authority; or
 - agent runtime context.
 
@@ -127,12 +127,12 @@ The universal contract is remote MCP over Streamable HTTP and OAuth. Optional
 profiles make setup and routing clearer without changing authority:
 
 - [Obsidian Mind](OBSIDIAN-MIND-COMPATIBILITY.md) remains the local graph and
-  scoped-memory system while OWD carries selected work between agents.
-- [Eve.dev](EVE-COMPATIBILITY.md) remains the durable agent runtime while OWD
+  scoped-memory system while MDevolved carries selected work between agents.
+- [Eve.dev](EVE-COMPATIBILITY.md) remains the durable agent runtime while MDevolved
   carries portable Project evidence and owner Decisions.
 
 Hermes, Orca ADE, and other compliant clients can use the same MCP endpoint.
-OWD does not launch their agents, change their sandboxes, edit their local
+MDevolved does not launch their agents, change their sandboxes, edit their local
 configuration silently, or ingest raw terminal/session history.
 
 See the [public roadmap](ROADMAP.md) for future durable-knowledge and

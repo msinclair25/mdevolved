@@ -1,4 +1,4 @@
 interface:
-  display_name: "OWD + Eve"
-  short_description: "Connect Eve to OWD with user-scoped OAuth"
-  default_prompt: "Use $owd-eve to connect or resume this Eve agent with OWD."
+  display_name: "MDevolved + Eve"
+  short_description: "Connect Eve to MDevolved with user-scoped OAuth"
+  default_prompt: "Use $owd-eve to connect or resume this Eve agent with MDevolved."

@@ -775,7 +775,8 @@ export function PolicyContinuityStatus({
         </span>
       )}
       <span>
-        Execution remains external to OWD; the Community remains independent.
+        Execution remains external to MDevolved; the Community remains
+        independent.
       </span>
       {!active ? (
         <button
@@ -1789,8 +1790,8 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                     </strong>
                     <span>
                       Compare the full IDs, record counts, grants, and last
-                      activity. Archive only the unwanted copy; OWD will not
-                      delete either record.
+                      activity. Archive only the unwanted copy; MDevolved will
+                      not delete either record.
                     </span>
                   </div>
                 ) : null}

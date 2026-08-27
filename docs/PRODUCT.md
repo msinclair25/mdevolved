@@ -23,13 +23,13 @@ decisions by hand.
 
 ## Distribution
 
-MDevolved Community (formerly OWD Community) is the complete Apache-2.0 product deployed into a user's own
+MDevolved Community is the complete Apache-2.0 product deployed into a user's own
 Cloudflare account. The invitation-only managed alpha runs that same single-owner data
 plane in operator-provisioned, isolated managed cells. Managed hosting sells
 convenience—onboarding, upgrades, monitoring, retention, and operations—not
 access to otherwise withheld core vault capabilities.
 
-The invitation-only managed alpha is an acceptance program, not a public OWD
+The invitation-only managed alpha is an acceptance program, not a public MDevolved
 Cloud launch or service-level promise. A generally available managed service
 still requires the account, billing, automated provisioning, export, deletion,
 operator-access, recovery, and commercial gates in
@@ -58,21 +58,21 @@ operator-access, recovery, and commercial gates in
   snapshot recovery with optional quarantined Unvetted history. One clean,
   unassisted two-agent acceptance run remains before wider tester expansion.
 - **Community `v1.0` public-usability gate:** publish the sanitized
-  self-service deployment path and representative OWD Sync installation only
+  self-service deployment path and representative MDevolved Sync installation only
   after the private-alpha collaboration proof, personal-vault safety gate, and
   public packaging gates pass.
 - **Community `v1.x`:** add reviewed durable knowledge, proposal workflows,
   evolving inert Markdown skills, frozen evaluations, promotion/rollback, and
-  thin native harness packs. OWD remains the portable intelligence and approval
+  thin native harness packs. MDevolved remains the portable intelligence and approval
   layer; each agent harness remains the execution layer.
-- **OWD Cloud `v2.0`:** begin only after the isolated-cell control-plane,
+- **MDevolved Cloud `v2.0`:** begin only after the isolated-cell control-plane,
   security, cost, operations, and commercial contracts are build-ready. Hosted
   service code cannot become a dependency of Community.
 
-Hoplon is a separate product and an optional OWD client. Its connector uses the
+Hoplon is a separate product and an optional MDevolved client. Its connector uses the
 same public OAuth/MCP contract as other clients. Hoplon adds organization and
 Project policy, budgets, fixed-evidence multi-model work, and optional
-evaluation; it does not become OWD's control plane or vault source of truth.
+evaluation; it does not become MDevolved's control plane or vault source of truth.
 
 ## V1 outcomes
 
@@ -162,7 +162,7 @@ branches, retries, and concurrency.
 
 Expired or abandoned actors can be replaced with fresh, narrower scopes; the
 predecessor is never revived. Harness-reported logical units and cost
-microunits produce durable accounting and blocking budget Exceptions. OWD
+microunits produce durable accounting and blocking budget Exceptions. MDevolved
 exposes only aggregate privacy-safe observations and never raw transcript,
 hidden-reasoning, terminal, credential, OAuth, provider-runtime, or
 production/customer log data.
@@ -170,7 +170,7 @@ production/customer log data.
 The inert Orca adapter maps optional worktree, branch, commit, pull-request,
 and session references into generic Run/Actor evidence. Orca is optional and
 non-authoritative: if its state is unavailable, a provider-neutral lead with
-fresh authorization resumes from OWD's Run snapshot/delta. No Orca scheduling,
+fresh authorization resumes from MDevolved's Run snapshot/delta. No Orca scheduling,
 session, worktree, branch, pull request, or credential is imported or restored.
 
 Every R3 record participates in encrypted portable export, snapshot, quarantine
@@ -231,12 +231,12 @@ remain separate human-authorized gates.
 - Automatic promotion of inferred preferences or skills, or treating a
   correlation as proof; M3 suggestions remain owner-reviewed drafts.
 - Claims that a local candidate is deployed to production, or that data survives
-  across computers without a deployed OWD endpoint/account and backup.
+  across computers without a deployed MDevolved endpoint/account and backup.
 
 ## Product principles
 
 - Keep users oriented. Selections update the relevant panel without resetting
-  the page. OWD preserves scroll position, focus, and stable layout while
+  the page. MDevolved preserves scroll position, focus, and stable layout while
   dependent content loads; it clears only data made invalid by the new choice.
   Source vault, target vault, and backup identity remain visible throughout
   sensitive workflows, and stale responses from earlier selections never
@@ -263,14 +263,14 @@ remain separate human-authorized gates.
 - Advanced Cloudflare controls may enhance the deployment but cannot break sync.
 - Self-hosting should feel like installing an app, not assembling infrastructure.
 - First run is a guided, resumable path—not a feature index. Show one truthful
-  next action, explain what OWD will access in plain language, derive completion
+  next action, explain what MDevolved will access in plain language, derive completion
   from authoritative state, and collapse finished steps into a compact
   readiness summary.
 - Daily agent work stays in the owner's existing project folder, Obsidian
-  vault, and agent harness. The OWD website handles setup, consent, visibility,
+  vault, and agent harness. The MDevolved website handles setup, consent, visibility,
   owner Decisions, revocation, recovery, and advanced inspection; it is not a
   mandatory project workspace.
-- OWD Sync synchronizes only the explicitly paired vault. Agent access and
+- MDevolved Sync synchronizes only the explicitly paired vault. Agent access and
   collaboration use the separately consented remote MCP boundary.
 - Project is a durable provenance and authorization identity, not routine
   setup labor. The normal dashboard empty state directs the owner to initialize
@@ -285,7 +285,7 @@ remain separate human-authorized gates.
   without accepting it as a Decision, durable Knowledge, or a stable Skill.
 - Roles belong to individual Attempts, not agent brands. Any compatible client
   may plan, research, build, review, or perform a custom role.
-- OWD reduces repeated explanation through frozen Work Packets and accepted
+- MDevolved reduces repeated explanation through frozen Work Packets and accepted
   Project history; it does not require agents to expose their complete hidden
   conversations.
 - A Continuity Point is acknowledged operational state, not a new owner
@@ -312,7 +312,7 @@ remain separate human-authorized gates.
 - A first AI client connects in under two minutes without copying a static API
   key, bearer token, raw scope, internal ID, JSON, or manually transcribed
   endpoint; revocation denies its next tool call.
-- After vault and client setup, the owner initializes OWD and receives the first
+- After vault and client setup, the owner initializes MDevolved and receives the first
   Work Packet from the working agent in under one minute, with at most one
   browser confirmation, no second MCP authorization, and no manual Project
   form, IDs, raw scopes, JSON, copied prompt, or endpoint URL.
@@ -326,7 +326,7 @@ remain separate human-authorized gates.
 - In a disposable replacement drill, a newly authorized lead can regain the
   latest bounded Project context in under five minutes while stale fencing
   tokens and restored authority remain unusable.
-- After one owner instruction to use OWD, an authorized lead can create a Work
+- After one owner instruction to use MDevolved, an authorized lead can create a Work
   Item, start a bounded Run, delegate to at least three claimed actors, share a
   provisional result, route an independent review, checkpoint, and close the
   Work Item without routine dashboard action. Privileged requests, exhausted

@@ -1212,7 +1212,7 @@ export async function submitRunBundlesBatch(
         projectId: request.projectId,
         requestedAction: action,
         runId: request.runId,
-        summary: `The Run requested ${action}; OWD recorded an exception and did not execute it.`,
+        summary: `The Run requested ${action}; MDevolved recorded an exception and did not execute it.`,
         workItemId: run.work_item_id,
       }),
     ),

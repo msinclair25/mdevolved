@@ -742,7 +742,7 @@ export class EditorBindingManager {
 		if (this.cmDegradedWarned) return;
 		this.cmDegradedWarned = true;
 		new Notice(
-			"OWD Sync: Could not resolve the active editor instance. " +
+			"MDevolved Sync for Obsidian: Could not resolve the active editor instance. " +
 			"Live collaborative editing is unavailable. Background sync may still continue, " +
 			"but live cursors and editor binding are degraded. Please check for a plugin update.",
 			10000,

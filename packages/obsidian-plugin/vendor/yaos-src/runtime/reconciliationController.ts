@@ -568,7 +568,7 @@ export class ReconciliationController {
 			}
 			if (oversizedCount > 0) {
 				this.deps.log(`reconcile: skipped ${oversizedCount} oversized files`);
-				this.notify(`OWD Sync: skipped ${oversizedCount} files exceeding ${runtimeConfig.maxFileSizeKB} KB size limit.`);
+				this.notify(`MDevolved Sync for Obsidian: skipped ${oversizedCount} files exceeding ${runtimeConfig.maxFileSizeKB} KB size limit.`);
 			}
 			if (skippedByIndex > 0) {
 				this.deps.log(`reconcile: ${skippedByIndex} files unchanged (stat match), ${changed.length} changed`);
@@ -650,7 +650,7 @@ export class ReconciliationController {
 				this.deps.log(`Reconcile safety brake: ${safetyBrakeReason}.`);
 				console.error(`[yaos] Reconcile safety brake: ${safetyBrakeReason}.`);
 				this.notify(
-					`OWD Sync: Reconcile safety brake — ${safetyBrakeReason}. ` +
+					`MDevolved Sync for Obsidian: Reconcile safety brake — ${safetyBrakeReason}. ` +
 					`Additive creates will continue. Export diagnostics and inspect logs.`,
 				);
 				this.deps.trace("reconcile", "reconcile-safety-brake-blocked", {
@@ -1126,7 +1126,7 @@ export class ReconciliationController {
 		this.deps.log(`Imported ${imported} previously untracked files`);
 
 		if (imported > 0) {
-			this.notify(`OWD Sync: imported ${imported} files after server sync.`);
+			this.notify(`MDevolved Sync for Obsidian: imported ${imported} files after server sync.`);
 		}
 	}
 
@@ -2566,7 +2566,7 @@ export class ReconciliationController {
 		const suffix = suppressed > 0
 			? ` (and ${suppressed} other conflict${suppressed > 1 ? "s" : ""} in the last 30s)`
 			: "";
-		this.notify(`OWD Sync: ${message}${suffix}`, 10000);
+		this.notify(`MDevolved Sync for Obsidian: ${message}${suffix}`, 10000);
 	}
 
 	/**
@@ -2590,6 +2590,6 @@ export class ReconciliationController {
 		const suffix = suppressed > 0
 			? ` (and ${suppressed} other quarantine${suppressed > 1 ? "s" : ""} in the last 60s)`
 			: "";
-		this.notify(`OWD Sync: ${message}${suffix}`, 12000);
+		this.notify(`MDevolved Sync for Obsidian: ${message}${suffix}`, 12000);
 	}
 }

@@ -34,7 +34,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
     );
     if (actual === expected) return true;
     new Notice(
-      "MDevolved Sync is paused because this device's approved vault root changed. Pair this vault again to resume safely.",
+      "MDevolved Sync for Obsidian is paused because this device's approved vault root changed. Pair this vault again to resume safely.",
       10000,
     );
     return false;
@@ -162,7 +162,7 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       }
       if (showSuccess) {
         new Notice(
-          "MDevolved Sync connected this vault and started its searchable library.",
+          "MDevolved Sync for Obsidian connected this vault and started its searchable library.",
           8000,
         );
       }
@@ -171,8 +171,8 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       if (!showSuccess) {
         new Notice(
           error instanceof Error
-            ? `MDevolved Sync: ${error.message}`
-            : "MDevolved Sync could not confirm this vault.",
+            ? `MDevolved Sync for Obsidian: ${error.message}`
+            : "MDevolved Sync for Obsidian could not confirm this vault.",
           8000,
         );
       }

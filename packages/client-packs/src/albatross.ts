@@ -76,7 +76,7 @@ export const ALBATROSS_OAUTH_CLIENT_METADATA = JSON.stringify({
 });
 
 /**
- * Albatross 2.0.3 is a stdio-only MCP client. This profile keeps OWD's
+ * Albatross 2.0.3 is a stdio-only MCP client. This profile keeps MDevolved's
  * standard remote endpoint and puts a pinned, removable transport bridge on
  * the client side until Albatross supports remote authenticated MCP natively.
  */
@@ -123,9 +123,9 @@ export const ALBATROSS_COMPATIBILITY_PROFILE = {
   identity: {
     defaultParticipantId: "primary",
     independentParticipantRule:
-      "The non-secret participant header partitions mcp-remote's OAuth cache. Reusing one participant ID represents one OWD OAuth client; an independently attributable Albatross writer or reviewer uses a different participant ID and completes its own authorization.",
+      "The non-secret participant header partitions mcp-remote's OAuth cache. Reusing one participant ID represents one MDevolved OAuth client; an independently attributable Albatross writer or reviewer uses a different participant ID and completes its own authorization.",
     serverAuthority:
-      "The participant header is only a local cache-partition label. It never grants access. OWD binds authority to the authenticated OAuth client and rechecks its durable vault and Project grants on every call.",
+      "The participant header is only a local cache-partition label. It never grants access. MDevolved binds authority to the authenticated OAuth client and rechecks its durable vault and Project grants on every call.",
   },
   projectLifecycle: {
     entryTool: "mcp__owd__open_project",
@@ -136,24 +136,24 @@ export const ALBATROSS_COMPATIBILITY_PROFILE = {
       "mcp__owd__resume_project",
     ],
     receipt: ".owdignore",
-    rule: "On every fresh task and after /reset, read .owdignore and resume its exact Project before any other OWD action. Keep each wait call below Albatross's 30-second MCP timeout and repeat only the same wait when approval is still pending. Never reconnect OAuth, create a duplicate Project, or infer writer authority from the Albatross session.",
+    rule: "On every fresh task and after /reset, read .owdignore and resume its exact Project before any other MDevolved action. Keep each wait call below Albatross's 30-second MCP timeout and repeat only the same wait when approval is still pending. Never reconnect OAuth, create a duplicate Project, or infer writer authority from the Albatross session.",
     waitTimeoutSeconds: ALBATROSS_WAIT_TIMEOUT_SECONDS,
   },
   runtime: {
     approvals:
-      "Albatross approval gates consent to execute the local MCP bridge or call a tool. It does not replace OWD OAuth, owner approval, vault scope, or Project authority.",
+      "Albatross approval gates consent to execute the local MCP bridge or call a tool. It does not replace MDevolved OAuth, owner approval, vault scope, or Project authority.",
     automation:
-      "Keep /auto bounded by the current OWD Work Packet, budget, and deadline. Resume OWD after every automatic reset, stop on a stale or mismatched packet, and submit the final cited Artifact or Handoff rather than every internal turn.",
+      "Keep /auto bounded by the current MDevolved Work Packet, budget, and deadline. Resume MDevolved after every automatic reset, stop on a stale or mismatched packet, and submit the final cited Artifact or Handoff rather than every internal turn.",
     checkpoints:
-      "Albatross checkpoints and continuation files are private runtime recovery. Promote only distilled, cited results into OWD so another agent receives useful evidence instead of a raw transcript.",
+      "Albatross checkpoints and continuation files are private runtime recovery. Promote only distilled, cited results into MDevolved so another agent receives useful evidence instead of a raw transcript.",
     evaluation:
-      "Treat /iterate candidates and critiques as internal Attempts. Publish meaningful alternatives and the selected result as OWD Attempts or Artifacts. Albatross review mode is independently attributable only when it uses a distinct participant ID and OAuth grant.",
+      "Treat /iterate candidates and critiques as internal Attempts. Publish meaningful alternatives and the selected result as MDevolved Attempts or Artifacts. Albatross review mode is independently attributable only when it uses a distinct participant ID and OAuth grant.",
     pathForks:
-      "Treat /path fork branches as alternative Attempts and Artifacts inside the same OWD Project. A path fork never creates a second OWD Project or a second participant identity.",
+      "Treat /path fork branches as alternative Attempts and Artifacts inside the same MDevolved Project. A path fork never creates a second MDevolved Project or a second participant identity.",
     reset:
-      "Albatross /reset and .albatross/continue.md preserve one runtime's continuation. OWD .owdignore and resume_project preserve the portable Project identity and current authority across agents.",
+      "Albatross /reset and .albatross/continue.md preserve one runtime's continuation. MDevolved .owdignore and resume_project preserve the portable Project identity and current authority across agents.",
     workspaceWrites:
-      "Albatross can edit the local workspace directly. Before a vault write, resume OWD and obey the returned localVaultAccess role; MCP Project submissions do not grant filesystem authority.",
+      "Albatross can edit the local workspace directly. Before a vault write, resume MDevolved and obey the returned localVaultAccess role; MCP Project submissions do not grant filesystem authority.",
   },
   source: {
     commit: "0543226b800ee57659f200c1ef928925868c90c9",
@@ -170,7 +170,7 @@ function normalizedOwdMcpUrl(value: string): string {
     url.protocol === "http:" &&
     ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
   if (url.protocol !== "https:" && !localHttp) {
-    throw new Error("OWD MCP requires HTTPS except on localhost.");
+    throw new Error("MDevolved MCP requires HTTPS except on localhost.");
   }
   if (
     url.username !== "" ||
@@ -179,7 +179,7 @@ function normalizedOwdMcpUrl(value: string): string {
     url.search !== ""
   ) {
     throw new Error(
-      "OWD MCP URLs cannot contain credentials, query parameters, or fragments.",
+      "MDevolved MCP URLs cannot contain credentials, query parameters, or fragments.",
     );
   }
   return url.toString();
@@ -279,20 +279,20 @@ export function createAlbatrossMcpMergeConfig(
 }
 
 export const ALBATROSS_WORKSPACE_PROMPT = `<!-- owd:albatross-profile:v1:start -->
-## OWD Project continuity in Albatross
+## MDevolved Project continuity in Albatross
 
-- OWD is the \`owd\` MCP server. Its tools are named \`mcp__owd__<tool>\`.
-- At the start of every fresh task and immediately after Albatross \`/reset\`, read \`.owdignore\`. When it exists, call \`mcp__owd__resume_project\` with its exact Project ID and complete context policy before any other OWD action or local vault write. Until it returns, the writer role is unconfirmed.
+- MDevolved is the \`owd\` MCP server. Its tools are named \`mcp__owd__<tool>\`.
+- At the start of every fresh task and immediately after Albatross \`/reset\`, read \`.owdignore\`. When it exists, call \`mcp__owd__resume_project\` with its exact Project ID and complete context policy before any other MDevolved action or local vault write. Until it returns, the writer role is unconfirmed.
 - When no receipt exists, call \`mcp__owd__connection_info\`, then \`mcp__owd__open_project\` with the visible Project name the owner supplied. Never guess among multiple Projects or create a duplicate to repair a connection.
 - If \`open_project\` returns pending, show its one approval URL and call \`mcp__owd__wait_for_project_connection\` with the exact wait key and \`timeoutSeconds: 20\`. Albatross limits each MCP request to 30 seconds, so repeat only that same wait when approval is still pending. Do not reconnect OAuth or repeat setup.
-- Albatross 2.0.3 reads MCP text content but ignores server initialize instructions, Resources, Prompts, and \`structuredContent\`. Treat the JSON text returned by OWD as authoritative and keep this managed prompt block installed.
-- Albatross \`/reset\` and \`.albatross/continue.md\` preserve runtime continuity only. OWD \`.owdignore\`, Projects, Handoffs, Reviews, Decisions, and provenance are the portable cross-agent record.
-- Treat every \`/path fork\` as an alternative Attempt or Artifact inside the same OWD Project, never as a duplicate Project or independent participant.
-- Keep \`/auto\` inside the current OWD Work Packet, budget, and deadline. After its automatic \`/reset\`, resume OWD before continuing; stop if the packet or policy is stale.
+- Albatross 2.0.3 reads MCP text content but ignores server initialize instructions, Resources, Prompts, and \`structuredContent\`. Treat the JSON text returned by MDevolved as authoritative and keep this managed prompt block installed.
+- Albatross \`/reset\` and \`.albatross/continue.md\` preserve runtime continuity only. MDevolved \`.owdignore\`, Projects, Handoffs, Reviews, Decisions, and provenance are the portable cross-agent record.
+- Treat every \`/path fork\` as an alternative Attempt or Artifact inside the same MDevolved Project, never as a duplicate Project or independent participant.
+- Keep \`/auto\` inside the current MDevolved Work Packet, budget, and deadline. After its automatic \`/reset\`, resume MDevolved before continuing; stop if the packet or policy is stale.
 - Treat \`/iterate\` candidates and critiques as internal Attempts. Submit meaningful alternatives and the selected cited result, not every private turn. Review mode is independent only with a different participant ID and OAuth authorization.
-- Albatross approval confirms a local tool execution. It never replaces OWD OAuth, owner consent, vault boundaries, Project grants, or revocation.
-- Reusing the configured participant header means this Albatross runtime is the same OWD participant. A genuinely independent writer or reviewer needs a different participant ID and its own OAuth authorization.
-- Before any direct Obsidian, shell, skill, or filesystem write, obey the current \`localVaultAccess.role\` returned by OWD. Project submission tools do not grant local write authority.
+- Albatross approval confirms a local tool execution. It never replaces MDevolved OAuth, owner consent, vault boundaries, Project grants, or revocation.
+- Reusing the configured participant header means this Albatross runtime is the same MDevolved participant. A genuinely independent writer or reviewer needs a different participant ID and its own OAuth authorization.
+- Before any direct Obsidian, shell, skill, or filesystem write, obey the current \`localVaultAccess.role\` returned by MDevolved. Project submission tools do not grant local write authority.
 <!-- owd:albatross-profile:v1:end -->`;
 
 export function createAlbatrossSetupKit(
@@ -301,11 +301,11 @@ export function createAlbatrossSetupKit(
     .defaultParticipantId,
 ): string {
   const participant = validatedParticipantId(participantId);
-  return `OWD + Albatross setup
+  return `MDevolved + Albatross setup
 
 Participant: ${participant}
 
-1. Before starting Albatross, run this once and finish OWD authorization in the browser:
+1. Before starting Albatross, run this once and finish MDevolved authorization in the browser:
 
 ${createAlbatrossAuthorizationCommand(mcpUrl, participant)}
 
@@ -319,7 +319,7 @@ ${ALBATROSS_WORKSPACE_PROMPT}
 
 4. Start Albatross, run \`/mcp trust owd\`, then say: \`Connect this project to MDevolved.\` The legacy phrase \`Connect this project to OWD.\` remains equivalent. On later tasks, \`MDevolved resume project\` and the legacy phrase \`OWD resume project\` both resume the existing receipt without reconnecting.
 
-Use a different participant ID and repeat authorization only for a genuinely independent writer or reviewer. The participant header is not a credential; OWD OAuth and server-side grants remain authoritative.`;
+Use a different participant ID and repeat authorization only for a genuinely independent writer or reviewer. The participant header is not a credential; MDevolved OAuth and server-side grants remain authoritative.`;
 }
 
 export function serializeAlbatrossCompatibilityProfile(): string {
@@ -333,13 +333,13 @@ export const ALBATROSS_CONTINUITY_GUIDANCE = `### Albatross compatibility
 - A \`/path fork\` is another Attempt in the same Project. Reusing \`X-OWD-Albatross-Participant\` is one OAuth participant; an independent reviewer uses another value and authorization. The header grants no authority.
 - Before any direct vault write, obey \`localVaultAccess\`; a read-only collaborator proposes or hands off.`;
 
-export const ALBATROSS_PROFILE_PROMPT = `Connect or resume this Albatross workspace with OWD through the configured \`owd\` MCP server.
+export const ALBATROSS_PROFILE_PROMPT = `Connect or resume this Albatross workspace with MDevolved through the configured \`owd\` MCP server.
 
-1. Use \`mcp__owd__<tool>\` names. Read \`.owdignore\` first. If it exists, call \`mcp__owd__resume_project\` with its exact Project ID and complete policy before any other OWD action. Until it returns, the writer role is unconfirmed.
+1. Use \`mcp__owd__<tool>\` names. Read \`.owdignore\` first. If it exists, call \`mcp__owd__resume_project\` with its exact Project ID and complete policy before any other MDevolved action. Until it returns, the writer role is unconfirmed.
 2. If no receipt exists, call \`mcp__owd__connection_info\`, then \`mcp__owd__open_project\` with the visible Project name the owner supplied.
 3. If approval is pending, present the one returned URL and call \`mcp__owd__wait_for_project_connection\` with the exact key and \`timeoutSeconds: 20\`. Repeat only that same wait if necessary; never reconnect OAuth, repeat setup, or create a duplicate Project.
-4. Persist the returned \`.owdignore\` receipt and marked OWD instruction blocks without replacing unrelated workspace instructions.
-5. After Albatross \`/reset\`, resume the OWD receipt first. Treat \`.albatross/continue.md\` and \`/path fork\` as runtime-local continuation and alternative Attempts, while OWD remains the portable Project record.
-6. Keep \`/auto\` bounded by the current OWD Work Packet, budget, and deadline. Treat \`/iterate\` candidates and critiques as internal Attempts; submit only meaningful alternatives and the selected cited result.
-7. A separate independent writer or reviewer needs a distinct Albatross participant ID and OAuth authorization. Review mode, a renamed session, or a path using the same participant header remains the same OWD participant.
-8. Before any direct local vault write, obey the current \`localVaultAccess.role\` returned by OWD.`;
+4. Persist the returned \`.owdignore\` receipt and marked MDevolved instruction blocks without replacing unrelated workspace instructions.
+5. After Albatross \`/reset\`, resume the MDevolved receipt first. Treat \`.albatross/continue.md\` and \`/path fork\` as runtime-local continuation and alternative Attempts, while MDevolved remains the portable Project record.
+6. Keep \`/auto\` bounded by the current MDevolved Work Packet, budget, and deadline. Treat \`/iterate\` candidates and critiques as internal Attempts; submit only meaningful alternatives and the selected cited result.
+7. A separate independent writer or reviewer needs a distinct Albatross participant ID and OAuth authorization. Review mode, a renamed session, or a path using the same participant header remains the same MDevolved participant.
+8. Before any direct local vault write, obey the current \`localVaultAccess.role\` returned by MDevolved.`;

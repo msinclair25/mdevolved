@@ -18,7 +18,7 @@ export function createRecoveryKeyFilename(now = new Date()): string {
 
 export function createRecoveryKeyDocument(identity: string): string {
   return [
-    "# MDevolved recovery key (OWD-compatible format)",
+    "# MDevolved recovery key (legacy-compatible format)",
     "# Keep this file private. MDevolved never receives this secret.",
     "# This is the only key that can open matching encrypted backups.",
     identity,

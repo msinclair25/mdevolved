@@ -232,7 +232,7 @@ export function collaborationRestoreVaultMappings(
   }
   if (identified.length > 0) {
     throw new Error(
-      "The encrypted snapshot has an incomplete source-vault identity map.",
+      "The encrypted snapshot has an incomplete Source identity map.",
     );
   }
   const intelligence = manifest.intelligence;
@@ -268,7 +268,7 @@ export function collaborationRestoreVaultMappings(
   if (sourceVaultIds.size === 0) return [];
   if (manifest.vaults.length !== 1 || sourceVaultIds.size !== 1) {
     throw new Error(
-      "This older multi-vault snapshot cannot prove an exact Project vault mapping.",
+      "This older multi-Source snapshot cannot prove an exact Project Source mapping.",
     );
   }
   return [

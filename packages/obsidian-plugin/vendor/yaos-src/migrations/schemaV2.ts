@@ -49,7 +49,7 @@ export const runSchemaMigrationToV2 = (context: SchemaV2MigrationContext): void 
 	new ConfirmModal(
 		context.app,
 		"Migrate sync schema to v2",
-		"This will switch this vault to schema v2 and block older OWD Sync clients from syncing " +
+		"This will switch this vault to schema v2 and block older MDevolved Sync for Obsidian clients from syncing " +
 			"until they are upgraded. Continue?",
 		async () => {
 			const activeVaultSync = context.vaultSync as VaultSync | null;
@@ -85,9 +85,9 @@ export const runSchemaMigrationToV2 = (context: SchemaV2MigrationContext): void 
 			}
 
 			new Notice(
-				`OWD Sync: schema v2 migration complete` +
+				`MDevolved Sync for Obsidian: schema v2 migration complete` +
 					(loserCleanupCount > 0 ? ` (${loserCleanupCount} local alias file(s) cleaned).` : ".") +
-					" Update OWD Sync on your other devices before reconnecting them.",
+					" Update MDevolved Sync for Obsidian on your other devices before reconnecting them.",
 				12000,
 			);
 		},

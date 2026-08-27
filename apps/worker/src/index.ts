@@ -44,7 +44,7 @@ const oauthProvider = new OAuthProvider<Env>({
   refreshTokenTTL: 30 * 24 * 60 * 60,
   resourceMetadata: {
     bearer_methods_supported: ["header"],
-    resource_name: "OWD vault and Project collaboration access",
+    resource_name: "MDevolved vault and Project collaboration access",
     scopes_supported: [
       "vault.read",
       "project.initialize.request",

@@ -148,11 +148,11 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 				);
 
 			new Setting(calloutContent)
-				.setName("Deploy OWD")
+				.setName("Deploy MDevolved")
 				.setDesc("Start one-click deployment in your browser.")
 				.addButton((button) =>
 					button
-						.setButtonText("Deploy OWD")
+						.setButtonText("Deploy MDevolved")
 						.setCta()
 						.onClick(() => {
 							window.open(CLOUDFLARE_DEPLOY_URL, "_blank", "noopener");
@@ -173,7 +173,7 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 					cls: "yaos-settings-status-title",
 				});
 			titleWrap.createEl("div", {
-				text: "Pair or revoke vault access from your private OWD dashboard.",
+				text: "Pair or revoke vault access from your private MDevolved dashboard.",
 				cls: "yaos-settings-status-subtitle",
 			});
 
@@ -221,7 +221,7 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setName("Max text file size in kilobytes")
-				.setDesc("Text files larger than this are skipped. OWD libraries support at most 1024 KB per Markdown file.")
+				.setDesc("Text files larger than this are skipped. MDevolved libraries support at most 1024 KB per Markdown file.")
 			.addText((text) =>
 				text
 					.setPlaceholder("1024")
@@ -376,10 +376,10 @@ export class VaultSyncSettingTab extends PluginSettingTab {
 				.setName("Sync token")
 				.setDesc(
 					authMode === "unclaimed"
-						? "Leave this blank until you claim OWD in a browser, then create a pairing link."
+						? "Leave this blank until you claim MDevolved in a browser, then create a pairing link."
 						: authMode === "env"
 							? "Must match the SYNC_TOKEN configured on the server."
-							: "This is usually filled in automatically by an OWD pairing link.",
+							: "This is usually filled in automatically by a MDevolved pairing link.",
 				)
 				.addText((text) =>
 					text

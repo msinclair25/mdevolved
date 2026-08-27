@@ -99,8 +99,8 @@ export function ProjectOutcomePanel({ projectId }: Props) {
     >
       <summary>Project outcome evidence</summary>
       <p className="project-outcome-note">
-        Local-only signals for this Project. This is not a success score; OWD
-        does not send telemetry or identify providers.
+        Local-only signals for this Project. This is not a success score;
+        MDevolved does not send telemetry or identify providers.
       </p>
       {loading ? <p role="status">Loading local evidence…</p> : null}
       {error !== null ? <p role="alert">{error}</p> : null}

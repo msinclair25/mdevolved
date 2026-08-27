@@ -39,36 +39,36 @@ export function getLabelFromConnectionState(
 	let base: string;
 	switch (state.kind) {
 		case "disconnected":
-			base = "MDevolved Sync: Disconnected";
+			base = "MDevolved Sync for Obsidian: Disconnected";
 			break;
 		case "loading_cache":
-			base = "MDevolved Sync: Loading...";
+			base = "MDevolved Sync for Obsidian: Loading...";
 			break;
 		case "connecting":
-			base = "MDevolved Sync: Connecting...";
+			base = "MDevolved Sync for Obsidian: Connecting...";
 			break;
 		case "online":
-			base = "MDevolved Sync: Connected";
+			base = "MDevolved Sync for Obsidian: Connected";
 			break;
 		case "offline":
-			base = "MDevolved Sync: Offline";
+			base = "MDevolved Sync for Obsidian: Offline";
 			break;
 		case "auth_failed":
 			switch (state.code) {
 				case "unclaimed":
-					base = "MDevolved Sync: Server unclaimed";
+					base = "MDevolved Sync for Obsidian: Server unclaimed";
 					break;
 				case "server_misconfigured":
-					base = "MDevolved Sync: Server misconfigured";
+					base = "MDevolved Sync for Obsidian: Server misconfigured";
 					break;
 				case "unauthorized":
 				default:
-					base = "MDevolved Sync: Auth rejected";
+					base = "MDevolved Sync for Obsidian: Auth rejected";
 					break;
 			}
 			break;
 		case "server_update_required":
-			base = "MDevolved Sync: Update required";
+			base = "MDevolved Sync for Obsidian: Update required";
 			break;
 	}
 	if (transferStatus) base = `${base} (${transferStatus})`;

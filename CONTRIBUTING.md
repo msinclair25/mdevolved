@@ -1,6 +1,6 @@
 # Contributing
 
-OWD Platform handles private notes, credentials, and recovery data. Contributions are welcome, but data safety takes priority over delivery speed.
+MDevolved handles private notes, credentials, and recovery data. Contributions are welcome, but data safety takes priority over delivery speed.
 
 ## Before coding
 
@@ -11,7 +11,7 @@ identity, storage formats, or recovery behavior.
 
 ## Development workflow
 
-OWD uses the risk-proportional Build, Checkpoint, and Release modes defined in
+MDevolved uses the risk-proportional Build, Checkpoint, and Release modes defined in
 `AGENTS.md`.
 
 1. Continue the current phase or vertical-slice branch when the change belongs

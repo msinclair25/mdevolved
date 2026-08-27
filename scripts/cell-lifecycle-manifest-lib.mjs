@@ -435,7 +435,9 @@ export function validateCellBuildManifest(value, expectations = {}) {
     actualRateLimitBindings.join("\0") !==
     REQUIRED_RATE_LIMIT_BINDINGS.join("\0")
   ) {
-    reject("cloudflare.rateLimits must reserve the five exact OWD bindings.");
+    reject(
+      "cloudflare.rateLimits must reserve the five exact MDevolved bindings.",
+    );
   }
   requireUnique(
     rateLimits.map((rateLimit) => rateLimit.namespaceId),

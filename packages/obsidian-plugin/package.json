@@ -2,7 +2,7 @@
   "name": "@owd/obsidian-plugin",
   "version": "0.1.7",
   "private": true,
-  "description": "The MDevolved Sync adapter for Obsidian, retaining the OWD Sync compatibility identity.",
+  "description": "The MDevolved Sync adapter for Obsidian, retaining the legacy owd-sync compatibility identity.",
   "license": "Apache-2.0 AND 0BSD",
   "type": "module",
   "main": "main.js",

@@ -106,7 +106,7 @@ async function requireCurrentGeneration(
     throw new ApiProblem(
       404,
       "materialization_not_found",
-      "OWD has not published this active vault's searchable library yet.",
+      "MDevolved has not published this active vault's searchable library yet.",
     );
   }
   return generation;

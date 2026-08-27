@@ -5,21 +5,21 @@ you are changing.
 
 ## Start here
 
-| I want to…                                | Read                                                              |
-| ----------------------------------------- | ----------------------------------------------------------------- |
-| Understand what MDevolved does            | [Product overview](../README.md)                                  |
-| See what the alpha includes               | [Alpha status](ALPHA-STATUS.md)                                   |
-| Connect an agent to a Project             | [Agent-first quick start](AGENT-FIRST-QUICKSTART.md)              |
-| Deploy Community or compare hosted modes  | [Deployment modes](DEPLOYMENT-MODES.md)                           |
-| See what is next                          | [Public roadmap](ROADMAP.md)                                      |
-| Review the MDevolved source plan          | [MDevolved plan](MDEVOLVED-PLAN.md)                               |
-| Review brand compatibility invariants     | [Brand compatibility](BRAND-COMPATIBILITY.md)                     |
-| Review MD5 requirement-to-test evidence   | [MD5 acceptance matrix](MD5-TEST-MATRIX.md)                       |
-| Review MD6 requirement-to-evidence gates  | [MD6 acceptance matrix](MD6-TEST-MATRIX.md)                       |
-| Review MD2 migration and recovery         | [MD2 recovery](MD2-RECOVERY.md)                                   |
-| Review supported versions and limits      | [Release compatibility](RELEASE-COMPATIBILITY.md)                 |
-| Audit monitored upstream integration pins | [Compatibility manifest](../compatibility/upstreams.json)         |
-| Install the Obsidian companion            | [OWD Sync README](https://github.com/msinclair25/owd-sync#readme) |
+| I want to…                                | Read                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| Understand what MDevolved does            | [Product overview](../README.md)                                        |
+| See what the alpha includes               | [Alpha status](ALPHA-STATUS.md)                                         |
+| Connect an agent to a Project             | [Agent-first quick start](AGENT-FIRST-QUICKSTART.md)                    |
+| Deploy Community or compare hosted modes  | [Deployment modes](DEPLOYMENT-MODES.md)                                 |
+| See what is next                          | [Public roadmap](ROADMAP.md)                                            |
+| Review the MDevolved source plan          | [MDevolved plan](MDEVOLVED-PLAN.md)                                     |
+| Review brand compatibility invariants     | [Brand compatibility](BRAND-COMPATIBILITY.md)                           |
+| Review MD5 requirement-to-test evidence   | [MD5 acceptance matrix](MD5-TEST-MATRIX.md)                             |
+| Review MD6 requirement-to-evidence gates  | [MD6 acceptance matrix](MD6-TEST-MATRIX.md)                             |
+| Review MD2 migration and recovery         | [MD2 recovery](MD2-RECOVERY.md)                                         |
+| Review supported versions and limits      | [Release compatibility](RELEASE-COMPATIBILITY.md)                       |
+| Audit monitored upstream integration pins | [Compatibility manifest](../compatibility/upstreams.json)               |
+| Install the Obsidian companion            | [MDevolved Sync README](https://github.com/msinclair25/owd-sync#readme) |
 
 ## Product and trust
 

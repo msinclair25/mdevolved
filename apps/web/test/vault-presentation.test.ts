@@ -29,7 +29,7 @@ describe("vault presentation", () => {
   });
 
   it("uses an accessible singular or plural history count", () => {
-    expect(disconnectedHistoryLabel(1)).toBe("1 disconnected vault");
-    expect(disconnectedHistoryLabel(18)).toBe("18 disconnected vaults");
+    expect(disconnectedHistoryLabel(1)).toBe("1 disconnected Source");
+    expect(disconnectedHistoryLabel(18)).toBe("18 disconnected Sources");
   });
 });

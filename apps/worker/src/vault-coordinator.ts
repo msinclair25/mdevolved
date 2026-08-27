@@ -241,7 +241,7 @@ export class VaultCoordinator extends YServer {
   }
 
   /**
-   * y-partyserver broadcasts applied state immediately. OWD sends YAOS's
+   * y-partyserver broadcasts applied state immediately. MDevolved sends YAOS's
    * state-vector receipt only after the corresponding state is durable.
    */
   override async onMessage(

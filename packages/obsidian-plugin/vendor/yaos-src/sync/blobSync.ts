@@ -1477,7 +1477,7 @@ export class BlobSyncManager {
 				// and will NOT sync to other devices.
 				try {
 					new Notice(
-						`OWD Sync: Local-only attachment conflict preserved — "${conflictPath.split("/").pop()}" (this device only)`,
+						`MDevolved Sync for Obsidian: Local-only attachment conflict preserved — "${conflictPath.split("/").pop()}" (this device only)`,
 						8000,
 					);
 				} catch {

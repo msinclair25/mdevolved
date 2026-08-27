@@ -256,7 +256,7 @@ async function loadVerifiedAssets(
       if (!response.ok) {
         throw new OwdSyncInstallerError(
           "installer_asset_unavailable",
-          `The pinned OWD Sync ${asset.name} file is unavailable.`,
+          `The pinned MDevolved Sync for Obsidian ${asset.name} file is unavailable.`,
         );
       }
 
@@ -267,7 +267,7 @@ async function loadVerifiedAssets(
       ) {
         throw new OwdSyncInstallerError(
           "installer_asset_mismatch",
-          `The pinned OWD Sync ${asset.name} file failed integrity verification.`,
+          `The pinned MDevolved Sync for Obsidian ${asset.name} file failed integrity verification.`,
         );
       }
       assets.set(asset.name, bytes);
@@ -592,7 +592,7 @@ export async function installOwdSyncIntoVault(
       if (bytes === undefined) {
         throw new OwdSyncInstallerError(
           "installer_asset_mismatch",
-          `The verified OWD Sync ${name} file is missing.`,
+          `The verified MDevolved Sync for Obsidian ${name} file is missing.`,
         );
       }
       await writeFile(pluginDirectory, name, bytes);

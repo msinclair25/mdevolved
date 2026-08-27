@@ -32,7 +32,7 @@ jobs:
       - run: pnpm audit --prod
       - run: pnpm public-source:check
       - name: Run the frozen identity compatibility contract
-        run: node --test scripts/md5-brand-transition.test.mjs
+        run: pnpm test:md7:brand
       - run: pnpm check
       - run: pnpm test:migrations
       - run: pnpm test

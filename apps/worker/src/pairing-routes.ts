@@ -156,7 +156,7 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
       throw new ApiProblem(
         409,
         "plugin_update_required",
-        `Update OWD Sync to ${MINIMUM_PLUGIN_VERSION} or newer, then generate a new pairing link.`,
+        `Update MDevolved Sync to ${MINIMUM_PLUGIN_VERSION} or newer, then generate a new pairing link.`,
       );
     }
 
@@ -337,7 +337,7 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
       throw new ApiProblem(
         409,
         "plugin_update_required",
-        `Update OWD Sync to ${MINIMUM_PLUGIN_VERSION} or newer before confirming this vault.`,
+        `Update MDevolved Sync to ${MINIMUM_PLUGIN_VERSION} or newer before confirming this vault.`,
       );
     }
     const credential = await readVaultCredential(
@@ -374,7 +374,7 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
       throw new ApiProblem(
         409,
         "vault_sync_pending",
-        "OWD is still receiving this vault. Keep Obsidian open and retry shortly.",
+        "MDevolved is still receiving this Source. Keep the Source sync client running and retry shortly.",
       );
     }
     const currentStateVector = new Uint8Array(
@@ -394,7 +394,7 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
       throw new ApiProblem(
         409,
         "vault_sync_pending",
-        "OWD could not confirm this vault connection. Reconnect and try again.",
+        "MDevolved could not confirm this vault connection. Reconnect and try again.",
       );
     }
     const libraryBuild = await coordinator.queueMaterialization(
@@ -410,10 +410,10 @@ export function registerPairingRoutes(app: Hono<AppBindings>): void {
           : 409,
         libraryBuild.code,
         libraryBuild.code === "note_too_large"
-          ? "A Markdown file exceeds OWD's 1 MiB library limit. Reduce or exclude it, then retry."
+          ? "A Markdown file exceeds MDevolved's 1 MiB library limit. Reduce or exclude it, then retry."
           : libraryBuild.code === "generation_too_large"
-            ? "This vault exceeds OWD's 32 MiB library limit. Narrow or reduce it, then retry."
-            : "OWD synced the vault but could not build its library. Open diagnostics before retrying.",
+            ? "This vault exceeds MDevolved's 32 MiB library limit. Narrow or reduce it, then retry."
+            : "MDevolved synced the vault but could not build its library. Open diagnostics before retrying.",
       );
     }
     context.header("Cache-Control", "no-store");

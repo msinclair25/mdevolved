@@ -5,7 +5,7 @@
 > as a supported legacy
 > single-vault recovery path.
 
-OWD backup artifacts are independent of live YAOS synchronization and the
+MDevolved backup artifacts are independent of live YAOS synchronization and the
 searchable D1/R2 materialization. Each artifact names one already-published
 materialization generation and is encrypted as a standard age/X25519 file.
 
@@ -13,24 +13,24 @@ materialization generation and is encrypted as a standard age/X25519 file.
 
 1. In **Backup & restore**, choose **Back up a vault**, then **Create recovery
    key**. Backup setup and emergency restore are separate in-place tasks; only
-   the chosen task is shown. OWD explains that an encrypted backup plus its
+   the chosen task is shown. MDevolved explains that an encrypted backup plus its
    matching private `.txt` key are both required for recovery.
 2. Choose **Download recovery key** for the timestamped
-   `owd-recovery-key-*.txt` file. OWD uses the browser's normal Downloads flow
+   `owd-recovery-key-*.txt` file. MDevolved uses the browser's normal Downloads flow
    and does not invoke a native save-location API. It shows the prepared
    filename and non-zero byte count, but a download request alone is never
    reported as a successful save. Store a second copy in another private,
-   recoverable location. OWD cannot view, replace, or recreate the file.
-3. Locate and reopen that exact file in OWD. This separate owner action proves
+   recoverable location. MDevolved cannot view, replace, or recreate the file.
+3. Locate and reopen that exact file in MDevolved. This separate owner action proves
    the downloaded bytes are accessible outside the page that generated them.
    The browser validates the non-empty file, derives its public lock locally,
    and refuses activation unless it matches the key just created. Only the
-   public `age1…` recipient is submitted to OWD.
+   public `age1…` recipient is submitted to MDevolved.
 4. Before creating a backup in a new browser session, choose the saved key
-   again. OWD verifies locally that it matches the configured public lock; the
+   again. MDevolved verifies locally that it matches the configured public lock; the
    private file contents are never uploaded. Backup creation stays disabled
    until this proof succeeds.
-5. Select the exact vault, then choose **Create backup**. OWD safely confirms a
+5. Select the exact vault, then choose **Create backup**. MDevolved safely confirms a
    fresh library in the same operation; a direct API caller also cannot encrypt
    a stale generation. The create request is bound to the fingerprint of the
    public key just verified, and that key cannot rotate while the artifact is
@@ -108,12 +108,12 @@ full vault plaintext or ciphertext in memory. A D1 artifact remains hidden in
 2. Choose **Create snapshot**. The default scope fixes the complete active-vault
    membership at capture start. A deliberately narrower selected-vault scope
    is under **Advanced** controls.
-3. OWD asks every fixed member to publish a fresh verified library generation.
+3. MDevolved asks every fixed member to publish a fresh verified library generation.
    This is a coordinated capture window, not an instantaneous transaction. If
    one member is unavailable, the entire snapshot fails before any partial
    recovery point is published. The server repeats this freshness check at the
    snapshot boundary, so a direct API caller cannot capture a stale library.
-4. The browser continues the bounded job while OWD encrypts new content
+4. The browser continues the bounded job while MDevolved encrypts new content
    objects. Identical content may reference a previously randomized, verified
    ciphertext object only inside the same recipient and section boundary.
    Every manifest remains logically complete and independently restorable. If
@@ -140,7 +140,7 @@ recovery point; failed artifacts enter delayed reference-aware cleanup.
 
 The production sync capability currently supports Markdown only. Accordingly,
 created v2 manifests include `notes` and explicitly mark `attachments` and
-`obsidian-allowlist` unavailable. OWD does not claim a complete restore while
+`obsidian-allowlist` unavailable. MDevolved does not claim a complete restore while
 silently skipping either section. Synthetic fixtures prove encryption,
 decryption, hashing, byte boundaries, and path round trips for Markdown, a
 binary attachment, and `.obsidian/appearance.json`; enabling real attachment or
@@ -179,16 +179,16 @@ manifests and encrypted objects, not retained search indexes.
    Historical Continuity Points remain byte-for-byte unchanged, and their
    embedded authority flags remain inert.
 4. A second authenticated pass stages every Markdown note into the existing
-   isolated restore namespace. OWD refreshes each exact target and presents
+   isolated restore namespace. MDevolved refreshes each exact target and presents
    added, changed, unchanged, and zero-deleted counts for every mapping. The
    browser polls the durable read-only library job instead of repeatedly
    invoking preview/apply mutations.
-5. Type each exact destination name. OWD confirms all previews before applying
+5. Type each exact destination name. MDevolved confirms all previews before applying
    bounded overlays sequentially through the respective Durable Objects. A
    retry reuses staging and apply progress instead of creating duplicate notes.
 6. Each target publishes a fresh verified library. Target-only notes survive;
    credentials, pairing authority, sessions, and agent grants remain disabled.
-   When every mapping is applied and verified, OWD focuses and centers the
+   When every mapping is applied and verified, MDevolved focuses and centers the
    checked completion card so the shorter final layout cannot leave the result
    outside the current scroll position.
 
@@ -202,7 +202,7 @@ and explicit mappings—not source connectivity.
 
 Automatic retention is off by default. Its control stays disabled until the UI
 shows logical size, likely new content, reusable-object count, and currently
-retained encrypted bytes. When the owner enables it, OWD keeps the configured
+retained encrypted bytes. When the owner enables it, MDevolved keeps the configured
 recent history, every pinned point, at least two ready points, and the newest
 verified recovery point. Deletion first records every now-unreferenced R2 key,
 then removes D1 membership; bounded garbage collection is idempotent and safe
@@ -240,12 +240,12 @@ The checked-in public fixtures are
 synthetic metadata and hashes—no ciphertext, recovery identity, hostname, D1
 row identity, R2 key, or personal content.
 
-| Custody or runtime          | v2 contract                                         | Result                                                          |
-| --------------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
-| Fresh OWD Community install | Public index + owner-key-encrypted manifest/objects | Local validation, explicit mappings, staged restore             |
-| Future isolated SaaS cell   | Same required capabilities and snapshot-scoped IDs  | No source-cell authority required                               |
-| Local downloaded file       | One streamed `.owdsnapshot`                         | Browser-local validation and restore without source service     |
-| Legacy `owd-backup-v1`      | Existing `.age` manifest and Markdown stream        | Remains downloadable, importable, and restorable under Advanced |
+| Custody or runtime                | v2 contract                                         | Result                                                          |
+| --------------------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
+| Fresh MDevolved Community install | Public index + owner-key-encrypted manifest/objects | Local validation, explicit mappings, staged restore             |
+| Future isolated SaaS cell         | Same required capabilities and snapshot-scoped IDs  | No source-cell authority required                               |
+| Local downloaded file             | One streamed `.owdsnapshot`                         | Browser-local validation and restore without source service     |
+| Legacy `owd-backup-v1`            | Existing `.age` manifest and Markdown stream        | Remains downloadable, importable, and restorable under Advanced |
 
 ## M2 working-profile recovery
 
@@ -331,12 +331,12 @@ run; this document does not claim that live gate has passed.
 
 ## Legacy V1 recovery workflow
 
-1. In **Backup & restore**, choose **Restore a vault**. Under **Saved in OWD**,
-   choose a backup from the selected source vault. OWD fetches the encrypted
+1. In **Backup & restore**, choose **Restore a vault**. Under **Saved in MDevolved**,
+   choose a backup from the selected source vault. MDevolved fetches the encrypted
    object directly into browser memory and
    verifies that its byte length matches the immutable artifact record. The
    normal recovery path does not use an operating-system file picker.
-2. Choose the matching private recovery `.txt` file. This is the file OWD
+2. Choose the matching private recovery `.txt` file. This is the file MDevolved
    required the owner to save and reopen before the backup could be created.
    A visible **Where do I get this file?** explanation gives its expected name
    and tells the owner to stop if it is missing; a replacement key cannot open
@@ -358,9 +358,9 @@ run; this document does not claim that live gate has passed.
    Worker refreshes the target materialization and reports added, changed, and
    unchanged counts. Deletion count is always zero in V1.
 7. Type the exact destination vault name and choose **Restore this vault**.
-   OWD then applies the overlay in bounded, resumable batches through the
+   MDevolved then applies the overlay in bounded, resumable batches through the
    target's Durable Object.
-8. OWD records each note as applied only after the canonical write is durable,
+8. MDevolved records each note as applied only after the canonical write is durable,
    then deletes its staging object, publishes a fresh target materialization,
    and reports the verified generation ID. If immediate deletion fails, expiry
    cleanup retries the recorded staging key without rolling back durable data.

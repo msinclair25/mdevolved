@@ -1,17 +1,19 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD6 are complete.<br />
+**Status:** MD1–MD6 are complete. MD7 brand completion is active.<br />
 **Date:** 2026-08-26
 
 ## Milestone boundary
 
-MD0 planning and MD1 through MD6 delivery are complete. The source-neutral
+MD0 planning and MD1 through MD6 delivery are complete. MD7 is the only active
+milestone. The source-neutral
 architecture, compatibility rules, rollout order, security boundaries, and
 independent acceptance decisions below remain explicit. MD5's final candidate
 passed its exact complete gate and authoritative legacy-repository redirect
 check. Its required PR checks, merge, and post-merge `main` health complete the
-recorded delivery workflow. Later product expansion requires a fresh milestone
-and acceptance decision.
+recorded delivery workflow. MD7 completes the human- and agent-facing naming
+transition without changing frozen compatibility identities. Later product
+expansion requires a fresh milestone and acceptance decision.
 
 ## Product promise
 
@@ -306,6 +308,26 @@ recovery, clean upgrade, public-source scan, full repository gate, and deployed
 Community health all pass from the exact candidate. Paid inference and human
 testing may improve confidence but are not release gates.
 
+### MD7 — MDevolved naming completion
+
+**Outcome:** MDevolved is the only product name in normal user and agent
+workflows. OWD appears only inside frozen compatibility identifiers or an
+explicit legacy compatibility explanation.
+
+**Build:** Clean web, marketing, desktop, CLI, Obsidian, MCP guidance, client
+packs, repository instructions, documentation, package descriptions, and
+release metadata. Add a repository-wide allowlist test that rejects new visible
+OWD branding while preserving the existing wire, storage, plugin, update,
+backup, export, deployment, and bookmark identities.
+
+**Acceptance decision:** Close only when a new user can discover, install,
+pair, authorize, resume, collaborate, recover, and revoke through MDevolved
+without encountering OWD as the product name; existing clients require no data
+migration, re-pairing, reconnect, plugin reinstall, bookmark edit, or restored
+authority; the exact candidate passes focused brand/compatibility checks, the
+complete repository gate, cross-platform packaging, independent review, and
+non-deploying release validation.
+
 ## Required verification matrix
 
 - Shared-core contract tests run against in-memory, folder, and Obsidian ports.
@@ -546,3 +568,39 @@ local fixture was deleted. Immutable archived/disconnected provenance remains
 inert and restores no grants, credentials, actors, sessions, leases, devices,
 OAuth state, or other live authority. No npm package, plugin, desktop release,
 GitHub Release, paid service, R3 work, or later milestone was started.
+
+## MD7 local candidate receipt
+
+MD7 completes the human- and agent-facing transition to MDevolved across the
+web app, marketing site, recovery and collaboration workflows, MCP guidance,
+client packs, public documentation, release metadata, and the optional
+Obsidian adapter. Normal workflows use MDevolved, Sources, Workspaces, and
+Projects. The Obsidian product label is **MDevolved Sync for Obsidian**, while
+the generic folder client remains **MDevolved Sync**.
+
+The transition is deliberately additive. It changes no schema, migration,
+stored record, authority boundary, Cloudflare resource, route, package scope,
+MCP tool, plugin identity, pairing scheme, bookmark, updater path, archive
+format, recovery format, or conflict filename. Existing users keep the frozen
+`owd_*`, `owd://*`, `owd-pair`, `.owdignore`, `vaultId`, `@owd/*`,
+`X-OWD-*`, `owd-sync`, backup, snapshot, deployment, and storage identities.
+The phrases `OWD resume project` and `Connect this project to OWD.` remain
+accepted compatibility language, without presenting OWD as the product.
+
+The repository-wide MD7 contract rejects visible OWD branding on normal user,
+agent, contract-error, documentation, plugin, and release surfaces while
+asserting the frozen identities and both current and legacy natural-language
+phrases. Independent review found and drove repairs for generated Albatross
+phrase parity, source-neutral sync guidance, the recovery-key name, public
+documentation, marketing artwork and spelling, consent and recovery labels,
+and the complete Obsidian product name. The exact local candidate passes the
+focused brand, Worker, web, plugin, packaging, browser, compatibility,
+migration, build, public-history, continuity, and non-deploying release gates.
+Validation uses only synthetic or disposable data and projects $0 incremental
+cost.
+
+Local acceptance does not publish the branch. MD7 remains active until the
+candidate is pushed with owner authorization and the configured macOS,
+Windows, and Linux GitHub checks pass on that exact commit. No production
+deployment, migration, package publication, plugin release, paid service, or
+external resource mutation is part of this local receipt.
