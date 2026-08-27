@@ -10,7 +10,7 @@ import {
   sourceIdentityForCanonicalRoot,
   type FolderSource,
 } from "../src/index";
-import { type CredentialRecord } from "@owd/yaos-core";
+import { type CredentialRecord } from "@mdevolved/yaos-core";
 
 const roots: string[] = [];
 const stateDirectories: string[] = [];

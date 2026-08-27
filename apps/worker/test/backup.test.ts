@@ -1,5 +1,6 @@
 import {
-  OWD_BACKUP_MAGIC,
+  MDEVOLVED_BACKUP_FORMAT,
+  MDEVOLVED_BACKUP_MAGIC,
   apiErrorSchema,
   backupArchiveManifestSchema,
   backupArtifactSchema,
@@ -11,7 +12,7 @@ import {
   restoreApplyResponseSchema,
   restoreJobSchema,
   type BackupArchiveManifest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   Decrypter,
   generateX25519Identity,
@@ -119,7 +120,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
     now,
   );
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -131,7 +132,7 @@ function ownerHeaders(
   return {
     Cookie: session.cookie,
     Origin: ORIGIN,
-    "X-OWD-CSRF": session.csrf,
+    "X-MDevolved-CSRF": session.csrf,
     ...(json ? { "Content-Type": "application/json" } : {}),
   };
 }
@@ -415,10 +416,11 @@ describe("age-encrypted backups", () => {
       ),
     );
     const parsed = parsePlaintext(plaintext);
-    expect(parsed.magic).toBe(OWD_BACKUP_MAGIC);
+    expect(parsed.magic).toBe(MDEVOLVED_BACKUP_MAGIC);
     expect(parsed.offset).toBe(plaintext.byteLength);
     expect(parsed.manifest).toMatchObject({
       backupId: created.backupId,
+      format: MDEVOLVED_BACKUP_FORMAT,
       generation,
       includedSections: ["notes"],
       vaultName: "Disposable recovery vault",

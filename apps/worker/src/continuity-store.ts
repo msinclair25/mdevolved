@@ -10,7 +10,7 @@ import {
   type ContinuityPoint,
   type ProjectLeadIdentity,
   type ProjectLeadLease,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { sha256Hex, sha256HexBytes } from "./security";
 
 const encoder = new TextEncoder();

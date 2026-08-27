@@ -9,7 +9,7 @@ import {
   setupStatusSchema,
   type ProjectInitializationConsentContext,
   type SetupStatus,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   browserSupportsWebAuthn,
   startAuthentication,
@@ -56,7 +56,7 @@ async function postJson(
     headers: {
       Accept: "application/json",
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      "X-OWD-CSRF": csrf,
+      "X-MDevolved-CSRF": csrf,
     },
     method: "POST",
   });
@@ -327,10 +327,10 @@ export function ProjectInitialize() {
             <div className="client-warning" role="note">
               <strong>Later sessions resume the same Project</strong>
               <span>
-                MDevolved should resume from the local <code>.owdignore</code>{" "}
-                receipt automatically. If a fresh session misses that step, say{" "}
-                <q>MDevolved resume project</q>. No reconnect or new approval is
-                required.
+                MDevolved should resume from the local{" "}
+                <code>.mdevolvedignore</code> receipt automatically. If a fresh
+                session misses that step, say <q>MDevolved resume project</q>.
+                No reconnect or new approval is required.
               </span>
             </div>
             <details className="consent-advanced">
@@ -650,7 +650,7 @@ export function ProjectInitialize() {
                       <small>
                         Use this for personal notes, drafts, archives, or other
                         Markdown mixed into an included folder. This policy
-                        becomes the Project&apos;s .owdignore file.
+                        becomes the Project&apos;s .mdevolvedignore file.
                       </small>
                     </label>
                   </>

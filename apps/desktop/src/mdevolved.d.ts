@@ -4,7 +4,7 @@ declare module "mdevolved" {
     FolderReconciliationResult,
     MarkdownRemotePort,
     SourceDescriptor,
-  } from "@owd/yaos-core";
+  } from "@mdevolved/yaos-core";
 
   export const CLIENT_VERSION = "mdevolved-cli-alpha.1";
 

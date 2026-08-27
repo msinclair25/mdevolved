@@ -9,17 +9,17 @@ import type {
   SourceDeviceEnrollment,
   SourceDescriptor,
   VaultSummary,
-} from "@owd/contracts";
-import { obsidianMindRuntimeProfileSchema } from "@owd/contracts";
+} from "@mdevolved/contracts";
+import { obsidianMindRuntimeProfileSchema } from "@mdevolved/contracts";
 import {
   sourceDescriptorInputSchema,
   sourceDescriptorSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   SERVER_MAX_SCHEMA_VERSION,
   SERVER_MIN_SCHEMA_VERSION,
   SERVER_VERSION,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import { randomToken, sha256Hex } from "./security";
 import {
   SourceDeviceError,
@@ -766,17 +766,25 @@ export async function createPairingGrant(
     return null;
   }
 
-  const pairingUrl = new URL("owd-pair://connect");
+  const pairingUrl = new URL("mdevolved://connect");
   pairingUrl.searchParams.set("deployment", input.deploymentUrl);
   pairingUrl.searchParams.set("grant", grant);
-  const obsidianUrl = new URL("obsidian://owd-pair");
+  const obsidianUrl = new URL("obsidian://mdevolved-pair");
   obsidianUrl.searchParams.set("deployment", input.deploymentUrl);
   obsidianUrl.searchParams.set("grant", grant);
+  const legacyPairingUrl = new URL("owd-pair://connect");
+  legacyPairingUrl.searchParams.set("deployment", input.deploymentUrl);
+  legacyPairingUrl.searchParams.set("grant", grant);
+  const legacyObsidianUrl = new URL("obsidian://owd-pair");
+  legacyObsidianUrl.searchParams.set("deployment", input.deploymentUrl);
+  legacyObsidianUrl.searchParams.set("grant", grant);
 
   return {
     vaultId,
     pairingUrl: pairingUrl.toString(),
     obsidianUrl: obsidianUrl.toString(),
+    legacyPairingUrl: legacyPairingUrl.toString(),
+    legacyObsidianUrl: legacyObsidianUrl.toString(),
     expiresAt,
   };
 }

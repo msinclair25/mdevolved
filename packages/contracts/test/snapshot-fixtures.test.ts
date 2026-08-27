@@ -3,7 +3,7 @@ import {
   snapshotExportIndexSchema,
   snapshotIntelligenceManifestSchema,
   snapshotManifestSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 import indexFixture from "../fixtures/owd-snapshot-v2-index.json";
 import manifestFixture from "../fixtures/owd-snapshot-v2-manifest.json";

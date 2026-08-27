@@ -1,5 +1,5 @@
 import {
-  OWD_PROJECT_CONTEXT_FORMAT,
+  MDEVOLVED_PROJECT_CONTEXT_FORMAT,
   VaultPathError,
   canonicalizeCollaborationJson,
   collaborationScopeSchema,
@@ -12,7 +12,7 @@ import {
   type ProjectContextPolicy,
   type ProjectInitializationStatusResponse,
   type StoredProjectSetupDraft,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { ActiveAgentGrant } from "./agent-access-store";
 import {
   agentVisibilityForGrant,
@@ -161,7 +161,7 @@ function fromRow(row: InitializationRow): StoredProjectInitialization {
           ...rawDraft,
           contextPolicy: {
             excludePaths: [],
-            format: OWD_PROJECT_CONTEXT_FORMAT,
+            format: MDEVOLVED_PROJECT_CONTEXT_FORMAT,
             includePaths: [row.folder_path],
           },
         }

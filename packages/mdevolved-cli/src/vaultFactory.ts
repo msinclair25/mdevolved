@@ -4,7 +4,7 @@ import type { VaultSyncSettings } from "../../obsidian-plugin/vendor/yaos-src/se
 import type { PairingConnection } from "./pairing.js";
 import type { VaultSyncLike } from "./runtime.js";
 import * as Y from "yjs";
-import { OWD_SYNC_COMPAT_VERSION } from "./pairing.js";
+import { MDEVOLVED_SYNC_COMPAT_VERSION } from "./pairing.js";
 
 interface SocketTicket {
   value: string;
@@ -105,7 +105,7 @@ export async function confirmSourcePublication(
     `${connection.host.replace(/\/$/u, "")}/api/vaults/${encodeURIComponent(connection.vaultId)}/sync-confirmation`,
     {
       body: JSON.stringify({
-        pluginVersion: OWD_SYNC_COMPAT_VERSION,
+        pluginVersion: MDEVOLVED_SYNC_COMPAT_VERSION,
         schemaVersion: 3,
         stateVector: Buffer.from(stateVector).toString("base64url"),
       }),

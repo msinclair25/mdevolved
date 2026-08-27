@@ -3,7 +3,7 @@ import {
   encodeSyncUpdateFrame,
   isStateVectorGe,
   parseSvEchoMessage,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import {
   SELF,
   env,

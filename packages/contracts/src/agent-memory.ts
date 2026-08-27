@@ -55,6 +55,34 @@ export const agentMemoryCapabilityProfileSchema = z
   })
   .strict();
 
+export const mdevolvedAgentMemoryCapabilityProfileSchema = z
+  .object({
+    format: z.literal("mdevolved-agent-memory-capabilities-v3"),
+    mcpProtocolRevision: z.literal("2025-11-25"),
+    mcpTools: z.tuple([
+      z.literal("mdevolved_resume"),
+      z.literal("mdevolved_find"),
+      z.literal("mdevolved_checkpoint"),
+      z.literal("mdevolved_get_skill"),
+    ]),
+    portableRecovery: z
+      .object({
+        maxTotalObjectsWhenProfilePresent: z.literal(
+          MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS,
+        ),
+        maxWorkingProfileRecordsPerRestore: z.literal(
+          MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS,
+        ),
+        restoresAuthority: z.literal(false),
+      })
+      .strict(),
+    requiredScope: z.literal("project.read"),
+    resumeContextVersions: z.tuple([z.literal(1), z.literal(2)]),
+    schemaVersion: z.literal(3),
+    workingProfileSchemaVersion: z.literal(1),
+  })
+  .strict();
+
 export const owdResumeRequestSchema = z
   .object({
     acceptedContextVersions: z
@@ -409,17 +437,55 @@ export const owdCheckpointResponseSchema = z
   })
   .strict();
 
+export const mdevolvedResumeRequestSchema = owdResumeRequestSchema;
+export const mdevolvedResumeResponseSchema = owdResumeCompatibleResponseSchema;
+export const mdevolvedFindRequestSchema = owdFindRequestSchema;
+export const mdevolvedFindResponseSchema = owdFindResponseSchema;
+export const mdevolvedGetSkillRequestSchema = owdGetSkillRequestSchema;
+export const mdevolvedGetSkillResponseSchema = owdGetSkillResponseSchema;
+export const mdevolvedCheckpointRequestSchema = owdCheckpointRequestSchema;
+export const mdevolvedCheckpointResponseSchema = owdCheckpointResponseSchema;
+
 export type AgentMemoryContextMode = z.infer<
   typeof agentMemoryContextModeSchema
 >;
 export type AgentMemoryContext = z.infer<typeof agentMemoryContextSchema>;
-export type OwdResumeRequest = z.infer<typeof owdResumeRequestSchema>;
+export type MDevolvedResumeRequest = z.infer<
+  typeof mdevolvedResumeRequestSchema
+>;
+export type MDevolvedResumeResponse = z.infer<
+  typeof mdevolvedResumeResponseSchema
+>;
+export type MDevolvedFindRequest = z.infer<typeof mdevolvedFindRequestSchema>;
+export type MDevolvedFindResponse = z.infer<typeof mdevolvedFindResponseSchema>;
+export type MDevolvedGetSkillRequest = z.infer<
+  typeof mdevolvedGetSkillRequestSchema
+>;
+export type MDevolvedGetSkillResponse = z.infer<
+  typeof mdevolvedGetSkillResponseSchema
+>;
+export type MDevolvedCheckpointRequest = z.infer<
+  typeof mdevolvedCheckpointRequestSchema
+>;
+export type MDevolvedCheckpointResponse = z.infer<
+  typeof mdevolvedCheckpointResponseSchema
+>;
+
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdResumeRequest = MDevolvedResumeRequest;
+/** @deprecated Use the MDevolved-prefixed type. */
 export type OwdResumeResponse = z.infer<
   typeof owdResumeCompatibleResponseSchema
 >;
-export type OwdFindRequest = z.infer<typeof owdFindRequestSchema>;
-export type OwdFindResponse = z.infer<typeof owdFindResponseSchema>;
-export type OwdGetSkillRequest = z.infer<typeof owdGetSkillRequestSchema>;
-export type OwdGetSkillResponse = z.infer<typeof owdGetSkillResponseSchema>;
-export type OwdCheckpointRequest = z.infer<typeof owdCheckpointRequestSchema>;
-export type OwdCheckpointResponse = z.infer<typeof owdCheckpointResponseSchema>;
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdFindRequest = MDevolvedFindRequest;
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdFindResponse = MDevolvedFindResponse;
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdGetSkillRequest = MDevolvedGetSkillRequest;
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdGetSkillResponse = MDevolvedGetSkillResponse;
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdCheckpointRequest = MDevolvedCheckpointRequest;
+/** @deprecated Use the MDevolved-prefixed type. */
+export type OwdCheckpointResponse = MDevolvedCheckpointResponse;

@@ -9,7 +9,8 @@ product model around them.
 
 An owner can:
 
-1. stay in the project folder, Obsidian vault, and agent client already in use;
+1. stay in the project folder, Markdown Workspace, or Obsidian Workspace and
+   agent client already in use;
 2. say **Connect this project to MDevolved**;
 3. give the agent one bounded, source-cited Work Packet;
 4. retain an immutable Artifact, Handoff, or Review from that agent;
@@ -25,8 +26,8 @@ record hidden conversations, or treat model confidence as owner approval.
 
 | Surface           | Owns                                                                                       | Does not own                                   |
 | ----------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| MDevolved Sync    | Transport for the explicitly paired Obsidian vault                                         | Agent authorization or Project collaboration   |
-| MDevolved MCP     | Scoped vault reads and append-only Project collaboration                                   | A model runtime or local filesystem authority  |
+| MDevolved Sync    | Transport for the explicitly paired Markdown Source                                        | Agent authorization or Project collaboration   |
+| MDevolved MCP     | Scoped Source reads and append-only Project collaboration                                  | A model runtime or local filesystem authority  |
 | MDevolved website | Setup, consent, provenance, owner Decisions, revocation, recovery, and advanced inspection | The owner's daily project workspace            |
 | MDevolved Project | Durable scope, evidence, attempts, handoffs, reviews, Decisions, and portable continuity   | An agent's hidden session or provider identity |
 
@@ -40,7 +41,7 @@ owner through daily renewal.
 
 | Record                  | Purpose                                                                           |
 | ----------------------- | --------------------------------------------------------------------------------- |
-| `KnowledgeSpaceVersion` | Immutable evaluated vault and folder membership                                   |
+| `KnowledgeSpaceVersion` | Immutable evaluated Source and folder membership                                  |
 | `Project`               | Long-lived owner objective and context boundary                                   |
 | `WorkItem`              | One bounded objective and definition of done                                      |
 | `WorkPacket`            | Frozen input for one attempt                                                      |

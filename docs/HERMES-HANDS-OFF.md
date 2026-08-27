@@ -1,11 +1,11 @@
 # Hermes hands-off lead adapter
 
-**Format:** `owd-hermes-hands-off-adapter-v1`
+**Format:** `mdevolved-hermes-hands-off-adapter-v1`
 
 **Status:** inert, script-free guidance over the generic MDevolved MCP services
 
 The same guidance is discoverable as the MCP resource
-`owd://adapters/hermes/hands-off/v1`.
+`mdevolved://adapters/hermes/hands-off/v1`.
 
 This adapter gives Hermes no executable code, credentials, provider state, or
 additional authority. It describes how an already authorized Project lead can
@@ -20,7 +20,7 @@ review, exception, and checkpoint records submitted by an authorized client.
 ## Preconditions
 
 - Resume the exact Project and claim its fenced lead lease.
-- Read `owd://collaboration/lead-operation-capabilities/v1`; stop if the client
+- Read `mdevolved://collaboration/lead-operation-capabilities/v1`; stop if the client
   does not understand every required format or tool.
 - Treat the standing Project policy as a ceiling. It cannot widen the Project,
   vault, folder, grant, or local filesystem boundary.
@@ -48,7 +48,7 @@ review, exception, and checkpoint records submitted by an authorized client.
 8. Call `complete_work_item` only after an independent passing review and when
    `list_project_exceptions` has no blocking result.
 
-For a fresh Hermes task, call `owd_resume` first and continue from that bounded
+For a fresh Hermes task, call `mdevolved_resume` first and continue from that bounded
 brief. Do not paste the prior Hermes prompt or session. If Hermes is operating
 in independent mode, the context intentionally omits peer conclusions; a later
 owner-authorized synthesis can compare separately attributable results.

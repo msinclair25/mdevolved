@@ -11,10 +11,11 @@ describe("MDevolved Sync for Obsidian setup guide", () => {
   it("leads with one direct local install action and keeps BRAT secondary", () => {
     const html = render();
 
+    expect(html).toContain('id="mdevolved-sync-installer"');
     expect(html).toContain('id="owd-sync-installer"');
     expect(html).toContain("Private trial · direct local install");
     expect(html).toContain(
-      "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
+      "Choose vault and install MDevolved Sync for Obsidian 0.2.0-alpha.1",
     );
     expect(html.match(/<button/g)).toHaveLength(1);
     expect(html).toContain("Community plugins");
@@ -31,17 +32,17 @@ describe("MDevolved Sync for Obsidian setup guide", () => {
     );
     expect(html).toContain("obsidian://show-plugin?id=obsidian42-brat");
     expect(html).toContain(
-      "obsidian://brat?plugin=msinclair25/owd-sync&amp;version=0.1.7",
+      "obsidian://brat?plugin=msinclair25/mdevolved-sync&amp;version=0.2.0-alpha.1",
     );
     expect(html).toContain("This link opens BRAT");
     expect(html).toContain("it does not finish the install");
     expect(html).toContain(
       "BRAT: Plugins: Add a beta plugin for testing (with or without version)",
     );
-    expect(html).toContain("https://github.com/msinclair25/owd-sync");
+    expect(html).toContain("https://github.com/msinclair25/mdevolved-sync");
     expect(html).toContain("Use either the direct installer or BRAT, not both");
-    expect(html).toContain("releases/tag/0.1.7");
-    expect(html).toContain("owd-sync-0.1.7.zip");
+    expect(html).toContain("releases/tag/mdevolved-sync-v0.2.0-alpha.1");
+    expect(html).toContain("mdevolved-sync-0.2.0-alpha.1.zip");
     expect(html).toContain("not a normal tester installation path");
   });
 

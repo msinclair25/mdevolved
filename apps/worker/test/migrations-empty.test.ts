@@ -9,7 +9,7 @@ import {
 } from "./migration-fixture";
 
 describe("D1 migration chain from empty", () => {
-  it("applies every migration from 0001 through 0038", async () => {
+  it("applies every migration from 0001 through 0039", async () => {
     await applyMigrations(env.DB, migrations);
 
     const rows = await env.DB.prepare(
@@ -117,6 +117,21 @@ describe("D1 migration chain from empty", () => {
        WHERE name = 'solo_verified_allowed'`,
     ).first<{ dflt_value: string }>();
     expect(soloPolicyColumn?.dflt_value).toBe("0");
+    for (const table of ["backup_artifacts", "workspace_snapshots"]) {
+      const portableFormatColumn = await env.DB.prepare(
+        `SELECT dflt_value, "notnull" AS is_not_null FROM pragma_table_info(?)
+         WHERE name = 'portable_format_version'`,
+      )
+        .bind(table)
+        .first<{ dflt_value: string; is_not_null: number }>();
+      expect(portableFormatColumn).toMatchObject({
+        dflt_value:
+          table === "backup_artifacts"
+            ? "'owd-backup-v1'"
+            : "'owd-snapshot-v2'",
+        is_not_null: 1,
+      });
+    }
     const historicalGrantIndex = await env.DB.prepare(
       `SELECT name FROM sqlite_master
        WHERE type = 'index'

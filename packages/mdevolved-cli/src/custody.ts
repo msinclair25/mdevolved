@@ -3,7 +3,10 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
-import type { CredentialCustodyPort, CredentialRecord } from "@owd/yaos-core";
+import type {
+  CredentialCustodyPort,
+  CredentialRecord,
+} from "@mdevolved/yaos-core";
 import type { PairingConnection } from "./pairing.js";
 
 const MAX_SECRET_BYTES = 16 * 1024;

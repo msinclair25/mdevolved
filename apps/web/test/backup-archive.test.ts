@@ -1,8 +1,10 @@
 import {
+  MDEVOLVED_BACKUP_FORMAT,
+  MDEVOLVED_BACKUP_MAGIC,
   OWD_BACKUP_FORMAT,
   OWD_BACKUP_MAGIC,
   type BackupArchiveManifest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   Encrypter,
   generateX25519Identity,
@@ -45,7 +47,9 @@ async function readAll(
   return value;
 }
 
-async function createFixture() {
+async function createFixture(
+  format: BackupArchiveManifest["format"] = MDEVOLVED_BACKUP_FORMAT,
+) {
   const content = "# Locally verified\nprivate";
   const contentBytes = encoder.encode(content);
   const backupId = crypto.randomUUID();
@@ -61,7 +65,7 @@ async function createFixture() {
       "pending-agent-proposals",
       "unknown-obsidian-plugin-data",
     ],
-    format: OWD_BACKUP_FORMAT,
+    format,
     generation: {
       completedAt: 1,
       createdAt: 1,
@@ -91,7 +95,9 @@ async function createFixture() {
     vaultName: "Local recovery fixture",
   };
   const plaintext = new Blob([
-    OWD_BACKUP_MAGIC,
+    format === MDEVOLVED_BACKUP_FORMAT
+      ? MDEVOLVED_BACKUP_MAGIC
+      : OWD_BACKUP_MAGIC,
     JSON.stringify(manifest),
     "\n",
     content,
@@ -119,6 +125,16 @@ describe("browser backup inspection", () => {
     );
     expect(manifest).toEqual(fixture.manifest);
     expect(notes).toEqual([["Safe.md", fixture.content]]);
+  });
+
+  it("continues to inspect legacy OWD archives", async () => {
+    const fixture = await createFixture(OWD_BACKUP_FORMAT);
+    await expect(
+      inspectBackupArchive(
+        new Blob([fixture.ciphertext.buffer]),
+        fixture.identity,
+      ),
+    ).resolves.toEqual(fixture.manifest);
   });
 
   it("rejects a wrong identity, tampering, and truncated ciphertext", async () => {

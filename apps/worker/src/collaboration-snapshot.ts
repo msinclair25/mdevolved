@@ -15,7 +15,7 @@ import {
   type SnapshotIntelligenceManifest,
   type SnapshotIntelligenceSummary,
   workingProfileRecordTypeSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 
 export type IntelligenceSelection =
   "approved" | "approved-and-unvetted" | "none";

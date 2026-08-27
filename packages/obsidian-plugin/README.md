@@ -5,11 +5,14 @@ MDevolved Sync for Obsidian is the optional Obsidian source adapter for
 vault you explicitly opened to an owner-controlled MDevolved deployment for sync,
 search, encrypted snapshots, and recovery.
 
-Existing installations keep the `owd-sync` plugin ID, settings, `owd-pair`
-deep link, BRAT repository, release tags, archive names, and updater path. The
-display-name transition requires no reinstall or re-pairing.
+New installations use the canonical `mdevolved-sync` plugin ID, release
+repository, `mdevolved-sync-v*` tags, and `mdevolved-sync-*.zip` archives.
+Existing `owd-sync` installations are a legacy compatibility input: they keep
+their own settings and authority, and are never silently copied, migrated, or
+re-paired. To move to the canonical adapter, explicitly install it in the
+intended vault and approve a new pairing request.
 
-> **Invited family test:** the compatibility package `0.1.7` is available through MDevolved's
+> **Invited family test:** the canonical package `0.2.0-alpha.1` is available through MDevolved's
 > temporary direct desktop installer because it is not yet listed in Obsidian
 > Community Plugins. The invited tester opens their private cell invitation;
 > the pre-provisioned MDevolved dashboard provides the version-matched installer.
@@ -23,10 +26,10 @@ display-name transition requires no reinstall or re-pairing.
 3. Fully quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q**.
    Closing the macOS window is not enough.
 4. Open **Sources**, choose **Choose vault and install MDevolved Sync for Obsidian
-   0.1.7**, and select the intended vault root containing `.obsidian` in Chrome
+   0.2.0-alpha.1**, and select the intended vault root containing `.obsidian` in Chrome
    or Edge's native folder picker. Do not select `.obsidian` itself; choose
    **Allow** if the browser asks for write access.
-5. Reopen Obsidian and confirm the selected vault shows MDevolved Sync for Obsidian `0.1.7`
+5. Reopen Obsidian and confirm the selected vault shows MDevolved Sync for Obsidian `0.2.0-alpha.1`
    enabled. Stop if the version differs.
 
 The dashboard verifies the published release, writes only the MDevolved Sync for Obsidian files
@@ -54,13 +57,15 @@ currently open vault and waits for approval. Pairing uses a ten-minute
 single-use grant and does not expose the stored vault credential in the
 dashboard. If the handoff is blocked, use MDevolved's **Manual fallback**, copy
 the request, run **MDevolved Sync for Obsidian: Pair this vault with MDevolved**, and paste
-it. Existing `owd-pair` links remain accepted.
+it. Existing `owd-pair` links remain accepted as a legacy input, but the
+canonical adapter always requires the same explicit owner disclosure before
+storing its own connection.
 
 ## Diagnostic package
 
-Download `owd-sync-<version>.zip` and `checksums.txt` from the matching
-[MDevolved Sync for Obsidian 0.1.7 GitHub Release](https://github.com/msinclair25/owd-sync/releases/tag/0.1.7).
-Verify the checksum, then install the complete `owd-sync` directory as one
+Download `mdevolved-sync-<version>.zip` and `checksums.txt` from the matching
+[MDevolved Sync for Obsidian release](https://github.com/msinclair25/mdevolved-sync/releases).
+Verify the checksum, then install the complete `mdevolved-sync` directory as one
 version-matched unit. Do not mix `main.js`, `manifest.json`, or `styles.css`
 from different releases. If both direct install and BRAT are blocked, stop the
 acceptance run. The ZIP is for separate maintainer diagnosis, not a substitute

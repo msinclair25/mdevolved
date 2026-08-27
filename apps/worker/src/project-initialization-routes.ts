@@ -4,7 +4,7 @@ import {
   projectInitializationDecisionRequestSchema,
   projectInitializationDecisionResponseSchema,
   vaultIdSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { Hono } from "hono";
 import { readActiveAgentGrant } from "./agent-access-store";
 import { ApiProblem } from "./api-problem";

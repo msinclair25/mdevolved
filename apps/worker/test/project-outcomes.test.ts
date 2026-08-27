@@ -1,4 +1,4 @@
-import { projectOutcomeResponseSchema } from "@owd/contracts";
+import { projectOutcomeResponseSchema } from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -204,7 +204,7 @@ async function ownerCookie(): Promise<string> {
     crypto.randomUUID(),
     now,
   );
-  return `__Host-owd_session=${session.token}`;
+  return `__Host-mdevolved_session=${session.token}`;
 }
 
 beforeAll(async () => applyMigrations(env.DB, migrations));

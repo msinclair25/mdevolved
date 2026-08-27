@@ -1,7 +1,7 @@
 import {
   ownerDiagnosticsResponseSchema,
   setupReadinessSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -133,7 +133,7 @@ async function createOwnerSession(): Promise<string> {
     crypto.randomUUID(),
     now,
   );
-  return `__Host-owd_session=${session.token}`;
+  return `__Host-mdevolved_session=${session.token}`;
 }
 
 async function createVault(displayName: string, createdAt: number) {

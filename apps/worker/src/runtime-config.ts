@@ -1,4 +1,4 @@
-import type { ApiError } from "@owd/contracts";
+import type { ApiError } from "@mdevolved/contracts";
 
 export type DeploymentMode = "community" | "managed";
 

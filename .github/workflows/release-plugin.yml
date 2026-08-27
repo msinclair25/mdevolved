@@ -1,15 +1,15 @@
-name: Release MDevolved Sync for Obsidian
+name: Package MDevolved Sync for Obsidian
 
 on:
   push:
     tags:
-      - "owd-sync-v*"
+      - "mdevolved-sync-v*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  package-release-candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -30,19 +30,24 @@ jobs:
       - run: pnpm check
       - run: pnpm test
       - run: pnpm package:plugin
-      - run: git merge-base --is-ancestor HEAD origin/main
+      - name: Require the tagged commit on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
 
-      - name: Publish plugin assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "$GITHUB_REF_NAME"
-          packages/obsidian-plugin/release/LICENSE
-          packages/obsidian-plugin/release/UPSTREAM.md
-          packages/obsidian-plugin/release/main.js
-          packages/obsidian-plugin/release/manifest.json
-          packages/obsidian-plugin/release/styles.css
-          packages/obsidian-plugin/release/checksums.txt
-          packages/obsidian-plugin/release/owd-sync-*.zip
-          --generate-notes
-          --title "MDevolved Sync for Obsidian $GITHUB_REF_NAME"
+      # This monorepo cannot use its automatic GITHUB_TOKEN to publish into
+      # the separate canonical distribution repository. Keep this workflow
+      # read-only and promote the verified artifact to msinclair25/mdevolved-sync
+      # only through the owner-authorized release procedure.
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: mdevolved-sync-${{ github.ref_name }}
+          path: |
+            packages/obsidian-plugin/release/LICENSE
+            packages/obsidian-plugin/release/UPSTREAM.md
+            packages/obsidian-plugin/release/main.js
+            packages/obsidian-plugin/release/manifest.json
+            packages/obsidian-plugin/release/styles.css
+            packages/obsidian-plugin/release/checksums.txt
+            packages/obsidian-plugin/release/mdevolved-sync-*.zip
+          if-no-files-found: error

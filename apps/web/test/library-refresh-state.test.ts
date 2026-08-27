@@ -1,4 +1,4 @@
-import type { MaterializationGeneration } from "@owd/contracts";
+import type { MaterializationGeneration } from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 import {
   beginLibraryRefresh,

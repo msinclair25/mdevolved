@@ -57,10 +57,10 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@owd/folder-adapter':
+      '@mdevolved/folder-adapter':
         specifier: workspace:*
         version: link:../../packages/folder-adapter
-      '@owd/yaos-core':
+      '@mdevolved/yaos-core':
         specifier: workspace:*
         version: link:../../packages/yaos-core
       mdevolved:
@@ -81,10 +81,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@owd/client-packs':
+      '@mdevolved/client-packs':
         specifier: workspace:*
         version: link:../../packages/client-packs
-      '@owd/contracts':
+      '@mdevolved/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@simplewebauthn/browser':
@@ -115,21 +115,21 @@ importers:
       '@cloudflare/workers-oauth-provider':
         specifier: 0.10.1
         version: 0.10.1
+      '@mdevolved/client-packs':
+        specifier: workspace:*
+        version: link:../../packages/client-packs
+      '@mdevolved/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@mdevolved/yaos-core':
+        specifier: workspace:*
+        version: link:../../packages/yaos-core
       '@modelcontextprotocol/sdk':
         specifier: 1.30.0
         version: 1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3)
       '@modelcontextprotocol/server':
         specifier: 2.0.0
         version: 2.0.0
-      '@owd/client-packs':
-        specifier: workspace:*
-        version: link:../../packages/client-packs
-      '@owd/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@owd/yaos-core':
-        specifier: workspace:*
-        version: link:../../packages/yaos-core
       '@simplewebauthn/server':
         specifier: 13.3.2
         version: 13.3.2
@@ -175,16 +175,16 @@ importers:
 
   packages/folder-adapter:
     dependencies:
-      '@owd/yaos-core':
+      '@mdevolved/yaos-core':
         specifier: workspace:*
         version: link:../yaos-core
 
   packages/mdevolved-cli:
     devDependencies:
-      '@owd/folder-adapter':
+      '@mdevolved/folder-adapter':
         specifier: workspace:*
         version: link:../folder-adapter
-      '@owd/yaos-core':
+      '@mdevolved/yaos-core':
         specifier: workspace:*
         version: link:../yaos-core
       '@types/node':
@@ -208,7 +208,7 @@ importers:
 
   packages/obsidian-plugin:
     dependencies:
-      '@owd/yaos-core':
+      '@mdevolved/yaos-core':
         specifier: workspace:*
         version: link:../yaos-core
       fast-diff:
@@ -242,7 +242,7 @@ importers:
       '@codemirror/view':
         specifier: 6.38.6
         version: 6.38.6
-      '@owd/folder-adapter':
+      '@mdevolved/folder-adapter':
         specifier: workspace:*
         version: link:../folder-adapter
       esbuild:

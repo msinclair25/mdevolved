@@ -6,7 +6,7 @@ import {
   healthResponseSchema,
   registrationOptionsSchema,
   setupStatusSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -59,7 +59,7 @@ async function issueCsrf(
   const result = csrfResponseSchema.parse(await response.json());
 
   return {
-    cookie: cookieFrom(response, "__Host-owd_csrf"),
+    cookie: cookieFrom(response, "__Host-mdevolved_csrf"),
     token: result.csrfToken,
   };
 }
@@ -72,7 +72,7 @@ function mutationHeaders(
   return {
     Cookie: [csrf.cookie, ...extraCookies].join("; "),
     Origin: origin,
-    "X-OWD-CSRF": csrf.token,
+    "X-MDevolved-CSRF": csrf.token,
   };
 }
 
@@ -105,7 +105,7 @@ describe("OWD Worker", () => {
       response.headers.get("content-security-policy-report-only"),
     ).not.toContain("'unsafe-inline'");
     expect(response.headers.get("content-security-policy")).toBeNull();
-    expect(result.service).toBe("owd-platform");
+    expect(result.service).toBe("mdevolved");
   });
 
   it("does not run release-prerequisite collaboration migrations during ordinary API traffic", async () => {
@@ -183,7 +183,7 @@ describe("OWD Worker", () => {
       {
         headers: {
           Cookie: csrf.cookie,
-          "X-OWD-CSRF": csrf.token,
+          "X-MDevolved-CSRF": csrf.token,
         },
         method: "POST",
       },
@@ -209,6 +209,40 @@ describe("OWD Worker", () => {
     expect(missingOrigin.status).toBe(403);
     expect(crossOrigin.status).toBe(403);
     expect(missingCsrf.status).toBe(403);
+  });
+
+  it("accepts matching legacy CSRF identity and denies conflicting aliases", async () => {
+    const csrf = await issueCsrf();
+    const legacyCookie = csrf.cookie.replace(
+      "__Host-mdevolved_csrf=",
+      "__Host-owd_csrf=",
+    );
+    const legacy = await exports.default.fetch(
+      `${ORIGIN}/api/auth/register/options`,
+      {
+        headers: {
+          Cookie: legacyCookie,
+          Origin: ORIGIN,
+          "X-OWD-CSRF": csrf.token,
+        },
+        method: "POST",
+      },
+    );
+    const conflicting = await exports.default.fetch(
+      `${ORIGIN}/api/auth/register/options`,
+      {
+        headers: {
+          Cookie: `${csrf.cookie}; __Host-owd_csrf=conflicting-token`,
+          Origin: ORIGIN,
+          "X-MDevolved-CSRF": csrf.token,
+          "X-OWD-CSRF": "conflicting-token",
+        },
+        method: "POST",
+      },
+    );
+
+    expect(legacy.status).toBe(200);
+    expect(conflicting.status).toBe(403);
   });
 
   it("rate-limits repeated authentication mutations without storing raw addresses", async () => {
@@ -254,7 +288,10 @@ describe("OWD Worker", () => {
     const registrationOptions = registrationOptionsSchema.parse(
       await optionsResponse.json(),
     );
-    const flowCookie = cookieFrom(optionsResponse, "__Host-owd_auth_flow");
+    const flowCookie = cookieFrom(
+      optionsResponse,
+      "__Host-mdevolved_auth_flow",
+    );
     const fixture = await createRegistrationFixture(
       registrationOptions,
       ORIGIN,
@@ -278,7 +315,10 @@ describe("OWD Worker", () => {
     expect(verifyResponse.status).toBe(200);
     expect(verified.authenticated).toBe(true);
 
-    const sessionCookie = cookieFrom(verifyResponse, "__Host-owd_session");
+    const sessionCookie = cookieFrom(
+      verifyResponse,
+      "__Host-mdevolved_session",
+    );
     const sessionToken = sessionCookie.split("=")[1] ?? "";
     const storedSession = await env.DB.prepare(
       "SELECT token_hash FROM sessions",
@@ -331,7 +371,7 @@ describe("OWD Worker", () => {
     );
     const loginFlowCookie = cookieFrom(
       loginOptionsResponse,
-      "__Host-owd_auth_flow",
+      "__Host-mdevolved_auth_flow",
     );
     const authenticationResponse = await createAuthenticationFixture(
       fixture.passkey,
@@ -388,7 +428,7 @@ describe("OWD Worker", () => {
         body: JSON.stringify(firstFixture.response),
         headers: {
           ...mutationHeaders(registrationCsrf, [
-            cookieFrom(firstOptionsResponse, "__Host-owd_auth_flow"),
+            cookieFrom(firstOptionsResponse, "__Host-mdevolved_auth_flow"),
           ]),
           "Content-Type": "application/json",
         },
@@ -397,7 +437,7 @@ describe("OWD Worker", () => {
     );
     expect(firstVerify.status).toBe(200);
 
-    const sessionCookie = cookieFrom(firstVerify, "__Host-owd_session");
+    const sessionCookie = cookieFrom(firstVerify, "__Host-mdevolved_session");
     const backupCsrf = await issueCsrf(sessionCookie);
     const backupOptionsResponse = await exports.default.fetch(
       `${ORIGIN}/api/auth/passkeys/register/options`,
@@ -424,7 +464,7 @@ describe("OWD Worker", () => {
         headers: {
           ...mutationHeaders(backupCsrf, [
             sessionCookie,
-            cookieFrom(backupOptionsResponse, "__Host-owd_auth_flow"),
+            cookieFrom(backupOptionsResponse, "__Host-mdevolved_auth_flow"),
           ]),
           "Content-Type": "application/json",
         },
@@ -475,7 +515,7 @@ describe("OWD Worker", () => {
         body: JSON.stringify(backupAuthentication),
         headers: {
           ...mutationHeaders(loginCsrf, [
-            cookieFrom(loginOptionsResponse, "__Host-owd_auth_flow"),
+            cookieFrom(loginOptionsResponse, "__Host-mdevolved_auth_flow"),
           ]),
           "Content-Type": "application/json",
         },
@@ -512,7 +552,7 @@ describe("OWD Worker", () => {
     );
     const originFlowCookie = cookieFrom(
       originOptionsResponse,
-      "__Host-owd_auth_flow",
+      "__Host-mdevolved_auth_flow",
     );
     const originFixture = await createRegistrationFixture(
       originOptions,
@@ -540,7 +580,10 @@ describe("OWD Worker", () => {
     const rpOptions = registrationOptionsSchema.parse(
       await rpOptionsResponse.json(),
     );
-    const rpFlowCookie = cookieFrom(rpOptionsResponse, "__Host-owd_auth_flow");
+    const rpFlowCookie = cookieFrom(
+      rpOptionsResponse,
+      "__Host-mdevolved_auth_flow",
+    );
     const rpFixture = await createRegistrationFixture(
       rpOptions,
       ORIGIN,

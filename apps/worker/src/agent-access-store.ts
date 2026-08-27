@@ -6,7 +6,7 @@ import {
   type AgentVaultScopes,
   type ObsidianMindRuntimeProfile,
   type RestoredSource,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { AuthRequest } from "@cloudflare/workers-oauth-provider";
 import { z } from "zod";
 import { listPreparedProjectHandoffs } from "./prepared-project-handoff-store";

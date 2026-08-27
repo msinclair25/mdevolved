@@ -16,7 +16,7 @@ import {
   type Decision,
   type PortableContinuityBundle,
   type ProjectLeadLease,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   CollaborationProblem,
   authorizeCollaboration,

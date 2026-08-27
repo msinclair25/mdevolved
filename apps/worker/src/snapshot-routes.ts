@@ -11,7 +11,7 @@ import {
   snapshotRetentionRunSchema,
   snapshotSummarySchema,
   type VaultSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { z } from "zod";
 import type { Context, Hono } from "hono";
 import { ApiProblem } from "./api-problem";
@@ -576,7 +576,11 @@ export function registerSnapshotRoutes(app: Hono<AppBindings>): void {
       context.header("Content-Length", String(portable.totalBytes));
       context.header(
         "Content-Disposition",
-        `attachment; filename="owd-snapshot-${snapshotId}.owdsnapshot"`,
+        `attachment; filename="${
+          portable.index.format === "mdevolved-snapshot-v3"
+            ? "mdevolved"
+            : "owd"
+        }-snapshot-${snapshotId}.owdsnapshot"`,
       );
       context.header("X-Content-Type-Options", "nosniff");
       return context.body(

@@ -40,7 +40,7 @@ import {
   type Run,
   type RunContext,
   type WorkPacket,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   CollaborationProblem,
   authorizeCollaboration,
@@ -469,7 +469,7 @@ function defaultPolicy(
     policyId: crypto.randomUUID(),
     projectId,
     projectVersionId,
-    protectedPaths: [".git", ".owdignore", ".obsidian"],
+    protectedPaths: [".git", ".mdevolvedignore", ".obsidian", ".owdignore"],
     restoredAuthorityAllowed: false,
     schemaVersion: 1,
     source: "project-version-bound-default",

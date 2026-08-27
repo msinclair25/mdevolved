@@ -1,4 +1,4 @@
-import type { StoredProjectSetupDraft } from "@owd/contracts";
+import type { StoredProjectSetupDraft } from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import { createCollaborationProject } from "../src/collaboration-service";

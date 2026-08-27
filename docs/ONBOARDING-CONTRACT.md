@@ -12,7 +12,8 @@ Packets, and collaboration history.
 
 A Source label is never a Project identity. A Project is recognized only by its
 full durable Project ID and exact source/context relationship. Technical
-compatibility responses continue to use `vaultId`.
+compatibility responses continue to use `vaultId`; new client responses expose
+the source as a **Source** with its selected **Workspace**.
 
 ## The single path
 
@@ -21,7 +22,7 @@ compatibility responses continue to use `vaultId`.
 | Unclaimed        | Create owner passkey                                          | Owner exists and the owner session is active                                 |
 | No Source        | Choose a Markdown folder or install the Obsidian adapter      | Exact compatible sync client is ready for that Source                        |
 | Client ready     | Pair this Source                                              | Single-use grant is exchanged for this exact Source                          |
-| Paired           | Keep the folder app or Obsidian adapter open                  | Durable reconcile confirms the first sync and current state vector           |
+| Paired           | Keep MDevolved Sync or its Obsidian adapter open              | Durable reconcile confirms the first sync and current state vector           |
 | Synced           | Wait for automatic library build                              | Published generation matches the exact current state vector                  |
 | Library current  | Connect an agent                                              | Active grant names the exact Source, folder boundary, and restored sources   |
 | Agent connected  | Prepare its first Project in MDevolved                        | One exact agent, Project name, and approved folder handoff is durable        |
@@ -52,7 +53,7 @@ another Source never completes a step.
 
 ## Primary vault writer
 
-The human always remains the vault owner. The first agent that establishes an
+The human always remains the Source owner. The first agent that establishes an
 MDevolved Project for a Source becomes that Source's primary writer across Projects.
 Later agents remain connected as read-only collaborators. Owner consent teaches
 this rule before approval, and every successful Project open, connection
@@ -60,7 +61,7 @@ completion, or resume returns the calling agent's advisory `localVaultAccess`
 role.
 
 Before local Obsidian CLI, skill, shell, or filesystem mutation, the managed
-`AGENTS.md` block requires the agent to call `owd_resume` and obey that
+`AGENTS.md` block requires the agent to call `mdevolved_resume` and obey that
 role. The primary writer still needs an owner-requested bounded task. A
 read-only collaborator warns the owner and hands off changes. A same-client
 restart retains the role; a different authorization remains read-only and the
@@ -68,12 +69,13 @@ global Agents screen never promotes it. This deters accidental writes but is
 not an operating-system or filesystem lock.
 
 A crash, restart, or fresh agent session does not change the vault-wide writer
-assignment. When `.owdignore` exists, the agent resumes it as its first MDevolved
-action and treats the role as unconfirmed until the current
+assignment. When `.mdevolvedignore` exists, the agent resumes it as its first
+MDevolved action and treats the role as unconfirmed until the current
 `localVaultAccess.role` response arrives. The normal path is automatic;
-**MDevolved resume project** is the visible fallback. The legacy phrase **OWD
-resume project** remains equivalent; neither means reconnect MCP, repeat
-consent, or create another Project.
+**MDevolved resume project** is the visible fallback. Existing `.owdignore`
+receipts and the legacy phrase **OWD resume project** remain equivalent
+compatibility inputs; neither means reconnect MCP, repeat consent, or create
+another Project.
 
 The operational regions follow the same top-to-bottom order as the state
 machine: **Source connections → Note library → Agent access**. After the
@@ -101,9 +103,9 @@ initialization, and snapshots cannot treat it as current.
 
 The owner gives one short instruction; the compatible agent handles the loop:
 
-1. call `owd_resume` before meaningful work;
-2. call `owd_find` for targeted durable recall; and
-3. call `owd_checkpoint` before finishing.
+1. call `mdevolved_resume` before meaningful work;
+2. call `mdevolved_find` for targeted durable recall; and
+3. call `mdevolved_checkpoint` before finishing.
 
 Resume returns bounded structured Project context rather than replaying a raw
 transcript or provider session. `focused` is the default, `independent`
@@ -156,7 +158,7 @@ not routine owner work.
   through initialization.
 - Routine internal packet expiry never creates an owner step and never hides or
   replaces the Project. A compatible Project remains discoverable; an
-  authorized `owd_resume` refreshes the ordinary bounded context after all
+  authorized `mdevolved_resume` refreshes the ordinary bounded context after all
   authority and integrity checks. Advanced clients retain `resume_project`.
 - An exact expired packet remains immutable and cannot be retrieved for active
   work or used for a new submission.

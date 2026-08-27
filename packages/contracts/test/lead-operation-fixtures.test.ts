@@ -18,7 +18,7 @@ import {
   runContextSchema,
   runDeltaPageSchema,
   submitBundlesBatchRequestSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import policyFixture from "../fixtures/owd-project-policy-v1.json";
 import bundleFixture from "../fixtures/owd-event-bundle-v1.json";
 import capabilitiesFixture from "../fixtures/owd-lead-operation-capabilities-v1.json";

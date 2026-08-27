@@ -1,4 +1,4 @@
-import type { SourceNeutralSyncCore, UserInteractionPort } from "@owd/yaos-core";
+import type { SourceNeutralSyncCore, UserInteractionPort } from "@mdevolved/yaos-core";
 import { App, MarkdownView, TFile } from "obsidian";
 import type { BlobSyncManager } from "../sync/blobSync";
 import type { DiskMirror } from "../sync/diskMirror";
@@ -2502,7 +2502,7 @@ export class ReconciliationController {
 		// Cap base name to 100 chars to prevent filesystem path length issues
 		const cappedBase = base.slice(0, 100);
 		const sourcePart = source ? ` - ${source}` : "";
-		const suffix = ` (OWD Sync conflict${sourcePart} from ${device} ${stamp})`;
+		const suffix = ` (MDevolved Sync conflict${sourcePart} from ${device} ${stamp})`;
 		// Guard total filename length: suffix + ext + base + margin for
 		// counter suffix (" 99") ≈ suffix.length + ext.length + 4.
 		// Most filesystems cap at 255 bytes per component.

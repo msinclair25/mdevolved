@@ -23,10 +23,10 @@ completion support. Execution engines remain outside MDevolved.
 
 The ordinary Project path uses three MDevolved tools over this unchanged protocol:
 
-- `owd_resume` returns bounded structured context, a `checkpointBase`, and the
+- `mdevolved_resume` returns bounded structured context, a `checkpointBase`, and the
   applied `contextMode`;
-- `owd_find` performs targeted cited recall; and
-- `owd_checkpoint` passes that opaque base and context mode back unchanged with
+- `mdevolved_find` performs targeted cited recall; and
+- `mdevolved_checkpoint` passes that opaque base and context mode back unchanged with
   verified progress.
 
 `focused` is the default resume mode. `independent` withholds peer conclusions

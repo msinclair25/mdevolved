@@ -5,6 +5,9 @@ description: Connect, initialize, resume, or coordinate MDevolved Projects from 
 
 # MDevolved + Eve
 
+> Legacy compatibility path. New setups should use `mdevolved-eve`; keep this
+> pack for existing `owd` connections and receipts.
+
 Keep one universal MDevolved server. Apply this profile as Eve-side configuration and
 instructions; never change MCP framing, OAuth, tool schemas, or MDevolved authority
 for Eve.

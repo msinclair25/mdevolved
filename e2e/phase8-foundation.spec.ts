@@ -207,7 +207,7 @@ function setupVaultReadiness(
     pendingProjectRequestCount: 0,
     pendingProjectRequests: [],
     pendingProjectReviewUrl: null,
-    pluginVersion: "0.1.7",
+    pluginVersion: "0.2.0-alpha.1",
     preparedProjectHandoff: null,
     syncConfirmed: true,
     verifiedSnapshot: false,
@@ -366,7 +366,7 @@ async function mockFoundationWithSnapshots(
         requestId: "88888888-8888-4888-8888-888888888888",
         releaseId: "e2e-release-id",
         releaseTag: "e2e-release",
-        service: "owd-platform",
+        service: "mdevolved",
         version: "1.0.0-alpha.7",
       });
     } else if (url.pathname === "/api/setup/status") {
@@ -441,8 +441,12 @@ async function mockFoundationWithSnapshots(
       await json({
         expiresAt: Math.floor(Date.now() / 1_000) + 600,
         pairingUrl:
-          "owd-pair://connect?deployment=http%3A%2F%2F127.0.0.1%3A4173&grant=abcdefghijklmnopqrstuvwxyz0123456789",
+          "mdevolved://connect?deployment=http%3A%2F%2F127.0.0.1%3A4173&grant=abcdefghijklmnopqrstuvwxyz0123456789",
         obsidianUrl:
+          "obsidian://mdevolved-pair?deployment=http%3A%2F%2F127.0.0.1%3A4173&grant=abcdefghijklmnopqrstuvwxyz0123456789",
+        legacyPairingUrl:
+          "owd-pair://connect?deployment=http%3A%2F%2F127.0.0.1%3A4173&grant=abcdefghijklmnopqrstuvwxyz0123456789",
+        legacyObsidianUrl:
           "obsidian://owd-pair?deployment=http%3A%2F%2F127.0.0.1%3A4173&grant=abcdefghijklmnopqrstuvwxyz0123456789",
         vaultId: "99999999-9999-4999-8999-999999999999",
       });
@@ -952,12 +956,12 @@ test("installs the pinned plugin from one primary tester action", async ({
   await expect(page.getByText(/MDevolved cannot bypass it/u)).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
+      name: "Choose vault and install MDevolved Sync for Obsidian 0.2.0-alpha.1",
     }),
   ).toBeEnabled();
   await page
     .getByRole("button", {
-      name: "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
+      name: "Choose vault and install MDevolved Sync for Obsidian 0.2.0-alpha.1",
     })
     .click();
   await expect(
@@ -975,17 +979,17 @@ test("installs the pinned plugin from one primary tester action", async ({
   );
   expect(snapshot).toMatchObject({
     "Tester Vault/.obsidian/community-plugins.json":
-      '[\n  "calendar",\n  "owd-sync"\n]\n',
-    "Tester Vault/.obsidian/plugins/owd-sync/styles.css": 5_002,
+      '[\n  "calendar",\n  "mdevolved-sync"\n]\n',
+    "Tester Vault/.obsidian/plugins/mdevolved-sync/styles.css": 5_002,
   });
   expect(
     (snapshot as Record<string, unknown>)[
-      "Tester Vault/.obsidian/plugins/owd-sync/main.js"
+      "Tester Vault/.obsidian/plugins/mdevolved-sync/main.js"
     ],
   ).toEqual(expect.any(Number));
   expect(
     (snapshot as Record<string, number>)[
-      "Tester Vault/.obsidian/plugins/owd-sync/main.js"
+      "Tester Vault/.obsidian/plugins/mdevolved-sync/main.js"
     ],
   ).toBeGreaterThan(400_000);
   await expect(
@@ -999,11 +1003,11 @@ test("installs the pinned plugin from one primary tester action", async ({
   ).toHaveAttribute("href", "obsidian://show-plugin?id=obsidian42-brat");
   await expect(
     page.getByRole("link", {
-      name: "Open the prefilled MDevolved Sync for Obsidian 0.1.7 form",
+      name: "Open the prefilled MDevolved Sync for Obsidian 0.2.0-alpha.1 form",
     }),
   ).toHaveAttribute(
     "href",
-    "obsidian://brat?plugin=msinclair25/owd-sync&version=0.1.7",
+    "obsidian://brat?plugin=msinclair25/mdevolved-sync&version=0.2.0-alpha.1",
   );
   await expect(
     page.getByText(/not the final Community Plugins experience/u),
@@ -1038,7 +1042,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
   await openOperationalRegion(page, "vaults");
   await page
     .getByRole("button", {
-      name: "Choose vault and install MDevolved Sync for Obsidian 0.1.7",
+      name: "Choose vault and install MDevolved Sync for Obsidian 0.2.0-alpha.1",
     })
     .click();
   await expect(
@@ -1051,7 +1055,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
   ).toBeVisible();
   await expect(
     page.getByRole("link", {
-      name: "Open the prefilled MDevolved Sync for Obsidian 0.1.7 form",
+      name: "Open the prefilled MDevolved Sync for Obsidian 0.2.0-alpha.1 form",
     }),
   ).toBeVisible();
   await expect(
@@ -1074,7 +1078,7 @@ test("captures a managed invitation fragment into the fast claim screen", async 
         requestId: "77777777-7777-4777-8777-777777777777",
         releaseId: "managed-e2e-release-id",
         releaseTag: "managed-e2e-release",
-        service: "owd-platform",
+        service: "mdevolved",
         version: "1.0.0-alpha.7",
       }),
       contentType: "application/json",
@@ -2335,7 +2339,7 @@ test("shows the exact Project boundary and a reconnect-free completion", async (
     "Projects/Agent First/Personal",
   );
   await expect(
-    page.getByText(/This policy becomes the Project's \.owdignore file/u),
+    page.getByText(/This policy becomes the Project's \.mdevolvedignore file/u),
   ).toBeVisible();
   await expect(
     page.getByText(
@@ -2649,9 +2653,9 @@ test("keeps a manual Project draft during an independent owner action", async ({
   ).not.toBeVisible();
   await expect(
     operationalRegion(page, "vaults").getByRole("link", {
-      name: "install or update the Obsidian adapter 0.1.7",
+      name: "install or update the Obsidian adapter 0.2.0-alpha.1",
     }),
-  ).toHaveAttribute("href", "#owd-sync-installer");
+  ).toHaveAttribute("href", "#mdevolved-sync-installer");
   await operationalRegion(page, "vaults")
     .getByRole("button", {
       name: "My folder app or Obsidian adapter is ready — create request",
@@ -2672,7 +2676,7 @@ test("keeps a manual Project draft during an independent owner action", async ({
     operationalRegion(page, "vaults").getByRole("link", {
       name: "Open Obsidian and pair",
     }),
-  ).toHaveAttribute("href", /^obsidian:\/\/owd-pair\?/u);
+  ).toHaveAttribute("href", /^obsidian:\/\/mdevolved-pair\?/u);
   await openOperationalRegion(page, "collaboration");
   await expect(projectObjective).toHaveValue(
     "This staged owner input must remain mounted.",

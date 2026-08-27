@@ -5,14 +5,14 @@ and evidence for Markdown folders, Obsidian, and compatible AI tools. It complem
 harnesses; it does not run, schedule, route, or supervise agents. This roadmap
 describes product outcomes, not deployment schedules or service commitments.
 
-## Current direction — autonomous Project continuity
+## Current direction — prove the minimum lovable product
 
-MDevolved's durable protocol and Community data plane become the compatibility
-foundation for **MDevolved**: source-independent Project memory with a plain
-Markdown folder as the universal sync floor and Obsidian as an optional
-first-class adapter. Existing `owd_*` tools, plugin identity, stored records,
-exports, and deployments remain compatible during the additive brand
-transition.
+MDevolved's durable protocol and Community data plane are the compatibility
+foundation for source-independent Project memory, with a plain Markdown folder
+as the universal sync floor and Obsidian as an optional first-class adapter.
+The next work makes MDevolved canonical for all new clients, data, packages,
+and installations while isolating former identities behind a deprecated
+compatibility layer.
 
 The source-core, desktop folder, Obsidian adapter, cross-computer, lovable
 release, and naming-completion milestones are complete. The locally accepted
@@ -20,11 +20,13 @@ MD8 candidate adds the Autonomous Project Loop: one owner-consented agent or an 
 lead managing several actors can verify, checkpoint, and continue bounded work
 without routine MDevolved-specific owner coordination. MDevolved still does not
 schedule, execute, or supervise agents.
-The complete architecture, security boundary, migration order, and acceptance
-decisions live in the [MDevolved source-independent product plan](MDEVOLVED-PLAN.md).
-Existing users require no re-pairing, MCP reconnect, plugin reinstall, or
-Cloudflare resource rename. Old records and clients retain the reviewed
-completion policy by default.
+The next three acceptance decisions are canonical identity and release hygiene,
+one simple public path with real product proof, and unassisted alpha evidence.
+New feature development is frozen until those pass. The exact scope, migration
+boundary, external gates, and tests live in the
+[MDevolved minimum lovable product plan](MDEVOLVED-MLP-PLAN.md). The completed
+architecture and MD1–MD8 delivery record remain in the
+[source-independent product plan](MDEVOLVED-PLAN.md).
 
 ## Available now
 
@@ -34,7 +36,7 @@ completion policy by default.
 - Remote MCP over Streamable HTTP with OAuth 2.1/PKCE and revocable
   vault/folder grants
 - Agent-first Project creation, connection, rejoin, and resume
-- The ordinary `owd_resume` → `owd_find` → `owd_checkpoint` loop, including an
+- The ordinary `mdevolved_resume` → `mdevolved_find` → `mdevolved_checkpoint` loop, including an
   agent-handled `checkpointBase` that fails stale memory closed
 - Editable Project briefs, portable owner and Project preferences, inert Agent
   Skills, and evidence-backed owner-reviewed suggestions
@@ -54,28 +56,21 @@ completion policy by default.
 - A direct desktop installer for MDevolved Sync while Community Plugin review is
   pending
 
-## Continue hardening the agent-native resume loop
+## Next
 
-- Make one MCP connection and one Project consent sufficient for the ordinary
-  loop, with no routine packet, lease, or fencing ceremony
-- Verify `focused` default context, `independent` withholding of peer
-  conclusions, and `synthesis` comparison of separately attributable durable
-  results
-- Complete separately authorized live disposable exercises across more
-  compliant MCP clients and Cloudflare cells; the deployed provider-neutral
-  contract does not imply a named-client acceptance claim
-- Observe the alpha.7 Community deployment and exercise separately authorized
-  application rollback evidence without destructive down-migrations
-- Submit MDevolved Sync to Obsidian Community Plugins and validate its updater path
-- Expand recovery scale and performance envelopes beyond the bounded R4
-  dependency-complete portable fixture
-- Add source-pinned profiles only where they improve a client without changing
-  MDevolved's universal MCP contract
-- Publish clearer performance envelopes for larger vaults and longer-lived
-  Projects
+- **MD9:** make MDevolved the canonical identity for new protocols, packages,
+  artifacts, installations, and releases while retaining bounded old-client and
+  old-data compatibility.
+- **MD10:** show the complete continuity loop with real synthetic-data captures
+  and one six-step-or-shorter human quickstart.
+- **MD11:** observe 5–10 external alpha users and accept only after at least five
+  independently complete a correct fresh-session resume without owner help.
 
 ## Explore later
 
+- Additional Source adapters and broader performance envelopes
+- More named-client compatibility exercises where they add evidence beyond the
+  provider-neutral contract
 - Additional provider-neutral export and interop formats
 - Optional managed MDevolved Cloud accounts while preserving one isolated data-plane
   cell per owner

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MDevolved + Albatross"
+  short_description: "Connect Albatross to MDevolved safely"
+  default_prompt: "Use $mdevolved-albatross to connect or resume this Albatross workspace with MDevolved."

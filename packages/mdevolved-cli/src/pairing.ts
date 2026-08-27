@@ -1,8 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import type { SourceDescriptor } from "@owd/yaos-core";
+import type { SourceDescriptor } from "@mdevolved/yaos-core";
 
 export const MDEVOLVED_SCHEMA_VERSION = 3;
-export const OWD_SYNC_COMPAT_VERSION = "0.1.7";
+export const MDEVOLVED_SYNC_COMPAT_VERSION = "0.2.0-alpha.1";
+/** @deprecated Use MDEVOLVED_SYNC_COMPAT_VERSION. */
+export const OWD_SYNC_COMPAT_VERSION = MDEVOLVED_SYNC_COMPAT_VERSION;
 const MAX_LINK_LENGTH = 2_048;
 
 export interface PairingParameters {
@@ -300,7 +302,7 @@ export function createFetchPairingTransport(
           },
           body: JSON.stringify({
             grant: request.grant,
-            pluginVersion: OWD_SYNC_COMPAT_VERSION,
+            pluginVersion: MDEVOLVED_SYNC_COMPAT_VERSION,
             schemaVersion: MDEVOLVED_SCHEMA_VERSION,
             vaultName: request.sourceName,
             sourceDescriptor: {

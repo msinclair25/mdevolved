@@ -25,7 +25,7 @@ import {
   leadOperationRecordSchema,
   elasticOperationRecordSchema,
   policyOperationalRecordSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { CollaborationProblem } from "./collaboration-service";
 import {
   insertQuarantinedElasticOperationRecordStatement,

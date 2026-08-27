@@ -9,7 +9,7 @@ import {
   policyBindingSchema,
   policyDecisionSchema,
   r4CapabilitiesSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import bindingFixture from "../fixtures/owd-policy-binding-v1.json";
 import receiptFixture from "../fixtures/owd-continuity-receipt-v1.json";
 import decisionFixture from "../fixtures/owd-policy-decision-v1.json";

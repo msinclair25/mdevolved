@@ -26,7 +26,7 @@ import {
   type ElasticOperationOverview,
   type EventBundle,
   type ProjectException,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { CollaborationAuthorizationContext } from "./collaboration-service";
 import { queueCollaborationObjectCleanup } from "./collaboration-retention";
 import {

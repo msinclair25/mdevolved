@@ -1,9 +1,26 @@
-import { OWD_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
+import {
+  MDEVOLVED_SYNC_PLUGIN_ID as CANONICAL_MDEVOLVED_SYNC_PLUGIN_ID,
+  MDEVOLVED_SYNC_REQUIRED_VERSION,
+} from "./obsidian-plugin-links";
 
-export const OWD_SYNC_INSTALLER_FORMAT = "owd-sync-web-installer-v1";
-export const OWD_SYNC_PLUGIN_ID = "owd-sync";
-export const OWD_SYNC_INSTALLER_BASE_PATH = `/owd-sync/${OWD_SYNC_REQUIRED_VERSION}`;
-export const OWD_SYNC_INSTALLER_MANIFEST_URL = `${OWD_SYNC_INSTALLER_BASE_PATH}/installer-manifest.json`;
+export const MDEVOLVED_SYNC_PLUGIN_ID = CANONICAL_MDEVOLVED_SYNC_PLUGIN_ID;
+
+export const MDEVOLVED_SYNC_INSTALLER_FORMAT =
+  "mdevolved-sync-web-installer-v1";
+export const MDEVOLVED_SYNC_INSTALLER_BASE_PATH = `/mdevolved-sync/${MDEVOLVED_SYNC_REQUIRED_VERSION}`;
+export const MDEVOLVED_SYNC_INSTALLER_MANIFEST_URL = `${MDEVOLVED_SYNC_INSTALLER_BASE_PATH}/installer-manifest.json`;
+
+/** @deprecated Use the canonical MDEVOLVED_SYNC_* constants. */
+export const OWD_SYNC_INSTALLER_FORMAT = MDEVOLVED_SYNC_INSTALLER_FORMAT;
+/** @deprecated Use MDEVOLVED_SYNC_PLUGIN_ID. */
+export const OWD_SYNC_PLUGIN_ID = MDEVOLVED_SYNC_PLUGIN_ID;
+/** @deprecated Use MDEVOLVED_SYNC_REQUIRED_VERSION. */
+export const OWD_SYNC_REQUIRED_VERSION = MDEVOLVED_SYNC_REQUIRED_VERSION;
+/** @deprecated Use MDEVOLVED_SYNC_INSTALLER_BASE_PATH. */
+export const OWD_SYNC_INSTALLER_BASE_PATH = MDEVOLVED_SYNC_INSTALLER_BASE_PATH;
+/** @deprecated Use MDEVOLVED_SYNC_INSTALLER_MANIFEST_URL. */
+export const OWD_SYNC_INSTALLER_MANIFEST_URL =
+  MDEVOLVED_SYNC_INSTALLER_MANIFEST_URL;
 
 const PLUGIN_ASSET_NAMES = ["main.js", "manifest.json", "styles.css"] as const;
 const MAX_ASSET_BYTES = 2 * 1024 * 1024;
@@ -21,8 +38,8 @@ type InstallerAsset = {
 
 type InstallerManifest = {
   assets: InstallerAsset[];
-  format: typeof OWD_SYNC_INSTALLER_FORMAT;
-  pluginId: typeof OWD_SYNC_PLUGIN_ID;
+  format: typeof MDEVOLVED_SYNC_INSTALLER_FORMAT;
+  pluginId: typeof MDEVOLVED_SYNC_PLUGIN_ID;
   version: string;
 };
 
@@ -119,9 +136,9 @@ function isPluginAssetName(value: unknown): value is PluginAssetName {
 function parseInstallerManifest(value: unknown): InstallerManifest {
   if (
     !isRecord(value) ||
-    value.format !== OWD_SYNC_INSTALLER_FORMAT ||
-    value.pluginId !== OWD_SYNC_PLUGIN_ID ||
-    value.version !== OWD_SYNC_REQUIRED_VERSION ||
+    value.format !== MDEVOLVED_SYNC_INSTALLER_FORMAT ||
+    value.pluginId !== MDEVOLVED_SYNC_PLUGIN_ID ||
+    value.version !== MDEVOLVED_SYNC_REQUIRED_VERSION ||
     !Array.isArray(value.assets) ||
     value.assets.length !== PLUGIN_ASSET_NAMES.length
   ) {
@@ -173,9 +190,9 @@ function parseInstallerManifest(value: unknown): InstallerManifest {
 
   return {
     assets,
-    format: OWD_SYNC_INSTALLER_FORMAT,
-    pluginId: OWD_SYNC_PLUGIN_ID,
-    version: OWD_SYNC_REQUIRED_VERSION,
+    format: MDEVOLVED_SYNC_INSTALLER_FORMAT,
+    pluginId: MDEVOLVED_SYNC_PLUGIN_ID,
+    version: MDEVOLVED_SYNC_REQUIRED_VERSION,
   };
 }
 
@@ -240,14 +257,14 @@ async function loadVerifiedAssets(
   dependencies: OwdSyncInstallerDependencies,
 ): Promise<Map<PluginAssetName, Uint8Array>> {
   const manifest = parseInstallerManifest(
-    await fetchJson(OWD_SYNC_INSTALLER_MANIFEST_URL, dependencies),
+    await fetchJson(MDEVOLVED_SYNC_INSTALLER_MANIFEST_URL, dependencies),
   );
   const assets = new Map<PluginAssetName, Uint8Array>();
 
   await Promise.all(
     manifest.assets.map(async (asset) => {
       const response = await dependencies.fetch(
-        `${OWD_SYNC_INSTALLER_BASE_PATH}/${asset.name}`,
+        `${MDEVOLVED_SYNC_INSTALLER_BASE_PATH}/${asset.name}`,
         {
           credentials: "same-origin",
           headers: { Accept: "application/octet-stream" },
@@ -294,8 +311,8 @@ async function loadVerifiedAssets(
   }
   if (
     !isRecord(pluginManifest) ||
-    pluginManifest.id !== OWD_SYNC_PLUGIN_ID ||
-    pluginManifest.version !== OWD_SYNC_REQUIRED_VERSION
+    pluginManifest.id !== MDEVOLVED_SYNC_PLUGIN_ID ||
+    pluginManifest.version !== MDEVOLVED_SYNC_REQUIRED_VERSION
   ) {
     throw new OwdSyncInstallerError(
       "installer_asset_mismatch",
@@ -430,7 +447,7 @@ async function rollback(
     });
     if (pluginsDirectory !== null) {
       try {
-        await pluginsDirectory.removeEntry(OWD_SYNC_PLUGIN_ID, {
+        await pluginsDirectory.removeEntry(MDEVOLVED_SYNC_PLUGIN_ID, {
           recursive: true,
         });
       } catch (error) {
@@ -444,13 +461,13 @@ async function rollback(
   if (errors.length > 0) {
     throw new OwdSyncInstallerError(
       "rollback_incomplete",
-      "Installation failed and MDevolved could not fully restore the prior plugin files. Keep Obsidian closed and inspect .obsidian/plugins/owd-sync before retrying.",
+      "Installation failed and MDevolved could not fully restore the prior plugin files. Keep Obsidian closed and inspect .obsidian/plugins/mdevolved-sync before retrying.",
       { cause: errors[0] },
     );
   }
 }
 
-export function browserSupportsOwdSyncInstall(): boolean {
+export function browserSupportsMdevolvedSyncInstall(): boolean {
   return (
     typeof window !== "undefined" &&
     window.isSecureContext &&
@@ -458,11 +475,11 @@ export function browserSupportsOwdSyncInstall(): boolean {
   );
 }
 
-export function isOwdSyncInstallCancellation(error: unknown): boolean {
+export function isMdevolvedSyncInstallCancellation(error: unknown): boolean {
   return isAbortError(error);
 }
 
-export function normalizeOwdSyncInstallerError(
+export function normalizeMdevolvedSyncInstallerError(
   error: unknown,
 ): OwdSyncInstallerError {
   if (error instanceof OwdSyncInstallerError) {
@@ -498,12 +515,12 @@ export function normalizeOwdSyncInstallerError(
   }
 }
 
-export async function chooseVaultAndInstallOwdSync(
+export async function chooseVaultAndInstallMdevolvedSync(
   dependencies: OwdSyncInstallerDependencies = defaultDependencies,
   onProgress?: (progress: OwdSyncInstallProgress) => void,
 ): Promise<OwdSyncInstallResult> {
   if (
-    !browserSupportsOwdSyncInstall() ||
+    !browserSupportsMdevolvedSyncInstall() ||
     window.showDirectoryPicker === undefined
   ) {
     throw new OwdSyncInstallerError(
@@ -513,15 +530,15 @@ export async function chooseVaultAndInstallOwdSync(
   }
 
   const vaultDirectory = await window.showDirectoryPicker({
-    id: "owd-sync-vault",
+    id: "mdevolved-sync-vault",
     mode: "readwrite",
     startIn: "documents",
   });
   onProgress?.({ kind: "vault-selected", vaultName: vaultDirectory.name });
-  return installOwdSyncIntoVault(vaultDirectory, dependencies);
+  return installMdevolvedSyncIntoVault(vaultDirectory, dependencies);
 }
 
-export async function installOwdSyncIntoVault(
+export async function installMdevolvedSyncIntoVault(
   vaultDirectory: OwdSyncDirectoryHandle,
   dependencies: OwdSyncInstallerDependencies = defaultDependencies,
 ): Promise<OwdSyncInstallResult> {
@@ -549,12 +566,12 @@ export async function installOwdSyncIntoVault(
 
   let pluginDirectory = await getExistingDirectory(
     pluginsDirectory,
-    OWD_SYNC_PLUGIN_ID,
+    MDEVOLVED_SYNC_PLUGIN_ID,
   );
   const removePluginDirectory = pluginDirectory === null;
   if (pluginDirectory === null) {
     pluginDirectory = await pluginsDirectory.getDirectoryHandle(
-      OWD_SYNC_PLUGIN_ID,
+      MDEVOLVED_SYNC_PLUGIN_ID,
       { create: true },
     );
   }
@@ -583,8 +600,8 @@ export async function installOwdSyncIntoVault(
       name: "community-plugins.json",
     });
     const enabledPlugins = parseEnabledPlugins(enabledPluginsBackup);
-    if (!enabledPlugins.includes(OWD_SYNC_PLUGIN_ID)) {
-      enabledPlugins.push(OWD_SYNC_PLUGIN_ID);
+    if (!enabledPlugins.includes(MDEVOLVED_SYNC_PLUGIN_ID)) {
+      enabledPlugins.push(MDEVOLVED_SYNC_PLUGIN_ID);
     }
 
     for (const name of PLUGIN_ASSET_NAMES) {
@@ -606,10 +623,25 @@ export async function installOwdSyncIntoVault(
     return {
       enabledPluginCount: enabledPlugins.length,
       vaultName: vaultDirectory.name,
-      version: OWD_SYNC_REQUIRED_VERSION,
+      version: MDEVOLVED_SYNC_REQUIRED_VERSION,
     };
   } catch (error) {
     await rollback(backups, obsidianDirectory, removePluginDirectory);
-    throw normalizeOwdSyncInstallerError(error);
+    throw normalizeMdevolvedSyncInstallerError(error);
   }
 }
+
+// Deprecated source aliases keep downstream callers compiling while the
+// canonical MDevolved names become the only new installer surface.
+/** @deprecated Use browserSupportsMdevolvedSyncInstall. */
+export const browserSupportsOwdSyncInstall =
+  browserSupportsMdevolvedSyncInstall;
+/** @deprecated Use isMdevolvedSyncInstallCancellation. */
+export const isOwdSyncInstallCancellation = isMdevolvedSyncInstallCancellation;
+/** @deprecated Use normalizeMdevolvedSyncInstallerError. */
+export const normalizeOwdSyncInstallerError =
+  normalizeMdevolvedSyncInstallerError;
+/** @deprecated Use chooseVaultAndInstallMdevolvedSync. */
+export const chooseVaultAndInstallOwdSync = chooseVaultAndInstallMdevolvedSync;
+/** @deprecated Use installMdevolvedSyncIntoVault. */
+export const installOwdSyncIntoVault = installMdevolvedSyncIntoVault;

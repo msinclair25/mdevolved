@@ -74,7 +74,7 @@ describe("M4 owner Project brief route", () => {
       crypto.randomUUID(),
       now,
     );
-    cookie = `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`;
+    cookie = `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`;
     csrf = session.csrfToken;
   });
 
@@ -103,13 +103,13 @@ describe("M4 owner Project brief route", () => {
     const accepted = await request({
       Cookie: cookie,
       Origin: ORIGIN,
-      "X-OWD-CSRF": csrf,
+      "X-MDevolved-CSRF": csrf,
     });
     expect(accepted.status).toBe(200);
     const replay = await request({
       Cookie: cookie,
       Origin: ORIGIN,
-      "X-OWD-CSRF": csrf,
+      "X-MDevolved-CSRF": csrf,
     });
     expect(replay.status).toBe(200);
     expect(await replay.json()).toEqual(await accepted.clone().json());
@@ -124,7 +124,7 @@ describe("M4 owner Project brief route", () => {
         Cookie: cookie,
         "Content-Type": "application/json",
         Origin: ORIGIN,
-        "X-OWD-CSRF": csrf,
+        "X-MDevolved-CSRF": csrf,
       },
       method: "POST",
     });
@@ -140,7 +140,7 @@ describe("M4 owner Project brief route", () => {
         Cookie: cookie,
         "Content-Type": "application/json",
         Origin: ORIGIN,
-        "X-OWD-CSRF": csrf,
+        "X-MDevolved-CSRF": csrf,
       },
       method: "POST",
     });
@@ -163,7 +163,7 @@ describe("M4 owner Project brief route", () => {
           Cookie: cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": csrf,
+          "X-MDevolved-CSRF": csrf,
         },
         method: "POST",
       },

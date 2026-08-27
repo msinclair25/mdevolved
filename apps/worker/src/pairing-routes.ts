@@ -7,12 +7,12 @@ import {
   vaultSyncConfirmationResponseSchema,
   vaultIdSchema,
   type VaultListResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   SERVER_MAX_SCHEMA_VERSION,
   SERVER_MIN_SCHEMA_VERSION,
   SERVER_VERSION,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import type { Context, Hono } from "hono";
 import { ApiProblem } from "./api-problem";
 import { enforceRateLimit, ownerExists } from "./auth-store";

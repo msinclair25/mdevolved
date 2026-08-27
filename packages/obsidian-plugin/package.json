@@ -1,8 +1,8 @@
 {
-  "name": "@owd/obsidian-plugin",
-  "version": "0.1.7",
+  "name": "@mdevolved/obsidian-plugin",
+  "version": "0.2.0-alpha.1",
   "private": true,
-  "description": "The MDevolved Sync adapter for Obsidian, retaining the legacy owd-sync compatibility identity.",
+  "description": "The canonical MDevolved Sync adapter for Obsidian; legacy owd-sync installs remain readable but are never migrated silently.",
   "license": "Apache-2.0 AND 0BSD",
   "type": "module",
   "main": "main.js",
@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "@owd/yaos-core": "workspace:*",
+    "@mdevolved/yaos-core": "workspace:*",
     "fast-diff": "1.3.0",
     "fflate": "0.8.2",
     "js-yaml": "4.3.1",
@@ -27,7 +27,7 @@
   "devDependencies": {
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@owd/folder-adapter": "workspace:*",
+    "@mdevolved/folder-adapter": "workspace:*",
     "esbuild": "0.25.5",
     "obsidian": "1.13.1",
     "tslib": "2.4.0"

@@ -1,4 +1,4 @@
-import { snapshotSummarySchema } from "@owd/contracts";
+import { snapshotSummarySchema } from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 import {
   snapshotDownloadFilename,
@@ -11,12 +11,13 @@ describe("snapshot timeline UI", () => {
   it("identifies a requested encrypted-copy download beside its action", () => {
     const snapshotId = "92c2d08d-9c23-4843-9325-bba4d9be89f7";
 
-    expect(snapshotDownloadFilename(snapshotId)).toBe(
-      "owd-snapshot-92c2d08d-9c23-4843-9325-bba4d9be89f7.owdsnapshot",
-    );
+    expect(
+      snapshotDownloadFilename({ format: "owd-snapshot-v2", snapshotId }),
+    ).toBe("owd-snapshot-92c2d08d-9c23-4843-9325-bba4d9be89f7.owdsnapshot");
     expect(
       snapshotDownloadRequestedMessage(
         {
+          format: "owd-snapshot-v2",
           snapshotId,
           verifiedAt: 1_785_000_000,
         },
@@ -24,6 +25,15 @@ describe("snapshot timeline UI", () => {
       ),
     ).toBe(
       "Download requested for owd-snapshot-92c2d08d-9c23-4843-9325-bba4d9be89f7.owdsnapshot. Snapshot created and checked at Jul 22, 2026, 11:20 PM. Snapshot record reference: 92c2d08d.",
+    );
+
+    expect(
+      snapshotDownloadFilename({
+        format: "mdevolved-snapshot-v3",
+        snapshotId,
+      }),
+    ).toBe(
+      "mdevolved-snapshot-92c2d08d-9c23-4843-9325-bba4d9be89f7.owdsnapshot",
     );
   });
 

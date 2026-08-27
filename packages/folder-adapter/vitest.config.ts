@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 export default defineConfig({
   resolve: {
     alias: {
-      "@owd/yaos-core": resolve(
+      "@mdevolved/yaos-core": resolve(
         import.meta.dirname,
         "../yaos-core/src/index.ts",
       ),

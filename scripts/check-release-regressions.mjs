@@ -147,19 +147,15 @@ const normalizedQualityGates = qualityGates.replace(/\s+/gu, " ");
 const acceptedPluginBaseline = [0, 1, 5];
 
 function versionAtLeast(value, minimum) {
-  if (typeof value !== "string" || !/^\d+\.\d+\.\d+$/u.test(value)) {
-    return false;
+  if (typeof value !== "string") return false;
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?$/u.exec(value);
+  if (match === null) return false;
+  const parts = match.slice(1).map(Number);
+  for (const [index, part] of parts.entries()) {
+    const baseline = minimum[index] ?? 0;
+    if (part !== baseline) return part > baseline;
   }
-  const parts = value.split(".").map(Number);
-  return (
-    parts.some(
-      (part, index) =>
-        part > minimum[index] &&
-        parts.slice(0, index).every((prior, priorIndex) => {
-          return prior === minimum[priorIndex];
-        }),
-    ) || parts.every((part, index) => part === minimum[index])
-  );
+  return true;
 }
 
 const forbiddenCopy = [
@@ -354,7 +350,7 @@ if (
   !normalizedPluginSetupGuide.includes("it does not finish the install") ||
   !pluginSetupGuide.includes("BRAT: Plugins: Add a beta plugin for testing") ||
   !pluginSetupGuide.includes("Use either the direct installer or BRAT") ||
-  !obsidianPluginLinks.includes("&version=${OWD_SYNC_REQUIRED_VERSION}")
+  !obsidianPluginLinks.includes("&version=${MDEVOLVED_SYNC_REQUIRED_VERSION}")
 ) {
   throw new Error(
     "MTR-046 regression: clean-macOS installation must retain explicit quit semantics, truthful picker states, and a pinned deterministic BRAT fallback.",

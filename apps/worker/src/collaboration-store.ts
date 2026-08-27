@@ -13,7 +13,7 @@ import {
   type CollaborationTimelineItem,
   type OwnerEvent,
   type ProvenanceEdge,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   decodeBase64Url,
   encodeBase64Url,

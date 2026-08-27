@@ -2,7 +2,7 @@ import {
   materializationJobSchema,
   type MaterializationGeneration,
   type MaterializationJob,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   MAX_MATERIALIZED_NOTE_BYTES,
   MaterializationSnapshotError,

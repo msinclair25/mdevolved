@@ -16,6 +16,18 @@ export {
   type OwdAlbatrossCompatibilityProfile,
 } from "./albatross";
 export {
+  MDEVOLVED_ALBATROSS_COMPATIBILITY_PROFILE,
+  MDEVOLVED_ALBATROSS_CONTINUITY_GUIDANCE,
+  MDEVOLVED_ALBATROSS_PROFILE_PROMPT,
+  MDEVOLVED_ALBATROSS_PROFILE_RESOURCE_URI,
+  MDEVOLVED_ALBATROSS_WORKSPACE_PROMPT,
+  createMDevolvedAlbatrossAuthorizationCommand,
+  createMDevolvedAlbatrossMcpMergeConfig,
+  createMDevolvedAlbatrossSetupKit,
+  serializeMDevolvedAlbatrossCompatibilityProfile,
+  type MDevolvedAlbatrossCompatibilityProfile,
+} from "./mdevolved-albatross";
+export {
   EVE_COMPATIBILITY_PROFILE,
   EVE_CONNECTION_DESCRIPTION,
   EVE_CONNECTION_INSTRUCTIONS,
@@ -27,6 +39,17 @@ export {
   type OwdEveCompatibilityProfile,
 } from "./eve";
 export {
+  MDEVOLVED_EVE_COMPATIBILITY_PROFILE,
+  MDEVOLVED_EVE_CONNECTION_DESCRIPTION,
+  MDEVOLVED_EVE_CONNECTION_INSTRUCTIONS,
+  MDEVOLVED_EVE_CONTINUITY_GUIDANCE,
+  MDEVOLVED_EVE_PROFILE_PROMPT,
+  MDEVOLVED_EVE_PROFILE_RESOURCE_URI,
+  createMDevolvedEveConnectionSource,
+  serializeMDevolvedEveCompatibilityProfile,
+  type MDevolvedEveCompatibilityProfile,
+} from "./mdevolved-eve";
+export {
   OBSIDIAN_MIND_COMPATIBILITY_PROFILE,
   OBSIDIAN_MIND_CONTINUITY_GUIDANCE,
   OBSIDIAN_MIND_PROFILE_PROMPT,
@@ -36,3 +59,13 @@ export {
   serializeObsidianMindCompatibilityProfile,
   type OwdVaultRuntimeCompatibilityProfile,
 } from "./obsidian-mind";
+export {
+  MDEVOLVED_OBSIDIAN_MIND_COMPATIBILITY_PROFILE,
+  MDEVOLVED_OBSIDIAN_MIND_CONTINUITY_GUIDANCE,
+  MDEVOLVED_OBSIDIAN_MIND_PROFILE_PROMPT,
+  MDEVOLVED_OBSIDIAN_MIND_PROFILE_RESOURCE_URI,
+  createMDevolvedObsidianMindMcpMergeConfig,
+  createMDevolvedObsidianMindProjectMcpCommand,
+  serializeMDevolvedObsidianMindCompatibilityProfile,
+  type MDevolvedObsidianMindCompatibilityProfile,
+} from "./mdevolved-obsidian-mind";

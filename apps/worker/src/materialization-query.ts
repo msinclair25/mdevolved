@@ -1,4 +1,4 @@
-import { materializedSearchQuerySchema } from "@owd/contracts";
+import { materializedSearchQuerySchema } from "@mdevolved/contracts";
 import { ApiProblem } from "./api-problem";
 
 export function buildMaterializedFtsQuery(raw: string): string {

@@ -1,5 +1,5 @@
 {
-  "name": "@owd/client-packs",
+  "name": "@mdevolved/client-packs",
   "version": "1.0.0-alpha.7",
   "private": true,
   "description": "Thin, protocol-neutral compatibility profiles for MDevolved clients and Source runtimes.",
@@ -7,6 +7,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./mdevolved-albatross": "./mdevolved-albatross/SKILL.md",
+    "./mdevolved-eve": "./mdevolved-eve/SKILL.md",
+    "./mdevolved-obsidian-mind": "./mdevolved-obsidian-mind/SKILL.md",
     "./owd-albatross": "./owd-albatross/SKILL.md",
     "./owd-eve": "./owd-eve/SKILL.md",
     "./owd-obsidian-mind": "./owd-obsidian-mind/SKILL.md"

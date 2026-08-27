@@ -4,7 +4,7 @@ import {
   decisionSchema,
   knowledgeSpaceVersionSchema,
   type CollaborationNotebookProjection,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { CollaborationProblem } from "./collaboration-service";
 import { readCollaborationRecord } from "./collaboration-store";
 import { sha256Hex } from "./security";

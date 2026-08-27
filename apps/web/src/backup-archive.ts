@@ -1,9 +1,10 @@
 import {
+  MDEVOLVED_BACKUP_MAGIC,
   OWD_BACKUP_MAGIC,
   backupArchiveManifestSchema,
   type BackupArchiveManifest,
   type BackupArchiveNote,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { Decrypter } from "age-encryption";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -130,10 +131,8 @@ export async function inspectBackupArchive(
   const reader = new StreamByteReader(decrypted);
   try {
     const magic = `${decoder.decode(await reader.readLine(64))}\n`;
-    if (magic !== OWD_BACKUP_MAGIC) {
-      throw new Error(
-        "This is not a MDevolved-compatible legacy backup archive.",
-      );
+    if (![MDEVOLVED_BACKUP_MAGIC, OWD_BACKUP_MAGIC].includes(magic)) {
+      throw new Error("This is not a MDevolved-compatible backup archive.");
     }
     const manifest = backupArchiveManifestSchema.parse(
       JSON.parse(

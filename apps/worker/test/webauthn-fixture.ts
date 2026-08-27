@@ -3,7 +3,7 @@ import type {
   AuthenticationResponse,
   RegistrationOptions,
   RegistrationResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { encodeBase64Url } from "../src/security";
 
 type VirtualPasskey = {

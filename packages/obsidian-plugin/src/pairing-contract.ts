@@ -165,7 +165,7 @@ export function parseObsidianPairingProtocol(
 ): OwdPairingParameters {
   const keys = Object.keys(params);
   if (
-    params.action !== "owd-pair" ||
+    !["mdevolved-pair", "owd-pair"].includes(params.action ?? "") ||
     keys.length !== 3 ||
     !keys.includes("deployment") ||
     !keys.includes("grant")
@@ -205,7 +205,7 @@ export function parseOwdPairingLink(value: string): OwdPairingParameters {
   const keys = [...url.searchParams.keys()];
   const uniqueKeys = new Set(keys);
   if (
-    url.protocol !== "owd-pair:" ||
+    !["mdevolved:", "owd-pair:"].includes(url.protocol) ||
     url.hostname !== "connect" ||
     (url.pathname !== "" && url.pathname !== "/") ||
     url.username !== "" ||

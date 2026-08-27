@@ -20,7 +20,10 @@ import {
 } from "./ipc.js";
 import { ProtectedCredentialCustody } from "./custody.js";
 import { FolderSyncController } from "./controller.js";
-import { windowCloseAction } from "./lifecycle.js";
+import {
+  isSupportedDesktopPairingLink,
+  windowCloseAction,
+} from "./lifecycle.js";
 
 const moduleDirectory = fileURLToPath(new URL(".", import.meta.url));
 const rendererFile = join(moduleDirectory, "index.html");
@@ -80,7 +83,7 @@ export function createDesktopMain(
   };
 
   const acceptPairingLink = async (value: string): Promise<void> => {
-    if (!value.startsWith("mdevolved://connect?")) return;
+    if (!isSupportedDesktopPairingLink(value)) return;
     try {
       if (!controller.pair) throw new Error("pairing_unavailable");
       publish(await controller.pair(value));
@@ -103,7 +106,7 @@ export function createDesktopMain(
   });
   registerEvent(app, "second-instance", (...args: unknown[]) => {
     const argv = args[1] as string[] | undefined;
-    const url = argv?.find((value) => value.startsWith("mdevolved://connect?"));
+    const url = argv?.find(isSupportedDesktopPairingLink);
     if (url) void acceptPairingLink(url);
   });
 
@@ -232,9 +235,7 @@ export function createDesktopMain(
     } else if (controller.restore) {
       publish(await controller.restore());
     }
-    const startupUrl = process.argv.find((value) =>
-      value.startsWith("mdevolved://connect?"),
-    );
+    const startupUrl = process.argv.find(isSupportedDesktopPairingLink);
     if (startupUrl) await acceptPairingLink(startupUrl);
   });
 

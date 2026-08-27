@@ -12,7 +12,7 @@ import {
   type SnapshotRetentionPolicy,
   type SnapshotSummary,
   type VaultSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SnapshotRestorePanel } from "./SnapshotRestorePanel";
 import { requestSetupReadinessRefresh } from "./setup-readiness-events";
@@ -41,15 +41,21 @@ function formatBytes(value: number): string {
   return `${(value / (1024 * 1024)).toFixed(1)} MiB`;
 }
 
-export function snapshotDownloadFilename(snapshotId: string): string {
-  return `owd-snapshot-${snapshotId}.owdsnapshot`;
+export function snapshotDownloadFilename(
+  snapshot: Pick<SnapshotSummary, "format" | "snapshotId">,
+): string {
+  const prefix =
+    snapshot.format === "mdevolved-snapshot-v3"
+      ? "mdevolved-snapshot"
+      : "owd-snapshot";
+  return `${prefix}-${snapshot.snapshotId}.owdsnapshot`;
 }
 
 export function snapshotDownloadRequestedMessage(
-  snapshot: Pick<SnapshotSummary, "snapshotId" | "verifiedAt">,
+  snapshot: Pick<SnapshotSummary, "format" | "snapshotId" | "verifiedAt">,
   verifiedAtLabel = formatTimestamp(snapshot.verifiedAt),
 ): string {
-  return `Download requested for ${snapshotDownloadFilename(snapshot.snapshotId)}. Snapshot created and checked at ${verifiedAtLabel}. Snapshot record reference: ${snapshot.snapshotId.slice(0, 8)}.`;
+  return `Download requested for ${snapshotDownloadFilename(snapshot)}. Snapshot created and checked at ${verifiedAtLabel}. Snapshot record reference: ${snapshot.snapshotId.slice(0, 8)}.`;
 }
 
 export function snapshotScopeSummary(
@@ -104,7 +110,9 @@ async function apiJson(
       ...(options.body === undefined
         ? {}
         : { "Content-Type": "application/json" }),
-      ...(options.csrf === undefined ? {} : { "X-OWD-CSRF": options.csrf }),
+      ...(options.csrf === undefined
+        ? {}
+        : { "X-MDevolved-CSRF": options.csrf }),
     },
     method: options.method ?? "GET",
     signal: options.signal,
@@ -778,7 +786,7 @@ export function SnapshotPanel({
           snapshot.integrityStatus === "verified" ? (
             <a
               className="secondary-action"
-              download={snapshotDownloadFilename(snapshot.snapshotId)}
+              download={snapshotDownloadFilename(snapshot)}
               href={`/api/snapshots/${encodeURIComponent(snapshot.snapshotId)}/download`}
               onClick={() =>
                 setDownloadRequestedSnapshotId(snapshot.snapshotId)

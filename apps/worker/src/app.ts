@@ -1,4 +1,4 @@
-import type { ApiError, HealthResponse } from "@owd/contracts";
+import type { ApiError, HealthResponse } from "@mdevolved/contracts";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { ApiProblem } from "./api-problem";
@@ -83,7 +83,7 @@ app.get("/healthz", (context) => {
   const releaseTag = context.env.WORKER_VERSION?.tag;
   const response: HealthResponse = {
     ok: true,
-    service: "owd-platform",
+    service: "mdevolved",
     version: context.env.APP_VERSION,
     releaseId: context.env.WORKER_VERSION?.id ?? "local-development",
     releaseTag:

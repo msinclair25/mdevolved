@@ -9,7 +9,7 @@ import {
   setupStatusSchema,
   type AgentConsentContext,
   type SetupStatus,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   browserSupportsWebAuthn,
   startAuthentication,
@@ -103,7 +103,7 @@ async function postJson(path: string, csrf: string, body?: unknown) {
     headers: {
       Accept: "application/json",
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      "X-OWD-CSRF": csrf,
+      "X-MDevolved-CSRF": csrf,
     },
     method: "POST",
   });

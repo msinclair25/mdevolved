@@ -1,4 +1,4 @@
-import { canonicalizeCollaborationJson } from "@owd/contracts";
+import { canonicalizeCollaborationJson } from "@mdevolved/contracts";
 import { sha256HexBytes } from "./security";
 
 const encoder = new TextEncoder();

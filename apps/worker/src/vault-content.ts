@@ -2,12 +2,12 @@ import type {
   LiveMarkdownNote,
   MarkdownNoteWriteRequest,
   RestoreMarkdownNoteRequest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   createNestedActiveMeta,
   decodeFileMeta,
   ensureNestedMetaEntry,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import * as Y from "yjs";
 import {
   MAX_MATERIALIZED_GENERATION_BYTES,

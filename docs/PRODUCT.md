@@ -38,8 +38,8 @@ operator-access, recovery, and commercial gates in
 
 ## Release ladder
 
-- **M1 shipped on `main`:** the agent-native `owd_resume` → `owd_find` →
-  `owd_checkpoint` loop over existing durable Project records.
+- **M1 shipped on `main`:** the agent-native `mdevolved_resume` → `mdevolved_find` →
+  `mdevolved_checkpoint` loop over existing durable Project records.
 - **M2 shipped on `main`:** portable owner and Project preferences plus inert
   portable skills across compatible harnesses.
 - **M3 shipped on `main`:** evidence-backed, owner-reviewed compounding without
@@ -76,8 +76,8 @@ evaluation; it does not become MDevolved's control plane or vault source of trut
 
 ## V1 outcomes
 
-- Connect a Project once, then let an agent call `owd_resume` before meaningful
-  work, `owd_find` for targeted durable recall, and `owd_checkpoint` before
+- Connect a Project once, then let an agent call `mdevolved_resume` before meaningful
+  work, `mdevolved_find` for targeted durable recall, and `mdevolved_checkpoint` before
   finishing.
 - Return bounded structured resume context rather than a raw transcript or
   provider-session replay. Default to `focused`; withhold peer conclusions in

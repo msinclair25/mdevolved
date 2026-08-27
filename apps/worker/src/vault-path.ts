@@ -5,4 +5,4 @@ export {
   VaultPathError,
   type ValidatedVaultPath,
   type VaultPathFailureReason,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";

@@ -7,7 +7,7 @@ import {
   validateMarkdownPath,
   type WorkspaceEntry,
   type WorkspaceFilesPort,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import { Notice, TFile, TFolder, type App, type EventRef } from "obsidian";
 import type {
   SourceAdapterBoundary,

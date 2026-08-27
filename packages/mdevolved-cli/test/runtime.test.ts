@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { folderSourceIdentity } from "@owd/folder-adapter";
+import { folderSourceIdentity } from "@mdevolved/folder-adapter";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   MemoryProtectedCredentialBackend,

@@ -57,7 +57,7 @@ For a matching vault:
 
 - use `documentationPlan.decision = "keep-current-locations"` rather than
   moving Mind notes into `docs/`;
-- use the UUID in `.owdignore` for MDevolved Project identity and resume;
+- use the UUID in `.mdevolvedignore` for MDevolved Project identity and resume;
 - use `.om-project` only as Obsidian Mind's local memory-routing identity;
 - select the narrowest relevant concrete roots from `work/active`,
   `work/archive`, `work/incidents`, `work/1-1`, `org/people`, `org/teams`,
@@ -106,10 +106,10 @@ it.
 
 The same versioned profile is available through:
 
-- the shared `@owd/client-packs` package;
+- the shared `@mdevolved/client-packs` package;
 - the portable `owd-obsidian-mind/SKILL.md`;
 - the standard MCP Resource
-  `owd://compatibility-profiles/obsidian-mind/v1`;
+  `mdevolved://compatibility-profiles/obsidian-mind/v1`;
 - the standard MCP Prompt `connect-obsidian-mind`;
 - the dashboard's additive setup command and generic merge fragment; and
 - the managed MDevolved block inserted into Project `AGENTS.md`.

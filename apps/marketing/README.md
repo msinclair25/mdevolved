@@ -21,9 +21,12 @@ not a public managed-service launch.
 The site leads with the lovable resume moment, explains the one-command folder
 path and one-click Community deployment, then offers invitation-only managed
 alpha access. The source section links the public
-[MDevolved repository](https://github.com/msinclair25/mdevolved) and the public
-[Obsidian adapter compatibility repository](https://github.com/msinclair25/owd-sync). Detailed release
-and installation status belongs in those GitHub READMEs.
+[MDevolved repository](https://github.com/msinclair25/mdevolved) and the
+canonical Obsidian adapter candidate in
+[`packages/obsidian-plugin`](https://github.com/msinclair25/mdevolved/tree/main/packages/obsidian-plugin).
+The candidate is not published or listed yet; existing `owd-sync` users retain
+the legacy compatibility path. Detailed release and installation status belongs
+in the repository documentation.
 
 The compatibility section must stay provider-neutral and useful to solo agents,
 lead-mediated orchestrations, and portable handoffs. Eve.dev remains one
@@ -50,7 +53,7 @@ That command is the fast visual-development server. To exercise the form
 endpoint with Cloudflare's local Email Service simulation:
 
 ```sh
-pnpm --filter @owd/marketing dev:worker
+pnpm --filter @mdevolved/marketing dev:worker
 ```
 
 Local Email Service simulation records the composed email but does not deliver

@@ -6,7 +6,7 @@ recovery keys, private deployment hostnames, vault names, or note content in a
 public issue.
 
 Report a vulnerability privately through GitHub's private vulnerability
-reporting for `msinclair25/owd-sync` when available. If that channel is not
+reporting for `msinclair25/mdevolved-sync` when available. If that channel is not
 available, open a content-free issue asking the maintainer to enable a private
 contact path.
 

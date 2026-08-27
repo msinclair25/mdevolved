@@ -31,8 +31,8 @@ that bridge when Albatross supports authenticated remote MCP natively.
 Albatross workspace
   ├── agent.config.json
   ├── .albatross/prompt.md
-  ├── .owdignore
-  └── mcp__owd__<tool>
+  ├── .mdevolvedignore
+  └── mcp__mdevolved__<tool>
              │
              │ stdio
              ▼
@@ -85,7 +85,7 @@ contains three matching pieces and the final trust step:
 1. the pre-authorization command;
 2. an additive `agent.config.json` fragment;
 3. a marked `.albatross/prompt.md` block; and
-4. `/mcp trust owd`.
+4. `/mcp trust mdevolved`.
 
 Use **New participant ID** before copying a kit for another workspace or an
 independently attributable reviewer.
@@ -128,7 +128,7 @@ Albatross prepends that file to its system prompt on each turn.
 Then start Albatross and run:
 
 ```text
-/mcp trust owd
+/mcp trust mdevolved
 ```
 
 Albatross scopes trust to the canonical workspace and the exact MCP config
@@ -157,13 +157,13 @@ or Prompts. It does not define new tools or authority.
 
 For server name `owd`, Albatross sees:
 
-1. `mcp__owd__connection_info`;
-2. `mcp__owd__open_project`;
-3. `mcp__owd__wait_for_project_connection`; and
-4. `mcp__owd__resume_project`.
+1. `mcp__mdevolved__connection_info`;
+2. `mcp__mdevolved__open_project`;
+3. `mcp__mdevolved__wait_for_project_connection`; and
+4. `mcp__mdevolved__resume_project`.
 
-When `.owdignore` exists, Albatross reads it and calls
-`mcp__owd__resume_project` as the first MDevolved action in a fresh task. It passes
+When `.mdevolvedignore` exists, Albatross reads it and calls
+`mcp__mdevolved__resume_project` as the first MDevolved action in a fresh task. It passes
 the exact Project UUID and complete context policy. The local writer role is
 unconfirmed until MDevolved returns the current `localVaultAccess`.
 
@@ -215,7 +215,7 @@ receipt-based `resume_project`. The two files have different jobs:
 | File                              | Authority and purpose                                |
 | --------------------------------- | ---------------------------------------------------- |
 | `.albatross/continue.md`          | Albatross runtime continuation                       |
-| `.owdignore`                      | Exact portable MDevolved Project identity and policy |
+| `.mdevolvedignore`                | Exact portable MDevolved Project identity and policy |
 | MDevolved Artifact/Handoff/Review | Cited cross-agent work and evaluation                |
 | MDevolved owner Decision          | Accepted Project direction                           |
 
@@ -233,7 +233,7 @@ MDevolved and Albatross should preserve different layers of the work:
 | `/iterate` and `critique` | Internal candidates; publish meaningful Attempts and selected proof |
 | `/path fork`              | Alternative Attempts inside one Project                             |
 | `/auto`                   | Bounded execution under the current packet, budget, and deadline    |
-| Checkpoint or `/reset`    | Runtime recovery; resume `.owdignore` before continuing             |
+| Checkpoint or `/reset`    | Runtime recovery; resume `.mdevolvedignore` before continuing       |
 | Winning implementation    | Cited Artifact                                                      |
 | Work another agent needs  | Handoff with sources, result, open questions, and next action       |
 | Independent evaluation    | Review from a distinct participant ID and OAuth authorization       |
@@ -274,9 +274,9 @@ do not grant local filesystem authority.
 
 The same versioned profile ships through:
 
-- package export `@owd/client-packs`;
-- script-free skill `@owd/client-packs/owd-albatross`;
-- MCP Resource `owd://compatibility-profiles/albatross/v1`;
+- package export `@mdevolved/client-packs`;
+- script-free skill `@mdevolved/client-packs/mdevolved-albatross`;
+- MCP Resource `mdevolved://compatibility-profiles/albatross/v1`;
 - MCP Prompt `connect-albatross`; and
 - the authenticated dashboard's copy-ready setup kit.
 

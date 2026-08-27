@@ -60,7 +60,7 @@ describe("Project context policy", () => {
       },
       policy: {
         excludePaths: ["Projects/Work/Private"],
-        format: "owd-project-context-v1",
+        format: "mdevolved-project-context-v1",
         includePaths: ["Projects/Work"],
       },
     });
@@ -73,9 +73,9 @@ describe("Project context policy", () => {
       projectId,
     );
     expect(receipt).toMatchObject({
-      contextFilePath: ".owdignore",
+      contextFilePath: ".mdevolvedignore",
       instructionFilePath: "AGENTS.md",
-      requiredTool: "resume_project",
+      requiredTool: "mdevolved_resume",
       selectorSha256,
     });
     expect(receipt.contextFileContent).toBe(
@@ -146,7 +146,7 @@ describe("Project context policy", () => {
     expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain(
       "A restarted session using that same authorized client keeps the role",
     );
-    expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain("call resume_project");
+    expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain("call mdevolved_resume");
     expect(OWD_LOCAL_VAULT_WRITE_SUMMARY).toContain(
       "the global Agents screen never promotes it",
     );

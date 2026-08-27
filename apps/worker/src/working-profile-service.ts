@@ -12,7 +12,7 @@ import {
   type ImportAgentSkillRequest,
   type ProjectSkillMutationRequest,
   type SaveWorkingPreferenceRequest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { parseDocument } from "yaml";
 import { sha256Hex } from "./security";
 import { queueCollaborationObjectCleanup } from "./collaboration-retention";

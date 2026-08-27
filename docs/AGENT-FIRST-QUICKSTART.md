@@ -4,7 +4,8 @@ This guide describes the agent-first workflow shared by Community deployments
 and the invitation-only managed alpha. Community operators deploy from this
 public repository; managed users start from a pre-provisioned workspace
 invitation. MDevolved Sync synchronizes a selected Markdown folder; its optional
-Obsidian adapter retains the frozen `owd-sync` compatibility identity. MDevolved MCP
+Obsidian adapter is developed under the canonical `mdevolved-sync` identity.
+Existing `owd-sync` installations remain a compatibility path. MDevolved MCP
 gives an already-authorized agent explicitly approved access to durable Project
 memory. You continue working in your project folder, Obsidian workspace, and
 existing agent.
@@ -25,17 +26,17 @@ Names may match, but a Source is never implicitly treated as a Project.
 After the Project is connected once, the user does not manage packets, leases,
 or fencing. Give the agent this instruction:
 
-> Before meaningful work, call `owd_resume` for this Project. Use `owd_find`
-> when you need targeted durable recall. Before finishing, call
-> `owd_checkpoint` with the resume receipt and verified outcome.
+> Before meaningful work, call `mdevolved_resume` for this Project. Use
+> `mdevolved_find` when you need targeted durable recall. Before finishing,
+> call `mdevolved_checkpoint` with the resume receipt and verified outcome.
 
-`owd_resume` returns bounded structured Project context, not a transcript or
+`mdevolved_resume` returns bounded structured Project context, not a transcript or
 provider-session replay. `focused` is the default. Use `independent` to withhold
 peer conclusions and provisional results, and `synthesis` only to compare
 separately attributable durable results.
 
 The agent passes the opaque `checkpointBase` and returned `contextMode` from
-`owd_resume` back to `owd_checkpoint` unchanged. Focused and synthesis work
+`mdevolved_resume` back to `mdevolved_checkpoint` unchanged. Focused and synthesis work
 reject stale memory instead of silently overwriting newer progress. Independent
 work remains bound to the exact frozen Work Packet, allowing separately working
 agents to submit attributable results without seeing peer conclusions. These
@@ -52,9 +53,9 @@ enter a resume until the owner accepts them.
 The smallest useful demonstration is deliberately boring:
 
 1. Client A connects the Project, does a bounded piece of work, and calls
-   `owd_checkpoint` with its verified outcome.
+   `mdevolved_checkpoint` with its verified outcome.
 2. The owner starts Client B on another computer or in a fresh session.
-3. Client B calls `owd_resume` for the exact Project ID and receives the
+3. Client B calls `mdevolved_resume` for the exact Project ID and receives the
    objective, current state, cited evidence, rejected approaches, and next
    action. No prompt, transcript, terminal history, or provider session is
    copied.
@@ -128,7 +129,7 @@ Project, an existing Project, a rejoin, and a resume. If exactly one compatible
 Project exists, MDevolved opens it without asking you to choose an internal mode. If
 more than one exists, the agent asks which visible Project you mean. If none
 exists, it prepares one bounded New Project draft and calls `open_project`
-again. A `.owdignore` `projectId` is authoritative. When you name the work and
+again. A `.mdevolvedignore` `projectId` is authoritative. When you name the work and
 no receipt exists, the agent passes that exact name as `projectHint`; it never
 matches authority by a local folder name or silently opens different work.
 
@@ -217,7 +218,7 @@ refer to the same Project.
 ## Client recipes
 
 Codex: use the dashboard's **Copy setup** command, authenticate the exact MCP
-server, then ask the agent to call `owd_resume` before meaningful work.
+server, then ask the agent to call `mdevolved_resume` before meaningful work.
 
 Claude or another compatible client: add the dashboard's MCP URL to its
 project-scoped `mcpServers` configuration. The common HTTP shape is:
@@ -239,19 +240,21 @@ continuity only; it does not launch Orca agents or certify their work.
 
 After approval, the initializing agent receives two exact continuity artifacts:
 
-- `.owdignore`, a versioned JSON manifest containing the exact `projectId`,
+- `.mdevolvedignore`, a versioned JSON manifest containing the exact `projectId`,
   `includePaths`, and `excludePaths`; and
 - a bounded MDevolved-managed block for the project root `AGENTS.md`.
 
-The agent writes the exact `.owdignore` receipt and merges only the marked MDevolved
+The agent writes the exact `.mdevolvedignore` receipt and merges only the marked MDevolved
 block into `AGENTS.md`; it must preserve every existing project instruction.
 It never asks the owner to copy the receipt, Project ID, policy JSON, or
 instruction block.
 Codex reads the applicable `AGENTS.md` instruction chain at the start of a new
-task. The MDevolved block therefore tells a fresh task to read `.owdignore` and call
-`owd_resume` with its exact `projectId` before using prior Project context.
+task. The MDevolved block therefore tells a fresh task to read `.mdevolvedignore`
+and call `mdevolved_resume` with its exact `projectId` before using prior Project
+context.
 
-That `owd_resume` call is the first MDevolved action when `.owdignore` exists. Until
+That `mdevolved_resume` call is the first MDevolved action when `.mdevolvedignore`
+exists. Until
 it returns, the fresh session's writer role is **unconfirmed**—the agent must
 not claim that it is or is not primary from chat history, a new session
 identity, or local tool availability. The current `localVaultAccess.role` is
@@ -261,14 +264,14 @@ does not after a crash, restart, or context reset, the owner can say
 equivalent; the agent resumes the existing receipt without reconnecting
 MCP or requesting new authorization.
 
-`owd_resume` uses the `projectId` in `.owdignore` rather than inferring a
+`mdevolved_resume` uses the `projectId` in `.mdevolvedignore` rather than inferring a
 Project from a label or whichever grant was most recently used. It rechecks the
 live client, exact Project grant, scope, revocation, and current durable state.
 It returns one bounded cited brief only when they agree. It does not replay raw
 conversation history. The lower-level `resume_project` receipt and packet
 behavior remain available under advanced compatibility paths.
 
-Do not hand-edit `.owdignore` as a way to change authority. Reinitialize or use
+Do not hand-edit `.mdevolvedignore` as a way to change authority. Reinitialize or use
 an owner-approved Knowledge Space change so MDevolved can issue a new pinned version.
 
 ## When an agent can also edit the vault
@@ -277,9 +280,9 @@ An MDevolved connection does not grant write access, even when the same agent ha
 Obsidian skill, Obsidian CLI, shell, or filesystem permission. Those local
 tools bypass MDevolved's read-only MCP boundary.
 
-The human always remains the vault owner. The first agent that establishes an
-MDevolved Project for the vault becomes its primary vault writer across Projects.
-Every successful `open_project`, connection completion, and `owd_resume`
+The human always remains the Source owner. The first agent that establishes an
+MDevolved Project for the Source becomes its primary Source writer across Projects.
+Every successful `open_project`, connection completion, and `mdevolved_resume`
 returns that caller's advisory `localVaultAccess` role. The managed `AGENTS.md`
 block requires an agent to check that role before a local mutation.
 
@@ -355,7 +358,7 @@ Project's identifiers, infer owner approval, or fall back to transcript or model
 claims as durable evidence.
 
 `continuity_point_conflict` means another checkpoint advanced the Project after
-this agent's resume. The agent calls `owd_resume`, incorporates the latest
+this agent's resume. The agent calls `mdevolved_resume`, incorporates the latest
 durable state, then creates a new checkpoint with a new idempotency key. It
 must not ask the owner to renew context or initialize a replacement Project.
 Advanced clients using historical packet APIs still handle `work_packet_stale`

@@ -3,7 +3,7 @@ import {
   type MaterializationJob,
   type RestoreJob,
   type RestoreMarkdownNoteRequest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { readMaterializationJob } from "./materialization-job";
 import { sha256Hex } from "./security";
 import { VaultPathError, validateMarkdownVaultPath } from "./vault-path";

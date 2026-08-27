@@ -1,4 +1,9 @@
-# MD5 acceptance test matrix
+# MD5 acceptance test matrix (historical)
+
+> This matrix records the display-name transition before MD9. The canonical
+> identity contract for new installs and writes is now
+> [`compatibility/identities.json`](../compatibility/identities.json); OWD
+> values in this historical matrix describe compatibility inputs only.
 
 This matrix ties each MDevolved brand-transition requirement to executable
 evidence. Static copy checks are a guardrail only; they never substitute for

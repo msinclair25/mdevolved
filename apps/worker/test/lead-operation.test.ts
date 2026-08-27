@@ -5,7 +5,7 @@ import {
   projectExceptionSchema,
   projectPolicySchema,
   runSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { LeadOperationProblem } from "../src/lead-operation-service";
 
 describe("R2 lead-operation contract spine", () => {

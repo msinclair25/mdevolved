@@ -21,7 +21,7 @@ import {
   snapshotIntelligenceManifestSchema,
   workPacketJsonSchema,
   workPacketSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 import capabilityFixture from "../fixtures/owd-collaboration-capabilities-v1.json";
 import continuityFixture from "../fixtures/owd-continuity-point-v1.json";

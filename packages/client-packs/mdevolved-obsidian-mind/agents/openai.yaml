@@ -1,0 +1,4 @@
+interface:
+  display_name: "MDevolved + Obsidian Mind"
+  short_description: "Connect Obsidian Mind to MDevolved safely"
+  default_prompt: "Use $mdevolved-obsidian-mind to connect or resume this Obsidian Mind workspace with MDevolved."

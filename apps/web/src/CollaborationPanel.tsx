@@ -22,7 +22,7 @@ import {
   type LeadOperationOverview,
   type OperationalOverview,
   type VaultSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   OperationalRegion,
@@ -55,7 +55,9 @@ async function apiJson(
       ...(options.body === undefined
         ? {}
         : { "Content-Type": "application/json" }),
-      ...(options.csrf === undefined ? {} : { "X-OWD-CSRF": options.csrf }),
+      ...(options.csrf === undefined
+        ? {}
+        : { "X-MDevolved-CSRF": options.csrf }),
     },
     method: options.method ?? "GET",
   });
@@ -81,7 +83,7 @@ async function apiNoContent(
     headers: {
       Accept: "application/json",
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      "X-OWD-CSRF": csrf,
+      "X-MDevolved-CSRF": csrf,
     },
     method: "POST",
   });

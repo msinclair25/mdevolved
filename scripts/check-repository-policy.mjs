@@ -151,8 +151,8 @@ for (const file of await collect(root)) {
   if (
     communityPackageRoots.some((path) => displayPath.startsWith(`${path}/`)) &&
     [
-      "@owd/control-plane",
-      "@owd/managed-",
+      "@mdevolved/control-plane",
+      "@mdevolved/managed-",
       "../control-plane",
       "/apps/control-plane",
     ].some((managedReference) => contents.includes(managedReference))

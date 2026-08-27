@@ -1,4 +1,4 @@
-import { ownerDiagnosticsResponseSchema } from "@owd/contracts";
+import { ownerDiagnosticsResponseSchema } from "@mdevolved/contracts";
 import type { Hono } from "hono";
 import { getCollaborationDashboard } from "./collaboration-service";
 import { requireOwnerSession } from "./owner-session";

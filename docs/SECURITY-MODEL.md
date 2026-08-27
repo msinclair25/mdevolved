@@ -193,7 +193,7 @@ invoking the Worker for HTML, JavaScript, or CSS:
 - fingerprinted `/assets/*` files are cached immutably for one year, while the
   HTML shell keeps Cloudflare's revalidation behavior so releases are visible
   immediately;
-- versioned `/owd-sync/<version>/*` files contain only the checked companion
+- versioned `/mdevolved-sync/<version>/*` files contain only the checked companion
   release and generated installer manifest and are cached immutably;
 - these rules live in `apps/web/public/_headers`, are copied into the Vite
   output, and are enforced by Cloudflare Static Assets at the edge.
@@ -333,9 +333,9 @@ to remain active. These checks deny legacy grants even if an older revocation
 path failed to cascade a stored status update.
 
 Agent-first initialization also pins an owner-approved include/exclude policy
-as the Knowledge Space selector. The canonical `.owdignore` receipt contains
+as the Knowledge Space selector. The canonical `.mdevolvedignore` receipt contains
 the exact `projectId` and is Project-context policy, not a sync exclusion. A
-fresh task presents that full manifest to `resume_project`; MDevolved verifies the
+fresh task presents that full manifest to `mdevolved_resume`; MDevolved verifies the
 explicit Project identity, live source and Project grants, pinned version, and
 selector hash before returning the current Work Packet. Local policy drift
 cannot widen server authority and is surfaced as a stable failure rather than

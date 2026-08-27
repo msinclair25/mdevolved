@@ -7,7 +7,7 @@
     "communityVersion": "1.0.0-alpha.7",
     "gitCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "compatibilityDate": "2026-07-26",
-    "migrationLedgerSha256": "85b5bcac0b92aabc53efb40c165c8e05ccc30b49bf5ac6443997e7ac2295a71f",
+    "migrationLedgerSha256": "b138a9062b1e23581b46d5de7d81b52c5ae5cb92c3b8f7466fa902485c8cbb61",
     "appliedMigrations": [
       "0001_platform_metadata.sql",
       "0002_owner_authentication.sql",
@@ -41,7 +41,8 @@
       "0035_compounding_drafts.sql",
       "0036_source_descriptors.sql",
       "0037_source_devices.sql",
-      "0038_autonomous_completion_mode.sql"
+      "0038_autonomous_completion_mode.sql",
+      "0039_canonical_portable_formats.sql"
     ]
   },
   "provisionedAt": "2026-08-06T00:00:00.000Z",

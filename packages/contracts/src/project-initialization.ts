@@ -6,9 +6,17 @@ import {
 
 export const PROJECT_INITIALIZATION_SCOPE = "project.initialize.request";
 export const PROJECT_CONNECTION_SCOPE = "project.connect.request";
+export const MDEVOLVED_PROJECT_CONTEXT_FILE = ".mdevolvedignore";
+export const MDEVOLVED_PROJECT_CONTEXT_FORMAT = "mdevolved-project-context-v1";
+export const MDEVOLVED_PROJECT_CONTINUITY_FILE = "AGENTS.md";
+export const MDEVOLVED_PROJECT_RESUME_TOOL = "mdevolved_resume";
+/** @deprecated Legacy receipt filename retained for resume compatibility. */
 export const OWD_PROJECT_CONTEXT_FILE = ".owdignore";
+/** @deprecated Legacy receipt format retained for resume compatibility. */
 export const OWD_PROJECT_CONTEXT_FORMAT = "owd-project-context-v1";
+/** @deprecated Use MDEVOLVED_PROJECT_CONTINUITY_FILE. */
 export const OWD_PROJECT_CONTINUITY_FILE = "AGENTS.md";
+/** @deprecated Use MDEVOLVED_PROJECT_RESUME_TOOL. */
 export const OWD_PROJECT_RESUME_TOOL = "resume_project";
 export const projectInitializationScopeSchema = z.literal(
   PROJECT_INITIALIZATION_SCOPE,
@@ -145,7 +153,10 @@ export const projectContextPolicySchema = z
       .array(contextPathSchema)
       .max(32)
       .refine((values) => new Set(values).size === values.length),
-    format: z.literal(OWD_PROJECT_CONTEXT_FORMAT),
+    format: z.union([
+      z.literal(MDEVOLVED_PROJECT_CONTEXT_FORMAT),
+      z.literal(OWD_PROJECT_CONTEXT_FORMAT),
+    ]),
     includePaths: z
       .array(safeFolderSchema)
       .min(1)
@@ -375,11 +386,17 @@ export const projectInitializationStatusResponseSchema = z
     continuity: z
       .object({
         contextFileContent: z.string().min(1).max(16_384),
-        contextFilePath: z.literal(OWD_PROJECT_CONTEXT_FILE),
-        instructionFilePath: z.literal(OWD_PROJECT_CONTINUITY_FILE),
+        contextFilePath: z.union([
+          z.literal(MDEVOLVED_PROJECT_CONTEXT_FILE),
+          z.literal(OWD_PROJECT_CONTEXT_FILE),
+        ]),
+        instructionFilePath: z.literal(MDEVOLVED_PROJECT_CONTINUITY_FILE),
         managedInstructionBlock: z.string().min(1).max(8_192),
         projectId: z.string().uuid(),
-        requiredTool: z.literal(OWD_PROJECT_RESUME_TOOL),
+        requiredTool: z.union([
+          z.literal(MDEVOLVED_PROJECT_RESUME_TOOL),
+          z.literal(OWD_PROJECT_RESUME_TOOL),
+        ]),
         selectorSha256: z.string().regex(/^[0-9a-f]{64}$/u),
       })
       .strict()

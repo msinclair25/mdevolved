@@ -1,4 +1,7 @@
-import type { BackupArtifact } from "@owd/contracts";
+import {
+  MDEVOLVED_BACKUP_FORMAT,
+  type BackupArtifact,
+} from "@mdevolved/contracts";
 
 export type RecoveryFileKind = "backup" | "identity";
 
@@ -93,7 +96,9 @@ export function createStoredBackupFile(
   if (encrypted.size !== backup.ciphertextBytes) {
     throw new Error("The verified encrypted copy size did not match.");
   }
-  return new File([encrypted], `owd-backup-${backup.backupId}.age`, {
+  const prefix =
+    backup.format === MDEVOLVED_BACKUP_FORMAT ? "mdevolved" : "owd";
+  return new File([encrypted], `${prefix}-backup-${backup.backupId}.age`, {
     type: "application/octet-stream",
   });
 }

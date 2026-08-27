@@ -3,10 +3,17 @@
   "version": "0.1.0-alpha.1",
   "description": "MDevolved source-neutral Markdown folder sync client.",
   "license": "Apache-2.0",
+  "homepage": "https://mdevolved.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msinclair25/mdevolved.git",
+    "directory": "packages/mdevolved-cli"
+  },
   "type": "module",
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "engines": {
     "node": ">=22.18.0"
@@ -21,8 +28,8 @@
     "prepublishOnly": "pnpm test && pnpm build"
   },
   "devDependencies": {
-    "@owd/folder-adapter": "workspace:*",
-    "@owd/yaos-core": "workspace:*",
+    "@mdevolved/folder-adapter": "workspace:*",
+    "@mdevolved/yaos-core": "workspace:*",
     "@types/node": "26.1.1",
     "esbuild": "0.25.5",
     "fake-indexeddb": "6.2.5",

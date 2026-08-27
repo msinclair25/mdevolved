@@ -1,7 +1,7 @@
 import {
   prepareMarkdownNotePath,
   validateMarkdownVaultPath,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 
 describe("friendly Markdown note paths", () => {

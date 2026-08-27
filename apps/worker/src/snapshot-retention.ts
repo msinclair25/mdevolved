@@ -1,7 +1,7 @@
 import {
   snapshotRetentionPolicySchema,
   type SnapshotRetentionPolicy,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 
 const RETENTION_DELETE_BATCH_SIZE = 4;
 const GC_BATCH_SIZE = 24;

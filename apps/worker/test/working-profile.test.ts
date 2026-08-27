@@ -1020,7 +1020,7 @@ describe("working-profile routes", () => {
         }),
         headers: {
           "Content-Type": "application/json",
-          Cookie: `__Host-owd_session=${session.token}`,
+          Cookie: `__Host-mdevolved_session=${session.token}`,
           Origin: ORIGIN,
         },
         method: "POST",
@@ -1042,9 +1042,9 @@ describe("working-profile routes", () => {
         }),
         headers: {
           "Content-Type": "application/json",
-          Cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+          Cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrfToken,
+          "X-MDevolved-CSRF": session.csrfToken,
         },
         method: "POST",
       }),
@@ -1055,7 +1055,7 @@ describe("working-profile routes", () => {
     const listed = await worker.fetch(
       new Request(`${ORIGIN}/api/working-profile/preferences`, {
         headers: {
-          Cookie: `__Host-owd_session=${session.token}`,
+          Cookie: `__Host-mdevolved_session=${session.token}`,
         },
       }),
       env,
@@ -1072,9 +1072,9 @@ describe("working-profile routes", () => {
         body: JSON.stringify({ padding: "x".repeat(401 * 1_024) }),
         headers: {
           "Content-Type": "application/json",
-          Cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+          Cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrfToken,
+          "X-MDevolved-CSRF": session.csrfToken,
         },
         method: "POST",
       }),

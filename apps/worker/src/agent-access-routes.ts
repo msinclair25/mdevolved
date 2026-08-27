@@ -12,7 +12,7 @@ import {
   type AgentVaultScopes,
   type CollaborationScope,
   type OAuthRedirectResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type {
   GrantSummary,
   OAuthHelpers,

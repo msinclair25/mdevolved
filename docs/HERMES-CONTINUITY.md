@@ -4,7 +4,7 @@ These thin instructions use the generic MDevolved MCP contract. Hermes-specific
 scripts, conversation export, provider credentials, hidden reasoning, terminal
 history, and runtime state are neither required nor accepted.
 
-1. Read `owd://collaboration/lead-continuity-capabilities/v1`. If the resource
+1. Read `mdevolved://collaboration/lead-continuity-capabilities/v1`. If the resource
    or required format is unsupported, continue with the legacy Project tools
    and do not pretend continuity support exists.
 2. Call `resume_project` with the explicit Project context. Treat the latest

@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  browserSupportsOwdSyncInstall,
-  installOwdSyncIntoVault,
-  isOwdSyncInstallCancellation,
-  normalizeOwdSyncInstallerError,
-  OWD_SYNC_INSTALLER_BASE_PATH,
-  OWD_SYNC_INSTALLER_FORMAT,
-  OWD_SYNC_INSTALLER_MANIFEST_URL,
-  OWD_SYNC_PLUGIN_ID,
+  browserSupportsMdevolvedSyncInstall,
+  installMdevolvedSyncIntoVault,
+  isMdevolvedSyncInstallCancellation,
+  normalizeMdevolvedSyncInstallerError,
+  MDEVOLVED_SYNC_INSTALLER_BASE_PATH,
+  MDEVOLVED_SYNC_INSTALLER_FORMAT,
+  MDEVOLVED_SYNC_INSTALLER_MANIFEST_URL,
   OwdSyncInstallerError,
   type OwdSyncDirectoryHandle,
   type OwdSyncFileHandle,
@@ -15,6 +14,7 @@ import {
   type OwdSyncReadableFile,
   type OwdSyncWritableFile,
 } from "../src/obsidian-plugin-installer";
+import { MDEVOLVED_SYNC_PLUGIN_ID } from "../src/obsidian-plugin-links";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -177,9 +177,9 @@ async function installerDependencies(options?: {
       "manifest.json",
       encoder.encode(
         JSON.stringify({
-          id: OWD_SYNC_PLUGIN_ID,
+          id: MDEVOLVED_SYNC_PLUGIN_ID,
           name: "OWD Sync",
-          version: "0.1.7",
+          version: "0.2.0-alpha.1",
         }),
       ),
     ],
@@ -193,17 +193,17 @@ async function installerDependencies(options?: {
         sha256: await sha256(bytes),
       })),
     ),
-    format: OWD_SYNC_INSTALLER_FORMAT,
-    pluginId: OWD_SYNC_PLUGIN_ID,
-    version: options?.manifestVersion ?? "0.1.7",
+    format: MDEVOLVED_SYNC_INSTALLER_FORMAT,
+    pluginId: MDEVOLVED_SYNC_PLUGIN_ID,
+    version: options?.manifestVersion ?? "0.2.0-alpha.1",
   };
 
   const fetcher: typeof fetch = async (input) => {
     const url = String(input);
-    if (url === OWD_SYNC_INSTALLER_MANIFEST_URL) {
+    if (url === MDEVOLVED_SYNC_INSTALLER_MANIFEST_URL) {
       return Response.json(manifest);
     }
-    const name = url.slice(`${OWD_SYNC_INSTALLER_BASE_PATH}/`.length);
+    const name = url.slice(`${MDEVOLVED_SYNC_INSTALLER_BASE_PATH}/`.length);
     const value = assets.get(name);
     if (value === undefined) {
       return new Response(null, { status: 404 });
@@ -226,29 +226,51 @@ describe("OWD Sync direct vault installer", () => {
       JSON.stringify(["calendar", "obsidian42-brat", "calendar"]),
     );
 
-    const result = await installOwdSyncIntoVault(
+    const result = await installMdevolvedSyncIntoVault(
       vault,
       await installerDependencies(),
     );
     const plugin = await (
       await obsidian.getDirectoryHandle("plugins")
-    ).getDirectoryHandle(OWD_SYNC_PLUGIN_ID);
+    ).getDirectoryHandle(MDEVOLVED_SYNC_PLUGIN_ID);
 
     expect(result).toEqual({
       enabledPluginCount: 3,
       vaultName: "Product vault",
-      version: "0.1.7",
+      version: "0.2.0-alpha.1",
     });
     expect(await plugin.readText("main.js")).toBe("console.log('OWD Sync');\n");
     expect(
       JSON.parse((await plugin.readText("manifest.json")) ?? "null"),
     ).toMatchObject({
-      id: OWD_SYNC_PLUGIN_ID,
-      version: "0.1.7",
+      id: MDEVOLVED_SYNC_PLUGIN_ID,
+      version: "0.2.0-alpha.1",
     });
     expect(
       JSON.parse((await obsidian.readText("community-plugins.json")) ?? "null"),
-    ).toEqual(["calendar", "obsidian42-brat", OWD_SYNC_PLUGIN_ID]);
+    ).toEqual(["calendar", "obsidian42-brat", MDEVOLVED_SYNC_PLUGIN_ID]);
+  });
+
+  it("leaves a legacy owd-sync installation untouched while adding the canonical adapter", async () => {
+    const vault = new MemoryDirectory("Migrated vault");
+    const obsidian = await vault.seedDirectory(".obsidian");
+    const plugins = await obsidian.seedDirectory("plugins");
+    const legacy = await plugins.seedDirectory("owd-sync");
+    await legacy.seedFile("main.js", "legacy adapter\n");
+    await obsidian.seedFile(
+      "community-plugins.json",
+      JSON.stringify(["owd-sync"]),
+    );
+
+    await installMdevolvedSyncIntoVault(vault, await installerDependencies());
+
+    expect(await legacy.readText("main.js")).toBe("legacy adapter\n");
+    expect(
+      await plugins.getDirectoryHandle(MDEVOLVED_SYNC_PLUGIN_ID),
+    ).toBeDefined();
+    expect(
+      JSON.parse((await obsidian.readText("community-plugins.json")) ?? "null"),
+    ).toEqual(["owd-sync", MDEVOLVED_SYNC_PLUGIN_ID]);
   });
 
   it("rejects a non-vault folder before loading or writing installer assets", async () => {
@@ -261,7 +283,7 @@ describe("OWD Sync direct vault installer", () => {
     };
 
     await expect(
-      installOwdSyncIntoVault(vault, dependencies),
+      installMdevolvedSyncIntoVault(vault, dependencies),
     ).rejects.toMatchObject({
       code: "not_an_obsidian_vault",
     });
@@ -274,7 +296,7 @@ describe("OWD Sync direct vault installer", () => {
     await obsidian.seedFile("community-plugins.json", '["calendar"]\n');
 
     await expect(
-      installOwdSyncIntoVault(
+      installMdevolvedSyncIntoVault(
         vault,
         await installerDependencies({ manifestVersion: "0.1.4" }),
       ),
@@ -282,7 +304,7 @@ describe("OWD Sync direct vault installer", () => {
       code: "invalid_installer_manifest",
     });
     await expect(
-      installOwdSyncIntoVault(
+      installMdevolvedSyncIntoVault(
         vault,
         await installerDependencies({ alterAsset: "main.js" }),
       ),
@@ -313,7 +335,7 @@ describe("OWD Sync direct vault installer", () => {
     );
     const obsidian = await vault.seedDirectory(".obsidian");
     const plugins = await obsidian.seedDirectory("plugins");
-    const plugin = await plugins.seedDirectory(OWD_SYNC_PLUGIN_ID);
+    const plugin = await plugins.seedDirectory(MDEVOLVED_SYNC_PLUGIN_ID);
     await plugin.seedFile("main.js", "old main");
     await plugin.seedFile("manifest.json", "old manifest");
     await plugin.seedFile("styles.css", "old styles");
@@ -321,7 +343,7 @@ describe("OWD Sync direct vault installer", () => {
     failStyles = true;
 
     await expect(
-      installOwdSyncIntoVault(vault, await installerDependencies()),
+      installMdevolvedSyncIntoVault(vault, await installerDependencies()),
     ).rejects.toBeInstanceOf(OwdSyncInstallerError);
 
     expect(await plugin.readText("main.js")).toBe("old main");
@@ -334,16 +356,16 @@ describe("OWD Sync direct vault installer", () => {
 
   it("treats picker cancellation as a no-change outcome and reports support honestly", () => {
     expect(
-      isOwdSyncInstallCancellation(
+      isMdevolvedSyncInstallCancellation(
         new DOMException("The user cancelled", "AbortError"),
       ),
     ).toBe(true);
-    expect(browserSupportsOwdSyncInstall()).toBe(false);
+    expect(browserSupportsMdevolvedSyncInstall()).toBe(false);
   });
 
   it("turns browser folder failures into specific, recoverable Mac guidance", () => {
     expect(
-      normalizeOwdSyncInstallerError(
+      normalizeMdevolvedSyncInstallerError(
         new DOMException("Permission denied", "NotAllowedError"),
       ),
     ).toMatchObject({
@@ -351,7 +373,7 @@ describe("OWD Sync direct vault installer", () => {
       message: expect.stringContaining("choose Allow"),
     });
     expect(
-      normalizeOwdSyncInstallerError(
+      normalizeMdevolvedSyncInstallerError(
         new DOMException("File is busy", "NotReadableError"),
       ),
     ).toMatchObject({
@@ -359,7 +381,7 @@ describe("OWD Sync direct vault installer", () => {
       message: expect.stringContaining("⌘Q"),
     });
     expect(
-      normalizeOwdSyncInstallerError(
+      normalizeMdevolvedSyncInstallerError(
         new DOMException("Picker blocked", "SecurityError"),
       ),
     ).toMatchObject({

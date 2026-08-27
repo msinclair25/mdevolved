@@ -9,7 +9,7 @@ import {
   type PairingExchangeResponse,
   type PairingGrantResponse,
   type SourceDevicePairingExchangeResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -93,7 +93,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
   );
 
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -105,7 +105,7 @@ function ownerMutationHeaders(
   return {
     Cookie: session.cookie,
     Origin: origin,
-    "X-OWD-CSRF": session.csrf,
+    "X-MDevolved-CSRF": session.csrf,
   };
 }
 
@@ -275,7 +275,7 @@ describe("vault pairing and authorization", () => {
       minSchemaVersion: 1,
       maxSchemaVersion: 3,
       minPluginVersion: "0.1.7",
-      recommendedPluginVersion: "0.1.7",
+      recommendedPluginVersion: "0.2.0-alpha.1",
       sourceDevices: {
         capability: "owd.source-devices-v1",
         credentialMode: "client-generated-sha256",
@@ -663,9 +663,11 @@ describe("vault pairing and authorization", () => {
     const grant = await createGrant(session);
     const pairingUrl = new URL(grant.pairingUrl);
     const obsidianUrl = new URL(grant.obsidianUrl);
+    const legacyPairingUrl = new URL(grant.legacyPairingUrl);
+    const legacyObsidianUrl = new URL(grant.legacyObsidianUrl);
     const rawGrant = grantFromUrl(grant.pairingUrl);
 
-    expect(pairingUrl.protocol).toBe("owd-pair:");
+    expect(pairingUrl.protocol).toBe("mdevolved:");
     expect(pairingUrl.host).toBe("connect");
     expect([...pairingUrl.searchParams.keys()].sort()).toEqual([
       "deployment",
@@ -673,9 +675,13 @@ describe("vault pairing and authorization", () => {
     ]);
     expect(pairingUrl.searchParams.get("deployment")).toBe(ORIGIN);
     expect(obsidianUrl.protocol).toBe("obsidian:");
-    expect(obsidianUrl.host).toBe("owd-pair");
+    expect(obsidianUrl.host).toBe("mdevolved-pair");
     expect(obsidianUrl.searchParams.get("deployment")).toBe(ORIGIN);
     expect(obsidianUrl.searchParams.get("grant")).toBe(rawGrant);
+    expect(legacyPairingUrl.protocol).toBe("owd-pair:");
+    expect(legacyPairingUrl.searchParams.get("grant")).toBe(rawGrant);
+    expect(legacyObsidianUrl.host).toBe("owd-pair");
+    expect(legacyObsidianUrl.searchParams.get("grant")).toBe(rawGrant);
 
     const storedGrant = await env.DB.prepare(
       "SELECT grant_hash FROM pairing_grants WHERE vault_id = ?",

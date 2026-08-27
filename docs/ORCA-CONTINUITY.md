@@ -112,7 +112,7 @@ until run.
 Connect the same generic MDevolved MCP endpoint from the owner's chosen client, then
 let Orca execute work in its own worktree. At a checkpoint, the client submits
 the bounded outcome and evidence; a fresh Codex, Claude, or Hermes client later
-calls `owd_resume` for the same Project or Run. That handoff does not restore an
+calls `mdevolved_resume` for the same Project or Run. That handoff does not restore an
 Orca session, terminal, worktree, branch, credentials, or scheduler state.
 
 MDevolved does not launch Orca, dispatch its agents, manage retries, or certify a

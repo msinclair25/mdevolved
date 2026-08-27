@@ -1,4 +1,7 @@
-import { projectOutcomeResponseSchema, vaultIdSchema } from "@owd/contracts";
+import {
+  projectOutcomeResponseSchema,
+  vaultIdSchema,
+} from "@mdevolved/contracts";
 import type { Hono } from "hono";
 import { ApiProblem } from "./api-problem";
 import { requireOwnerSession } from "./owner-session";
