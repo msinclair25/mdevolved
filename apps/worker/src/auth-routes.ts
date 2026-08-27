@@ -16,7 +16,7 @@ import {
   type CsrfResponse,
   type SessionStatus,
   type SetupStatus,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { Context, Hono } from "hono";
 import { ApiProblem } from "./api-problem";
 import {

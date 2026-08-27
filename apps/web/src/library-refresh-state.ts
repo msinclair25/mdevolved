@@ -1,7 +1,7 @@
 import type {
   MaterializationGeneration,
   MaterializedNoteSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 
 export type LibraryState =
   | { kind: "idle" | "loading" }

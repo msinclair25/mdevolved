@@ -16,7 +16,7 @@ import {
   type SnapshotSummary,
   type SnapshotVaultManifest,
   type VaultSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { useEffect, useRef, useState } from "react";
 import { identityFromFile } from "./backup-archive";
 import {
@@ -64,7 +64,7 @@ function formatBytes(value: number): string {
 
 export function snapshotArchiveFilename(
   file: Blob,
-  initialSnapshot: Pick<SnapshotSummary, "snapshotId"> | null,
+  initialSnapshot: Pick<SnapshotSummary, "format" | "snapshotId"> | null,
 ): string {
   const namedFile = file as Blob & { name?: unknown };
   if (typeof namedFile.name === "string" && namedFile.name.trim().length > 0) {
@@ -72,12 +72,14 @@ export function snapshotArchiveFilename(
   }
   return initialSnapshot === null
     ? "Encrypted snapshot copy"
-    : `owd-snapshot-${initialSnapshot.snapshotId}.owdsnapshot`;
+    : `${
+        initialSnapshot.format === "mdevolved-snapshot-v3" ? "mdevolved" : "owd"
+      }-snapshot-${initialSnapshot.snapshotId}.owdsnapshot`;
 }
 
 export function snapshotArchiveSelectionMessage(
   file: Blob,
-  initialSnapshot: Pick<SnapshotSummary, "snapshotId"> | null,
+  initialSnapshot: Pick<SnapshotSummary, "format" | "snapshotId"> | null,
 ): string {
   return `Selected ${snapshotArchiveFilename(file, initialSnapshot)} · ${formatBytes(file.size)}.`;
 }
@@ -122,7 +124,7 @@ async function apiJson(
       ...(options.body === undefined
         ? {}
         : { "Content-Type": "application/json" }),
-      "X-OWD-CSRF": options.csrf,
+      "X-MDevolved-CSRF": options.csrf,
     },
     method: options.method ?? "POST",
   });

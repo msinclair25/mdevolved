@@ -5,7 +5,7 @@ import {
   csrfResponseSchema,
   type CompoundingCandidate,
   type CompoundingDraft,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -57,7 +57,7 @@ async function request(path: string, body?: unknown): Promise<unknown> {
     headers: {
       Accept: "application/json",
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      ...(csrf === undefined ? {} : { "X-OWD-CSRF": csrf }),
+      ...(csrf === undefined ? {} : { "X-MDevolved-CSRF": csrf }),
     },
     method: body === undefined ? "GET" : "POST",
   });

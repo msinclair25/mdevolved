@@ -21,12 +21,13 @@ upstream updater calls are disabled; the settings deploy link points to MDevolve
 and primary visible labels say MDevolved Sync for Obsidian. The vendored orchestration requests a
 source adapter through `runtime/sourceAdapterPort.ts`; the Obsidian vault,
 notice, local-state, and credential-custody implementation lives in
-`src/obsidian-adapter.ts` over the shared `@owd/yaos-core` contract. The
+`src/obsidian-adapter.ts` over the shared `@mdevolved/yaos-core` contract. The
 production build keeps YAOS's QA mutation harness disabled. Upstream telemetry
 is excluded from the vendored source and release artifact; MDevolved retains only
 minimal no-op diagnostic ports needed by the sync engine's command interfaces.
 
-The MDevolved adapter validates an untrusted copied `owd-pair://` value and exchange
+The MDevolved adapter validates an untrusted copied `mdevolved://` value (and the
+legacy `owd-pair://` compatibility form) and exchange
 response, starts pairing only from the command or settings UI inside the
 currently selected vault, displays an explicit vault-data disclosure, and
 stores the resulting credential through the upstream settings path. It does not

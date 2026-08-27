@@ -18,7 +18,7 @@ async function fetchWorker(input: RequestInfo | URL, init?: RequestInit) {
 
 function ownerHeaders(session: OwnerSession, csrf = false): HeadersInit {
   return {
-    ...(csrf ? { Origin: ORIGIN, "X-OWD-CSRF": session.csrf } : {}),
+    ...(csrf ? { Origin: ORIGIN, "X-MDevolved-CSRF": session.csrf } : {}),
     Cookie: session.cookie,
   };
 }
@@ -111,7 +111,7 @@ describe("M3 owner compounding routes", () => {
       now,
     );
     session = {
-      cookie: `__Host-owd_session=${material.token}; __Host-owd_csrf=${material.csrfToken}`,
+      cookie: `__Host-mdevolved_session=${material.token}; __Host-mdevolved_csrf=${material.csrfToken}`,
       csrf: material.csrfToken,
     };
   });

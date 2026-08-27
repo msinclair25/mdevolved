@@ -6,7 +6,7 @@
  * Persisted as JSON via plugin's loadData/saveData under the key
  * "_diskIndex" in the plugin's data.json.
  */
-import type { WorkspaceEntry } from "@owd/yaos-core";
+import type { WorkspaceEntry } from "@mdevolved/yaos-core";
 import { mapWithConcurrency } from "../utils/concurrency";
 
 const DEFAULT_STAT_CONCURRENCY = 16;

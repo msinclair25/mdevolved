@@ -44,14 +44,14 @@ await mkdir(releaseDirectory, { recursive: true });
 
 for (const filename of releaseFiles) {
   const contents = await readFile(new URL(`../${filename}`, import.meta.url));
-  archive[`owd-sync/${filename}`] = new Uint8Array(contents);
+  archive[`mdevolved-sync/${filename}`] = new Uint8Array(contents);
   await writeFile(new URL(filename, releaseDirectory), contents);
   checksums.push(
     `${createHash("sha256").update(contents).digest("hex")}  ${filename}`,
   );
 }
 
-const archiveName = `owd-sync-${manifest.version}.zip`;
+const archiveName = `mdevolved-sync-${manifest.version}.zip`;
 // fflate otherwise embeds the packaging clock in every entry. Constructing a
 // fixed local date keeps the encoded DOS timestamp identical in every timezone.
 const zipped = zipSync(archive, {

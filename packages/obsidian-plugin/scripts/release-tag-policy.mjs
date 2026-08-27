@@ -1,5 +1,5 @@
 /**
- * Keep Community and OWD Sync releases in separate, exact tag namespaces.
+ * Keep Community and MDevolved Sync releases in separate, exact tag namespaces.
  * Unknown or mismatched release tags fail before packaging.
  *
  * @param {{ coreVersion: string; manifestVersion: string; refName?: string; refType?: string }} input
@@ -19,7 +19,7 @@ export function assertPluginPackagingRef({
     return;
   }
 
-  const expectedPluginTag = `owd-sync-v${manifestVersion}`;
+  const expectedPluginTag = `mdevolved-sync-v${manifestVersion}`;
   if (refName !== expectedPluginTag) {
     throw new Error(
       `Release tag ${String(refName)} does not match ${expectedCommunityTag} or ${expectedPluginTag}.`,

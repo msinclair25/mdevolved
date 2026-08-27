@@ -85,7 +85,7 @@ The companion client lives in `packages/obsidian-plugin`. MDevolved-specific ada
 are under `src`, while the reviewed upstream client is pinned under
 `vendor/yaos-src` and excluded from mechanical root lint/format rewrites. Use
 `pnpm build:plugin` for a production bundle and its security guard,
-`pnpm --filter @owd/obsidian-plugin test` for the pairing contract, and
+`pnpm --filter @mdevolved/obsidian-plugin test` for the pairing contract, and
 `pnpm package:plugin` for the version-checked release directory and ZIP. Test
 installation only in a synthetic disposable vault; never install development
 builds into a real vault as part of automated verification.

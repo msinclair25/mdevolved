@@ -343,3 +343,12 @@ device history only in `quarantined_source_devices`, whose database checks keep
 authority, credential, and connection restoration false. Application rollback
 leaves the columns, rows, and indexes intact; never down-migrate, revive a
 device, copy a credential, or turn quarantined history into a live device.
+
+The MD9 portable-format migration adds one checked marker column to backups
+and snapshots without changing their frozen internal format constraints or
+rewriting any historical row or encrypted object. Existing rows retain the
+legacy marker; new application code writes the canonical MDevolved marker.
+Older application versions ignore the additive columns. Roll back application
+code only, leave both columns and all encrypted objects intact, and repair
+forward. No restore or identity transition may copy grants, sessions, OAuth
+state, credentials, leases, actors, or any other live authority.

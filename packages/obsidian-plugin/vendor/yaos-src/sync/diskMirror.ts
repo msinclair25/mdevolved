@@ -1,5 +1,5 @@
 import { type App, arrayBufferToHex, MarkdownView, TFile, normalizePath } from "obsidian";
-import type { SourceNeutralSyncCore } from "@owd/yaos-core";
+import type { SourceNeutralSyncCore } from "@mdevolved/yaos-core";
 import * as Y from "yjs";
 import type { VaultSync } from "./vaultSync";
 import type { EditorBindingManager } from "./editorBinding";

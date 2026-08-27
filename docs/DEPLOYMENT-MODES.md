@@ -154,6 +154,21 @@ The Community installation simplicity contract is:
 - setup continues inside MDevolved with one next action at a time. GitHub and
   Cloudflare vocabulary does not leak into vault, recovery, or agent setup.
 
+### Canonical installs and existing cells
+
+Fresh MD9 Community installs use `mdevolved-community`,
+`mdevolved-community-db`, and `mdevolved-community-sources`. These names are
+installation metadata only; they do not change the frozen database schema,
+Durable Object class, binding names, or stored Source identities.
+
+Existing alpha cells keep their original Worker, D1, and R2 resources. Their
+explicit upgrade path is `pnpm deploy:legacy`, backed by
+`wrangler.legacy.jsonc`. Never point the canonical config at an existing cell,
+rename its resources in place, or copy data or authority between the two
+identities. A deliberate move to a fresh canonical cell must use the encrypted
+export/restore path and still restores no sessions, grants, OAuth state,
+credentials, actors, leases, or live authority.
+
 The current managed alpha removes the GitHub and Cloudflare approvals by
 pre-provisioning one isolated cell. Community adoption does not wait for a
 public hosted service to become script-free and terminal-free.

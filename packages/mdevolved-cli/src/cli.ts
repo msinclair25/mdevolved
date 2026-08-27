@@ -4,8 +4,8 @@ import {
   canonicalizeFolderRoot,
   createFolderSource,
   folderSourceIdentity,
-} from "@owd/folder-adapter";
-import type { SourceDescriptor } from "@owd/yaos-core";
+} from "@mdevolved/folder-adapter";
+import type { SourceDescriptor } from "@mdevolved/yaos-core";
 import {
   ProtectedCredentialCustody,
   createSystemProtectedCredentialBackend,

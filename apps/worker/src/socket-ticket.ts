@@ -2,7 +2,7 @@ import {
   socketTicketResponseSchema,
   vaultIdSchema,
   type SocketTicketResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { decodeBase64Url, encodeBase64Url, randomToken } from "./security";
 import {
   readVaultCredentialById,

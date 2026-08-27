@@ -1,5 +1,6 @@
 import {
   MAX_SNAPSHOT_ITEMS,
+  MDEVOLVED_SNAPSHOT_EXPORT_MAGIC,
   OWD_SNAPSHOT_EXPORT_MAGIC,
   snapshotExportIndexSchema,
   snapshotManifestSchema,
@@ -8,7 +9,7 @@ import {
   type SnapshotExportIndex,
   type SnapshotManifest,
   type SnapshotVaultManifest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { Decrypter } from "age-encryption";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -94,7 +95,10 @@ async function parsePortableIndex(file: Blob): Promise<{
     throw new Error("The portable snapshot header is incomplete or too large.");
   }
   const magic = `${decoder.decode(prefix.slice(0, firstLineEnd))}\n`;
-  if (magic !== OWD_SNAPSHOT_EXPORT_MAGIC) {
+  if (
+    magic !== MDEVOLVED_SNAPSHOT_EXPORT_MAGIC &&
+    magic !== OWD_SNAPSHOT_EXPORT_MAGIC
+  ) {
     throw new Error("This is not a MDevolved portable snapshot.");
   }
   const index = snapshotExportIndexSchema.parse(

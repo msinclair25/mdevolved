@@ -1,4 +1,8 @@
-# MD6 source-independent MLR acceptance matrix
+# MD6 source-independent MLR acceptance matrix (historical)
+
+> MD9 supersedes the public identity values recorded here for new installs and
+> writes. OWD protocol, package, plugin, and storage names remain only as
+> explicit compatibility inputs; see [`compatibility/identities.json`](../compatibility/identities.json).
 
 **Frozen:** 2026-08-26 before MD6 implementation edits
 **Candidate:** PR #44 final head

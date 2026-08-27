@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "owd-platform",
+  "name": "mdevolved-community",
   "main": "apps/worker/src/index.ts",
   "compatibility_date": "2026-07-26",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -32,14 +32,14 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "owd-platform-db",
+      "database_name": "mdevolved-community-db",
       "migrations_dir": "migrations",
     },
   ],
   "r2_buckets": [
     {
       "binding": "VAULT_STORAGE",
-      "bucket_name": "owd-platform-vaults",
+      "bucket_name": "mdevolved-community-sources",
     },
   ],
   "kv_namespaces": [

@@ -1,6 +1,8 @@
 import {
   APPROVED_INTELLIGENCE_CAPABILITY,
   BASE_SNAPSHOT_REQUIRED_CAPABILITIES,
+  MDEVOLVED_SNAPSHOT_EXPORT_MAGIC,
+  MDEVOLVED_SNAPSHOT_FORMAT,
   OWD_SNAPSHOT_EXPORT_MAGIC,
   OWD_SNAPSHOT_FORMAT,
   canonicalizeCollaborationJson,
@@ -9,7 +11,7 @@ import {
   type PortableSourceDevice,
   type SnapshotExportIndex,
   type SnapshotManifest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   Encrypter,
   generateX25519Identity,
@@ -45,6 +47,7 @@ async function encrypt(value: Uint8Array, recipient: string): Promise<Blob> {
 }
 
 async function createSyntheticPortableSnapshot(input?: {
+  format?: typeof MDEVOLVED_SNAPSHOT_FORMAT | typeof OWD_SNAPSHOT_FORMAT;
   includeIntelligence?: boolean;
   oversizedFirstContent?: boolean;
   unknownRequiredCapability?: boolean;
@@ -54,6 +57,7 @@ async function createSyntheticPortableSnapshot(input?: {
   manifest: SnapshotManifest;
 }> {
   const identity = await generateX25519Identity();
+  const format = input?.format ?? MDEVOLVED_SNAPSHOT_FORMAT;
   const recipient = await identityToRecipient(identity);
   const values = [
     {
@@ -173,7 +177,7 @@ async function createSyntheticPortableSnapshot(input?: {
       "harness-context",
       "unknown-obsidian-plugin-data",
     ],
-    format: OWD_SNAPSHOT_FORMAT,
+    format,
     includedSections: ["notes", "attachments", "obsidian-allowlist"],
     intelligence,
     logicalBytes: values.reduce(
@@ -237,7 +241,7 @@ async function createSyntheticPortableSnapshot(input?: {
       ? await encrypt(decisionBytes, recipient)
       : null;
   const index: SnapshotExportIndex = {
-    format: OWD_SNAPSHOT_FORMAT,
+    format,
     ...(input?.includeIntelligence === true
       ? { intelligenceSelection: "approved" as const }
       : {}),
@@ -268,7 +272,9 @@ async function createSyntheticPortableSnapshot(input?: {
   };
   return {
     file: new Blob([
-      OWD_SNAPSHOT_EXPORT_MAGIC,
+      format === MDEVOLVED_SNAPSHOT_FORMAT
+        ? MDEVOLVED_SNAPSHOT_EXPORT_MAGIC
+        : OWD_SNAPSHOT_EXPORT_MAGIC,
       `${JSON.stringify(index)}\n`,
       manifestPart,
       ...contentParts,
@@ -280,6 +286,15 @@ async function createSyntheticPortableSnapshot(input?: {
 }
 
 describe("portable snapshot archive", () => {
+  it("continues to inspect legacy OWD snapshots", async () => {
+    const fixture = await createSyntheticPortableSnapshot({
+      format: OWD_SNAPSHOT_FORMAT,
+    });
+    await expect(
+      inspectSnapshotArchive(fixture.file, fixture.identity),
+    ).resolves.toMatchObject({ manifest: { format: OWD_SNAPSHOT_FORMAT } });
+  });
+
   it("round-trips Markdown, a supported attachment, and allowlisted Obsidian configuration", async () => {
     const fixture = await createSyntheticPortableSnapshot();
     const restored = new Map<string, Uint8Array>();

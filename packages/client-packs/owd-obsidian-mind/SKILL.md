@@ -5,6 +5,9 @@ description: Connect, initialize, resume, or coordinate an Obsidian Mind vault w
 
 # MDevolved + Obsidian Mind
 
+> Legacy compatibility path. New setups should use `mdevolved-obsidian-mind`;
+> keep this pack for existing `owd` MCP entries and receipts.
+
 Keep one universal MDevolved server. Apply this profile as client-side conventions;
 never change MCP framing, OAuth, or tool schemas for Obsidian Mind.
 

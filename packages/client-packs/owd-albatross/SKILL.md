@@ -5,6 +5,9 @@ description: Connect, initialize, resume, or coordinate MDevolved Projects from 
 
 # MDevolved + Albatross
 
+> Legacy compatibility path. New setups should use `mdevolved-albatross`; keep
+> this pack for existing `owd` configurations and receipts.
+
 Keep one universal MDevolved server. Apply this profile only as Albatross-side
 configuration and instructions; never change MDevolved framing, OAuth, tool schemas,
 Project lifecycle, or server-side authority.

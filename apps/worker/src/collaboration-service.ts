@@ -43,7 +43,7 @@ import {
   type ProjectContextPolicy,
   type ProvenanceEdge,
   type WorkPacket,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { z } from "zod";
 import { readActiveAgentGrant } from "./agent-access-store";
 import {

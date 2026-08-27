@@ -13,13 +13,19 @@ const obsidian = vi.hoisted(() => {
       readonly children: Array<TFile | TFolder>,
     ) {}
   }
-  return { Notice: vi.fn(), TFile, TFolder };
+  return {
+    Notice: vi.fn(),
+    TFile,
+    TFolder,
+    normalizePath: (path: string) => path.replaceAll("\\", "/"),
+  };
 });
 
 vi.mock("obsidian", () => obsidian);
 
 import { createObsidianSourceAdapter } from "../src/obsidian-adapter";
 import { planClosedFileReconcile } from "../vendor/yaos-src/runtime/reconcile/closedFilePlanner";
+import { isBlobConflictArtifactPath } from "../vendor/yaos-src/sync/blobSync";
 
 function fixture() {
   const contents = new Map<string, string>([["notes/one.md", "one"]]);
@@ -144,6 +150,20 @@ describe("Obsidian source-neutral adapter", () => {
 });
 
 describe("source-neutral reconciliation compatibility", () => {
+  it("keeps canonical and legacy blob conflict artifacts local-only", () => {
+    expect(
+      isBlobConflictArtifactPath(
+        "attachments/file (MDevolved Sync remote conflict 2026-08-27T10-20-30Z).png",
+      ),
+    ).toBe(true);
+    expect(
+      isBlobConflictArtifactPath(
+        "attachments/file (OWD Sync remote conflict 2026-08-27T10-20-30Z).png",
+      ),
+    ).toBe(true);
+    expect(isBlobConflictArtifactPath("attachments/file.png")).toBe(false);
+  });
+
   it("preserves the remote side when disk and CRDT both changed", () => {
     expect(
       planClosedFileReconcile({

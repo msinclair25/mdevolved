@@ -1,10 +1,13 @@
-import { createFolderSource, type FolderSource } from "@owd/folder-adapter";
+import {
+  createFolderSource,
+  type FolderSource,
+} from "@mdevolved/folder-adapter";
 import {
   reconcileFolder,
   type FolderReconciliationResult,
   type MarkdownRemotePort,
-} from "@owd/yaos-core";
-import type { CredentialCustodyPort } from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
+import type { CredentialCustodyPort } from "@mdevolved/yaos-core";
 
 export interface SyncText {
   toString(): string;

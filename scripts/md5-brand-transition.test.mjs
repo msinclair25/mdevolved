@@ -165,26 +165,40 @@ test("legacy protocol, data, plugin, update, and deploy identities stay frozen",
 
   const plugin = JSON.parse(pluginManifest);
   const pluginPkg = JSON.parse(pluginPackage);
-  assert.equal(plugin.id, "owd-sync");
-  assert.equal(plugin.version, "0.1.7");
-  assert.equal(pluginPkg.name, "@owd/obsidian-plugin");
+  assert.equal(plugin.id, "mdevolved-sync");
+  assert.equal(plugin.version, "0.2.0-alpha.1");
+  assert.equal(pluginPkg.name, "@mdevolved/obsidian-plugin");
   assert.match(plugin.name, /^MDevolved Sync for Obsidian$/u);
-  assert.match(pluginLinks, /msinclair25\/owd-sync/u);
-  assert.match(pluginLinks, /obsidian:\/\/show-plugin\?id=owd-sync/u);
-  assert.match(pluginLinks, /owd-sync-\$\{OWD_SYNC_REQUIRED_VERSION\}\.zip/u);
+  assert.match(pluginLinks, /msinclair25\/mdevolved-sync/u);
+  assert.match(
+    pluginLinks,
+    /obsidian:\/\/show-plugin\?id=\$\{MDEVOLVED_SYNC_PLUGIN_ID\}/u,
+  );
+  assert.match(
+    pluginLinks,
+    /mdevolved-sync-\$\{MDEVOLVED_SYNC_REQUIRED_VERSION\}\.zip/u,
+  );
+  assert.match(pluginLinks, /LEGACY_OWD_SYNC_PLUGIN_ID = "owd-sync"/u);
+  assert.match(
+    pairingProtocol,
+    /registerObsidianProtocolHandler\("mdevolved-pair"/u,
+  );
   assert.match(pairingProtocol, /registerObsidianProtocolHandler\("owd-pair"/u);
   assert.match(mcpServer, /owd_resume/u);
   assert.match(mcpServer, /owd_find/u);
   assert.match(mcpServer, /owd_checkpoint/u);
   assert.match(backupRoutes, /owd-backup-v1/u);
   assert.match(compatibilityContracts, /owd-snapshot-v2/u);
-  assert.match(pluginWorkflow, /owd-sync-v\*/u);
+  assert.match(pluginWorkflow, /mdevolved-sync-v\*/u);
   assert.match(
     pluginWorkflow,
-    /packages\/obsidian-plugin\/release\/owd-sync-\*\.zip/u,
+    /packages\/obsidian-plugin\/release\/mdevolved-sync-\*\.zip/u,
   );
+  assert.match(pluginWorkflow, /actions\/upload-artifact@/u);
+  assert.doesNotMatch(pluginWorkflow, /gh release create/u);
+  assert.match(pluginWorkflow, /msinclair25\/mdevolved-sync/u);
   assert.match(desktopManifest, /mdevolved-update\/v1/u);
-  assert.match(rootPackage, /@owd\//u);
+  assert.match(rootPackage, /@mdevolved\//u);
   assert.match(
     brandContract,
     /Existing users require no migration, data edit, re-pairing, MCP reconnect/u,

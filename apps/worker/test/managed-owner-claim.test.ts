@@ -4,7 +4,7 @@ import {
   csrfResponseSchema,
   registrationOptionsSchema,
   setupStatusSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -69,7 +69,7 @@ async function issueCsrf(): Promise<{ cookie: string; token: string }> {
   const response = await fetchManaged(`${ORIGIN}/api/auth/csrf`);
   const parsed = csrfResponseSchema.parse(await response.json());
   return {
-    cookie: cookieFrom(response, "__Host-owd_csrf"),
+    cookie: cookieFrom(response, "__Host-mdevolved_csrf"),
     token: parsed.csrfToken,
   };
 }
@@ -81,7 +81,7 @@ function mutationHeaders(
   return {
     Cookie: [csrf.cookie, flowCookie].filter(Boolean).join("; "),
     Origin: ORIGIN,
-    "X-OWD-CSRF": csrf.token,
+    "X-MDevolved-CSRF": csrf.token,
   };
 }
 
@@ -116,7 +116,7 @@ async function registrationOptions(
     method: "POST",
   });
   return {
-    flowCookie: cookieFrom(response, "__Host-owd_auth_flow"),
+    flowCookie: cookieFrom(response, "__Host-mdevolved_auth_flow"),
     options: registrationOptionsSchema.parse(await response.json()),
   };
 }

@@ -1,4 +1,4 @@
-import { workingPreferenceSchema } from "@owd/contracts";
+import { workingPreferenceSchema } from "@mdevolved/contracts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -18,7 +18,7 @@ import {
   draftCandidateLabel,
   draftScopeLabel,
 } from "../src/CompoundingDraftsPanel";
-import { compoundingDraftSchema } from "@owd/contracts";
+import { compoundingDraftSchema } from "@mdevolved/contracts";
 
 const personal = workingPreferenceSchema.parse({
   key: "package-manager",

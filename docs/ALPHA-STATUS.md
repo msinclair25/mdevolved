@@ -2,7 +2,7 @@
 
 **Updated:** August 26, 2026<br />
 **MDevolved Community:** `1.0.0-alpha.7`<br />
-**MDevolved Sync for Obsidian (`owd-sync` identity):** `0.1.7`
+**MDevolved Sync for Obsidian (MD9 candidate):** `0.2.0-alpha.1` (not yet published)
 
 MDevolved is available as an Apache-2.0 Community alpha. The optional
 managed service remains invitation-only. Alpha means the contracts and safety
@@ -11,15 +11,15 @@ durability evidence is still being accumulated.
 
 ## Availability
 
-| Surface                         | Current status                                                           |
-| ------------------------------- | ------------------------------------------------------------------------ |
-| Community source                | Public Apache-2.0 alpha                                                  |
-| Community self-hosting          | Available for technical alpha use in the owner's Cloudflare account      |
-| Managed service                 | Invitation-only alpha; one isolated data-plane cell per owner            |
-| MDevolved Sync                  | Public `0.1.0-alpha.1` npm and unsigned macOS/Windows/Linux prerelease   |
-| MDevolved Sync for Obsidian     | Public `0.1.7` alpha release on the unchanged `owd-sync` update path     |
-| Obsidian Community Plugin       | Submission/listing pending                                               |
-| Public MDevolved Cloud accounts | Not generally available; billing and service commitments are future work |
+| Surface                         | Current status                                                              |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| Community source                | Public Apache-2.0 alpha                                                     |
+| Community self-hosting          | Available for technical alpha use in the owner's Cloudflare account         |
+| Managed service                 | Invitation-only alpha; one isolated data-plane cell per owner               |
+| MDevolved Sync                  | Public `0.1.0-alpha.1` npm and unsigned macOS/Windows/Linux prerelease      |
+| MDevolved Sync for Obsidian     | MD9 candidate `0.2.0-alpha.1`; publication and plugin-store listing pending |
+| Obsidian Community Plugin       | Submission/listing pending                                                  |
+| Public MDevolved Cloud accounts | Not generally available; billing and service commitments are future work    |
 
 Community is the complete product core, not a reduced tier. Managed hosting
 uses the same pinned Community release and adds operational convenience; it
@@ -36,7 +36,7 @@ does not place multiple owners in one vault database.
   grants
 - Agent-first Project create, connect, rejoin, and resume through
   `open_project`
-- The bounded `owd_resume` → `owd_find` → `owd_checkpoint` loop across fresh
+- The bounded `mdevolved_resume` → `mdevolved_find` → `mdevolved_checkpoint` loop across fresh
   compatible clients
 - Editable immutable Project briefs, portable preferences, inert Agent Skills,
   and owner-reviewed memory suggestions
@@ -62,7 +62,8 @@ does not place multiple owners in one vault database.
   attachment writes, and arbitrary `.obsidian` writes are not supported.
 - Snapshot attachment and `.obsidian` sections are disabled.
 - MDevolved Sync for Obsidian is not yet discoverable through Obsidian Community
-  Plugins; its compatibility plugin ID remains `owd-sync`.
+  Plugins. New installs use `mdevolved-sync`; existing `owd-sync` installs stay
+  readable through the compatibility adapter.
 - Local multi-agent writer coordination is advisory guidance, not a filesystem
   lock.
 - A protocol-compatible client is not automatically a client-specific
@@ -87,6 +88,16 @@ The most important external exercise is intentionally simple:
 Issues that create Project duplication, repeated authorization, cross-Source
 visibility, stale context, hidden internal data, or recovery ambiguity are
 release blockers.
+
+## MD9 identity and recovery boundary
+
+New writes use the MDevolved package scope, MCP tool/resource names, pairing
+schemes, `.mdevolvedignore` receipt, and versioned `mdevolved-*` backup and
+snapshot formats. Existing former-name records and client identities remain
+readable through explicit aliases. An upgrade or portable restore never recreates or
+copies grants, sessions, actors, leases, credentials, OAuth state, or live
+authority; restored records begin quarantined or disabled until the owner
+reviews them.
 
 [Deploy Community](https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved) ·
 [Request managed alpha access](https://mdevolved.com/#alpha-access) ·

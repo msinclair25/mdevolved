@@ -3,4 +3,4 @@ export {
 	type ClosedFileConflictDecision,
 	type ClosedFileConflictInput,
 	type MissingBaselineWinnerPolicy,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";

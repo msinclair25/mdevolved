@@ -6,6 +6,8 @@ import {
   APPROVED_INTELLIGENCE_CAPABILITY,
   BASE_SNAPSHOT_REQUIRED_CAPABILITIES,
   COMPOUNDING_SNAPSHOT_CAPABILITY,
+  MDEVOLVED_SNAPSHOT_EXPORT_MAGIC,
+  MDEVOLVED_SNAPSHOT_FORMAT,
   OWD_SNAPSHOT_EXPORT_MAGIC,
   OWD_SNAPSHOT_FORMAT,
   QUARANTINED_INTELLIGENCE_CAPABILITY,
@@ -24,7 +26,7 @@ import {
   type SnapshotSection,
   type SnapshotSummary,
   type SourceDescriptor,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { Encrypter } from "age-encryption";
 import {
   listMaterializedNotesForBackup,
@@ -77,6 +79,8 @@ type SnapshotRow = {
   manifest_portable_object_id: string;
   newly_stored_bytes: number;
   pinned: number;
+  portable_format_version:
+    typeof MDEVOLVED_SNAPSHOT_FORMAT | typeof OWD_SNAPSHOT_FORMAT;
   portable_snapshot_id: string;
   processed_object_count: number;
   recipient_fingerprint: string;
@@ -269,6 +273,25 @@ export async function ensureSnapshotSchema(db: D1Database): Promise<void> {
   if (objects?.count !== 14) {
     await db.exec(executableMigration(snapshotMigration));
     await db.exec(executableMigration(snapshotArchiveMigration));
+  }
+  const portableFormatColumn = await db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM pragma_table_info('workspace_snapshots')
+       WHERE name = 'portable_format_version'`,
+    )
+    .first<{ count: number }>();
+  if (portableFormatColumn?.count !== 1) {
+    await db
+      .prepare(
+        `ALTER TABLE workspace_snapshots
+         ADD COLUMN portable_format_version TEXT NOT NULL
+         DEFAULT 'owd-snapshot-v2'
+         CHECK (portable_format_version IN (
+           'owd-snapshot-v2', 'mdevolved-snapshot-v3'
+         ))`,
+      )
+      .run();
   }
   const descriptorColumn = await db
     .prepare(
@@ -588,13 +611,14 @@ export async function startWorkspaceSnapshot(
     const inserted = await db
       .prepare(
         `INSERT INTO workspace_snapshots (
-          id, portable_snapshot_id, format_version, origin, scope, status,
+          id, portable_snapshot_id, format_version, portable_format_version,
+          origin, scope, status,
           recipient_fingerprint,
           capture_started_at, vault_count, item_count, logical_bytes,
           changed_item_count, total_object_count, included_sections,
           unavailable_sections, manifest_portable_object_id, created_at
         )
-        SELECT ?, ?, ?, 'created', ?, 'creating', recipient.fingerprint,
+        SELECT ?, ?, ?, ?, 'created', ?, 'creating', recipient.fingerprint,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         FROM backup_recipients recipient
         WHERE recipient.id = 1 AND recipient.fingerprint = ?
@@ -608,6 +632,7 @@ export async function startWorkspaceSnapshot(
         snapshotId,
         portableSnapshotId,
         OWD_SNAPSHOT_FORMAT,
+        MDEVOLVED_SNAPSHOT_FORMAT,
         input.scope,
         input.captureStartedAt,
         plan.vaults.length,
@@ -770,7 +795,7 @@ async function summaryFromRow(
     changedItemCount: row.changed_item_count,
     createdAt: row.created_at,
     failureCode: row.failure_code,
-    format: row.format_version,
+    format: row.portable_format_version,
     includedSections: parseSections(row.included_sections),
     intelligence: await readCollaborationSnapshotSummary(db, row.id),
     integrityStatus: row.integrity_status,
@@ -799,7 +824,8 @@ async function summaryFromRow(
 }
 
 const SNAPSHOT_ROW_SELECT = `
-  id, portable_snapshot_id, format_version, scope, status, recipient_fingerprint,
+  id, portable_snapshot_id, format_version, portable_format_version,
+  scope, status, recipient_fingerprint,
   (SELECT archived_at FROM snapshot_archives
    WHERE snapshot_id = workspace_snapshots.id) AS archived_at,
   capture_started_at, capture_completed_at, item_count, logical_bytes,
@@ -964,6 +990,7 @@ async function processPendingIntelligence(
   db: D1Database,
   storage: R2Bucket,
   input: {
+    format: typeof MDEVOLVED_SNAPSHOT_FORMAT | typeof OWD_SNAPSHOT_FORMAT;
     now: number;
     recipient: string;
     recipientFingerprint: string;
@@ -997,7 +1024,7 @@ async function processPendingIntelligence(
       `${item.portable_object_id}.age`;
     const written = await encryptObjectToR2(storage, {
       customMetadata: {
-        format: OWD_SNAPSHOT_FORMAT,
+        format: input.format,
         plaintextSha256: item.content_sha256,
         recipient: input.recipientFingerprint,
         role: "intelligence",
@@ -1044,6 +1071,7 @@ async function createRecoveryObject(
   input: {
     byteLength: number;
     contentSha256: string;
+    format: typeof MDEVOLVED_SNAPSHOT_FORMAT | typeof OWD_SNAPSHOT_FORMAT;
     now: number;
     recipient: string;
     recipientFingerprint: string;
@@ -1084,7 +1112,7 @@ async function createRecoveryObject(
   try {
     const written = await encryptObjectToR2(storage, {
       customMetadata: {
-        format: OWD_SNAPSHOT_FORMAT,
+        format: input.format,
         plaintextSha256: input.contentSha256,
         recipient: input.recipientFingerprint,
         section: input.section,
@@ -1228,7 +1256,7 @@ async function buildWorkspaceSnapshotManifest(
       "harness-context",
       "unknown-obsidian-plugin-data",
     ],
-    format: OWD_SNAPSHOT_FORMAT,
+    format: row.portable_format_version,
     includedSections: parseSections(row.included_sections),
     intelligence,
     logicalBytes: row.logical_bytes,
@@ -1343,7 +1371,7 @@ async function finalizeWorkspaceSnapshot(
   const objectKey = `snapshots/${snapshotId}/manifest.age`;
   const written = await encryptObjectToR2(storage, {
     customMetadata: {
-      format: OWD_SNAPSHOT_FORMAT,
+      format: row.portable_format_version,
       recipient: row.recipient_fingerprint,
       role: "manifest",
     },
@@ -1403,11 +1431,14 @@ export async function continueWorkspaceSnapshot(
 ): Promise<SnapshotSummary> {
   const existing = await db
     .prepare(
-      `SELECT status, recipient_fingerprint FROM workspace_snapshots
+      `SELECT status, recipient_fingerprint, portable_format_version
+       FROM workspace_snapshots
        WHERE id = ?`,
     )
     .bind(input.snapshotId)
     .first<{
+      portable_format_version:
+        typeof MDEVOLVED_SNAPSHOT_FORMAT | typeof OWD_SNAPSHOT_FORMAT;
       recipient_fingerprint: string;
       status: SnapshotSummary["status"];
     }>();
@@ -1460,6 +1491,7 @@ export async function continueWorkspaceSnapshot(
       object = await createRecoveryObject(db, storage, {
         byteLength: item.byte_length,
         contentSha256: item.content_sha256,
+        format: existing.portable_format_version,
         now: input.now,
         recipient: recipient.recipient,
         recipientFingerprint: existing.recipient_fingerprint,
@@ -1481,6 +1513,7 @@ export async function continueWorkspaceSnapshot(
     db,
     storage,
     {
+      format: existing.portable_format_version,
       now: input.now,
       recipient: recipient.recipient,
       recipientFingerprint: existing.recipient_fingerprint,
@@ -1766,7 +1799,7 @@ export async function buildPortableSnapshotExport(
     })),
   ];
   const index = snapshotExportIndexSchema.parse({
-    format: OWD_SNAPSHOT_FORMAT,
+    format: row.portable_format_version,
     intelligenceSelection: intelligence.selection,
     optionalCapabilities: OPTIONAL_CAPABILITIES,
     parts: parts.map((part) => ({
@@ -1795,7 +1828,11 @@ export async function buildPortableSnapshotExport(
     snapshotId: row.portable_snapshot_id,
   });
   const prefix = encoder.encode(
-    `${OWD_SNAPSHOT_EXPORT_MAGIC}${JSON.stringify(index)}\n`,
+    `${
+      row.portable_format_version === MDEVOLVED_SNAPSHOT_FORMAT
+        ? MDEVOLVED_SNAPSHOT_EXPORT_MAGIC
+        : OWD_SNAPSHOT_EXPORT_MAGIC
+    }${JSON.stringify(index)}\n`,
   );
   return {
     index,
@@ -1902,7 +1939,7 @@ async function repairWorkspaceSnapshotManifest(
   const replacementKey = `snapshots/${input.snapshotId}/manifests/${crypto.randomUUID()}.age`;
   const written = await encryptObjectToR2(storage, {
     customMetadata: {
-      format: OWD_SNAPSHOT_FORMAT,
+      format: input.row.portable_format_version,
       recipient: input.row.recipient_fingerprint,
       role: "manifest",
     },
@@ -1958,6 +1995,7 @@ async function repairSnapshotIntelligenceObject(
   storage: R2Bucket,
   input: {
     candidate: SnapshotRepairIntelligenceCandidate;
+    format: typeof MDEVOLVED_SNAPSHOT_FORMAT | typeof OWD_SNAPSHOT_FORMAT;
     now: number;
     recipient: string;
     recipientFingerprint: string;
@@ -1980,7 +2018,7 @@ async function repairSnapshotIntelligenceObject(
     `${input.candidate.portable_object_id}-${crypto.randomUUID()}.age`;
   const replacement = await encryptObjectToR2(storage, {
     customMetadata: {
-      format: OWD_SNAPSHOT_FORMAT,
+      format: input.format,
       plaintextSha256: input.candidate.content_sha256,
       recipient: input.recipientFingerprint,
       role: "intelligence",
@@ -2135,6 +2173,7 @@ export async function repairWorkspaceSnapshot(
         .run();
       await repairSnapshotIntelligenceObject(db, storage, {
         candidate,
+        format: snapshot.portable_format_version,
         now: input.now,
         recipient: recipient.recipient,
         recipientFingerprint: snapshot.recipient_fingerprint,
@@ -2170,6 +2209,7 @@ export async function repairWorkspaceSnapshot(
     const replacement = await createRecoveryObject(db, storage, {
       byteLength: candidate.byte_length,
       contentSha256: candidate.content_sha256,
+      format: snapshot.portable_format_version,
       now: input.now,
       recipient: recipient.recipient,
       recipientFingerprint: snapshot.recipient_fingerprint,

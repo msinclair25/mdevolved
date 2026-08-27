@@ -2,7 +2,7 @@ import {
   SERVER_MAX_SCHEMA_VERSION,
   SERVER_MIN_SCHEMA_VERSION,
   decodeFileMeta,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import * as Y from "yjs";
 import { VaultPathError, validateMarkdownVaultPath } from "./vault-path";
 

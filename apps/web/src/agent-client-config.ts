@@ -5,7 +5,7 @@ import {
   createEveConnectionSource as createProfileEveConnectionSource,
   createObsidianMindMcpMergeConfig as createProfileMcpMergeConfig,
   createObsidianMindProjectMcpCommand as createProfileProjectMcpCommand,
-} from "@owd/client-packs";
+} from "@mdevolved/client-packs";
 
 export const AGENT_SERVER_NAME = "md-evolved";
 

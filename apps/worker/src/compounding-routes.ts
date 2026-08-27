@@ -4,7 +4,7 @@ import {
   compoundingDraftListResponseSchema,
   compoundingDraftActionResponseSchema,
   vaultIdSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { Hono } from "hono";
 import { ApiProblem } from "./api-problem";
 import { requireOwnerSession } from "./owner-session";

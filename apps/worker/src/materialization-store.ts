@@ -4,8 +4,8 @@ import type {
   MaterializedNoteSummary,
   MaterializedSearchResult,
   RestoredSource,
-} from "@owd/contracts";
-import { restoredSourceSchema } from "@owd/contracts";
+} from "@mdevolved/contracts";
+import { restoredSourceSchema } from "@mdevolved/contracts";
 import type {
   MaterializationFailureCode,
   MaterializedSnapshot,

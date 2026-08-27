@@ -35,7 +35,10 @@
       "packages/obsidian-plugin/package.json",
       "packages/yaos-core/package.json"
     ],
-    "forbiddenDependencyPrefixes": ["@owd/control-plane", "@owd/managed-"]
+    "forbiddenDependencyPrefixes": [
+      "@mdevolved/control-plane",
+      "@mdevolved/managed-"
+    ]
   },
   "managed": {
     "status": "manual-private-alpha",

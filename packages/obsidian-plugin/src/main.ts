@@ -47,6 +47,9 @@ export default class OwdSyncPlugin extends VaultCrdtSyncPlugin {
       callback: () => this.startOwdPairing(),
     });
 
+    this.registerObsidianProtocolHandler("mdevolved-pair", (params) => {
+      void this.handleOwdPairing(() => parseObsidianPairingProtocol(params));
+    });
     this.registerObsidianProtocolHandler("owd-pair", (params) => {
       void this.handleOwdPairing(() => parseObsidianPairingProtocol(params));
     });

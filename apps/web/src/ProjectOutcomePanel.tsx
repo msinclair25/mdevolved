@@ -2,7 +2,7 @@ import {
   apiErrorSchema,
   projectOutcomeResponseSchema,
   type ProjectOutcome,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { useEffect, useState } from "react";
 
 type Props = { projectId: string };

@@ -34,7 +34,7 @@ import {
   type SetupVaultReadiness,
   type SourceDeviceSummary,
   type VaultSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   browserSupportsWebAuthn,
   startAuthentication,
@@ -79,7 +79,7 @@ import {
   captureOwnerClaimToken,
   clearOwnerClaimToken,
 } from "./owner-claim-token";
-import { OWD_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
+import { MDEVOLVED_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
 import {
   beginLibraryRefresh,
   completeEmptyLibraryRefresh,
@@ -231,7 +231,7 @@ async function requestJson(
     headers: {
       Accept: "application/json",
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      "X-OWD-CSRF": csrfToken,
+      "X-MDevolved-CSRF": csrfToken,
     },
     method,
   });
@@ -2082,7 +2082,7 @@ function StateAwareSetup({
               <span>
                 MDevolved should resume automatically. If it does not, say{" "}
                 <q>MDevolved resume project</q>. MDevolved restores the exact
-                Project and writer role from <code>.owdignore</code>—no
+                Project and writer role from <code>.mdevolvedignore</code>—no
                 reconnect, copied prompt, or new approval.
               </span>
             </div>
@@ -3164,7 +3164,9 @@ function Dashboard() {
             : "The note could not be opened.",
         );
       }
-      const generationId = response.headers.get("X-OWD-Generation");
+      const generationId =
+        response.headers.get("X-MDevolved-Generation") ??
+        response.headers.get("X-OWD-Generation");
       if (generationId !== expectedGeneration) {
         await refreshLibrary(selectedVaultId);
         throw new Error("The library changed. Choose the note again.");
@@ -3665,15 +3667,15 @@ function Dashboard() {
                     <p>
                       Choose a Markdown folder in MDevolved Sync, or open an
                       Obsidian workspace and confirm MDevolved Sync for Obsidian{" "}
-                      {OWD_SYNC_REQUIRED_VERSION} is enabled. Then create the
-                      private, ten-minute pairing request.
+                      {MDEVOLVED_SYNC_REQUIRED_VERSION} is enabled. Then create
+                      the private, ten-minute pairing request.
                     </p>
                     <p className="pairing-install-note">
                       Obsidian keeps one plugin installation per vault. If this
                       vault shows an older version,{" "}
-                      <a href="#owd-sync-installer">
+                      <a href="#mdevolved-sync-installer">
                         install or update the Obsidian adapter{" "}
-                        {OWD_SYNC_REQUIRED_VERSION}
+                        {MDEVOLVED_SYNC_REQUIRED_VERSION}
                       </a>{" "}
                       here before continuing.
                     </p>
@@ -3759,7 +3761,7 @@ function Dashboard() {
                         If Obsidian says{" "}
                         <strong>unrecognized URI action</strong>, MDevolved Sync
                         for Obsidian is not loaded at version{" "}
-                        {OWD_SYNC_REQUIRED_VERSION} in the vault Obsidian
+                        {MDEVOLVED_SYNC_REQUIRED_VERSION} in the vault Obsidian
                         opened. Install or update and enable MDevolved Sync for
                         Obsidian there, then reopen this request. If the direct
                         handoff is still blocked, copy the request, run{" "}

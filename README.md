@@ -189,10 +189,13 @@ The fastest generic Source path is one command:
 npx mdevolved@latest sync .
 ```
 
-Prefer Obsidian? Use
-[MDevolved Sync for Obsidian](https://github.com/msinclair25/owd-sync#readme)
+Prefer Obsidian? Use the optional
+[MDevolved Sync for Obsidian](packages/obsidian-plugin/README.md) adapter
 instead. Both use the same source-neutral sync and durable Project model;
-Obsidian is an optional richer adapter, not a requirement.
+Obsidian is an optional richer adapter, not a requirement. The canonical MD9
+plugin identity is `mdevolved-sync`; the previously published `owd-sync`
+adapter remains available as a clearly labelled compatibility path while the
+new release is prepared.
 
 ### Deploy Community
 
@@ -238,12 +241,18 @@ See the [current alpha status](docs/ALPHA-STATUS.md) and
 <details>
 <summary><strong>Legacy compatibility</strong></summary>
 
-MDevolved was formerly called **OWD**. Existing deployments, stored records,
-bookmarks, MCP tools, `owd-pair` links, exports, backups, `@owd/*` packages, and
-the `owd-sync` plugin identity remain compatible. Those technical names stay
-visible only where an existing client or stored record requires them. The
-technical compatibility protocol retains the OWD name where changing it would
-break existing clients or durable data.
+MDevolved was formerly called **OWD**. New installs, package imports, MCP
+operations, pairing links, portable formats, and the Obsidian adapter use the
+MDevolved identity. Existing deployments, stored records, bookmarks, old MCP
+operations, `owd-pair` links, exports, backups, and the `owd-sync` plugin
+identity remain readable through a compatibility adapter. The private former
+workspace package scope remains only in repository history and explicit
+compatibility fixtures; it was never a public package contract.
+Those technical names stay visible only where an existing client or stored
+record requires them; no rename or restore operation copies grants, sessions,
+credentials, or other live authority.
+The technical compatibility protocol retains the OWD name where changing it
+would break an existing client or durable record.
 
 </details>
 

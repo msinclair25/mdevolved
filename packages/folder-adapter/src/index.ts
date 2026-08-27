@@ -31,7 +31,7 @@ import {
   type UserInteractionPort,
   type WorkspaceEntry,
   type WorkspaceFilesPort,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const DEFAULT_DEBOUNCE_MS = 100;

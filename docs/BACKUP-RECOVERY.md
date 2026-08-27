@@ -1,9 +1,9 @@
 # Encrypted backup and staged recovery
 
-> **Production boundary:** `owd-snapshot-v2` is the primary deployed
-> multi-vault recovery path. `owd-backup-v1` remains available under Advanced
-> as a supported legacy
-> single-vault recovery path.
+> **Canonical boundary:** `mdevolved-snapshot-v3` is the primary recovery
+> path for new installations. `mdevolved-backup-v1` is the compact single-Source
+> format. Existing `owd-snapshot-v2` and `owd-backup-v1` artifacts remain
+> readable under the explicitly labelled legacy path.
 
 MDevolved backup artifacts are independent of live YAOS synchronization and the
 searchable D1/R2 materialization. Each artifact names one already-published
@@ -11,12 +11,12 @@ materialization generation and is encrypted as a standard age/X25519 file.
 
 ## Owner workflow
 
-1. In **Backup & restore**, choose **Back up a vault**, then **Create recovery
+1. In **Backup & restore**, choose **Back up a Source**, then **Create recovery
    key**. Backup setup and emergency restore are separate in-place tasks; only
    the chosen task is shown. MDevolved explains that an encrypted backup plus its
    matching private `.txt` key are both required for recovery.
 2. Choose **Download recovery key** for the timestamped
-   `owd-recovery-key-*.txt` file. MDevolved uses the browser's normal Downloads flow
+   `mdevolved-recovery-key-*.txt` file. MDevolved uses the browser's normal Downloads flow
    and does not invoke a native save-location API. It shows the prepared
    filename and non-zero byte count, but a download request alone is never
    reported as a successful save. Store a second copy in another private,
@@ -30,7 +30,7 @@ materialization generation and is encrypted as a standard age/X25519 file.
    again. MDevolved verifies locally that it matches the configured public lock; the
    private file contents are never uploaded. Backup creation stays disabled
    until this proof succeeds.
-5. Select the exact vault, then choose **Create backup**. MDevolved safely confirms a
+5. Select the exact Source, then choose **Create backup**. MDevolved safely confirms a
    fresh library in the same operation; a direct API caller also cannot encrypt
    a stale generation. The create request is bound to the fingerprint of the
    public key just verified, and that key cannot rotate while the artifact is
@@ -49,9 +49,9 @@ it; choose a separately active target for recovery.
 
 ## Artifact format
 
-The decrypted `owd-backup-v1` byte stream contains:
+The decrypted `mdevolved-backup-v1` byte stream contains:
 
-1. the ASCII line `OWD-BACKUP-V1`;
+1. the ASCII line `MDEVOLVED-BACKUP-V1`;
 2. one bounded JSON manifest line; and
 3. each UTF-8 Markdown body in canonical, case-folded path order, with byte
    boundaries and SHA-256 values supplied by the authenticated manifest.
@@ -73,7 +73,7 @@ export fixtures, and isolated restore coverage. Future durable Knowledge,
 Skills, and Evaluations remain gated. Harness conversations, credentials, and
 live grants remain excluded permanently.
 
-Acknowledged `owd-continuity-point-v1` records are Approved operational
+Acknowledged `mdevolved-continuity-point-v1` records are Approved operational
 checkpoints. Their exact dependency closure is encrypted with the snapshot,
 but their disposition remains `checkpointed`, not accepted truth. Lead leases,
 checkpoint receipts, OAuth/grant rows, and producer authority are never
@@ -124,7 +124,7 @@ full vault plaintext or ciphertext in memory. A D1 artifact remains hidden in
    timeline then shows the capture window, exact source generations, changed
    items, logical bytes, newly stored bytes, encryption/integrity state, pin
    state, and a short timestamped reference.
-6. **Download encrypted copy** streams a provider-neutral `.owdsnapshot`
+6. **Download encrypted copy** streams a provider-neutral `.mdevolvedsnapshot`
    container. The timeline immediately identifies the exact requested filename,
    checked timestamp, and short snapshot reference beside the action; this
    confirms a browser download request, not a successful save. The container
@@ -156,7 +156,7 @@ manifests and encrypted objects, not retained search indexes.
 ### v2 named restore and portable import
 
 1. Choose **Restore** on one timeline entry, or **Open encrypted copy** to use a
-   downloaded `.owdsnapshot` from another installation.
+   downloaded `.mdevolvedsnapshot` from another installation.
 2. The portable-file path shows the exact selected filename and byte count.
    Choose the matching recovery key. The browser validates the public index,
    unknown required capabilities, encrypted manifest, every byte boundary, age
@@ -234,9 +234,8 @@ or implied background recovery point in the current alpha.
 
 ### Format fixtures and compatibility
 
-The checked-in public fixtures are
-`packages/contracts/fixtures/owd-snapshot-v2-manifest.json` and
-`packages/contracts/fixtures/owd-snapshot-v2-index.json`. They contain only
+The checked-in public fixtures are the version-matched
+`mdevolved-snapshot-v3` manifest and index fixtures. They contain only
 synthetic metadata and hashes—no ciphertext, recovery identity, hostname, D1
 row identity, R2 key, or personal content.
 
@@ -265,7 +264,7 @@ before staging.
 ## M3 compounding recovery
 
 Compounding observations and draft actions are an additive encrypted snapshot
-extension negotiated with `owd.snapshot.compounding-v1`. They are Unvetted:
+extension negotiated with `mdevolved.snapshot.compounding-v1`. They are Unvetted:
 `none` and Approved-only snapshots exclude them, while an explicit
 Approved-and-Unvetted snapshot includes each immutable `compounding_records`
 body with its canonical hash, byte size, portable identity, source Project

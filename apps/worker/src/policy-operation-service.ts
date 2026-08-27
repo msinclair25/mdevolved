@@ -29,7 +29,7 @@ import {
   type PolicyDecision,
   type PolicyEvidenceRef,
   type PolicyExceptionAction,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { CollaborationAuthorizationContext } from "./collaboration-service";
 import { queueCollaborationObjectCleanup } from "./collaboration-retention";
 import { readCollaborationRecord } from "./collaboration-store";
@@ -1363,7 +1363,7 @@ export async function evaluateRunPolicy(
       kind === "destructive-action" ||
       (kind === "protected-path-access" &&
         request.normalizedRelativePath !== null &&
-        [".git", ".owdignore", ".obsidian"].includes(
+        [".git", ".mdevolvedignore", ".owdignore", ".obsidian"].includes(
           request.normalizedRelativePath.split("/")[0] ?? "",
         ))
         ? kind

@@ -8,7 +8,7 @@ import {
   type CurrentMaterializationResponse,
   type MaterializedNotesResponse,
   type MaterializedSearchResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { z } from "zod";
 import type { Context, Hono } from "hono";
 import { ApiProblem } from "./api-problem";
@@ -302,6 +302,7 @@ export function registerMaterializationRoutes(app: Hono<AppBindings>): void {
     context.header("Content-Type", "text/markdown; charset=utf-8");
     context.header("Content-Disposition", 'inline; filename="note.md"');
     context.header("X-Content-Type-Options", "nosniff");
+    context.header("X-MDevolved-Generation", generation.generationId);
     context.header("X-OWD-Generation", generation.generationId);
     return context.body(object.body);
   });

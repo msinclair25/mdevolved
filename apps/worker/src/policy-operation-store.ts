@@ -3,7 +3,7 @@ import {
   canonicalizeCollaborationJson,
   policyOperationalRecordSchema,
   type PolicyOperationalRecord,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { sha256HexBytes } from "./security";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

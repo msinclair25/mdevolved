@@ -9,7 +9,7 @@ import {
   type BackupArtifact,
   type BackupRecipientStatus,
   type VaultSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { generateX25519Identity, identityToRecipient } from "age-encryption";
 import { useEffect, useRef, useState } from "react";
 import { OperationalRegion } from "./OperationalRegion";
@@ -111,7 +111,9 @@ async function apiJson(
       ...(options.body === undefined
         ? {}
         : { "Content-Type": "application/json" }),
-      ...(options.csrf === undefined ? {} : { "X-OWD-CSRF": options.csrf }),
+      ...(options.csrf === undefined
+        ? {}
+        : { "X-MDevolved-CSRF": options.csrf }),
     },
     method: options.method ?? "GET",
     signal: options.signal,

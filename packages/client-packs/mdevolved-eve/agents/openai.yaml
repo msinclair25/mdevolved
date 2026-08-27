@@ -1,0 +1,4 @@
+interface:
+  display_name: "MDevolved + Eve"
+  short_description: "Connect Eve to MDevolved with user-scoped OAuth"
+  default_prompt: "Use $mdevolved-eve to connect or resume this Eve agent with MDevolved."

@@ -1,4 +1,4 @@
-import type { PreparedProjectHandoff } from "@owd/contracts";
+import type { PreparedProjectHandoff } from "@mdevolved/contracts";
 import type { ActiveAgentGrant } from "./agent-access-store";
 import { VaultPathError, validateMarkdownVaultPath } from "./vault-path";
 import { projectCreationLabelKey } from "./project-initialization-store";

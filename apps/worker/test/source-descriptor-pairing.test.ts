@@ -7,7 +7,7 @@ import {
 } from "../src/pairing-store";
 import { sha256Hex } from "../src/security";
 import { ensureAuthSchema } from "../src/auth-store";
-import type { SourceDescriptorInput } from "@owd/contracts";
+import type { SourceDescriptorInput } from "@mdevolved/contracts";
 
 const ORIGIN = "https://owd.test";
 const DESCRIPTOR = {

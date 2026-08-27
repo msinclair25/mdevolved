@@ -5,8 +5,11 @@ import {
 } from "./ipc.js";
 import { basename } from "node:path";
 import { createHash } from "node:crypto";
-import { createSourceDescriptor, type CredentialRecord } from "@owd/yaos-core";
-import { folderSourceIdentity } from "@owd/folder-adapter";
+import {
+  createSourceDescriptor,
+  type CredentialRecord,
+} from "@mdevolved/yaos-core";
+import { folderSourceIdentity } from "@mdevolved/folder-adapter";
 import {
   CLIENT_VERSION,
   createFetchPairingTransport,

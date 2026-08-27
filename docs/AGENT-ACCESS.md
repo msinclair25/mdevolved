@@ -24,16 +24,16 @@ skill automation.
 
 One MCP connection and one Project consent cover the normal loop:
 
-1. `owd_resume(projectId, task?, contextMode?)` returns a bounded, cited,
+1. `mdevolved_resume(projectId, task?, contextMode?)` returns a bounded, cited,
    structured brief. It does not replay raw transcripts or provider sessions.
    `focused` is the default; `independent` withholds peer conclusions,
    provisional results, and record bodies; `synthesis` includes only separately
    attributable durable shared results.
-2. `owd_find(projectId, question)` searches the current brief, recent durable
+2. `mdevolved_find(projectId, question)` searches the current brief, recent durable
    Project memory, and authorized current library within explicit ceilings.
-3. `owd_checkpoint(...)` appends a compact outcome, verification evidence,
+3. `mdevolved_checkpoint(...)` appends a compact outcome, verification evidence,
    useful failures, remaining work, and next action. The agent passes the
-   opaque `checkpointBase` and `contextMode` returned by `owd_resume` unchanged.
+   opaque `checkpointBase` and `contextMode` returned by `mdevolved_resume` unchanged.
    Focused and synthesis stale bases fail closed; independent bases remain
    bound to the exact frozen Work Packet. Exact retries are idempotent.
 
@@ -158,7 +158,7 @@ for browser consent but cannot grant Project authority by themselves.
 resume. It opens one compatible Project automatically, asks only when several
 compatible Projects make identity ambiguous, and prepares a bounded New Project
 draft when none exists.
-A local `.owdignore` `projectId` is authoritative. When the user names work
+A local `.mdevolvedignore` `projectId` is authoritative. When the user names work
 without a local receipt, the agent passes that exact name as `projectHint`; no
 differently named Project may be selected silently.
 
@@ -197,11 +197,11 @@ The normal client algorithm is fixed:
 4. If owner approval is required, present the one `approvalUrl` and immediately
    call the tool and key named by `wait`.
 5. Repeat only that bounded wait while approval remains pending.
-6. In a fresh task, read `.owdignore` and call `owd_resume` with its exact
+6. In a fresh task, read `.mdevolvedignore` and call `mdevolved_resume` with its exact
    Project ID.
 
-When `.owdignore` exists, step 6 is the first MDevolved action. The session's writer
-role remains unconfirmed until `owd_resume` returns
+When `.mdevolvedignore` exists, step 6 is the first MDevolved action. The session's writer
+role remains unconfirmed until `mdevolved_resume` returns
 `localVaultAccess.role`; a fresh chat, process, or context window does not
 change the durable assignment. Clients must not report “not primary,” reconnect
 MCP, or seek new Project approval based only on missing conversation memory.
@@ -226,15 +226,15 @@ the separately scoped collaboration grant. The source grant and existing
 access token are never widened in place, and no second OAuth authorization is
 required.
 
-The approved selector is returned as a canonical `.owdignore` JSON receipt
+The approved selector is returned as a canonical `.mdevolvedignore` JSON receipt
 containing the exact `projectId`, `includePaths`, and `excludePaths`, plus a
 marked Project-continuity block for the root `AGENTS.md`. The agent preserves
 all existing instructions and merges only that marked block. On every fresh
-task, the block requires the agent to read `.owdignore` and call
-`resume_project` with that exact identity and policy. The tool returns durable
+task, the block requires the agent to read `.mdevolvedignore` and call
+`mdevolved_resume` with that exact identity and policy. The tool returns durable
 context only after the supplied manifest exactly matches the active grant's
 pinned Knowledge Space selector hash. Missing, malformed, changed, broadened,
-or stale policy fails closed. `.owdignore` affects Project context selection
+or stale policy fails closed. `.mdevolvedignore` affects Project context selection
 only; it does not silently remove notes from vault synchronization or recovery.
 `resume_project` also returns the current receipt and managed block so an
 existing Project replaces only that marked block when MDevolved hardens its
@@ -314,9 +314,9 @@ returns only the current bounded packet and owner-shared records.
 
 The ordinary M1 catalog stays intentionally small:
 
-- `owd_resume`: bounded structured Project context and a checkpoint receipt.
-- `owd_find`: targeted durable recall with citations and scan ceilings.
-- `owd_checkpoint`: append-only verified progress using the resume receipt.
+- `mdevolved_resume`: bounded structured Project context and a checkpoint receipt.
+- `mdevolved_find`: targeted durable recall with citations and scan ceilings.
+- `mdevolved_checkpoint`: append-only verified progress using the resume receipt.
 
 The existing setup and vault tools remain current compatibility paths:
 
@@ -370,7 +370,7 @@ vault content is untrusted read-only data, every operation must name a granted
 vault, and results must preserve generation provenance. Client-specific setup
 may vary, but tool names and schemas do not.
 
-For an explicit Project ID, `owd_resume` is the normal path. The lower-level
+For an explicit Project ID, `mdevolved_resume` is the normal path. The lower-level
 `resume_project` and `get_current_work_packet`
 resolve and revalidate the exact live source and Project grants, Project,
 Knowledge Space, restored-source approvals, source generations, and packet
@@ -468,7 +468,7 @@ sequence of agent roles.
 ### Autonomous Project loop
 
 Capability resource
-`owd://collaboration/lead-operation-capabilities/v4` adds two completion modes
+`mdevolved://collaboration/lead-operation-capabilities/v4` adds two completion modes
 without changing the older resources or tool names:
 
 - omitted `completionMode` remains `orchestrated-reviewed`: at least three
@@ -499,8 +499,8 @@ continuing. Codex, Claude, Cursor, Antigravity, Grok Build, Hermes Agent, T3
 Code, Orca ADE, and LangChain/LangGraph are compatibility fixtures and smoke
 targets, never durable product enums.
 
-`owd-run-context-v1` is intentionally `run-shared-unvetted`; it is not an
-independent-discovery context. Harnesses use `owd_resume` with `independent`
+`mdevolved-run-context-v1` is intentionally `run-shared-unvetted`; it is not an
+independent-discovery context. Harnesses use `mdevolved_resume` with `independent`
 for discovery without peer conclusions, and expose only an explicitly routed
 target provisional result when an actor is assigned as its reviewer.
 
@@ -679,14 +679,14 @@ the protocol boundary:
 - **Obsidian Mind** receives a project-scoped Claude command that adds MDevolved
   without replacing its existing `qmd` entry, plus a generic merge fragment,
   the standard MCP Resource
-  `owd://compatibility-profiles/obsidian-mind/v1`, the standard MCP Prompt
+  `mdevolved://compatibility-profiles/obsidian-mind/v1`, the standard MCP Prompt
   `connect-obsidian-mind`, and a script-free skill. The profile keeps native
-  note locations, separates `.om-project` routing from the `.owdignore`
+  note locations, separates `.om-project` routing from the `.mdevolvedignore`
   Project UUID, and classifies Mind's `record_work` and `remember` as direct
   vault writes subject to `localVaultAccess`.
 - **Eve** receives a complete `agent/connections/owd.ts` module using Eve's
   standard Streamable HTTP connection and user-scoped Vercel Connect OAuth,
-  plus the Resource `owd://compatibility-profiles/eve/v1`, Prompt
+  plus the Resource `mdevolved://compatibility-profiles/eve/v1`, Prompt
   `connect-eve`, and a script-free skill. Eve qualifies the connection's tools
   as `owd__<tool>`. A separately attributable Eve reviewer uses a distinct
   connector UID and OAuth registration; a session, channel, or child that

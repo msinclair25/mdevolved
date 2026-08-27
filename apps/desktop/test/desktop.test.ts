@@ -17,7 +17,10 @@ import {
   isSyncStatus,
   selectedFolder,
 } from "../src/ipc.js";
-import { windowCloseAction } from "../src/lifecycle.js";
+import {
+  isSupportedDesktopPairingLink,
+  windowCloseAction,
+} from "../src/lifecycle.js";
 import {
   canonicalManifestPayload,
   verifyArtifactHash,
@@ -112,6 +115,18 @@ describe("controller lifecycle", () => {
   it("hides on close but quits after explicit quit", () => {
     expect(windowCloseAction(false)).toBe("hide");
     expect(windowCloseAction(true)).toBe("quit");
+  });
+
+  it("accepts canonical and legacy pairing links without accepting lookalikes", () => {
+    expect(
+      isSupportedDesktopPairingLink("mdevolved://connect?deployment=x"),
+    ).toBe(true);
+    expect(
+      isSupportedDesktopPairingLink("owd-pair://connect?deployment=x"),
+    ).toBe(true);
+    expect(
+      isSupportedDesktopPairingLink("https://example.com/connect?deployment=x"),
+    ).toBe(false);
   });
 
   it("retains a valid pairing request until a folder is selected", async () => {

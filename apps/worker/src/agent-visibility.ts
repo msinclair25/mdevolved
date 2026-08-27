@@ -1,4 +1,4 @@
-import type { ObsidianMindRuntimeProfile } from "@owd/contracts";
+import type { ObsidianMindRuntimeProfile } from "@mdevolved/contracts";
 
 type VisibilityGrant = {
   pathKeyPrefixes: string[];

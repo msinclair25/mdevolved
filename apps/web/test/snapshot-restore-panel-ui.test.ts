@@ -5,7 +5,7 @@ import {
   APPROVED_INTELLIGENCE_CAPABILITY,
   snapshotIntelligenceManifestSchema,
   type SnapshotManifest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   collaborationRestoreVaultMappings,
   revealRestoreCompletion,

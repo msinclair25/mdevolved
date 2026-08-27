@@ -255,7 +255,7 @@ function conflictPathFor(path: string, date = new Date()): string {
 		.toISOString()
 		.replace(/\.\d{3}Z$/, "Z")
 		.replace(/[:]/g, "-");
-	const suffix = ` (OWD Sync remote conflict ${stamp})`;
+	const suffix = ` (MDevolved Sync remote conflict ${stamp})`;
 	const ext = dot > 0 ? name.slice(dot) : "";
 	const base = dot > 0 ? name.slice(0, dot) : name;
 	// Cap base name to prevent filesystem path length issues (255 byte limit)
@@ -264,10 +264,13 @@ function conflictPathFor(path: string, date = new Date()): string {
 	return `${dir}${cappedBase}${suffix}${ext}`;
 }
 
-function isBlobConflictArtifactPath(path: string): boolean {
+export function isBlobConflictArtifactPath(path: string): boolean {
 	const normalized = normalizePath(path);
 	const name = normalized.split("/").pop() ?? normalized;
-	return /^.+ \(OWD Sync remote conflict \d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z\)(?:\.[^/.]+)?$/.test(name);
+	return [
+		/^.+ \(MDevolved Sync remote conflict \d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z\)(?:\.[^/.]+)?$/,
+		/^.+ \(OWD Sync remote conflict \d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z\)(?:\.[^/.]+)?$/,
+	].some((pattern) => pattern.test(name));
 }
 
 // -------------------------------------------------------------------

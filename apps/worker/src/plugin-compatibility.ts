@@ -1,5 +1,5 @@
 export const MINIMUM_PLUGIN_VERSION = "0.1.7";
-export const RECOMMENDED_PLUGIN_VERSION = "0.1.7";
+export const RECOMMENDED_PLUGIN_VERSION = "0.2.0-alpha.1";
 
 type ParsedVersion = {
   major: number;

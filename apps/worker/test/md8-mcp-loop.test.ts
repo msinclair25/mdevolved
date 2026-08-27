@@ -7,7 +7,7 @@ import {
   startRunReceiptSchema,
   submitBundleReceiptSchema,
   type CollaborationProjectCreateRequest,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -251,7 +251,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
     now,
   );
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -427,7 +427,7 @@ async function authorize(
       Cookie: owner.cookie,
       "Content-Type": "application/json",
       Origin: ORIGIN,
-      "X-OWD-CSRF": owner.csrf,
+      "X-MDevolved-CSRF": owner.csrf,
     },
     method: "POST",
   });
@@ -555,7 +555,7 @@ async function policyConsent(
         Cookie: owner.cookie,
         "Content-Type": "application/json",
         Origin: ORIGIN,
-        "X-OWD-CSRF": owner.csrf,
+        "X-MDevolved-CSRF": owner.csrf,
       },
       method: "POST",
     },
@@ -610,7 +610,7 @@ async function setup(): Promise<{
         Cookie: project.owner.cookie,
         "Content-Type": "application/json",
         Origin: ORIGIN,
-        "X-OWD-CSRF": project.owner.csrf,
+        "X-MDevolved-CSRF": project.owner.csrf,
       },
       method: "POST",
     },

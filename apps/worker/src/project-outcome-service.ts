@@ -1,4 +1,7 @@
-import { projectOutcomeSchema, type ProjectOutcome } from "@owd/contracts";
+import {
+  projectOutcomeSchema,
+  type ProjectOutcome,
+} from "@mdevolved/contracts";
 
 export class ProjectOutcomeProblem extends Error {
   constructor(readonly code: "project_not_found") {

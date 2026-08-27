@@ -2,7 +2,7 @@ import {
   setupReadinessSchema,
   setupVaultNextStepSchema,
   type SetupVaultNextStep,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import type { Hono } from "hono";
 import { requireOwnerSession } from "./owner-session";
 import type { AppBindings } from "./types";

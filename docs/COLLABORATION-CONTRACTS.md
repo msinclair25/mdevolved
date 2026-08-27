@@ -311,7 +311,7 @@ Lead-continuity authorization is deliberately narrower:
 | C27 | A provider-neutral export requires no D1 row, R2 key, hostname, source account, or source connectivity.                                        |
 | C28 | Project-notebook projection is derived, excluded as source by default, and cannot overwrite an owner edit without the exact prior hash.        |
 | C29 | One owner approval atomically creates the exact collaboration grant; the same source MCP connection resolves it without a second OAuth flow.   |
-| C30 | `.owdignore` binds resume to one explicit durable Project ID and the complete approved selector.                                               |
+| C30 | `.mdevolvedignore` binds resume to one explicit durable Project ID and the complete approved selector.                                         |
 | C31 | Routine source, packet, token, and active-grant refresh is automatic; explicit revocation remains final.                                       |
 | C32 | Legacy approval self-healing requires the same active source grant and exact approved Project/context; it can never restore revoked authority. |
 | C33 | One Project has at most one live lead lease; every takeover increments a monotonically increasing fencing token.                               |
@@ -398,7 +398,7 @@ The same Tools, Resources, and Prompts are also served through the current
   Metadata, exact per-client consent, short-lived access, and authoritative D1
   policy checks. Token passthrough is forbidden.
 - Lead-continuity clients discover
-  `owd://collaboration/lead-continuity-capabilities/v1`; clients that do not
+  `mdevolved://collaboration/lead-continuity-capabilities/v1`; clients that do not
   understand it continue using the unchanged legacy profile and tools.
 
 ### A2A 1.0
@@ -538,7 +538,7 @@ retarget an active Run. `start_run` only selects an accepted, non-restored
 packet; quarantined or restored packet bodies can never seed live Run authority.
 
 Requests for authority expansion, destructive action, or access below the
-exact `.git`, `.owdignore`, or `.obsidian` protected roots are recorded and not
+exact `.git`, `.mdevolvedignore`, or `.obsidian` protected roots are recorded and not
 executed. Conflicting claim hashes are preserved and block completion; MDevolved does
 not choose a winner. No EventBundle contains a raw transcript, hidden
 reasoning, terminal history, credential, OAuth state, retry loop, or harness
@@ -553,17 +553,17 @@ live operation therefore requires fresh ordinary authorization and can never
 resume restored actor authority.
 
 Capability discovery is additive at
-`owd://collaboration/lead-operation-capabilities/v1`. The existing
+`mdevolved://collaboration/lead-operation-capabilities/v1`. The existing
 `owd-collaboration-capabilities-v1` and lead-continuity resource are unchanged,
 so current R1 and older clients continue using their existing tools. The
-Hermes resource at `owd://adapters/hermes/hands-off/v1` is inert, script-free
+Hermes resource at `mdevolved://adapters/hermes/hands-off/v1` is inert, script-free
 sequencing guidance over the same generic services.
 
 ## R3 elastic Run and Orca contracts
 
 R3 is negotiated additively through
-`owd-lead-operation-capabilities-v2` (schema version 2). Clients that only
-advertise `owd-lead-operation-capabilities-v1` retain the R2 seven-tool
+`mdevolved-lead-operation-capabilities-v2` (schema version 2). Clients that only
+advertise `mdevolved-lead-operation-capabilities-v1` retain the R2 seven-tool
 surface and R2 limits. A client must opt into the elastic profile; an R2 Run
 never silently changes capacity or response shape.
 

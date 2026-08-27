@@ -97,8 +97,9 @@ export const projectPolicySchema = z
     maxRunLogicalBytes: z.literal(MAX_R2_RUN_LOGICAL_BYTES),
     independentReviewRequired: z.literal(true),
     protectedPaths: z
-      .array(z.enum([".git", ".owdignore", ".obsidian"]))
-      .length(3),
+      .array(z.enum([".git", ".mdevolvedignore", ".obsidian", ".owdignore"]))
+      .min(3)
+      .max(4),
     exceptionOnlyActions: z
       .array(
         z.enum([
@@ -114,7 +115,18 @@ export const projectPolicySchema = z
   })
   .strict()
   .superRefine((value, context) => {
-    if (new Set(value.protectedPaths).size !== 3) {
+    const protectedPaths = new Set(value.protectedPaths);
+    const currentProtectedPaths = [
+      ".git",
+      ".mdevolvedignore",
+      ".obsidian",
+    ] as const;
+    const legacyProtectedPaths = [".git", ".owdignore", ".obsidian"] as const;
+    if (
+      protectedPaths.size !== value.protectedPaths.length ||
+      (!currentProtectedPaths.every((path) => protectedPaths.has(path)) &&
+        !legacyProtectedPaths.every((path) => protectedPaths.has(path)))
+    ) {
       context.addIssue({
         code: "custom",
         message: "Protected paths must be exact and unique.",
@@ -367,7 +379,9 @@ export const eventBundleSchema = z
             .some(
               (part) => part === "." || part === ".." || part.length === 0,
             ) ||
-          ![".git", ".owdignore", ".obsidian"].includes(firstSegment ?? "")))
+          ![".git", ".mdevolvedignore", ".owdignore", ".obsidian"].includes(
+            firstSegment ?? "",
+          )))
     ) {
       context.addIssue({
         code: "custom",
@@ -454,7 +468,9 @@ export const projectExceptionSchema = z
             .some(
               (part) => part === "." || part === ".." || part.length === 0,
             ) ||
-          ![".git", ".owdignore", ".obsidian"].includes(firstSegment ?? "")))
+          ![".git", ".mdevolvedignore", ".owdignore", ".obsidian"].includes(
+            firstSegment ?? "",
+          )))
     ) {
       context.addIssue({
         code: "custom",

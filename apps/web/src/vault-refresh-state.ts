@@ -1,4 +1,4 @@
-import type { VaultSummary } from "@owd/contracts";
+import type { VaultSummary } from "@mdevolved/contracts";
 
 export type VaultState =
   | { kind: "idle" | "loading" }

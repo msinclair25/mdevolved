@@ -4,11 +4,13 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import {
-  OWD_SYNC_INSTALLER_BASE_PATH,
-  OWD_SYNC_INSTALLER_FORMAT,
-  OWD_SYNC_PLUGIN_ID,
+  MDEVOLVED_SYNC_INSTALLER_BASE_PATH,
+  MDEVOLVED_SYNC_INSTALLER_FORMAT,
 } from "./src/obsidian-plugin-installer";
-import { OWD_SYNC_REQUIRED_VERSION } from "./src/obsidian-plugin-links";
+import {
+  MDEVOLVED_SYNC_PLUGIN_ID,
+  MDEVOLVED_SYNC_REQUIRED_VERSION,
+} from "./src/obsidian-plugin-links";
 
 const pluginAssetNames = ["main.js", "manifest.json", "styles.css"] as const;
 const releaseDirectory = fileURLToPath(
@@ -41,9 +43,9 @@ async function loadInstallerFiles(): Promise<InstallerFile[]> {
     typeof pluginManifest !== "object" ||
     pluginManifest === null ||
     !("id" in pluginManifest) ||
-    pluginManifest.id !== OWD_SYNC_PLUGIN_ID ||
+    pluginManifest.id !== MDEVOLVED_SYNC_PLUGIN_ID ||
     !("version" in pluginManifest) ||
-    pluginManifest.version !== OWD_SYNC_REQUIRED_VERSION
+    pluginManifest.version !== MDEVOLVED_SYNC_REQUIRED_VERSION
   ) {
     throw new Error(
       "The packaged MDevolved Sync for Obsidian manifest does not match the web installer.",
@@ -58,9 +60,9 @@ async function loadInstallerFiles(): Promise<InstallerFile[]> {
           name: asset.name,
           sha256: asset.sha256,
         })),
-        format: OWD_SYNC_INSTALLER_FORMAT,
-        pluginId: OWD_SYNC_PLUGIN_ID,
-        version: OWD_SYNC_REQUIRED_VERSION,
+        format: MDEVOLVED_SYNC_INSTALLER_FORMAT,
+        pluginId: MDEVOLVED_SYNC_PLUGIN_ID,
+        version: MDEVOLVED_SYNC_REQUIRED_VERSION,
       },
       null,
       2,
@@ -76,12 +78,12 @@ async function loadInstallerFiles(): Promise<InstallerFile[]> {
           : asset.name === "styles.css"
             ? "text/css; charset=utf-8"
             : "text/javascript; charset=utf-8",
-      fileName: `${OWD_SYNC_INSTALLER_BASE_PATH.slice(1)}/${asset.name}`,
+      fileName: `${MDEVOLVED_SYNC_INSTALLER_BASE_PATH.slice(1)}/${asset.name}`,
     })),
     {
       bytes: manifestBytes,
       contentType: "application/json; charset=utf-8",
-      fileName: `${OWD_SYNC_INSTALLER_BASE_PATH.slice(1)}/installer-manifest.json`,
+      fileName: `${MDEVOLVED_SYNC_INSTALLER_BASE_PATH.slice(1)}/installer-manifest.json`,
     },
   ];
 }
@@ -89,7 +91,7 @@ async function loadInstallerFiles(): Promise<InstallerFile[]> {
 function owdSyncInstallerAssets(): Plugin {
   const files = loadInstallerFiles();
   return {
-    name: "owd-sync-installer-assets",
+    name: "mdevolved-sync-installer-assets",
     configurePreviewServer(server) {
       server.middlewares.use((request, response, next) => {
         const path = new URL(

@@ -189,8 +189,21 @@ if (
 }
 
 const wrangler = await readFile("wrangler.jsonc", "utf8");
+const legacyWrangler = await readFile("wrangler.legacy.jsonc", "utf8");
 if (!wrangler.includes(`"APP_VERSION": "${CORE_VERSION}"`)) {
   throw new Error(`wrangler.jsonc must expose APP_VERSION ${CORE_VERSION}.`);
+}
+if (
+  !wrangler.includes('"name": "mdevolved-community"') ||
+  !wrangler.includes('"database_name": "mdevolved-community-db"') ||
+  !wrangler.includes('"bucket_name": "mdevolved-community-sources"') ||
+  !legacyWrangler.includes('"name": "owd-platform"') ||
+  !legacyWrangler.includes('"database_name": "owd-platform-db"') ||
+  !legacyWrangler.includes('"bucket_name": "owd-platform-vaults"')
+) {
+  throw new Error(
+    "Fresh Community installs must use canonical MDevolved resources while existing cells retain the explicit legacy config.",
+  );
 }
 
 const generatedBindings = await readFile(
@@ -253,7 +266,7 @@ if (
 }
 if (
   !pluginLinks.includes(
-    `export const OWD_SYNC_REQUIRED_VERSION = "${pluginManifest.version}"`,
+    `export const MDEVOLVED_SYNC_REQUIRED_VERSION = "${pluginManifest.version}"`,
   )
 ) {
   throw new Error(
@@ -297,8 +310,10 @@ if (
   );
 }
 if (
-  !pluginInstaller.includes("owd-sync-web-installer-v1") ||
-  !pluginInstaller.includes("`/owd-sync/${OWD_SYNC_REQUIRED_VERSION}`") ||
+  !pluginInstaller.includes("mdevolved-sync-web-installer-v1") ||
+  !pluginInstaller.includes(
+    "`/mdevolved-sync/${MDEVOLVED_SYNC_REQUIRED_VERSION}`",
+  ) ||
   !webViteConfig.includes("../../packages/obsidian-plugin/release/") ||
   !webViteConfig.includes("installer-manifest.json") ||
   installerAssetNames.some(

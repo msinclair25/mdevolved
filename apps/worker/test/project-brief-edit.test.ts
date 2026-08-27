@@ -1,7 +1,7 @@
 import {
   collaborationProjectBriefUpdateRequestSchema,
   collaborationProjectBriefUpdateResponseSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 
 const projectVersionId = "10000000-0000-4000-8000-000000000001";

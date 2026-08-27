@@ -1,4 +1,4 @@
-import type { VaultSummary } from "@owd/contracts";
+import type { VaultSummary } from "@mdevolved/contracts";
 
 export function partitionVaults(vaults: readonly VaultSummary[]): {
   connected: VaultSummary[];

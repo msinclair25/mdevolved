@@ -1,5 +1,5 @@
 {
-  "name": "@owd/folder-adapter",
+  "name": "@mdevolved/folder-adapter",
   "version": "1.0.0-alpha.1",
   "private": true,
   "description": "MDevolved's source-neutral Node filesystem adapter.",
@@ -13,6 +13,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@owd/yaos-core": "workspace:*"
+    "@mdevolved/yaos-core": "workspace:*"
   }
 }

@@ -11,7 +11,7 @@ import {
   type WorkingPreference,
   workingPreferenceListResponseSchema,
   workingPreferenceMutationResponseSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CompoundingDraftsPanel } from "./CompoundingDraftsPanel";
 
@@ -130,7 +130,7 @@ async function request(path: string, body?: unknown): Promise<unknown> {
     headers: {
       Accept: "application/json",
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-      ...(csrf === undefined ? {} : { "X-OWD-CSRF": csrf }),
+      ...(csrf === undefined ? {} : { "X-MDevolved-CSRF": csrf }),
     },
     method: body === undefined ? "GET" : "POST",
   });

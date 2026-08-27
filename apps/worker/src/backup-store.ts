@@ -1,14 +1,15 @@
 import backupMigration from "../../../migrations/0007_encrypted_backups.sql";
 import {
+  MDEVOLVED_BACKUP_FORMAT,
+  MDEVOLVED_BACKUP_MAGIC,
   OWD_BACKUP_FORMAT,
-  OWD_BACKUP_MAGIC,
   backupArchiveManifestSchema,
   type BackupArchiveManifest,
   type BackupArtifact,
   type BackupRecipientStatus,
   type MaterializationGeneration,
   type PortableSourceDevice,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { Encrypter } from "age-encryption";
 import {
   listMaterializedNotesForBackup,
@@ -31,6 +32,8 @@ type BackupRow = {
   completed_at: number;
   created_at: number;
   format_version: "owd-backup-v1";
+  portable_format_version:
+    typeof MDEVOLVED_BACKUP_FORMAT | typeof OWD_BACKUP_FORMAT;
   generation_id: string;
   id: string;
   note_count: number;
@@ -113,6 +116,23 @@ export async function ensureBackupSchema(db: D1Database): Promise<void> {
       ),
     );
   }
+  const portableFormatColumn = await db
+    .prepare(
+      `SELECT COUNT(*) AS count FROM pragma_table_info('backup_artifacts')
+       WHERE name = 'portable_format_version'`,
+    )
+    .first<{ count: number }>();
+  if (portableFormatColumn?.count !== 1) {
+    await db
+      .prepare(
+        `ALTER TABLE backup_artifacts ADD COLUMN portable_format_version TEXT
+         NOT NULL DEFAULT 'owd-backup-v1'
+         CHECK (portable_format_version IN (
+           'owd-backup-v1', 'mdevolved-backup-v1'
+         ))`,
+      )
+      .run();
+  }
 }
 
 function artifactFromRow(row: BackupRow): BackupArtifact {
@@ -121,7 +141,7 @@ function artifactFromRow(row: BackupRow): BackupArtifact {
     ciphertextBytes: row.ciphertext_bytes,
     completedAt: row.completed_at,
     createdAt: row.created_at,
-    format: row.format_version,
+    format: row.portable_format_version,
     generationId: row.generation_id,
     noteCount: row.note_count,
     recipientFingerprint: row.recipient_fingerprint,
@@ -396,7 +416,7 @@ export async function createEncryptedBackup(
       "pending-agent-proposals",
       "unknown-obsidian-plugin-data",
     ],
-    format: OWD_BACKUP_FORMAT,
+    format: MDEVOLVED_BACKUP_FORMAT,
     generation: input.generation,
     includedSections: ["notes"],
     notes: notes.map((note) => ({
@@ -417,7 +437,7 @@ export async function createEncryptedBackup(
     vaultName: input.vaultName,
   });
   const prefix = encoder.encode(
-    `${OWD_BACKUP_MAGIC}${JSON.stringify(manifest)}\n`,
+    `${MDEVOLVED_BACKUP_MAGIC}${JSON.stringify(manifest)}\n`,
   );
   const plaintextBytes = prefix.byteLength + input.generation.totalBytes;
   const objectKey = `backups/${backupId}/vault.age`;
@@ -427,10 +447,11 @@ export async function createEncryptedBackup(
     const inserted = await db
       .prepare(
         `INSERT INTO backup_artifacts (
-          id, vault_id, generation_id, format_version, status, object_key,
+          id, vault_id, generation_id, format_version,
+          portable_format_version, status, object_key,
           recipient_fingerprint, note_count, plaintext_bytes, created_at
         )
-        SELECT ?, v.id, g.id, ?, 'creating', ?, ?, ?, ?, ?
+        SELECT ?, v.id, g.id, ?, ?, 'creating', ?, ?, ?, ?, ?
         FROM vaults v
         JOIN materialization_generations g ON g.vault_id = v.id
         JOIN current_materializations current ON current.generation_id = g.id
@@ -446,6 +467,7 @@ export async function createEncryptedBackup(
       .bind(
         backupId,
         OWD_BACKUP_FORMAT,
+        MDEVOLVED_BACKUP_FORMAT,
         objectKey,
         recipient.fingerprint,
         notes.length,
@@ -472,7 +494,7 @@ export async function createEncryptedBackup(
       encrypted.pipeTo(fixedLength.writable),
       storage.put(objectKey, fixedLength.readable, {
         customMetadata: {
-          format: OWD_BACKUP_FORMAT,
+          format: MDEVOLVED_BACKUP_FORMAT,
           recipient: recipient.fingerprint,
         },
         httpMetadata: {
@@ -531,7 +553,7 @@ export async function createEncryptedBackup(
       ciphertextBytes: verified.size,
       completedAt: input.now,
       createdAt: input.now,
-      format: OWD_BACKUP_FORMAT,
+      format: MDEVOLVED_BACKUP_FORMAT,
       generationId: input.generation.generationId,
       noteCount: notes.length,
       recipientFingerprint: recipient.fingerprint,
@@ -568,6 +590,7 @@ export async function listReadyBackups(
   const result = await db
     .prepare(
       `SELECT b.id, b.vault_id, b.generation_id, b.format_version,
+        b.portable_format_version,
         b.object_key, b.object_etag, b.object_version,
         b.recipient_fingerprint, b.note_count, b.ciphertext_bytes,
         b.created_at, b.completed_at, b.verified_at
@@ -592,6 +615,7 @@ export async function readReadyBackup(
   const row = await db
     .prepare(
       `SELECT b.id, b.vault_id, b.generation_id, b.format_version,
+        b.portable_format_version,
         b.object_key, b.object_etag, b.object_version,
         b.recipient_fingerprint, b.note_count, b.ciphertext_bytes,
         b.created_at, b.completed_at, b.verified_at

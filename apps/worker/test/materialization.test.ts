@@ -5,7 +5,7 @@ import {
   materializationJobSchema,
   materializedNotesResponseSchema,
   materializedSearchResponseSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { createExecutionContext, runDurableObjectAlarm } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -87,7 +87,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
     now,
   );
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -96,7 +96,7 @@ function ownerHeaders(session: OwnerSession, origin = ORIGIN): HeadersInit {
   return {
     Cookie: session.cookie,
     Origin: origin,
-    "X-OWD-CSRF": session.csrf,
+    "X-MDevolved-CSRF": session.csrf,
   };
 }
 
@@ -426,7 +426,7 @@ describe("immutable vault materialization", () => {
     expect(browse.generation.generationId).toBe(published.generationId);
     expect(search.generation.generationId).toBe(published.generationId);
     expect(search.results[0]?.path).toBe("Projects/Alpha.md");
-    expect(noteResponse.headers.get("X-OWD-Generation")).toBe(
+    expect(noteResponse.headers.get("X-MDevolved-Generation")).toBe(
       published.generationId,
     );
     expect(noteResponse.headers.get("Content-Type")).toContain("text/markdown");

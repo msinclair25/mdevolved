@@ -1,4 +1,4 @@
-import { vaultIdSchema } from "@owd/contracts";
+import { vaultIdSchema } from "@mdevolved/contracts";
 import { sha256Hex } from "./security";
 
 const SOCKET_TICKET_PATH = /^\/vault\/([^/]+)\/auth\/ticket$/u;

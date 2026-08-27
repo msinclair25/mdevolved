@@ -1,10 +1,14 @@
 # MDevolved brand compatibility
 
-MDevolved is the human-facing product name. It was formerly called OWD. MD7
-completes the display-copy transition without renaming the wire protocol,
-stored model, package scope, or released compatibility identities. Normal user
-and agent workflows say MDevolved; OWD appears only as a frozen identifier or
-inside an explicit legacy compatibility explanation.
+> **MD9 identity contract:** new installs and writes use the canonical values
+> below. Former OWD values remain read-only compatibility inputs until their
+> documented migration windows close. No rename, import, or restore operation
+> transfers live authority.
+
+MDevolved is the human-facing and machine-facing identity for new installs. It
+was formerly called OWD. Normal user and agent workflows say MDevolved; OWD
+appears only as a frozen identifier or inside an explicit legacy compatibility
+explanation.
 
 ## Normal product path
 
@@ -20,21 +24,30 @@ inside an explicit legacy compatibility explanation.
 - Keep implementation terms under **Technical details**, **Advanced**, or an
   explicit compatibility notice.
 - Say **MDevolved Sync** for the folder app and **MDevolved Sync for Obsidian**
-  for the companion plugin. Its `owd-sync` ID remains a compatibility detail.
+  for the companion plugin. Its new plugin ID is `mdevolved-sync`; the old
+  `owd-sync` ID remains a compatibility detail.
 
 ## Frozen compatibility identities
 
-| Surface                 | Frozen value or behavior                                                                                 |
-| ----------------------- | -------------------------------------------------------------------------------------------------------- |
-| MCP tools and resources | `owd_*`, `owd://*`, existing capability names                                                            |
-| Pairing                 | `owd-pair` remains accepted; `mdevolved:` is additive                                                    |
-| Stored source identity  | `vaultId`, vault tables, migrations, records, keys                                                       |
-| Packages                | `@owd/*` and published `mdevolved` package names                                                         |
-| Obsidian plugin         | ID `owd-sync`, settings schema, BRAT repository, release tags, archive paths, updater behavior           |
-| Portable data           | `owd-backup-v1`, `owd-snapshot-v2`, exports, restore manifests, quarantine semantics                     |
-| Routes and bookmarks    | Existing API/deploy routes and `#vaults`; `#sources` aliases the same panel                              |
-| Repository              | `msinclair25/mdevolved`; legacy GitHub URLs must redirect before any old link is removed                 |
-| Deployment              | Existing Worker names, bindings, resource identifiers, permanent hostnames, and Deploy-to-Cloudflare URL |
+| Surface                   | Frozen value or behavior                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
+| New writes and installs   | `mdevolved-*`, `@mdevolved/*`, `mdevolved://*`, `mdevolved://connect`, `.mdevolvedignore`   |
+| MCP primary loop          | `mdevolved_resume`, `mdevolved_find`, `mdevolved_get_skill`, `mdevolved_checkpoint`         |
+| Pairing                   | `mdevolved://connect`; Obsidian `obsidian://mdevolved-pair`                                 |
+| Portable data             | `mdevolved-backup-v1`, `mdevolved-snapshot-v3`, provider-neutral restore                    |
+| Obsidian plugin           | ID `mdevolved-sync`; repository and release publication pending verification                |
+| Source identity           | User-facing **Source** and **Workspace**; frozen `vaultId` remains storage compatibility    |
+| Repository and deployment | `msinclair25/mdevolved`; fresh Community installs use the separate canonical resource names |
+
+### Legacy read-only compatibility
+
+Existing cells continue to read `owd_*`, `owd://*`, `owd-pair`, `.owdignore`,
+`owd-sync`, `owd-backup-v1`, and `owd-snapshot-v2`. Existing Worker, D1, R2,
+Durable Object, route, bookmark, table, migration, and object-key identities
+remain frozen. The private former workspace package scope remains historical
+source compatibility, not a published package bridge. The `#vaults` route and
+old API names stay available for existing clients, while `#sources` and the
+canonical APIs are the normal path for new clients.
 
 Existing users require no migration, data edit, re-pairing, MCP reconnect,
 plugin reinstall, or updater change. New display names never expand source or
@@ -43,13 +56,20 @@ and free of a managed-control-plane dependency.
 
 ## Release verification
 
-`pnpm test:md5:acceptance` checks the display-copy boundary and the frozen
-identifiers above, then exercises folder and Obsidian onboarding, navigation,
-plugin packaging/update metadata, CLI/desktop metadata, MCP compatibility,
-backup/snapshot/restore compatibility, accessibility/narrow-width browser
-coverage, and release/deploy link contracts. Live release review separately
-verifies the legacy GitHub redirect and the existing Deploy-to-Cloudflare URL
-without renaming or publishing anything.
+`pnpm test:md9:identity` checks the canonical/legacy identity matrix. The
+focused and full repository gates additionally exercise folder and Obsidian
+onboarding, navigation, plugin packaging/update metadata, CLI/desktop
+metadata, MCP compatibility, backup/snapshot/restore compatibility,
+accessibility, and release/deploy link contracts. Publication of the canonical
+Obsidian adapter, plugin-store listing, and any live client acceptance remain
+separate release-owner gates.
+
+The monorepo tag workflow packages and uploads a verified candidate artifact;
+it does not publish that artifact into the wrong repository. After explicit
+owner authorization, the reviewed files are promoted to
+`msinclair25/mdevolved-sync`, and the canonical release is created there. The
+old adapter remains available until that repository, release, checksums, and
+installer URLs have all been independently verified.
 
 The MD5 candidate's authoritative live check on 2026-08-26 verified the renamed
 repository without another mutation. `gh repo view msinclair25/owd-platform`

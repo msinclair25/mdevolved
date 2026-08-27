@@ -62,14 +62,14 @@ Create `agent/connections/owd.ts`:
 import { connect } from "@vercel/connect/eve";
 import { defineMcpClientConnection } from "eve/connections";
 
-const owdMcpUrl = "https://YOUR-MDEVOLVED-HOST/mcp";
+const mdevolvedMcpUrl = "https://YOUR-MDEVOLVED-HOST/mcp";
 
 export default defineMcpClientConnection({
-  url: owdMcpUrl,
+  url: mdevolvedMcpUrl,
   description:
     "MDevolved owner-approved Obsidian knowledge and durable cross-agent Projects. Use it to connect, resume, read bounded context, and exchange cited handoffs.",
   auth: connect({
-    connector: "oauth/owd",
+    connector: "oauth/mdevolved",
     principalType: "user",
     tokenParams: {
       scopes: [
@@ -77,7 +77,7 @@ export default defineMcpClientConnection({
         "project.initialize.request",
         "project.connect.request",
       ],
-      resources: [owdMcpUrl],
+      resources: [mdevolvedMcpUrl],
     },
     autoProvision: true,
     displayName: "MDevolved",
@@ -90,7 +90,7 @@ export default defineMcpClientConnection({
 The authenticated MDevolved dashboard generates this module with the deployment's
 exact MCP URL. The reusable generator is
 `createEveConnectionSource(mcpUrl, connectorUid?)` from
-`@owd/client-packs`.
+`@mdevolved/client-packs`.
 
 The profile deliberately does not set a client-side tool allowlist. MDevolved's live
 advertised catalog and server-side grant are the authority. It also does not
@@ -99,25 +99,25 @@ durable grant on every tool call and immediately denies revoked access.
 
 ## The normal user flow
 
-The connection filename `owd.ts` gives Eve the connection name `owd`, so its
-discovered tools are qualified as `owd__<tool>`.
+The connection filename `mdevolved.ts` gives Eve the connection name
+`mdevolved`, so its discovered tools are qualified as `mdevolved__<tool>`.
 
 1. The user asks Eve to connect this Project to MDevolved.
-2. Eve calls `owd__connection_info`.
-3. Eve calls `owd__open_project` with the exact Project UUID from `.owdignore`
+2. Eve calls `mdevolved__connection_info`.
+3. Eve calls `mdevolved__open_project` with the exact Project UUID from `.mdevolvedignore`
    or the visible name the user supplied.
 4. When OAuth is needed, Eve pauses the call and opens its user-scoped
    connection flow. The owner signs in to MDevolved and approves the exact vault and
    optional folder boundary.
 5. When Project approval is still needed, Eve presents the single returned
-   approval URL and calls `owd__wait_for_project_connection` with the exact
+   approval URL and calls `mdevolved__wait_for_project_connection` with the exact
    returned key.
 6. Eve persists the continuity receipt in a durable workspace and uses
-   `owd__resume_project` on later tasks.
+   `mdevolved__resume_project` on later tasks.
 
 No step asks the owner to copy a prompt, reconnect a working OAuth connection,
 renew a routine 24-hour packet, or create a duplicate Project. If a wrapper
-loses a pending envelope, Eve repeats only the exact same `owd__open_project`
+loses a pending envelope, Eve repeats only the exact same `mdevolved__open_project`
 call once so MDevolved can recover the same durable request.
 
 An initial Eve connection authorization and a later exact Project approval are
@@ -144,12 +144,12 @@ MDevolved attributes a grant and every collaboration submission to the OAuth cli
 identity. An Eve display name, prompt, session, channel, or directory name is
 not authority.
 
-| Eve shape                                                        | MDevolved identity                            |
-| ---------------------------------------------------------------- | --------------------------------------------- |
-| Multiple sessions or channels using `oauth/owd`                  | One participant                               |
-| Eve's built-in `agent` child                                     | Inherits the root connection; one participant |
-| Declared local subagent with the same connector UID              | Still one participant                         |
-| Separate agent/reviewer using `oauth/owd-reviewer` and new OAuth | Independently attributable participant        |
+| Eve shape                                                              | MDevolved identity                            |
+| ---------------------------------------------------------------------- | --------------------------------------------- |
+| Multiple sessions or channels using `oauth/mdevolved`                  | One participant                               |
+| Eve's built-in `agent` child                                           | Inherits the root connection; one participant |
+| Declared local subagent with the same connector UID                    | Still one participant                         |
+| Separate agent/reviewer using `oauth/mdevolved-reviewer` and new OAuth | Independently attributable participant        |
 
 Use a unique connector UID and OAuth registration for every agent that must be
 independently attributable, especially a reviewer. Prefer a separate top-level
@@ -195,9 +195,9 @@ profile does not downgrade MDevolved to app-scoped access for unattended executi
 
 The same versioned profile is available through:
 
-- package export `@owd/client-packs`;
-- script-free skill `@owd/client-packs/owd-eve`;
-- MCP Resource `owd://compatibility-profiles/eve/v1`;
+- package export `@mdevolved/client-packs`;
+- script-free skill `@mdevolved/client-packs/mdevolved-eve`;
+- MCP Resource `mdevolved://compatibility-profiles/eve/v1`;
 - MCP Prompt `connect-eve`; and
 - the authenticated dashboard's copy-ready connection module.
 

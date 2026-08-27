@@ -14,7 +14,7 @@ import {
   collaborationWorkItemReopenRequestSchema,
   portableWorkPacketBundleSchema,
   portableContinuityBundleSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { z } from "zod";
 import type { Context, Hono } from "hono";
 import { ApiProblem } from "./api-problem";

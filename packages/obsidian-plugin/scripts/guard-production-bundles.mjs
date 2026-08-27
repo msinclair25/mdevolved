@@ -3,7 +3,7 @@
 /**
  * guard-production-bundles.mjs
  *
- * Verifies that the OWD Sync production bundle contains neither the upstream
+ * Verifies that the MDevolved Sync production bundle contains neither the upstream
  * Observer/QA surfaces nor credential-sharing and update paths that OWD does
  * not ship.
  *
@@ -103,18 +103,21 @@ const MAIN_FORBIDDEN = [
   "mobile-setup#",
   "YAOS Recovery Kit",
   "Pair another device",
-  // OWD does not contact the upstream release service.
+  // MDevolved does not contact the upstream release service.
   "kavinsood/yaos/releases",
 ];
 
 const MAIN_REQUIRED = [
-  // Direct pairing may enter through exactly OWD's registered Obsidian action,
-  // but the plugin still displays and requires approval for the current vault.
+  // Direct pairing may enter through the canonical action or the explicit
+  // legacy compatibility action, but the plugin still displays and requires
+  // approval for the current vault.
   "registerObsidianProtocolHandler",
+  "mdevolved-pair",
   "owd-pair",
   "Pair and start sync",
-  // Copy/paste remains a selected-vault fallback.
-  "owd-pair://connect",
+  // Copy/paste remains a selected-vault fallback for both protocol forms.
+  "mdevolved://connect",
+  "owd-pair:",
   "pair-this-vault",
 ];
 
@@ -232,33 +235,37 @@ function scanSrcForQaImports(dir) {
   return count;
 }
 
-function checkOwdProtocolRegistration() {
+function checkMdevolvedProtocolRegistration() {
   const sourcePath = "src/main.ts";
   const source = readFileSync(sourcePath, "utf8");
   const registrations =
     source.match(/registerObsidianProtocolHandler\s*\(/gu) ?? [];
-  const exactRegistration = source.includes(
+  const canonicalRegistration = source.includes(
+    'registerObsidianProtocolHandler("mdevolved-pair"',
+  );
+  const legacyRegistration = source.includes(
     'registerObsidianProtocolHandler("owd-pair"',
   );
   const registrationIndex = source.indexOf(
-    'registerObsidianProtocolHandler("owd-pair"',
+    'registerObsidianProtocolHandler("mdevolved-pair"',
   );
   const upstreamLoadIndex = source.indexOf("super.onload()");
 
   if (
-    registrations.length !== 1 ||
-    !exactRegistration ||
+    registrations.length !== 2 ||
+    !canonicalRegistration ||
+    !legacyRegistration ||
     upstreamLoadIndex === -1 ||
     registrationIndex > upstreamLoadIndex
   ) {
     console.error(
-      "FAIL [OWD protocol]: production must register exactly one owd-pair handler before upstream startup.",
+      "FAIL [MDevolved protocol]: production must register canonical and legacy pairing handlers before upstream startup.",
     );
     return 1;
   }
 
   console.log(
-    "PASS [OWD protocol]: exactly one explicit owd-pair handler is registered before upstream startup.",
+    "PASS [MDevolved protocol]: canonical and legacy pairing handlers are registered before upstream startup.",
   );
   return 0;
 }
@@ -280,7 +287,7 @@ failures += checkBundle(
   MAIN_REQUIRED,
   "main.js",
 );
-failures += checkOwdProtocolRegistration();
+failures += checkMdevolvedProtocolRegistration();
 const srcQaViolations = scanSrcForQaImports("src");
 if (srcQaViolations > 0) {
   console.error(

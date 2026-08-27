@@ -112,7 +112,7 @@ Authentication attempts use D1-backed, pseudonymous fixed-window limits.
 
 The authenticated dashboard creates a ten-minute, single-use pairing grant and
 stores only its SHA-256 hash plus the exact deployment origin in D1. The
-dashboard exposes a non-launching `owd-pair://` value for explicit copying. The
+dashboard exposes a non-launching `mdevolved://connect` value for explicit copying. The
 user first opens the intended vault, invokes MDevolved Sync from inside that vault,
 and pastes the grant there. No operating-system URI handler selects a vault.
 After a second confirmation naming the current vault, the plugin sends that
@@ -280,7 +280,7 @@ source connection and explicit durable Project identity. When owner consent is
 needed, `wait_for_project_connection` remains on that same MCP connection while
 the browser action atomically creates the separately stored collaboration
 grant. The source access token is never widened and no second OAuth redirect is
-required. `.owdignore` carries the exact `projectId` with its approved selector
+required. `.mdevolvedignore` carries the exact `projectId` with its approved selector
 so later `resume_project` calls cannot infer Project identity from labels,
 folders, or client history.
 

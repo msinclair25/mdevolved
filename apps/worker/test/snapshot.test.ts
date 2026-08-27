@@ -1,7 +1,9 @@
 import {
   APPROVED_INTELLIGENCE_CAPABILITY,
-  OWD_SNAPSHOT_EXPORT_MAGIC,
+  MDEVOLVED_SNAPSHOT_EXPORT_MAGIC,
   MAX_SAFE_WORKING_PROFILE_RESTORE_ITEMS,
+  OWD_SNAPSHOT_EXPORT_MAGIC,
+  OWD_SNAPSHOT_FORMAT,
   WORKING_PROFILE_SNAPSHOT_CAPABILITY,
   apiErrorSchema,
   materializationJobSchema,
@@ -13,7 +15,7 @@ import {
   sourceDescriptorSchema,
   type SnapshotManifest,
   type SnapshotSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   Decrypter,
   generateX25519Identity,
@@ -256,7 +258,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
     now,
   );
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -268,7 +270,7 @@ function ownerHeaders(
   return {
     Cookie: session.cookie,
     Origin: ORIGIN,
-    "X-OWD-CSRF": session.csrf,
+    "X-MDevolved-CSRF": session.csrf,
     ...(json ? { "Content-Type": "application/json" } : {}),
   };
 }
@@ -1208,9 +1210,9 @@ describe("workspace snapshots", () => {
     );
     expect(download.status).toBe(200);
     const file = await download.blob();
-    expect(await file.slice(0, OWD_SNAPSHOT_EXPORT_MAGIC.length).text()).toBe(
-      OWD_SNAPSHOT_EXPORT_MAGIC,
-    );
+    expect(
+      await file.slice(0, MDEVOLVED_SNAPSHOT_EXPORT_MAGIC.length).text(),
+    ).toBe(MDEVOLVED_SNAPSHOT_EXPORT_MAGIC);
     const restored = new Map<string, string>();
     const inspected = await inspectPortableSnapshot(
       file,
@@ -1278,7 +1280,7 @@ describe("workspace snapshots", () => {
     ).toHaveLength(2);
   }, 15_000);
 
-  it("repairs a missing shared ciphertext from the retained canonical library object", async () => {
+  it("repairs a legacy snapshot without relabeling its portable format", async () => {
     const session = await createOwnerSession();
     const { identity } = await configureRecoveryRecipient(session);
     const vaultId = await createActiveVault("Repair vault");
@@ -1288,16 +1290,29 @@ describe("workspace snapshots", () => {
       ]),
     );
     const snapshot = await createSnapshot(session);
+    await env.DB.prepare(
+      `UPDATE workspace_snapshots SET portable_format_version = ? WHERE id = ?`,
+    )
+      .bind(OWD_SNAPSHOT_FORMAT, snapshot.snapshotId)
+      .run();
     const before = await env.DB.prepare(
-      `SELECT o.id, o.object_key
+      `SELECT o.id, o.object_key, s.manifest_object_key
        FROM snapshot_objects o
        JOIN snapshot_entries e ON e.recovery_object_id = o.id
+       JOIN workspace_snapshots s ON s.id = e.snapshot_id
        WHERE e.snapshot_id = ?`,
     )
       .bind(snapshot.snapshotId)
-      .first<{ id: string; object_key: string }>();
+      .first<{
+        id: string;
+        manifest_object_key: string;
+        object_key: string;
+      }>();
     expect(before).not.toBeNull();
-    await env.VAULT_STORAGE.delete(before?.object_key ?? "missing");
+    await env.VAULT_STORAGE.delete([
+      before?.manifest_object_key ?? "missing-manifest",
+      before?.object_key ?? "missing",
+    ]);
 
     const repaired = await fetchWorker(
       `${ORIGIN}/api/snapshots/${snapshot.snapshotId}/repair`,
@@ -1321,19 +1336,32 @@ describe("workspace snapshots", () => {
       .bind(snapshot.snapshotId)
       .first<{ id: string; object_key: string }>();
     expect(after?.id).not.toBe(before?.id);
-    expect(
-      await env.VAULT_STORAGE.head(after?.object_key ?? "missing"),
-    ).not.toBeNull();
+    const repairedObject = await env.VAULT_STORAGE.head(
+      after?.object_key ?? "missing",
+    );
+    expect(repairedObject?.customMetadata?.format).toBe(OWD_SNAPSHOT_FORMAT);
 
     const download = await fetchWorker(
       `${ORIGIN}/api/snapshots/${snapshot.snapshotId}/download`,
       { headers: ownerHeaders(session) },
     );
     expect(download.status).toBe(200);
+    expect(
+      new TextDecoder().decode(
+        new Uint8Array(
+          await (
+            await download.clone().blob()
+          )
+            .slice(0, OWD_SNAPSHOT_EXPORT_MAGIC.length)
+            .arrayBuffer(),
+        ),
+      ),
+    ).toBe(OWD_SNAPSHOT_EXPORT_MAGIC);
     const repairedManifest = await inspectPortableSnapshot(
       await download.blob(),
       identity,
     );
+    expect(repairedManifest.format).toBe(OWD_SNAPSHOT_FORMAT);
     expect(repairedManifest.snapshotId).not.toBe(snapshot.snapshotId);
   }, 15_000);
 

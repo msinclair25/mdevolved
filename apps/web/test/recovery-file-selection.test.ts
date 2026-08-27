@@ -4,7 +4,7 @@ import {
   describeRecoveryFile,
   validateRecoveryFile,
 } from "../src/recovery-file-selection";
-import type { BackupArtifact } from "@owd/contracts";
+import type { BackupArtifact } from "@mdevolved/contracts";
 
 describe("recovery file selection", () => {
   it("accepts non-empty recovery files and describes an attached file", () => {
@@ -55,6 +55,24 @@ describe("recovery file selection", () => {
     expect(file.size).toBe(backup.ciphertextBytes);
     expect(() => createStoredBackupFile(backup, new Blob(["short"]))).toThrow(
       "size did not match",
+    );
+  });
+
+  it("uses the canonical filename for newly written MDevolved backups", () => {
+    const backup: BackupArtifact = {
+      backupId: crypto.randomUUID(),
+      ciphertextBytes: 4,
+      completedAt: 1,
+      createdAt: 1,
+      format: "mdevolved-backup-v1",
+      generationId: crypto.randomUUID(),
+      noteCount: 1,
+      recipientFingerprint: "a".repeat(64),
+      vaultId: crypto.randomUUID(),
+      verifiedAt: 1,
+    };
+    expect(createStoredBackupFile(backup, new Blob(["safe"])).name).toBe(
+      `mdevolved-backup-${backup.backupId}.age`,
     );
   });
 });

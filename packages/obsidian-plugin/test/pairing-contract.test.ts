@@ -14,7 +14,8 @@ const CREDENTIAL = "credential_12345678901234567890";
 const VAULT_ID = "946009ef-ad0e-43e4-bd7e-3552d559a9ab";
 const DEVICE_ID = "a4cfebbb-1c37-4fea-a30b-894e0d909911";
 const IDEMPOTENCY_KEY = "bad2c67d-d80f-40b2-a4c0-49070ed1a25c";
-const PAIRING_LINK = `owd-pair://connect?deployment=${encodeURIComponent(DEPLOYMENT)}&grant=${GRANT}`;
+const PAIRING_LINK = `mdevolved://connect?deployment=${encodeURIComponent(DEPLOYMENT)}&grant=${GRANT}`;
+const LEGACY_PAIRING_LINK = `owd-pair://connect?deployment=${encodeURIComponent(DEPLOYMENT)}&grant=${GRANT}`;
 
 function dependencies(
   overrides: Partial<OwdPairingDependencies> = {},
@@ -42,7 +43,7 @@ function dependencies(
   };
 }
 
-describe("OWD Obsidian pairing contract", () => {
+describe("MDevolved Obsidian pairing contract", () => {
   it("accepts HTTPS deployment origins and local HTTP only", () => {
     expect(
       parseOwdPairingParameters({ deployment: DEPLOYMENT, grant: GRANT }),
@@ -65,8 +66,12 @@ describe("OWD Obsidian pairing contract", () => {
     }
   });
 
-  it("accepts only a copied OWD pairing link with one deployment and grant", () => {
+  it("accepts canonical and legacy copied pairing links with exact fields", () => {
     expect(parseOwdPairingLink(PAIRING_LINK)).toEqual({
+      deploymentUrl: DEPLOYMENT,
+      grant: GRANT,
+    });
+    expect(parseOwdPairingLink(LEGACY_PAIRING_LINK)).toEqual({
       deploymentUrl: DEPLOYMENT,
       grant: GRANT,
     });
@@ -85,7 +90,7 @@ describe("OWD Obsidian pairing contract", () => {
   it("accepts only the registered Obsidian protocol action and exact fields", () => {
     expect(
       parseObsidianPairingProtocol({
-        action: "owd-pair",
+        action: "mdevolved-pair",
         deployment: DEPLOYMENT,
         grant: GRANT,
       }),
@@ -93,6 +98,13 @@ describe("OWD Obsidian pairing contract", () => {
       deploymentUrl: DEPLOYMENT,
       grant: GRANT,
     });
+    expect(
+      parseObsidianPairingProtocol({
+        action: "owd-pair",
+        deployment: DEPLOYMENT,
+        grant: GRANT,
+      }),
+    ).toEqual({ deploymentUrl: DEPLOYMENT, grant: GRANT });
 
     const invalidProtocolParams: Readonly<Record<string, string>>[] = [
       { action: "other", deployment: DEPLOYMENT, grant: GRANT },

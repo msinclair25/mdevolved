@@ -3,9 +3,14 @@ import type { Context } from "hono";
 import { ApiProblem } from "./api-problem";
 import type { AppBindings } from "./types";
 
-export const CSRF_COOKIE = "__Host-owd_csrf";
-export const FLOW_COOKIE = "__Host-owd_auth_flow";
-export const SESSION_COOKIE = "__Host-owd_session";
+export const CSRF_COOKIE = "__Host-mdevolved_csrf";
+export const FLOW_COOKIE = "__Host-mdevolved_auth_flow";
+export const SESSION_COOKIE = "__Host-mdevolved_session";
+export const LEGACY_CSRF_COOKIE = "__Host-owd_csrf";
+export const LEGACY_FLOW_COOKIE = "__Host-owd_auth_flow";
+export const LEGACY_SESSION_COOKIE = "__Host-owd_session";
+export const CSRF_HEADER = "X-MDevolved-CSRF";
+export const LEGACY_CSRF_HEADER = "X-OWD-CSRF";
 
 const encoder = new TextEncoder();
 const DEFAULT_MAX_JSON_BYTES = 65_536;
@@ -109,10 +114,24 @@ export async function requireCsrf(
 ): Promise<void> {
   requireSameOrigin(context);
 
-  const cookieToken = getCookie(context, CSRF_COOKIE);
-  const headerToken = context.req.header("X-OWD-CSRF");
+  const currentCookieToken = getCookie(context, CSRF_COOKIE);
+  const legacyCookieToken = getCookie(context, LEGACY_CSRF_COOKIE);
+  const currentHeaderToken = context.req.header(CSRF_HEADER);
+  const legacyHeaderToken = context.req.header(LEGACY_CSRF_HEADER);
+  const cookieConflict =
+    currentCookieToken !== undefined &&
+    legacyCookieToken !== undefined &&
+    !(await tokensMatch(currentCookieToken, legacyCookieToken));
+  const headerConflict =
+    currentHeaderToken !== undefined &&
+    legacyHeaderToken !== undefined &&
+    !(await tokensMatch(currentHeaderToken, legacyHeaderToken));
+  const cookieToken = currentCookieToken ?? legacyCookieToken;
+  const headerToken = currentHeaderToken ?? legacyHeaderToken;
 
   if (
+    cookieConflict ||
+    headerConflict ||
     !cookieToken ||
     !headerToken ||
     !(await tokensMatch(cookieToken, headerToken))
@@ -139,13 +158,21 @@ export async function requireCsrf(
 export function readFlowToken(
   context: Context<AppBindings>,
 ): string | undefined {
-  return getCookie(context, FLOW_COOKIE);
+  const current = getCookie(context, FLOW_COOKIE);
+  const legacy = getCookie(context, LEGACY_FLOW_COOKIE);
+  return current !== undefined && legacy !== undefined && current !== legacy
+    ? undefined
+    : (current ?? legacy);
 }
 
 export function readSessionToken(
   context: Context<AppBindings>,
 ): string | undefined {
-  return getCookie(context, SESSION_COOKIE);
+  const current = getCookie(context, SESSION_COOKIE);
+  const legacy = getCookie(context, LEGACY_SESSION_COOKIE);
+  return current !== undefined && legacy !== undefined && current !== legacy
+    ? undefined
+    : (current ?? legacy);
 }
 
 export function setAnonymousCsrfCookie(
@@ -175,14 +202,16 @@ export function setFlowCookie(
 }
 
 export function clearFlowCookie(context: Context<AppBindings>): void {
-  setCookie(context, FLOW_COOKIE, "", {
-    expires: new Date(0),
-    httpOnly: true,
-    maxAge: 0,
-    path: "/",
-    sameSite: "Strict",
-    secure: true,
-  });
+  for (const name of [FLOW_COOKIE, LEGACY_FLOW_COOKIE]) {
+    setCookie(context, name, "", {
+      expires: new Date(0),
+      httpOnly: true,
+      maxAge: 0,
+      path: "/",
+      sameSite: "Strict",
+      secure: true,
+    });
+  }
 }
 
 export function setSessionCookies(
@@ -208,22 +237,26 @@ export function setSessionCookies(
 }
 
 export function clearSessionCookies(context: Context<AppBindings>): void {
-  setCookie(context, SESSION_COOKIE, "", {
-    expires: new Date(0),
-    httpOnly: true,
-    maxAge: 0,
-    path: "/",
-    sameSite: "Strict",
-    secure: true,
-  });
-  setCookie(context, CSRF_COOKIE, "", {
-    expires: new Date(0),
-    httpOnly: false,
-    maxAge: 0,
-    path: "/",
-    sameSite: "Strict",
-    secure: true,
-  });
+  for (const name of [SESSION_COOKIE, LEGACY_SESSION_COOKIE]) {
+    setCookie(context, name, "", {
+      expires: new Date(0),
+      httpOnly: true,
+      maxAge: 0,
+      path: "/",
+      sameSite: "Strict",
+      secure: true,
+    });
+  }
+  for (const name of [CSRF_COOKIE, LEGACY_CSRF_COOKIE]) {
+    setCookie(context, name, "", {
+      expires: new Date(0),
+      httpOnly: false,
+      maxAge: 0,
+      path: "/",
+      sameSite: "Strict",
+      secure: true,
+    });
+  }
 }
 
 export async function parseJsonBody(

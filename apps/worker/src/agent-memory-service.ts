@@ -20,7 +20,7 @@ import {
   type OwdGetSkillResponse,
   type OwdResumeResponse,
   type WorkPacket,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { readActiveAgentGrant } from "./agent-access-store";
 import { agentVisibilityForGrant } from "./agent-visibility";
 import {

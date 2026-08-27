@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
-import { canonicalizeCollaborationJson } from "@owd/contracts";
+import { canonicalizeCollaborationJson } from "@mdevolved/contracts";
 import {
   acceptCompoundingDraft,
   deleteCompoundingDraft,

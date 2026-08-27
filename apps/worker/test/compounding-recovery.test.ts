@@ -1,4 +1,4 @@
-import { compoundingRecordBodySchema } from "@owd/contracts";
+import { compoundingRecordBodySchema } from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { beforeAll, describe, expect, it } from "vitest";
 import {

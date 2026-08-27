@@ -1,5 +1,5 @@
 {
-  "name": "@owd/desktop",
+  "name": "@mdevolved/desktop",
   "version": "0.1.0-alpha.1",
   "description": "MDevolved Sync desktop shell",
   "license": "Apache-2.0",
@@ -19,8 +19,8 @@
     "esbuild": "0.25.5"
   },
   "dependencies": {
-    "@owd/folder-adapter": "workspace:*",
-    "@owd/yaos-core": "workspace:*",
+    "@mdevolved/folder-adapter": "workspace:*",
+    "@mdevolved/yaos-core": "workspace:*",
     "mdevolved": "workspace:*"
   }
 }

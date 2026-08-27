@@ -31,6 +31,7 @@ import compoundingDraftsMigration from "../../../migrations/0035_compounding_dra
 import sourceDescriptorsMigration from "../../../migrations/0036_source_descriptors.sql";
 import sourceDevicesMigration from "../../../migrations/0037_source_devices.sql";
 import autonomousCompletionModeMigration from "../../../migrations/0038_autonomous_completion_mode.sql";
+import canonicalPortableFormatsMigration from "../../../migrations/0039_canonical_portable_formats.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -128,6 +129,10 @@ export const migrations = [
   {
     file: "0038_autonomous_completion_mode.sql",
     source: autonomousCompletionModeMigration,
+  },
+  {
+    file: "0039_canonical_portable_formats.sql",
+    source: canonicalPortableFormatsMigration,
   },
 ] as const;
 

@@ -7,8 +7,8 @@ schedule inference, retry providers, or store provider runtime.
 
 ## Standing policy and deterministic Decisions
 
-An owner may activate one immutable `owd-policy-binding-v1` for the exact
-active Project version and its existing `owd-project-policy-v1`. The binding
+An owner may activate one immutable `mdevolved-policy-binding-v1` for the exact
+active Project version and its existing `mdevolved-project-policy-v1`. The binding
 records both input hashes, the two versioned gate profiles, fixed checkpoint
 and drill intervals, and `ownerAuthored: true`. A lead cannot create, replace,
 or edit that binding through MCP.
@@ -34,7 +34,7 @@ The generic `evaluate_run_policy` tool evaluates only bounded durable inputs:
 
 The gate never consumes model confidence, raw transcripts, hidden reasoning,
 terminal history, provider credentials, provider runtime, or production logs.
-It emits an immutable `owd-policy-decision-v1`: either every fixed check passes
+It emits an immutable `mdevolved-policy-decision-v1`: either every fixed check passes
 and the outcome is `allow`, or the outcome is `exception` with an explicit
 reason. Completion re-reads the canonical binding and Decision bodies and
 rechecks the active Project version, binding, Run, bundle count, Continuity
@@ -65,7 +65,7 @@ Migration `0033_policy_autopilot_r4.sql` adds one provider-neutral schedule per
 active binding. The existing Worker scheduled handler passes the Cloudflare
 scheduled-event timestamp into a bounded service. At most eight due schedules
 are inspected per invocation. The service emits deterministic, idempotent
-`owd-operational-evidence-v1` requests for a Continuity Point or disposable
+`mdevolved-operational-evidence-v1` requests for a Continuity Point or disposable
 drill; it does not call an inference provider or launch an agent. Missed windows
 are coalesced, and an uncompleted request backpressures another request of the
 same kind.
@@ -73,7 +73,7 @@ same kind.
 An external execution harness remains responsible for consuming a request,
 checkpointing under the current fenced lead lease, replacing a lost lead,
 running a disposable drill, and reporting completion. The inert MCP resource
-`owd://adapters/policy-continuity/v1` documents this sequencing without code,
+`mdevolved://adapters/policy-continuity/v1` documents this sequencing without code,
 authority, credentials, or provider behavior. The append-only v3
 `complete_continuity_drill` tool accepts only the exact pending scheduled
 request, exact source Continuity Point, distinct replacement lead lease, and
@@ -83,7 +83,7 @@ source lead, stale lease, or mismatched request fails closed.
 
 ## Metrics and receipt redaction
 
-`owd-continuity-receipt-v1` derives metrics from explicit integer event times:
+`mdevolved-continuity-receipt-v1` derives metrics from explicit integer event times:
 
 - `RPO = max(0, simulatedLeadLossAt - latestAcknowledgedPointAt)`;
 - `RTO = replacementProductiveAt - simulatedLeadLossAt`;
@@ -127,7 +127,7 @@ and operational dependencies prevent deletion. The R2 garbage collector also
 treats R4 R2 keys as live references.
 
 Owner export is available from the policy-operations portable endpoint as
-`owd-operational-record-export-v1`. The bounded export is dependency-complete:
+`mdevolved-operational-record-export-v1`. The bounded export is dependency-complete:
 it includes the exact R4 dependency graph and content-addressed referenced R1,
 R2, and R3 record bodies, including every accepted R2 evidence body used by a
 Decision. Encrypted snapshots inventory the five R4 record kinds and their

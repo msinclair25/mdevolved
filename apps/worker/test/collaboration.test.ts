@@ -28,7 +28,7 @@ import {
   type CollaborationSubmissionReceipt,
   type ContinuityReceipt,
   type WorkPacket,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import {

@@ -23,7 +23,7 @@ import {
   type ProjectInitializationStatusResponse,
   type StoredProjectSetupDraft,
   type WorkPacket,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   readActiveAgentGrant,
   type ActiveAgentGrant,
@@ -2070,6 +2070,20 @@ export async function revalidateProjectAccessSelection(
   if (input.value.draft.requestKind !== "join") {
     throw new ProjectInitializationProblem("project_not_joinable");
   }
+  let approvedContextPolicy: ProjectContextPolicy;
+  try {
+    approvedContextPolicy = compileProjectContextPolicy(
+      input.rawContextPolicy,
+      {
+        folderBoundary: input.value.folderPath,
+        grant: input.grant,
+        sourcePaths: input.value.draft.sourceNotePaths.map((note) => note.path),
+        vaultId: input.value.vaultId,
+      },
+    ).policy;
+  } catch (error) {
+    throwContextPolicyProblem(error);
+  }
   const inspection = await inspectJoinableProjects(db, storage, {
     grant: input.grant,
     now: input.now,
@@ -2135,7 +2149,7 @@ export async function revalidateProjectAccessSelection(
     selected.packet.workItemId !== input.value.draft.target.workItemId ||
     canonicalizeCollaborationJson(selected.candidate.contextPolicy) !==
       canonicalizeCollaborationJson(input.value.draft.contextPolicy) ||
-    canonicalizeCollaborationJson(input.rawContextPolicy) !==
+    canonicalizeCollaborationJson(approvedContextPolicy) !==
       canonicalizeCollaborationJson(input.value.draft.contextPolicy)
   ) {
     throw new ProjectInitializationProblem("project_not_joinable");

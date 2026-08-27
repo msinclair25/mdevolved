@@ -1,4 +1,4 @@
-import type { VaultSummary } from "@owd/contracts";
+import type { VaultSummary } from "@mdevolved/contracts";
 import { describe, expect, it } from "vitest";
 import {
   beginVaultRefresh,

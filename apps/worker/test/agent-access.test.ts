@@ -14,7 +14,7 @@ import {
   projectInitializationStatusResponseSchema,
   prepareProjectHandoffResponseSchema,
   type ProjectContextPolicy,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { env } from "cloudflare:workers";
 import {
   createExecutionContext,
@@ -362,7 +362,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
     now,
   );
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -691,7 +691,7 @@ async function authorize(
         Cookie: session.cookie,
         "Content-Type": "application/json",
         Origin: ORIGIN,
-        "X-OWD-CSRF": session.csrf,
+        "X-MDevolved-CSRF": session.csrf,
       },
       method: "POST",
     },
@@ -748,7 +748,7 @@ async function prepareFirstProject(
         Cookie: session.cookie,
         "Content-Type": "application/json",
         Origin: ORIGIN,
-        "X-OWD-CSRF": session.csrf,
+        "X-MDevolved-CSRF": session.csrf,
       },
       method: "POST",
     },
@@ -860,7 +860,7 @@ async function approveProjectInitialization(
       Cookie: session.cookie,
       "Content-Type": "application/json",
       Origin: ORIGIN,
-      "X-OWD-CSRF": session.csrf,
+      "X-MDevolved-CSRF": session.csrf,
     },
     method: "POST",
   });
@@ -976,16 +976,26 @@ describe("scoped universal agent access", () => {
 
     const currentToolsResponse = await currentRequest("tools/list", {});
     expect(currentToolsResponse.status).toBe(200);
-    expect(
-      z
-        .object({
-          result: z.object({
-            tools: z.array(z.object({ name: z.string() })).min(1),
-          }),
-        })
-        .parse(await currentToolsResponse.json())
-        .result.tools.map((tool) => tool.name),
-    ).toContain("connection_info");
+    const currentToolNames = z
+      .object({
+        result: z.object({
+          tools: z.array(z.object({ name: z.string() })).min(1),
+        }),
+      })
+      .parse(await currentToolsResponse.json())
+      .result.tools.map((tool) => tool.name);
+    expect(currentToolNames).toContain("connection_info");
+    expect(currentToolNames).toEqual(
+      expect.arrayContaining([
+        "mdevolved_resume",
+        "mdevolved_find",
+        "mdevolved_checkpoint",
+        "mdevolved_get_skill",
+      ]),
+    );
+    expect(currentToolNames.some((name) => name.startsWith("owd_"))).toBe(
+      false,
+    );
 
     const currentCallResponse = await currentRequest(
       "tools/call",
@@ -1025,14 +1035,17 @@ describe("scoped universal agent access", () => {
         }),
       })
       .parse(await currentResourcesResponse.json()).result.resources;
+    expect(currentResources.some(({ uri }) => uri.startsWith("owd://"))).toBe(
+      false,
+    );
     expect(currentResources).toContainEqual(
       expect.objectContaining({
-        uri: "owd://collaboration/lead-continuity-capabilities/v1",
+        uri: "mdevolved://collaboration/lead-continuity-capabilities/v1",
       }),
     );
     expect(currentResources).toContainEqual(
       expect.objectContaining({
-        uri: "owd://agent-memory/capabilities/v3",
+        uri: "mdevolved://agent-memory/compounding-capabilities/v3",
       }),
     );
     const currentResourceReadResponse = await currentRequest(
@@ -1052,8 +1065,8 @@ describe("scoped universal agent access", () => {
     ).toHaveLength(1);
     const compoundingResourceReadResponse = await currentRequest(
       "resources/read",
-      { uri: "owd://agent-memory/capabilities/v3" },
-      "owd://agent-memory/capabilities/v3",
+      { uri: "mdevolved://agent-memory/compounding-capabilities/v3" },
+      "mdevolved://agent-memory/compounding-capabilities/v3",
     );
     expect(compoundingResourceReadResponse.status).toBe(200);
     expect(
@@ -1068,8 +1081,11 @@ describe("scoped universal agent access", () => {
         ownerReviewRequired: true,
       },
       evidence: { minimumDistinctContinuityPoints: 2 },
-      format: "owd-agent-memory-capabilities-v3",
-      learningSignals: { maxPerCheckpoint: 4, optionalOnOwdCheckpoint: true },
+      format: "mdevolved-agent-memory-compounding-capabilities-v3",
+      learningSignals: {
+        maxPerCheckpoint: 4,
+        optionalOnMDevolvedCheckpoint: true,
+      },
     });
     const legacyResourcesResponse = await fetchWorker(`${ORIGIN}/mcp`, {
       body: JSON.stringify({
@@ -1093,19 +1109,25 @@ describe("scoped universal agent access", () => {
 
     const currentPromptsResponse = await currentRequest("prompts/list", {});
     expect(currentPromptsResponse.status).toBe(200);
+    const currentPrompts = z
+      .object({
+        result: z.object({
+          prompts: z.array(z.object({ name: z.string() })).min(1),
+        }),
+      })
+      .parse(await currentPromptsResponse.json()).result.prompts;
+    expect(currentPrompts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "resume-mdevolved-project" }),
+      ]),
+    );
     expect(
-      z
-        .object({
-          result: z.object({
-            prompts: z.array(z.object({ name: z.string() })).min(1),
-          }),
-        })
-        .parse(await currentPromptsResponse.json()).result.prompts,
-    ).toContainEqual(expect.objectContaining({ name: "resume-owd-project" }));
+      currentPrompts.some(({ name }) => name === "resume-owd-project"),
+    ).toBe(false);
     const currentPromptResponse = await currentRequest(
       "prompts/get",
-      { name: "resume-owd-project" },
-      "resume-owd-project",
+      { name: "resume-mdevolved-project" },
+      "resume-mdevolved-project",
     );
     expect(currentPromptResponse.status).toBe(200);
     expect(
@@ -1527,14 +1549,116 @@ describe("scoped universal agent access", () => {
     const resources = mcpResourcesListResponseSchema.parse(
       await resourcesResponse.json(),
     );
+    for (const uri of [
+      "mdevolved://collaboration/lead-continuity-capabilities/v1",
+      "mdevolved://collaboration/lead-operation-capabilities/v1",
+      "mdevolved://collaboration/lead-operation-capabilities/v2",
+      "mdevolved://collaboration/lead-operation-capabilities/v3",
+      "mdevolved://collaboration/lead-operation-capabilities/v4",
+      "mdevolved://adapters/hermes/hands-off/v1",
+      "mdevolved://adapters/orca/continuity/v1",
+      "mdevolved://adapters/policy-continuity/v1",
+      "mdevolved://compatibility-profiles/obsidian-mind/v1",
+      "mdevolved://compatibility-profiles/eve/v1",
+      "mdevolved://compatibility-profiles/albatross/v1",
+    ]) {
+      expect(resources.result.resources).toContainEqual(
+        expect.objectContaining({ uri }),
+      );
+    }
+    const canonicalLeadProfileResponse = await productionFetch(
+      "resources/read",
+      {
+        uri: "mdevolved://collaboration/lead-operation-capabilities/v1",
+      },
+    );
+    expect(canonicalLeadProfileResponse.status).toBe(200);
+    expect(
+      JSON.parse(
+        mcpResourceReadResponseSchema.parse(
+          await canonicalLeadProfileResponse.json(),
+        ).result.contents[0]?.text ?? "{}",
+      ),
+    ).toMatchObject({
+      authority: {
+        liveAuthorityIncluded: false,
+        restoredAuthorityAllowed: false,
+      },
+      canonicalResourceUri:
+        "mdevolved://collaboration/lead-operation-capabilities/v1",
+      format: "owd-lead-operation-capabilities-v1",
+      formats: [
+        "owd-project-policy-v1",
+        "owd-run-v1",
+        "owd-actor-v1",
+        "owd-event-bundle-v1",
+        "owd-project-exception-v1",
+        "owd-run-context-v1",
+      ],
+      requiredScope: "project.lead",
+    });
+    for (const [uri, expected] of [
+      [
+        "mdevolved://collaboration/lead-continuity-capabilities/v1",
+        {
+          continuityPointFormats: ["owd-continuity-point-v1"],
+          portableBundleFormats: ["owd-portable-continuity-bundle-v1"],
+          requiredScope: "project.lead",
+        },
+      ],
+      [
+        "mdevolved://collaboration/lead-operation-capabilities/v2",
+        {
+          formats: expect.arrayContaining(["owd-run-delta-v1"]),
+          mcpTools: expect.arrayContaining(["get_run_delta"]),
+          requiredScope: "project.lead",
+        },
+      ],
+      [
+        "mdevolved://collaboration/lead-operation-capabilities/v3",
+        {
+          formats: expect.arrayContaining(["owd-continuity-receipt-v1"]),
+          mcpTools: expect.arrayContaining(["evaluate_run_policy"]),
+          requiredScope: "project.lead",
+        },
+      ],
+      [
+        "mdevolved://collaboration/lead-operation-capabilities/v4",
+        {
+          completionModes: ["orchestrated-reviewed", "solo-verified"],
+          connectionModes: [
+            "direct-mcp",
+            "lead-mediated-mcp",
+            "portable-handoff",
+          ],
+          requiredScope: "project.lead",
+        },
+      ],
+    ] as const) {
+      const response = await productionFetch("resources/read", { uri });
+      expect(response.status).toBe(200);
+      const content = mcpResourceReadResponseSchema.parse(
+        await response.json(),
+      );
+      expect(
+        JSON.parse(content.result.contents[0]?.text ?? "{}"),
+      ).toMatchObject({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        canonicalResourceUri: uri,
+        ...expected,
+      });
+    }
     expect(resources.result.resources).toContainEqual(
       expect.objectContaining({
         name: "agent-memory-capabilities",
-        uri: "owd://agent-memory/capabilities/v2",
+        uri: "mdevolved://agent-memory/capabilities/v3",
       }),
     );
     const agentMemoryProfileResponse = await productionFetch("resources/read", {
-      uri: "owd://agent-memory/capabilities/v2",
+      uri: "mdevolved://agent-memory/capabilities/v3",
     });
     expect(agentMemoryProfileResponse.status).toBe(200);
     const agentMemoryProfile = mcpResourceReadResponseSchema.parse(
@@ -1543,7 +1667,7 @@ describe("scoped universal agent access", () => {
     expect(
       JSON.parse(agentMemoryProfile.result.contents[0]?.text ?? "{}"),
     ).toMatchObject({
-      format: "owd-agent-memory-capabilities-v2",
+      format: "mdevolved-agent-memory-capabilities-v3",
       portableRecovery: {
         maxTotalObjectsWhenProfilePresent: 14,
         maxWorkingProfileRecordsPerRestore: 14,
@@ -1552,6 +1676,12 @@ describe("scoped universal agent access", () => {
       resumeContextVersions: [1, 2],
       workingProfileSchemaVersion: 1,
     });
+    expect(resources.result.resources).toContainEqual(
+      expect.objectContaining({
+        name: "legacy-agent-memory-capabilities",
+        uri: "owd://agent-memory/capabilities/v2",
+      }),
+    );
     expect(resources.result.resources).toContainEqual(
       expect.objectContaining({
         name: "lead-continuity-capabilities",
@@ -1853,7 +1983,7 @@ describe("scoped universal agent access", () => {
     expect(connection.result.structuredContent).toMatchObject({
       projectLifecycle: {
         continuityCapabilitiesResource:
-          "owd://collaboration/lead-continuity-capabilities/v1",
+          "mdevolved://collaboration/lead-continuity-capabilities/v1",
         continuityTools: [
           "claim_project_lead",
           "renew_project_lead",
@@ -1861,9 +1991,10 @@ describe("scoped universal agent access", () => {
           "resume_project",
         ],
         entryTool: "open_project",
-        hermesHandsOffAdapterResource: "owd://adapters/hermes/hands-off/v1",
+        hermesHandsOffAdapterResource:
+          "mdevolved://adapters/hermes/hands-off/v1",
         elasticLeadOperationCapabilitiesResource:
-          "owd://collaboration/lead-operation-capabilities/v2",
+          "mdevolved://collaboration/lead-operation-capabilities/v2",
         elasticLeadOperationTools: expect.arrayContaining([
           "register_actors_batch",
           "get_run_delta",
@@ -1872,7 +2003,7 @@ describe("scoped universal agent access", () => {
           "project_orca_metadata",
         ]),
         leadOperationCapabilitiesResource:
-          "owd://collaboration/lead-operation-capabilities/v1",
+          "mdevolved://collaboration/lead-operation-capabilities/v1",
         leadOperationTools: [
           "create_work_item",
           "start_run",
@@ -1883,19 +2014,26 @@ describe("scoped universal agent access", () => {
           "list_project_exceptions",
         ],
         policyAutopilotCapabilitiesResource:
-          "owd://collaboration/lead-operation-capabilities/v3",
+          "mdevolved://collaboration/lead-operation-capabilities/v3",
         autonomousProjectLoopCapabilitiesResource:
-          "owd://collaboration/lead-operation-capabilities/v4",
+          "mdevolved://collaboration/lead-operation-capabilities/v4",
         policyAutopilotTools: [
           "evaluate_run_policy",
           "get_policy_operations",
           "complete_continuity_drill",
         ],
-        policyContinuityAdapterResource: "owd://adapters/policy-continuity/v1",
-        orcaContinuityAdapterResource: "owd://adapters/orca/continuity/v1",
+        policyContinuityAdapterResource:
+          "mdevolved://adapters/policy-continuity/v1",
+        orcaContinuityAdapterResource:
+          "mdevolved://adapters/orca/continuity/v1",
+        legacyCompatibilityResources: {
+          leadOperationCapabilities:
+            "owd://collaboration/lead-operation-capabilities/v1",
+        },
         liveTools: [
           "open_project",
           "wait_for_project_connection",
+          "mdevolved_resume",
           "resume_project",
         ],
         retiredTools: [
@@ -1905,7 +2043,7 @@ describe("scoped universal agent access", () => {
           "get_project_initialization_status",
           "get_project_access_status",
         ],
-        resumeTool: "resume_project",
+        resumeTool: "mdevolved_resume",
         waitTool: "wait_for_project_connection",
       },
     });
@@ -2372,7 +2510,7 @@ describe("scoped universal agent access", () => {
       folderBoundary: "Projects",
       contextPolicy: {
         excludePaths: ["Projects/Private"],
-        format: "owd-project-context-v1",
+        format: "mdevolved-project-context-v1",
         includePaths: ["Projects"],
       },
       objective: "Prove the exact owner-confirmed initialization boundary.",
@@ -2389,7 +2527,7 @@ describe("scoped universal agent access", () => {
         body: JSON.stringify({
           contextPolicy: {
             excludePaths: [],
-            format: "owd-project-context-v1",
+            format: "mdevolved-project-context-v1",
             includePaths: [""],
           },
           initializationToken: idempotencyKey,
@@ -2398,7 +2536,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -2420,7 +2558,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -2444,9 +2582,9 @@ describe("scoped universal agent access", () => {
     );
     expect(status).toMatchObject({
       continuity: {
-        contextFilePath: ".owdignore",
+        contextFilePath: ".mdevolvedignore",
         instructionFilePath: "AGENTS.md",
-        requiredTool: "resume_project",
+        requiredTool: "mdevolved_resume",
       },
       folderBoundary: "Projects",
       objective: "Prove the exact owner-confirmed initialization boundary.",
@@ -2459,6 +2597,7 @@ describe("scoped universal agent access", () => {
       `${JSON.stringify(
         {
           ...request.draft.contextPolicy,
+          format: "mdevolved-project-context-v1",
           projectId: status.projectId,
         },
         null,
@@ -2481,7 +2620,7 @@ describe("scoped universal agent access", () => {
     expect(opened.result.isError).not.toBe(true);
     expect(opened.result.structuredContent).toMatchObject({
       continuity: {
-        contextFilePath: ".owdignore",
+        contextFilePath: ".mdevolvedignore",
         instructionFilePath: "AGENTS.md",
         managedInstructionBlock: expect.stringContaining(
           "first agent that establishes a Project",
@@ -2518,12 +2657,12 @@ describe("scoped universal agent access", () => {
     expect(resumed.result.isError).not.toBe(true);
     expect(resumed.result.structuredContent).toMatchObject({
       continuity: {
-        contextFilePath: ".owdignore",
+        contextFilePath: ".mdevolvedignore",
         instructionFilePath: "AGENTS.md",
         managedInstructionBlock: expect.stringContaining(
           "writer role is **unconfirmed**",
         ),
-        requiredTool: "resume_project",
+        requiredTool: "mdevolved_resume",
       },
       localVaultAccess: {
         enforcement: "advisory",
@@ -2535,7 +2674,10 @@ describe("scoped universal agent access", () => {
       ),
       ok: true,
       resume: {
-        contextPolicy: request.draft.contextPolicy,
+        contextPolicy: {
+          ...request.draft.contextPolicy,
+          format: "mdevolved-project-context-v1",
+        },
         packet: {
           packetId: status.packetId,
           projectId: status.projectId,
@@ -2697,7 +2839,7 @@ describe("scoped universal agent access", () => {
 
     const independent = await callCurrentTool(
       projectAccessToken,
-      "owd_resume",
+      "mdevolved_resume",
       {
         acceptedContextVersions: [1, 2],
         contextMode: "independent",
@@ -2740,11 +2882,15 @@ describe("scoped universal agent access", () => {
         ],
       },
     });
-    const exactSkill = await callTool(projectAccessToken, "owd_get_skill", {
-      projectId: currentPacket.projectId,
-      skillId: attachedSkill.skillId,
-      versionRecordId: attachedSkill.versionRecordId,
-    });
+    const exactSkill = await callTool(
+      projectAccessToken,
+      "mdevolved_get_skill",
+      {
+        projectId: currentPacket.projectId,
+        skillId: attachedSkill.skillId,
+        versionRecordId: attachedSkill.versionRecordId,
+      },
+    );
     expect(exactSkill.result.isError).not.toBe(true);
     expect(exactSkill.result.structuredContent).toMatchObject({
       executes: false,
@@ -2776,11 +2922,15 @@ describe("scoped universal agent access", () => {
       idempotencyKey: "mcp-profile-skill-v2",
       skillId: attachedSkill.skillId,
     });
-    const staleSkill = await callTool(projectAccessToken, "owd_get_skill", {
-      projectId: currentPacket.projectId,
-      skillId: attachedSkill.skillId,
-      versionRecordId: currentSkill.versionRecordId,
-    });
+    const staleSkill = await callTool(
+      projectAccessToken,
+      "mdevolved_get_skill",
+      {
+        projectId: currentPacket.projectId,
+        skillId: attachedSkill.skillId,
+        versionRecordId: currentSkill.versionRecordId,
+      },
+    );
     expect(staleSkill.result.structuredContent).toMatchObject({
       error: { code: "skill_not_attached" },
       ok: false,
@@ -2816,7 +2966,7 @@ describe("scoped universal agent access", () => {
       .run();
     const conflictingSkill = await callTool(
       projectAccessToken,
-      "owd_get_skill",
+      "mdevolved_get_skill",
       {
         projectId: currentPacket.projectId,
         skillId: attachedSkill.skillId,
@@ -2827,9 +2977,13 @@ describe("scoped universal agent access", () => {
       error: { code: "integrity_mismatch" },
       ok: false,
     });
-    const conflictingResume = await callTool(projectAccessToken, "owd_resume", {
-      projectId: currentPacket.projectId,
-    });
+    const conflictingResume = await callTool(
+      projectAccessToken,
+      "mdevolved_resume",
+      {
+        projectId: currentPacket.projectId,
+      },
+    );
     expect(conflictingResume.result.structuredContent).toMatchObject({
       error: { code: "integrity_mismatch" },
       ok: false,
@@ -2859,7 +3013,7 @@ describe("scoped universal agent access", () => {
       .string()
       .regex(/^[0-9a-f]{64}$/u)
       .parse(independent.result.structuredContent.checkpointBase);
-    const found = await callTool(projectAccessToken, "owd_find", {
+    const found = await callTool(projectAccessToken, "mdevolved_find", {
       limit: 5,
       projectId: currentPacket.projectId,
       question: "bounded owner selected source",
@@ -3000,7 +3154,7 @@ describe("scoped universal agent access", () => {
       .parse(recoveredCheckpoint.checkpoint.continuityPointId);
     const facadeReplay = await callTool(
       projectAccessToken,
-      "owd_checkpoint",
+      "mdevolved_checkpoint",
       facadeCheckpointInput,
     );
     expect(facadeReplay.result.structuredContent).toMatchObject({
@@ -3031,22 +3185,28 @@ describe("scoped universal agent access", () => {
       .run();
     const freshForFacadeBusy = await callTool(
       projectAccessToken,
-      "owd_resume",
+      "mdevolved_resume",
       {
         contextMode: "independent",
         projectId: currentPacket.projectId,
       },
     );
-    const facadeBusy = await callTool(projectAccessToken, "owd_checkpoint", {
-      ...facadeCheckpointInput,
-      checkpointBase:
-        freshForFacadeBusy.result.structuredContent.checkpointBase,
-      idempotencyKey: `owd-busy-facade-${crypto.randomUUID()}`,
-    });
+    const facadeBusy = await callTool(
+      projectAccessToken,
+      "mdevolved_checkpoint",
+      {
+        ...facadeCheckpointInput,
+        checkpointBase:
+          freshForFacadeBusy.result.structuredContent.checkpointBase,
+        idempotencyKey: `mdevolved-busy-facade-${crypto.randomUUID()}`,
+      },
+    );
     expect(facadeBusy.result.structuredContent).toMatchObject({
       error: {
         code: "checkpoint_busy",
-        message: expect.stringContaining("Retry owd_checkpoint immediately"),
+        message: expect.stringContaining(
+          "Retry mdevolved_checkpoint immediately",
+        ),
         retryAfterMs: 50,
         retryable: true,
       },
@@ -3161,7 +3321,10 @@ describe("scoped universal agent access", () => {
       newProjectAllowed: true,
       projects: [
         {
-          contextPolicy: request.draft.contextPolicy,
+          contextPolicy: {
+            ...request.draft.contextPolicy,
+            format: "mdevolved-project-context-v1",
+          },
           currentPacket: {
             packetId: status.packetId,
             workItemId: status.workItemId,
@@ -3370,7 +3533,10 @@ describe("scoped universal agent access", () => {
     );
     expect(accessContext).toMatchObject({
       client: { id: agentB.clientId },
-      contextPolicy: request.draft.contextPolicy,
+      contextPolicy: {
+        ...request.draft.contextPolicy,
+        format: "mdevolved-project-context-v1",
+      },
       projectId,
       projectLabel: "Agent-first Project",
       requestKind: "join",
@@ -3392,12 +3558,15 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
     );
-    expect(broadenedAccess.status).toBe(404);
+    expect(broadenedAccess.status).toBe(400);
+    expect(await broadenedAccess.json()).toMatchObject({
+      error: { code: "folder_scope_invalid" },
+    });
 
     const accessApproval = await fetchWorker(
       `${ORIGIN}/api/project-initializations/approve`,
@@ -3410,7 +3579,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -3432,9 +3601,9 @@ describe("scoped universal agent access", () => {
     );
     expect(accessStatus).toMatchObject({
       continuity: {
-        contextFilePath: ".owdignore",
+        contextFilePath: ".mdevolvedignore",
         instructionFilePath: "AGENTS.md",
-        requiredTool: "resume_project",
+        requiredTool: "mdevolved_resume",
       },
       packetId: status.packetId,
       projectId,
@@ -3520,7 +3689,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -3552,7 +3721,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -4407,7 +4576,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -4482,7 +4651,7 @@ describe("scoped universal agent access", () => {
             Cookie: session.cookie,
             "Content-Type": "application/json",
             Origin: ORIGIN,
-            "X-OWD-CSRF": session.csrf,
+            "X-MDevolved-CSRF": session.csrf,
           },
           method: "POST",
         },
@@ -4779,7 +4948,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -5083,7 +5252,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -5251,7 +5420,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -5447,7 +5616,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -5761,7 +5930,7 @@ describe("scoped universal agent access", () => {
               Cookie: session.cookie,
               "Content-Type": "application/json",
               Origin: ORIGIN,
-              "X-OWD-CSRF": session.csrf,
+              "X-MDevolved-CSRF": session.csrf,
             },
             method: "POST",
           }),
@@ -6257,7 +6426,7 @@ describe("scoped universal agent access", () => {
           Cookie: session.cookie,
           "Content-Type": "application/json",
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -8117,7 +8286,7 @@ describe("scoped universal agent access", () => {
         headers: {
           Cookie: session.cookie,
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -8177,7 +8346,7 @@ describe("scoped universal agent access", () => {
         headers: {
           Cookie: session.cookie,
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },
@@ -8233,7 +8402,7 @@ describe("scoped universal agent access", () => {
         headers: {
           Cookie: session.cookie,
           Origin: ORIGIN,
-          "X-OWD-CSRF": session.csrf,
+          "X-MDevolved-CSRF": session.csrf,
         },
         method: "POST",
       },

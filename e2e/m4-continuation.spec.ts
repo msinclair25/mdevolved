@@ -105,7 +105,7 @@ async function mockM4(context: BrowserContext): Promise<void> {
         requestId: "88888888-8888-4888-8888-888888888888",
         releaseId: "m4-e2e",
         releaseTag: "m4-e2e",
-        service: "owd-platform",
+        service: "mdevolved",
         version: "1.0.0-alpha.7",
       });
     } else if (requestUrl.pathname === "/api/setup/status") {
@@ -147,7 +147,7 @@ async function mockM4(context: BrowserContext): Promise<void> {
             pendingProjectRequestCount: 0,
             pendingProjectRequests: [],
             pendingProjectReviewUrl: null,
-            pluginVersion: "0.1.7",
+            pluginVersion: "0.2.0-alpha.1",
             preparedProjectHandoff: null,
             syncConfirmed: true,
             verifiedSnapshot: true,

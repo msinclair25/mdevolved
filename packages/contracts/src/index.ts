@@ -39,7 +39,7 @@ export * from "./source-device";
 
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
-  service: z.literal("owd-platform"),
+  service: z.enum(["mdevolved", "owd-platform"]),
   version: z.string().min(1),
   releaseId: z.string().min(1),
   releaseTag: z.string().min(1).nullable(),
@@ -298,8 +298,10 @@ export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 export const pairingGrantResponseSchema = z
   .object({
     vaultId: vaultIdSchema,
-    pairingUrl: z.string().regex(/^owd-pair:\/\/connect\?/u),
-    obsidianUrl: z.string().regex(/^obsidian:\/\/owd-pair\?/u),
+    pairingUrl: z.string().regex(/^mdevolved:\/\/connect\?/u),
+    obsidianUrl: z.string().regex(/^obsidian:\/\/mdevolved-pair\?/u),
+    legacyPairingUrl: z.string().regex(/^owd-pair:\/\/connect\?/u),
+    legacyObsidianUrl: z.string().regex(/^obsidian:\/\/owd-pair\?/u),
     expiresAt: z.number().int().positive(),
   })
   .strict();
@@ -822,8 +824,16 @@ export type MaterializedSearchResponse = z.infer<
   typeof materializedSearchResponseSchema
 >;
 
+export const MDEVOLVED_BACKUP_MAGIC = "MDEVOLVED-BACKUP-V1\n";
+export const MDEVOLVED_BACKUP_FORMAT = "mdevolved-backup-v1" as const;
+/** @deprecated Read-only compatibility identity. */
 export const OWD_BACKUP_MAGIC = "OWD-BACKUP-V1\n";
+/** @deprecated Read-only compatibility identity. */
 export const OWD_BACKUP_FORMAT = "owd-backup-v1" as const;
+export const backupFormatSchema = z.union([
+  z.literal(MDEVOLVED_BACKUP_FORMAT),
+  z.literal(OWD_BACKUP_FORMAT),
+]);
 export const MAX_BACKUP_NOTES = 2_000;
 export const MAX_BACKUP_TOTAL_BYTES = 32 * 1024 * 1024;
 
@@ -878,7 +888,7 @@ export const backupArchiveManifestSchema = z
       z.literal("pending-agent-proposals"),
       z.literal("unknown-obsidian-plugin-data"),
     ]),
-    format: z.literal(OWD_BACKUP_FORMAT),
+    format: backupFormatSchema,
     generation: materializationGenerationSchema,
     includedSections: z.tuple([z.literal("notes")]),
     notes: z.array(backupArchiveNoteSchema).max(MAX_BACKUP_NOTES),
@@ -930,7 +940,7 @@ export const backupArtifactSchema = z
     ciphertextBytes: z.number().int().nonnegative(),
     completedAt: z.number().int().nonnegative(),
     createdAt: z.number().int().nonnegative(),
-    format: z.literal(OWD_BACKUP_FORMAT),
+    format: backupFormatSchema,
     generationId: z.string().uuid(),
     noteCount: z.number().int().nonnegative(),
     recipientFingerprint: sha256HexSchema,
@@ -947,8 +957,16 @@ export const backupListResponseSchema = z
 
 export type BackupListResponse = z.infer<typeof backupListResponseSchema>;
 
+export const MDEVOLVED_SNAPSHOT_FORMAT = "mdevolved-snapshot-v3" as const;
+export const MDEVOLVED_SNAPSHOT_EXPORT_MAGIC = "MDEVOLVED-SNAPSHOT-EXPORT-V3\n";
+/** @deprecated Legacy portable snapshot identity retained for import. */
 export const OWD_SNAPSHOT_FORMAT = "owd-snapshot-v2" as const;
+/** @deprecated Legacy portable snapshot identity retained for import. */
 export const OWD_SNAPSHOT_EXPORT_MAGIC = "OWD-SNAPSHOT-EXPORT-V2\n";
+export const snapshotFormatSchema = z.union([
+  z.literal(MDEVOLVED_SNAPSHOT_FORMAT),
+  z.literal(OWD_SNAPSHOT_FORMAT),
+]);
 export const MAX_SNAPSHOT_VAULTS = 20;
 export const MAX_SNAPSHOT_ITEMS = 5_000;
 export const MAX_SNAPSHOT_LOGICAL_BYTES = 128 * 1024 * 1024;
@@ -1051,7 +1069,7 @@ export const snapshotManifestSchema = z
       z.literal("harness-context"),
       z.literal("unknown-obsidian-plugin-data"),
     ]),
-    format: z.literal(OWD_SNAPSHOT_FORMAT),
+    format: snapshotFormatSchema,
     includedSections: z.array(snapshotSectionSchema).min(1).max(3),
     intelligence: snapshotIntelligenceManifestSchema.optional(),
     logicalBytes: z
@@ -1279,7 +1297,7 @@ export const snapshotSummarySchema = z
     changedItemCount: z.number().int().nonnegative(),
     createdAt: z.number().int().nonnegative(),
     failureCode: z.string().min(1).max(128).nullable(),
-    format: z.literal(OWD_SNAPSHOT_FORMAT),
+    format: snapshotFormatSchema,
     includedSections: z.array(snapshotSectionSchema).min(1).max(3),
     intelligence: snapshotIntelligenceSummarySchema,
     integrityStatus: z.enum(["pending", "verified", "degraded"]),
@@ -1396,7 +1414,7 @@ export const snapshotExportPartSchema = z
 
 export const snapshotExportIndexSchema = z
   .object({
-    format: z.literal(OWD_SNAPSHOT_FORMAT),
+    format: snapshotFormatSchema,
     intelligenceSelection: z
       .enum(["none", "approved", "approved-and-unvetted"])
       .optional(),

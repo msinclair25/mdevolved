@@ -20,7 +20,7 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: `pnpm --filter @owd/web dev --host 127.0.0.1 --port ${e2ePort}`,
+    command: `pnpm --filter @mdevolved/web dev --host 127.0.0.1 --port ${e2ePort}`,
     reuseExistingServer: !process.env.CI,
     stderr: "pipe",
     stdout: "pipe",

@@ -35,7 +35,7 @@ class OwdPairingLinkModal extends Modal {
       attr: {
         "aria-label": "MDevolved pairing link",
         autocomplete: "off",
-        placeholder: "owd-pair://connect?deployment=…&grant=…",
+        placeholder: "mdevolved://connect?deployment=…&grant=…",
         rows: "4",
         spellcheck: "false",
       },
@@ -113,7 +113,7 @@ class OwdPairingModal extends Modal {
     });
     contentEl.createEl("p", {
       cls: "mod-muted",
-      text: "The short-lived link is exchanged once. The resulting vault credential is stored only in this plugin’s private settings and sent to your deployment over HTTPS (or localhost HTTP during development).",
+      text: "The short-lived link is exchanged once. The resulting vault credential is stored only in this plugin’s private settings and sent to your deployment over HTTPS (or localhost HTTP during development). Legacy owd-pair links are accepted for compatibility, but never copy an existing installation’s authority.",
     });
 
     const buttons = contentEl.createDiv({ cls: "modal-button-container" });

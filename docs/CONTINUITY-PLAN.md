@@ -47,7 +47,7 @@ Resume relevant context
 
 MDevolved exposes this loop through three plain agent operations:
 
-### `owd_resume(project, task?, contextMode?, acceptedContextVersions?)`
+### `mdevolved_resume(project, task?, contextMode?, acceptedContextVersions?)`
 
 Return one compact working context:
 
@@ -59,7 +59,7 @@ Return one compact working context:
 - relevant skill names and descriptions.
 
 The frozen version-1 structured response remains unchanged for existing
-clients. Clients that discover `owd://agent-memory/capabilities/v2` send
+clients. Clients that discover `mdevolved://agent-memory/capabilities/v3` send
 `acceptedContextVersions: [1, 2]` through the same normal operation and receive
 the machine-readable working profile in version 2. This is response-version
 negotiation, not a provider-specific profile toggle.
@@ -70,13 +70,13 @@ peer conclusions and provisional results. `synthesis` may include separately
 attributable submitted results for comparison. MDevolved records the bounded context
 version supplied to the agent; it never treats hidden reasoning as context.
 
-### `owd_find(question)`
+### `mdevolved_find(question)`
 
 Answer a targeted question from durable Project memory with citations. Older or
 less relevant material remains searchable instead of filling every context
 window.
 
-### `owd_checkpoint(outcome)`
+### `mdevolved_checkpoint(outcome)`
 
 Record what changed, verification evidence, decisions, useful failures, skills
 used, remaining work, and the recommended next action. Reuse the existing
@@ -191,8 +191,8 @@ advanced diagnostics without becoming product vocabulary.
 work, and a fresh agent in another harness continues correctly through the
 three-operation facade.
 
-**Build:** Add the smallest compatible facade for `owd_resume`, `owd_find`, and
-`owd_checkpoint`; generate focused, independent, and synthesis views of the
+**Build:** Add the smallest compatible facade for `mdevolved_resume`, `mdevolved_find`, and
+`mdevolved_checkpoint`; generate focused, independent, and synthesis views of the
 compact current brief from existing records; add one short bootstrap
 instruction; and reduce the default Project UI and documentation to the resume
 loop.
@@ -281,7 +281,7 @@ product but is not a release gate.
 **Delivery receipt (2026-08-25):** Accepted locally. The owner can edit the
 current Project and Work Item brief through immutable successor versions;
 stale or conflicting writes fail closed, same-key retries are stable, and the
-next `owd_resume` rotates stale packet context automatically. The Project view
+next `mdevolved_resume` rotates stale packet context automatically. The Project view
 keeps Memory & Skills in the ordinary path and adds collapsed, owner-only,
 local outcome evidence using only bounded counts, booleans, and timestamps.
 Provider-neutral Codex, Claude-compatible, Hermes, and Orca recipes preserve

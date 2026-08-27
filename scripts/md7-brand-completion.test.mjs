@@ -63,13 +63,18 @@ test("normal user and agent surfaces use MDevolved as the product name", async (
   ];
   const files = (await Promise.all(roots.map(sourceFiles)))
     .flat()
-    .filter((path) => !/[.]test[.]/u.test(path));
+    .filter(
+      (path) =>
+        !/[.]test[.]/u.test(path) &&
+        path !== "packages/client-packs/src/canonical.ts",
+    );
   await assertNoProductNameLeaks(files);
 });
 
 test("current public documentation uses MDevolved outside explicit compatibility history", async () => {
   const excluded = new Set([
     "docs/BRAND-COMPATIBILITY.md",
+    "docs/MD5-TEST-MATRIX.md",
     "docs/MD6-TEST-MATRIX.md",
     "docs/MDEVOLVED-PLAN.md",
   ]);
@@ -119,26 +124,38 @@ test("the human-facing spelling and product labels are exact", async () => {
   );
 });
 
-test("frozen protocol, storage, plugin, and deployment identities remain intact", async () => {
-  const [contracts, plugin, pairing, worker, webLinks, wrangler, brand] =
-    await Promise.all([
-      readFile("packages/contracts/src/index.ts", "utf8"),
-      readFile("packages/obsidian-plugin/manifest.json", "utf8"),
-      readFile("packages/obsidian-plugin/src/pairing-contract.ts", "utf8"),
-      readFile("apps/worker/src/mcp-server.ts", "utf8"),
-      readFile("apps/web/src/obsidian-plugin-links.ts", "utf8"),
-      readFile("wrangler.jsonc", "utf8"),
-      readFile("docs/BRAND-COMPATIBILITY.md", "utf8"),
-    ]);
+test("canonical identities lead while legacy protocol and deployment inputs remain readable", async () => {
+  const [
+    contracts,
+    plugin,
+    pairing,
+    worker,
+    webLinks,
+    wrangler,
+    legacyWrangler,
+    brand,
+  ] = await Promise.all([
+    readFile("packages/contracts/src/index.ts", "utf8"),
+    readFile("packages/obsidian-plugin/manifest.json", "utf8"),
+    readFile("packages/obsidian-plugin/src/pairing-contract.ts", "utf8"),
+    readFile("apps/worker/src/mcp-server.ts", "utf8"),
+    readFile("apps/web/src/obsidian-plugin-links.ts", "utf8"),
+    readFile("wrangler.jsonc", "utf8"),
+    readFile("wrangler.legacy.jsonc", "utf8"),
+    readFile("docs/BRAND-COMPATIBILITY.md", "utf8"),
+  ]);
 
+  assert.match(contracts, /mdevolved-snapshot-v3/u);
   assert.match(contracts, /owd-snapshot-v2/u);
-  assert.equal(JSON.parse(plugin).id, "owd-sync");
+  assert.equal(JSON.parse(plugin).id, "mdevolved-sync");
+  assert.match(pairing, /mdevolved-pair/u);
   assert.match(pairing, /owd-pair:/u);
   for (const tool of ["owd_resume", "owd_find", "owd_checkpoint"]) {
     assert.match(worker, new RegExp(tool, "u"));
   }
-  assert.match(webLinks, /msinclair25\/owd-sync/u);
-  assert.match(wrangler, /"name": "owd-platform"/u);
+  assert.match(webLinks, /msinclair25\/mdevolved-sync/u);
+  assert.match(wrangler, /"name": "mdevolved-community"/u);
+  assert.match(legacyWrangler, /"name": "owd-platform"/u);
   assert.match(
     brand,
     /Existing users require no migration, data edit, re-pairing, MCP reconnect/u,

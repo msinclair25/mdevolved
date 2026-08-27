@@ -1,7 +1,7 @@
 {
-  "id": "owd-sync",
+  "id": "mdevolved-sync",
   "name": "MDevolved Sync for Obsidian",
-  "version": "0.1.7",
+  "version": "0.2.0-alpha.1",
   "minAppVersion": "1.5.0",
   "description": "Connect an Obsidian workspace to private, owner-controlled MDevolved Project memory.",
   "author": "MDevolved contributors",

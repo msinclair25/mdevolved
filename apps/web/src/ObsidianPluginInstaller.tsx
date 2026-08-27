@@ -1,11 +1,11 @@
 import { useState } from "react";
 import {
-  browserSupportsOwdSyncInstall,
-  chooseVaultAndInstallOwdSync,
-  isOwdSyncInstallCancellation,
-  normalizeOwdSyncInstallerError,
+  browserSupportsMdevolvedSyncInstall,
+  chooseVaultAndInstallMdevolvedSync,
+  isMdevolvedSyncInstallCancellation,
+  normalizeMdevolvedSyncInstallerError,
 } from "./obsidian-plugin-installer";
-import { OWD_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
+import { MDEVOLVED_SYNC_REQUIRED_VERSION } from "./obsidian-plugin-links";
 
 type InstallState =
   | { kind: "idle" }
@@ -23,22 +23,24 @@ export function ObsidianPluginInstaller({
   onFallbackNeeded,
 }: ObsidianPluginInstallerProps) {
   const [state, setState] = useState<InstallState>({ kind: "idle" });
-  const supported = browserSupportsOwdSyncInstall();
+  const supported = browserSupportsMdevolvedSyncInstall();
   const busy = state.kind === "choosing" || state.kind === "installing";
 
   const install = async () => {
     setState({ kind: "choosing" });
     try {
-      const result = await chooseVaultAndInstallOwdSync(undefined, (progress) =>
-        setState({ kind: "installing", vaultName: progress.vaultName }),
+      const result = await chooseVaultAndInstallMdevolvedSync(
+        undefined,
+        (progress) =>
+          setState({ kind: "installing", vaultName: progress.vaultName }),
       );
       setState({ kind: "success", vaultName: result.vaultName });
     } catch (error) {
-      if (isOwdSyncInstallCancellation(error)) {
+      if (isMdevolvedSyncInstallCancellation(error)) {
         setState({ kind: "cancelled" });
         return;
       }
-      const installerError = normalizeOwdSyncInstallerError(error);
+      const installerError = normalizeMdevolvedSyncInstallerError(error);
       setState({
         kind: "error",
         message: installerError.message,
@@ -68,7 +70,7 @@ export function ObsidianPluginInstaller({
                 ? "Waiting for Chrome’s folder picker…"
                 : state.kind === "installing"
                   ? `Installing in ${state.vaultName}…`
-                  : `Choose vault and install MDevolved Sync for Obsidian ${OWD_SYNC_REQUIRED_VERSION}`}
+                  : `Choose vault and install MDevolved Sync for Obsidian ${MDEVOLVED_SYNC_REQUIRED_VERSION}`}
             </button>
             <span>
               Choose the vault root containing your notes and hidden{" "}
@@ -79,7 +81,7 @@ export function ObsidianPluginInstaller({
         </li>
         <li>
           Reopen that exact vault and confirm MDevolved Sync for Obsidian{" "}
-          <strong>{OWD_SYNC_REQUIRED_VERSION}</strong> is enabled under
+          <strong>{MDEVOLVED_SYNC_REQUIRED_VERSION}</strong> is enabled under
           Community plugins. Then return here to pair it.
         </li>
       </ol>
@@ -116,7 +118,7 @@ export function ObsidianPluginInstaller({
             <li>Reopen this exact vault in Obsidian.</li>
             <li>
               Open Settings → Community plugins and confirm MDevolved Sync for
-              Obsidian {OWD_SYNC_REQUIRED_VERSION} is switched on.
+              Obsidian {MDEVOLVED_SYNC_REQUIRED_VERSION} is switched on.
             </li>
             <li>
               A brief Connecting or Disconnected status can appear while the

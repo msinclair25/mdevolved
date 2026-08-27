@@ -5,7 +5,7 @@ import esbuild from "esbuild";
 const production = process.argv[2] === "production";
 const shared = {
   banner: {
-    js: "/* OWD Sync — Apache-2.0 adapter with pinned 0BSD YAOS client; see UPSTREAM.md. */",
+    js: "/* MDevolved Sync — Apache-2.0 adapter with pinned 0BSD YAOS client; see UPSTREAM.md. */",
   },
   bundle: true,
   external: [

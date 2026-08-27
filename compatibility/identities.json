@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "milestone": "MD9",
+  "policy": "canonical-new-write-dual-read",
+  "canonical": {
+    "product": "MDevolved",
+    "slug": "mdevolved",
+    "rootPackage": "mdevolved-platform",
+    "workspaceScope": "@mdevolved/",
+    "healthService": "mdevolved",
+    "packages": [
+      "@mdevolved/client-packs",
+      "@mdevolved/contracts",
+      "@mdevolved/desktop",
+      "@mdevolved/folder-adapter",
+      "@mdevolved/marketing",
+      "@mdevolved/obsidian-plugin",
+      "@mdevolved/web",
+      "@mdevolved/worker",
+      "@mdevolved/yaos-core",
+      "mdevolved"
+    ],
+    "mcp": {
+      "tools": [
+        "mdevolved_resume",
+        "mdevolved_find",
+        "mdevolved_get_skill",
+        "mdevolved_checkpoint"
+      ],
+      "resources": [
+        "mdevolved://agent-memory/capabilities/v3",
+        "mdevolved://agent-memory/compounding-capabilities/v3",
+        "mdevolved://collaboration/lead-continuity-capabilities/v1",
+        "mdevolved://collaboration/lead-operation-capabilities/v1",
+        "mdevolved://collaboration/lead-operation-capabilities/v2",
+        "mdevolved://collaboration/lead-operation-capabilities/v3",
+        "mdevolved://collaboration/lead-operation-capabilities/v4",
+        "mdevolved://adapters/hermes/hands-off/v1",
+        "mdevolved://adapters/orca/continuity/v1",
+        "mdevolved://adapters/policy-continuity/v1",
+        "mdevolved://compatibility-profiles/albatross/v1",
+        "mdevolved://compatibility-profiles/eve/v1",
+        "mdevolved://compatibility-profiles/obsidian-mind/v1"
+      ],
+      "prompt": "resume-mdevolved-project"
+    },
+    "pairing": {
+      "desktop": "mdevolved://connect",
+      "obsidian": "obsidian://mdevolved-pair",
+      "receipt": ".mdevolvedignore"
+    },
+    "httpHeaders": {
+      "csrf": "X-MDevolved-CSRF",
+      "generation": "X-MDevolved-Generation"
+    },
+    "browserCookies": {
+      "csrf": "__Host-mdevolved_csrf",
+      "flow": "__Host-mdevolved_auth_flow",
+      "session": "__Host-mdevolved_session"
+    },
+    "portable": {
+      "backupFormat": "mdevolved-backup-v1",
+      "backupMagic": "MDEVOLVED-BACKUP-V1\n",
+      "backupFilenamePrefix": "mdevolved-backup-",
+      "snapshotFormat": "mdevolved-snapshot-v3",
+      "snapshotMagic": "MDEVOLVED-SNAPSHOT-EXPORT-V3\n",
+      "snapshotFilenamePrefix": "mdevolved-snapshot-"
+    },
+    "obsidianPlugin": {
+      "id": "mdevolved-sync",
+      "package": "@mdevolved/obsidian-plugin",
+      "repository": "msinclair25/mdevolved-sync",
+      "releaseTagPrefix": "mdevolved-sync-v"
+    },
+    "newCommunityDeployment": {
+      "worker": "mdevolved-community",
+      "database": "mdevolved-community-db",
+      "bucket": "mdevolved-community-sources"
+    }
+  },
+  "aliases": {
+    "mcp": {
+      "tools": {
+        "mdevolved_resume": "owd_resume",
+        "mdevolved_find": "owd_find",
+        "mdevolved_get_skill": "owd_get_skill",
+        "mdevolved_checkpoint": "owd_checkpoint"
+      },
+      "resources": {
+        "mdevolved://agent-memory/capabilities/v3": "owd://agent-memory/capabilities/v3",
+        "mdevolved://agent-memory/compounding-capabilities/v3": "owd://agent-memory/capabilities/v2",
+        "mdevolved://collaboration/lead-continuity-capabilities/v1": "owd://collaboration/lead-continuity-capabilities/v1",
+        "mdevolved://collaboration/lead-operation-capabilities/v1": "owd://collaboration/lead-operation-capabilities/v1",
+        "mdevolved://collaboration/lead-operation-capabilities/v2": "owd://collaboration/lead-operation-capabilities/v2",
+        "mdevolved://collaboration/lead-operation-capabilities/v3": "owd://collaboration/lead-operation-capabilities/v3",
+        "mdevolved://collaboration/lead-operation-capabilities/v4": "owd://collaboration/lead-operation-capabilities/v4",
+        "mdevolved://adapters/hermes/hands-off/v1": "owd://adapters/hermes/hands-off/v1",
+        "mdevolved://adapters/orca/continuity/v1": "owd://adapters/orca/continuity/v1",
+        "mdevolved://adapters/policy-continuity/v1": "owd://adapters/policy-continuity/v1",
+        "mdevolved://compatibility-profiles/albatross/v1": "owd://compatibility-profiles/albatross/v1",
+        "mdevolved://compatibility-profiles/eve/v1": "owd://compatibility-profiles/eve/v1",
+        "mdevolved://compatibility-profiles/obsidian-mind/v1": "owd://compatibility-profiles/obsidian-mind/v1"
+      },
+      "prompt": {
+        "resume-mdevolved-project": "resume-owd-project"
+      }
+    },
+    "pairing": {
+      "mdevolved://connect": "owd-pair://connect",
+      "obsidian://mdevolved-pair": "obsidian://owd-pair"
+    }
+  },
+  "legacyReadOnly": {
+    "rootPackage": "owd-platform",
+    "historicalWorkspaceScope": "@owd/",
+    "healthService": "owd-platform",
+    "pairing": ["owd-pair://connect", "obsidian://owd-pair"],
+    "receipt": ".owdignore",
+    "httpHeaders": ["X-OWD-CSRF", "X-OWD-Generation"],
+    "browserCookies": [
+      "__Host-owd_csrf",
+      "__Host-owd_auth_flow",
+      "__Host-owd_session"
+    ],
+    "portable": {
+      "backupFormat": "owd-backup-v1",
+      "backupMagic": "OWD-BACKUP-V1\n",
+      "snapshotFormat": "owd-snapshot-v2",
+      "snapshotMagic": "OWD-SNAPSHOT-EXPORT-V2\n"
+    },
+    "obsidianPlugin": {
+      "id": "owd-sync",
+      "repository": "msinclair25/owd-sync"
+    },
+    "existingCommunityDeployment": {
+      "worker": "owd-platform",
+      "database": "owd-platform-db",
+      "bucket": "owd-platform-vaults"
+    }
+  },
+  "frozenStorageInternals": [
+    "vaultId fields",
+    "vault and collaboration table names",
+    "existing D1 migration names",
+    "existing R2 object keys",
+    "existing Durable Object identities",
+    "immutable provenance record hashes"
+  ],
+  "authorityRule": "No import, restore, alias, package migration, plugin migration, or deployment rename restores or copies grants, credentials, actors, leases, OAuth state, sessions, or live consent."
+}

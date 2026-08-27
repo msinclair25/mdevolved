@@ -2,7 +2,7 @@ import {
   canonicalizeCollaborationJson,
   leadOperationRecordSchema,
   type LeadOperationRecord,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { sha256HexBytes } from "./security";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });

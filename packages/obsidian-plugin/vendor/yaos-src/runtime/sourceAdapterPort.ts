@@ -3,7 +3,7 @@ import type {
 	SourceCoreStatus,
 	SourceNeutralSyncCore,
 	UserInteractionPort,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 
 export interface SourceAdapterBoundary {
 	core: SourceNeutralSyncCore;

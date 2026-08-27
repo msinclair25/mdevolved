@@ -4,7 +4,7 @@ import {
   vaultIdSchema,
   type LiveMarkdownNote,
   type MaterializationJob,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   ChunkedDocStore,
   PersistenceCoordinator,
@@ -17,7 +17,7 @@ import {
   trySendSvEchoStateVector,
   type PersistenceHealth,
   type SaveResult,
-} from "@owd/yaos-core";
+} from "@mdevolved/yaos-core";
 import type { Connection, ConnectionContext, WSMessage } from "partyserver";
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";

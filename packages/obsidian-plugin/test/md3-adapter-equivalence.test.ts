@@ -21,8 +21,11 @@ const obsidian = vi.hoisted(() => {
 
 vi.mock("obsidian", () => obsidian);
 
-import { reconcileFolder, type MarkdownRemotePort } from "@owd/yaos-core";
-import { createFolderSource, folderSourceIdentity } from "@owd/folder-adapter";
+import { reconcileFolder, type MarkdownRemotePort } from "@mdevolved/yaos-core";
+import {
+  createFolderSource,
+  folderSourceIdentity,
+} from "@mdevolved/folder-adapter";
 import { createObsidianSourceAdapter } from "../src/obsidian-adapter";
 import {
   SettingsStore,

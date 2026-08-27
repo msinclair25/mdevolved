@@ -19,6 +19,6 @@
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable
 
-/owd-sync/*
+/mdevolved-sync/*
   ! Cache-Control
   Cache-Control: public, max-age=31536000, immutable

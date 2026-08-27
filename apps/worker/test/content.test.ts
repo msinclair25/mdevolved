@@ -2,7 +2,7 @@ import {
   apiErrorSchema,
   liveMarkdownNoteSchema,
   markdownNoteWriteResponseSchema,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   env,
   evictDurableObject,
@@ -77,7 +77,7 @@ async function createOwnerSession(): Promise<OwnerSession> {
     now,
   );
   return {
-    cookie: `__Host-owd_session=${session.token}; __Host-owd_csrf=${session.csrfToken}`,
+    cookie: `__Host-mdevolved_session=${session.token}; __Host-mdevolved_csrf=${session.csrfToken}`,
     csrf: session.csrfToken,
   };
 }
@@ -86,7 +86,7 @@ function ownerHeaders(session: OwnerSession, origin = ORIGIN): HeadersInit {
   return {
     Cookie: session.cookie,
     Origin: origin,
-    "X-OWD-CSRF": session.csrf,
+    "X-MDevolved-CSRF": session.csrf,
   };
 }
 

@@ -3,7 +3,7 @@ import {
   sourceDeviceSummarySchema,
   type SourceBoundary,
   type SourceDeviceSummary,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { sha256Hex } from "./security";
 
 interface SourceDeviceRow {

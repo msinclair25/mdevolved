@@ -12,7 +12,7 @@ import {
   type CompoundingDraft,
   type CompoundingEvidence,
   type LearningSignal,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import {
   importAgentSkill,
   mutateProjectSkill,

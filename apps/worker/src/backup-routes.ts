@@ -1,10 +1,11 @@
 import {
+  MDEVOLVED_BACKUP_FORMAT,
   backupCreateRequestSchema,
   backupListResponseSchema,
   backupRecipientRequestSchema,
   vaultIdSchema,
   type BackupListResponse,
-} from "@owd/contracts";
+} from "@mdevolved/contracts";
 import { z } from "zod";
 import type { Context, Hono } from "hono";
 import { ApiProblem } from "./api-problem";
@@ -270,7 +271,9 @@ export function registerBackupRoutes(app: Hono<AppBindings>): void {
     context.header("Content-Type", "application/octet-stream");
     context.header(
       "Content-Disposition",
-      `attachment; filename="owd-backup-${backup.backupId}.age"`,
+      `attachment; filename="${
+        backup.format === MDEVOLVED_BACKUP_FORMAT ? "mdevolved" : "owd"
+      }-backup-${backup.backupId}.age"`,
     );
     context.header("X-Content-Type-Options", "nosniff");
     return context.body(object.body);
