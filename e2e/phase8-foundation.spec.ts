@@ -3118,12 +3118,12 @@ test("keeps authorized clients compact without global writer promotion", async (
   ).toHaveCount(0);
   await expect(
     agents.getByRole("button", {
-      name: "Shared client, Recovery target, authorization 1 of 2",
+      name: "Shared client, Recovery target, authorization aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     }),
   ).toBeVisible();
   await expect(
     agents.getByRole("button", {
-      name: "Shared client, Recovery target, authorization 2 of 2",
+      name: "Shared client, Recovery target, authorization bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
     }),
   ).toBeVisible();
   await expect(
@@ -3131,7 +3131,7 @@ test("keeps authorized clients compact without global writer promotion", async (
   ).toHaveCount(0);
 
   const secondClientButton = agents.getByRole("button", {
-    name: "Shared client, Recovery target, authorization 2 of 2",
+    name: "Shared client, Recovery target, authorization bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   });
   await secondClientButton.click();
   const clientWindow = agents.locator(".authorized-client-popover");

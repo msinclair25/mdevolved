@@ -7859,6 +7859,7 @@ describe("scoped universal agent access", () => {
       {},
     );
     expect(connectionInfo.result.structuredContent).toMatchObject({
+      authorizationId: agent.grantId,
       preparedProjectHandoff: {
         folderBoundary: "",
         folderBoundaryLabel: "Entire approved vault boundary",
@@ -8120,6 +8121,69 @@ describe("scoped universal agent access", () => {
       method: "POST",
     });
     expect(rejected.status).toBe(401);
+  });
+
+  it("revokes only the exact duplicate-labeled authorization", async () => {
+    const session = await createOwnerSession();
+    const vaultId = await createVault("Duplicate authorization vault");
+    await materialize(vaultId, []);
+    const older = await authorize(session, vaultId, []);
+    const newer = await authorize(session, vaultId, []);
+
+    const listedResponse = await fetchWorker(
+      `${ORIGIN}/api/agent/connections`,
+      { headers: { Cookie: session.cookie } },
+    );
+    const listed = agentConnectionListResponseSchema.parse(
+      await listedResponse.json(),
+    );
+    expect(
+      new Set(
+        listed.connections.slice(0, 2).map((connection) => connection.id),
+      ),
+    ).toEqual(new Set([newer.grantId, older.grantId]));
+    expect(
+      listed.connections.slice(0, 2).map((connection) => connection.clientName),
+    ).toEqual(["Synthetic agent", "Synthetic agent"]);
+
+    const revokeResponse = await fetchWorker(
+      `${ORIGIN}/api/agent/connections/${older.grantId}/revoke`,
+      {
+        headers: {
+          Cookie: session.cookie,
+          Origin: ORIGIN,
+          "X-OWD-CSRF": session.csrf,
+        },
+        method: "POST",
+      },
+    );
+    expect(revokeResponse.status).toBe(204);
+
+    const rejected = await fetchWorker(`${ORIGIN}/mcp`, {
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: { arguments: {}, name: "connection_info" },
+      }),
+      headers: {
+        Accept: "application/json, text/event-stream",
+        Authorization: `Bearer ${older.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    expect(rejected.status).toBe(401);
+
+    const stillAuthorized = await callTool(
+      newer.accessToken,
+      "connection_info",
+      {},
+    );
+    expect(stillAuthorized.result.structuredContent).toMatchObject({
+      authorizationId: newer.grantId,
+      ok: true,
+    });
   });
 
   it("revokes an unused prepared handoff with its vault", async () => {

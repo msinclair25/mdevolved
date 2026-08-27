@@ -508,12 +508,12 @@ function AuthorizedClientInventory({
   >(null);
   const connectionButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const connectionLabelCounts = new Map<string, number>();
-  const connectionLabelOrdinals = new Map<string, number>();
   for (const connection of connections) {
     const labelKey = `${connection.clientName}\u0000${connection.vaultName}`;
-    const ordinal = (connectionLabelCounts.get(labelKey) ?? 0) + 1;
-    connectionLabelOrdinals.set(connection.id, ordinal);
-    connectionLabelCounts.set(labelKey, ordinal);
+    connectionLabelCounts.set(
+      labelKey,
+      (connectionLabelCounts.get(labelKey) ?? 0) + 1,
+    );
   }
   const selectedConnection =
     connections.find((connection) => connection.id === selectedConnectionId) ??
@@ -618,8 +618,8 @@ function AuthorizedClientInventory({
             connectionLabelCounts.get(
               `${connection.clientName}\u0000${connection.vaultName}`,
             ) ?? 1;
-          const labelOrdinal = connectionLabelOrdinals.get(connection.id) ?? 1;
           const duplicateLabel = labelCount > 1;
+          const shortAuthorizationId = connection.id.slice(0, 8);
           return (
             <button
               aria-controls={
@@ -628,7 +628,7 @@ function AuthorizedClientInventory({
               aria-expanded={selected}
               aria-label={
                 duplicateLabel
-                  ? `${connection.clientName}, ${connection.vaultName}, authorization ${labelOrdinal} of ${labelCount}`
+                  ? `${connection.clientName}, ${connection.vaultName}, authorization ${connection.id}`
                   : `${connection.clientName}, ${connection.vaultName}`
               }
               className="authorized-client-button"
@@ -648,7 +648,9 @@ function AuthorizedClientInventory({
               <span>{connection.clientName}</span>
               <small>
                 {connection.vaultName}
-                {duplicateLabel ? ` · ${labelOrdinal}/${labelCount}` : ""}
+                {duplicateLabel
+                  ? ` · auth ${shortAuthorizationId} · last used ${formatTimestamp(connection.lastUsedAt)}`
+                  : ""}
               </small>
             </button>
           );
