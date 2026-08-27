@@ -15,6 +15,7 @@ you are changing.
 | Review the MDevolved source plan          | [MDevolved plan](MDEVOLVED-PLAN.md)                               |
 | Review brand compatibility invariants     | [Brand compatibility](BRAND-COMPATIBILITY.md)                     |
 | Review MD5 requirement-to-test evidence   | [MD5 acceptance matrix](MD5-TEST-MATRIX.md)                       |
+| Review MD6 requirement-to-evidence gates  | [MD6 acceptance matrix](MD6-TEST-MATRIX.md)                       |
 | Review MD2 migration and recovery         | [MD2 recovery](MD2-RECOVERY.md)                                   |
 | Review supported versions and limits      | [Release compatibility](RELEASE-COMPATIBILITY.md)                 |
 | Audit monitored upstream integration pins | [Compatibility manifest](../compatibility/upstreams.json)         |

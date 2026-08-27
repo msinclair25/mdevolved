@@ -57,7 +57,7 @@ export function createDesktopMain(
   const platform = options.platform ?? process.platform;
   let window: BrowserWindow | undefined;
   let tray: Tray | undefined;
-  let custodyFailure: string | undefined;
+  let custodyUnavailable = false;
   let quitting = false;
   let startAtLogin = false;
 
@@ -123,7 +123,8 @@ export function createDesktopMain(
       return publish({
         ...controller.getStatus(),
         phase: "error",
-        message: custodyFailure ?? "protected credential storage unavailable",
+        message:
+          "Protected credential storage is unavailable. Reconnect is disabled on this device.",
         canRetry: false,
         canRepair: false,
       });
@@ -160,7 +161,7 @@ export function createDesktopMain(
       width: 760,
       height: 720,
       webPreferences: {
-        preload: join(moduleDirectory, "preload.js"),
+        preload: join(moduleDirectory, "preload.cjs"),
         contextIsolation: true,
         sandbox: true,
         nodeIntegration: false,
@@ -205,11 +206,8 @@ export function createDesktopMain(
         join(app.getPath("userData"), "credential.bin"),
         platform,
       );
-    } catch (error) {
-      custodyFailure =
-        error instanceof Error
-          ? error.message
-          : "protected credential storage unavailable";
+    } catch {
+      custodyUnavailable = true;
     }
     tray = new Tray(nativeImage.createEmpty());
     tray.setToolTip("MDevolved Sync");
@@ -222,6 +220,18 @@ export function createDesktopMain(
     tray.on("click", () => void openWindow());
     controller.onStatusChange?.(publish);
     await openWindow();
+    if (custodyUnavailable) {
+      publish({
+        ...controller.getStatus(),
+        phase: "error",
+        message:
+          "Protected credential storage is unavailable. Reconnect is disabled on this device.",
+        canRetry: false,
+        canRepair: false,
+      });
+    } else if (controller.restore) {
+      publish(await controller.restore());
+    }
     const startupUrl = process.argv.find((value) =>
       value.startsWith("mdevolved://connect?"),
     );

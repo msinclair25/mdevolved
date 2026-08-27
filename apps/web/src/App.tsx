@@ -508,12 +508,12 @@ function AuthorizedClientInventory({
   >(null);
   const connectionButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const connectionLabelCounts = new Map<string, number>();
-  const connectionLabelOrdinals = new Map<string, number>();
   for (const connection of connections) {
     const labelKey = `${connection.clientName}\u0000${connection.vaultName}`;
-    const ordinal = (connectionLabelCounts.get(labelKey) ?? 0) + 1;
-    connectionLabelOrdinals.set(connection.id, ordinal);
-    connectionLabelCounts.set(labelKey, ordinal);
+    connectionLabelCounts.set(
+      labelKey,
+      (connectionLabelCounts.get(labelKey) ?? 0) + 1,
+    );
   }
   const selectedConnection =
     connections.find((connection) => connection.id === selectedConnectionId) ??
@@ -618,8 +618,8 @@ function AuthorizedClientInventory({
             connectionLabelCounts.get(
               `${connection.clientName}\u0000${connection.vaultName}`,
             ) ?? 1;
-          const labelOrdinal = connectionLabelOrdinals.get(connection.id) ?? 1;
           const duplicateLabel = labelCount > 1;
+          const shortAuthorizationId = connection.id.slice(0, 8);
           return (
             <button
               aria-controls={
@@ -628,7 +628,7 @@ function AuthorizedClientInventory({
               aria-expanded={selected}
               aria-label={
                 duplicateLabel
-                  ? `${connection.clientName}, ${connection.vaultName}, authorization ${labelOrdinal} of ${labelCount}`
+                  ? `${connection.clientName}, ${connection.vaultName}, authorization ${connection.id}`
                   : `${connection.clientName}, ${connection.vaultName}`
               }
               className="authorized-client-button"
@@ -648,7 +648,9 @@ function AuthorizedClientInventory({
               <span>{connection.clientName}</span>
               <small>
                 {connection.vaultName}
-                {duplicateLabel ? ` · ${labelOrdinal}/${labelCount}` : ""}
+                {duplicateLabel
+                  ? ` · auth ${shortAuthorizationId} · last used ${formatTimestamp(connection.lastUsedAt)}`
+                  : ""}
               </small>
             </button>
           );
@@ -2919,8 +2921,9 @@ function Dashboard() {
   async function refreshLibrary(
     vaultId = selectedVaultId,
     mode: LibraryRefreshMode = "background",
-  ): Promise<void> {
-    if (vaultId === "") return;
+    requireGeneration = false,
+  ): Promise<boolean> {
+    if (vaultId === "") return false;
     libraryRefreshControllerRef.current?.abort();
     const controller = new AbortController();
     libraryRefreshControllerRef.current = controller;
@@ -2937,12 +2940,12 @@ function Dashboard() {
           controller.signal,
         ),
       );
-      if (libraryRefreshControllerRef.current !== controller) return;
+      if (libraryRefreshControllerRef.current !== controller) return false;
       if (status.generation === null) {
         setLibraryState(completeEmptyLibraryRefresh());
         setSearchState({ kind: "idle" });
         setNoteState({ kind: "idle" });
-        return;
+        return !requireGeneration;
       }
       const page = materializedNotesResponseSchema.parse(
         await postApiJson(
@@ -2951,7 +2954,7 @@ function Dashboard() {
           controller.signal,
         ),
       );
-      if (libraryRefreshControllerRef.current !== controller) return;
+      if (libraryRefreshControllerRef.current !== controller) return false;
       if (page.generation.generationId !== status.generation.generationId) {
         throw new Error(
           "The library changed while notes were loading. Refresh it.",
@@ -2967,13 +2970,16 @@ function Dashboard() {
         setSearchState({ kind: "idle" });
         setNoteState({ kind: "idle" });
       }
+      return true;
     } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (error instanceof DOMException && error.name === "AbortError")
+        return false;
       const message =
         error instanceof Error
           ? error.message
           : "The searchable library could not be loaded.";
       setLibraryState((current) => failLibraryRefresh(current, message));
+      return false;
     } finally {
       if (libraryRefreshControllerRef.current === controller) {
         libraryRefreshControllerRef.current = null;
@@ -3022,12 +3028,16 @@ function Dashboard() {
       if (job.status !== "completed") {
         throw new Error(
           job.status === "failed"
-            ? "The searchable library build stopped safely. The previous library is unchanged."
+            ? `The searchable library build stopped safely (${job.failureCode ?? "unknown_error"}). The previous library is unchanged.`
             : "The searchable library is still building. Refresh its status in a moment.",
         );
       }
       const generation = materializationGenerationSchema.parse(job.generation);
-      await refreshLibrary(vaultId);
+      if (!(await refreshLibrary(vaultId, "background", true))) {
+        throw new Error(
+          "The library was published but could not be loaded. Refresh it before continuing.",
+        );
+      }
       if (shouldAdvanceToAgents) {
         setPendingAgentAdvanceVaultId(vaultId);
       }
@@ -3040,9 +3050,11 @@ function Dashboard() {
       setActionState({
         kind: "error",
         message:
-          error instanceof Error
-            ? error.message
-            : "The searchable library could not be built.",
+          error instanceof ApiRequestError
+            ? `${error.message} (${error.code})`
+            : error instanceof Error
+              ? error.message
+              : "The searchable library could not be built.",
       });
     }
   }
@@ -3904,6 +3916,19 @@ function Dashboard() {
                     New note
                   </button>
                 </div>
+                {actionState.kind === "working" ? (
+                  <p className="availability" role="status">
+                    {actionState.label}
+                  </p>
+                ) : actionState.kind === "success" ? (
+                  <p className="availability" role="status">
+                    {actionState.message}
+                  </p>
+                ) : actionState.kind === "error" ? (
+                  <p className="action-error" role="alert">
+                    {actionState.message}
+                  </p>
+                ) : null}
               </div>
 
               {libraryState.kind === "ready" &&
@@ -4334,11 +4359,11 @@ function Dashboard() {
                 activeVaults={activeVaults}
                 autoOpen={activeWorkspaceSection === "recovery"}
                 initialVaultId={selectedVaultId}
-                onRestoreApplied={(vaultId) =>
-                  vaultId === selectedVaultId
-                    ? refreshLibrary(vaultId)
-                    : undefined
-                }
+                onRestoreApplied={async (vaultId) => {
+                  if (vaultId === selectedVaultId) {
+                    await refreshLibrary(vaultId);
+                  }
+                }}
                 vaults={vaults}
               />
             </Suspense>

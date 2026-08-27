@@ -123,6 +123,43 @@ describe("controller lifecycle", () => {
     expect(status?.message).toContain("Choose the folder");
   });
 
+  it("reports protected connection restore failures without exposing details", async () => {
+    const corrupted = new FolderSyncController(() => ({
+      load: async () => "not-json",
+      save: async () => undefined,
+    }));
+    const corruptedStatus = await corrupted.restore();
+    expect(corruptedStatus).toMatchObject({
+      phase: "error",
+      canRetry: false,
+      canRepair: false,
+    });
+    expect(corruptedStatus.message).toBe(
+      "Protected connection could not be restored. Reconnect it.",
+    );
+
+    const unavailable = new FolderSyncController(() => ({
+      load: async () => {
+        throw new Error("synthetic private backend detail");
+      },
+      save: async () => undefined,
+    }));
+    const unavailableStatus = await unavailable.restore();
+    expect(unavailableStatus.phase).toBe("error");
+    expect(unavailableStatus.message).not.toContain("private backend detail");
+  });
+
+  it("bounds invalid folder selection failures before source or network use", async () => {
+    const controller = new FolderSyncController(() => undefined);
+    const status = await controller.selectFolder("bad\npath");
+    expect(status).toMatchObject({
+      phase: "error",
+      canRetry: false,
+      canRepair: false,
+    });
+    expect(status.folderPath).toBeUndefined();
+  });
+
   it("rejects malformed protected connection records before network use", () => {
     const valid = {
       sourceId: `folder-${"a".repeat(32)}`,
@@ -137,6 +174,14 @@ describe("controller lifecycle", () => {
       },
     };
     expect(decodeConnection(JSON.stringify(valid))).toEqual(valid);
+    expect(
+      decodeConnection(
+        JSON.stringify({ ...valid, folderPath: "/tmp/synthetic-project" }),
+      ),
+    ).toEqual({ ...valid, folderPath: "/tmp/synthetic-project" });
+    expect(
+      decodeConnection(JSON.stringify({ ...valid, folderPath: "bad\npath" })),
+    ).toBeNull();
     expect(
       decodeConnection(
         JSON.stringify({

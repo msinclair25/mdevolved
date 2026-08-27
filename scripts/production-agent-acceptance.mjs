@@ -1,5 +1,9 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
+import {
+  checkpointArguments,
+  continuityPoint,
+} from "./live-continuity-acceptance-lib.mjs";
 
 const CURRENT_PROTOCOL_VERSION = "2026-07-28";
 const LEGACY_PROTOCOL_VERSION = "2025-11-25";
@@ -15,6 +19,8 @@ const PROJECT_LIFECYCLE_TOOLS = [
 ];
 const REQUIRED_TOOLS = [
   "connection_info",
+  "checkpoint_project",
+  "claim_project_lead",
   "get_vault_status",
   "list_recent_changes",
   "list_vaults",
@@ -35,7 +41,8 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const OPAQUE_KEY_PATTERN = /^[A-Za-z0-9_-]{43,128}$/u;
 const ROOT_MARKDOWN_PATTERN = /^[^/\\\p{Cc}\p{Cf}]+\.md$/iu;
-const PROJECT_APPROVAL_TIMEOUT_MS = 180_000;
+const OAUTH_APPROVAL_TIMEOUT_MS = 600_000;
+const PROJECT_APPROVAL_TIMEOUT_MS = 600_000;
 
 function fail(message) {
   throw new Error(message);
@@ -333,7 +340,7 @@ async function main() {
 
   const timeout = setTimeout(
     () => callbackReject(new Error("OAuth authorization timed out.")),
-    180_000,
+    OAUTH_APPROVAL_TIMEOUT_MS,
   );
   let code;
   try {
@@ -545,6 +552,10 @@ async function main() {
       "The acceptance connection was not bound to the disposable read-only vault.",
     );
   }
+  const authorizationId = exactProjectId(
+    connection.authorizationId,
+    "connection_info authorization",
+  );
   if (
     !Array.isArray(connection.scopes) ||
     BOOTSTRAP_SCOPES.some((scope) => !connection.scopes.includes(scope))
@@ -822,6 +833,7 @@ async function main() {
     }
     return {
       contextPolicy: asRecord(resume.contextPolicy, `${label} context policy`),
+      latestContinuityPoint: resume.latestContinuityPoint,
       packet,
     };
   }
@@ -843,11 +855,74 @@ async function main() {
     );
   }
 
+  const claimedLead = toolContent(
+    (
+      await rpc("tools/call", {
+        arguments: {
+          idempotencyKey: `md6-replacement-claim-${randomUUID()}`,
+          leadIdentity: {
+            claimedHarness: {
+              assertedBy: "client",
+              name: "MDevolved MD6 production acceptance",
+              verification: "claimed",
+              version: "0.1.0",
+            },
+            claimedModel: null,
+            displayName: "MD6 independent replacement",
+          },
+          leaseExpiresInSeconds: 180,
+          projectId,
+        },
+        name: "claim_project_lead",
+      })
+    ).result,
+    "claim_project_lead",
+  );
+  const leadLease = asRecord(claimedLead.lease, "claim_project_lead lease");
+  const previousContinuityPointId =
+    firstResume.latestContinuityPoint === null ||
+    firstResume.latestContinuityPoint === undefined
+      ? null
+      : continuityPoint(firstResume.latestContinuityPoint, { projectId })
+          .continuityPointId;
+  const checkpointed = toolContent(
+    (
+      await rpc("tools/call", {
+        arguments: checkpointArguments({
+          leaseInput: leadLease,
+          packetInput: repeatedResume.packet,
+          phase: "replacement",
+          previousContinuityPointId,
+          projectId,
+        }),
+        name: "checkpoint_project",
+      })
+    ).result,
+    "checkpoint_project",
+  );
+  const successorPoint = continuityPoint(checkpointed.continuityPoint, {
+    projectId,
+  });
+  const afterCheckpoint = await resumeExactProject(
+    repeatedResume.contextPolicy,
+    "post-checkpoint resume_project",
+  );
+  const resumedPoint = continuityPoint(afterCheckpoint.latestContinuityPoint, {
+    continuityPointId: successorPoint.continuityPointId,
+    projectId,
+  });
+  if (resumedPoint.continuityPointId !== successorPoint.continuityPointId) {
+    fail(
+      "The replacement client did not resume its exact successor checkpoint.",
+    );
+  }
+
   console.log(
     JSON.stringify({
       event: "owd.agent_acceptance.ready_for_revocation",
       generation: generation.generationId.slice(0, 8),
       oauthTokenExchangeCount: 1,
+      replacementCheckpointVerified: true,
       protocols: [CURRENT_PROTOCOL_VERSION, LEGACY_PROTOCOL_VERSION],
       projectId,
       projectState: "ready",
@@ -858,6 +933,7 @@ async function main() {
       vaultCount: vaults.vaults.length,
     }),
   );
+  console.log(`OWD_ACCEPTANCE_AUTHORIZATION_ID=${authorizationId}`);
   console.log("OWD_ACCEPTANCE_REVOKE_NOW=1");
   await readInputLine(
     "Revoke the acceptance agent connection in OWD, then press Enter: ",
@@ -875,9 +951,10 @@ async function main() {
       rpcResult.structuredContent,
       "revocation structured content",
     );
-    const error = asRecord(structured.error, "revocation error");
-    revoked =
-      rpcResult.isError === true && error.code === "agent_grant_revoked";
+    if (rpcResult.isError === true) {
+      const error = asRecord(structured.error, "revocation error");
+      revoked = error.code === "agent_grant_revoked";
+    }
   }
   if (!revoked) {
     fail("The access token still reached a granted tool after revocation.");
@@ -904,9 +981,10 @@ async function main() {
       rpcResult.structuredContent,
       "Project revocation structured content",
     );
-    const error = asRecord(structured.error, "Project revocation error");
-    projectRevoked =
-      rpcResult.isError === true && error.code === "agent_grant_revoked";
+    if (rpcResult.isError === true) {
+      const error = asRecord(structured.error, "Project revocation error");
+      projectRevoked = error.code === "agent_grant_revoked";
+    }
   }
   if (!projectRevoked) {
     fail(

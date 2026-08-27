@@ -1,16 +1,17 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD5 are complete. MD6 requires a fresh milestone task.<br />
+**Status:** MD1–MD6 are complete.<br />
 **Date:** 2026-08-26
 
 ## Milestone boundary
 
-MD0 planning and MD1 through MD4 delivery are complete. The source-neutral
+MD0 planning and MD1 through MD6 delivery are complete. The source-neutral
 architecture, compatibility rules, rollout order, security boundaries, and
 independent acceptance decisions below remain explicit. MD5's final candidate
 passed its exact complete gate and authoritative legacy-repository redirect
 check. Its required PR checks, merge, and post-merge `main` health complete the
-recorded delivery workflow. MD6 requires a fresh milestone task.
+recorded delivery workflow. Later product expansion requires a fresh milestone
+and acceptance decision.
 
 ## Product promise
 
@@ -68,7 +69,7 @@ The later external gates are deliberately narrow:
 - obtain explicit owner authorization at execution time before package
   publication, production deployment, repository renaming, or paid services.
 
-Human usability feedback is valuable but is not a prerequisite for MD1-MD5
+Human usability feedback is valuable but is not a prerequisite for MD1-MD6
 implementation or automated validation. Each milestone's automated acceptance
 decision remains mandatory.
 
@@ -494,4 +495,54 @@ redirect-following checks returned HTTP 200 at the renamed effective root,
 `/tree/main/docs`, and `/blob/main/README.md` URLs. The earlier distinct-repo
 browser/search view was stale. No production deployment, npm/plugin/desktop
 publication, new repository mutation, paid service, or external cost was
-performed. MD6 has not started and requires a fresh milestone task.
+performed.
+
+## MD6 delivery receipt
+
+MD6 closes the source-independent minimum lovable release. A Markdown folder
+can now be selected through the packaged desktop bridge, published through the
+shared folder adapter, resumed as the same durable Project from a fresh OAuth
+authorization, checkpointed, and denied immediately after exact owner
+revocation. Obsidian remains an optional compatibility adapter over the same
+shared core rather than a required storage or runtime dependency.
+
+The final live exercise used only the disposable Source
+`mdevolved-md6-live.Fu6hE0` and Project `MD6 Synthetic Lantern Continuity`. A
+fresh dynamically registered client received only the selected Source and one
+owner-approved Project, searched and read cited Markdown, resumed a predecessor
+Continuity Point written under an earlier authorization, claimed a bounded lead
+lease, wrote a successor checkpoint, and re-resumed that exact successor. The
+current and legacy MCP protocols both passed. The owner then revoked the exact
+immutable authorization ID; its next Source call returned HTTP 401 and its
+dependent Project resume was denied. No chat, transcript, hidden reasoning,
+terminal history, provider runtime, credential, or local agent state entered
+durable Project context.
+
+Adversarial rework corrected packaged-desktop restore cleanup, required a real
+successor checkpoint in the production harness, lengthened only the harness's
+owner-review windows, and removed ambiguous duplicate-authorization ordinals.
+`connection_info` now returns the existing non-secret authorization UUID, the
+owner UI shows immutable IDs for duplicate labels, and focused tests prove that
+revoking one same-name authorization denies only that bearer while leaving the
+other authorized. This is additive and changes no durable identity, protocol
+name, authority boundary, or old-client response requirement.
+
+The named MD6 gate covers the in-memory, folder, and Obsidian adapters; hostile
+filesystem fixtures; offline/restart behavior; current and legacy MCP;
+encrypted export/snapshot/restore with zero restored authority; clean install
+and upgrade; plugin packaging/updater compatibility; packaged desktop behavior;
+accessibility at desktop and 360 px; complete repository tests; the public
+history scan; builds; and both non-deploying Cloudflare dry-runs. Current
+macOS, Windows, and Linux GitHub runners passed the bounded client gate; Linux
+uses the documented portal-neutral preload/IPC path because its headless XDG
+portal cannot accept the in-process native-picker stub.
+
+MD6 adds no migration and required no new Cloudflare resource. The acceptance
+candidate was deployed to the existing Community Worker with zero pending D1
+migrations, a retained previous version for rollback, and projected
+incremental cost of $0. The synthetic authorizations were revoked, the Project
+was archived, every disposable Source registration was disconnected, and the
+local fixture was deleted. Immutable archived/disconnected provenance remains
+inert and restores no grants, credentials, actors, sessions, leases, devices,
+OAuth state, or other live authority. No npm package, plugin, desktop release,
+GitHub Release, paid service, R3 work, or later milestone was started.

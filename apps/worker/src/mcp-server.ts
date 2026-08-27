@@ -1965,6 +1965,7 @@ function createServer(env: Env, context: ExecutionContext): McpServer {
           grant.id,
         );
         return {
+          authorizationId: grant.id,
           clientName: grant.clientName,
           folderAccess:
             visibility.pathKeyPrefixes.length === 0 && !visibility.denyAll

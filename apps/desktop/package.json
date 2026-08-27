@@ -8,6 +8,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && node build.mjs",
+    "test:e2e": "playwright test --config playwright.config.ts",
     "package": "pnpm build && node package.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"

@@ -34,6 +34,7 @@ export interface SyncStatus {
 
 export interface SyncController {
   getStatus(): SyncStatus;
+  restore?(): Promise<SyncStatus>;
   selectFolder(folderPath: string): Promise<SyncStatus>;
   retry(): Promise<SyncStatus>;
   repair(): Promise<SyncStatus>;

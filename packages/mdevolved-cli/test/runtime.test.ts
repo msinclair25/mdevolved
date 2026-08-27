@@ -92,6 +92,7 @@ describe("generic VaultSync bridge", () => {
     const files = new Map<string, FakeText>([
       ["remote.md", new FakeText("remote")],
     ]);
+    let initializationCount = 0;
     const vault: VaultSyncLike = {
       connected: true,
       providerSynced: true,
@@ -103,6 +104,9 @@ describe("generic VaultSync bridge", () => {
         files.set(path, text);
         return text;
       },
+      markInitialized: () => {
+        initializationCount += 1;
+      },
     };
     const first = await createSyncRuntime({
       sourceRoot: root,
@@ -113,6 +117,7 @@ describe("generic VaultSync bridge", () => {
       now: () => 1_000,
     });
     expect(await first.start()).toBe("running");
+    expect(initializationCount).toBe(1);
     expect(files.get("local.md")?.toString()).toBe("local");
     expect(await fs.readFile(join(root, "remote.md"), "utf8")).toBe("remote");
     await first.stop();
@@ -128,6 +133,7 @@ describe("generic VaultSync bridge", () => {
       now: () => 2_000,
     });
     expect(await restarted.start()).toBe("running");
+    expect(initializationCount).toBe(2);
     expect(
       (await fs.readdir(root)).some((path) =>
         path.startsWith("local (MDevolved conflict"),
@@ -143,7 +149,25 @@ describe("generic VaultSync bridge", () => {
     await expect(restarted.syncOnce()).rejects.toThrow(
       "remote_receipt_unconfirmed",
     );
+    expect(initializationCount).toBe(3);
+
+    Object.assign(vault, {
+      connected: true,
+      providerSynced: true,
+      serverAppliedLocalState: true,
+    });
+    await expect(restarted.syncOnce()).resolves.toMatchObject({
+      durable: true,
+    });
+    expect(files.get("offline.md")?.toString()).toBe("not confirmed");
+    expect(initializationCount).toBe(4);
     await restarted.stop();
+
+    Object.assign(vault, {
+      connected: false,
+      providerSynced: false,
+      serverAppliedLocalState: false,
+    });
 
     const offlineRestart = await createSyncRuntime({
       sourceRoot: root,
