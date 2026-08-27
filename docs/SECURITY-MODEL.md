@@ -34,7 +34,7 @@
   independently reviewed an Artifact.
 - A knowledge-space edit that silently broadens an existing client grant.
 - A compromised external application attempting to translate its own Project,
-  team, or organization role into OWD vault authority.
+  team, or organization role into MDevolved vault authority.
 - A malicious managed customer attempting hostname, identifier, OAuth, storage,
   log, quota, or provisioning confusion across owner cells.
 - A compromised managed control plane, deployment credential, support account,
@@ -79,7 +79,7 @@ Compromise of the owner's Cloudflare account or local device is outside the prim
     call; adding or widening content never expands an existing grant without
     fresh owner consent.
 21. An external application's user, organization, Project, or role claims do
-    not authorize OWD. Only an active OWD grant does.
+    not authorize MDevolved. Only an active MDevolved grant does.
 22. A producing agent or model cannot approve or promote its own note, memory,
     or skill proposal, and evaluation cannot expand the proposal's source grant.
 23. A snapshot is logically complete and independently restorable. Physical
@@ -136,12 +136,12 @@ Compromise of the owner's Cloudflare account or local device is outside the prim
 38. Accepted records retain immutable packet evidence objects sufficient to
     verify their cited source excerpts after the live library changes. Complete
     restore cannot require an external URL or source deployment.
-39. The private-trial web installer can write only the pinned OWD Sync release
+39. The private-trial web installer can write only the pinned MDevolved Sync release
     and enabled-plugin list after an explicit local directory-picker gesture.
     It cannot enumerate notes, persist a directory handle, upload vault data,
     change general Obsidian settings, or grant filesystem access to the Worker,
     sync protocol, MCP clients, or agents.
-40. Every Project operation names an explicit durable Project ID. OWD resolves
+40. Every Project operation names an explicit durable Project ID. MDevolved resolves
     its separately stored collaboration grant from the active source
     connection; it never infers authority from a label, local path, chat, or
     most recently used grant.
@@ -156,7 +156,7 @@ Compromise of the owner's Cloudflare account or local device is outside the prim
     vault, internal acceptance Project, operator evidence/runbook, source
     branch, or other tester's state.
 44. An owner may additionally classify an exact Project as `owner-only`.
-    OWD revokes that Project's agent grants, expires pending joins, and excludes
+    MDevolved revokes that Project's agent grants, expires pending joins, and excludes
     its identity and source membership from every agent discovery,
     authorization-repair, and collaboration path while preserving it in the
     authenticated owner dashboard.
@@ -204,7 +204,7 @@ only same-origin versioned assets, verifies each byte count and SHA-256 hash,
 backs up only its four allowed targets in memory, writes the enabled-plugin
 list last, and rolls back on failure. Directory handles are not placed in
 browser storage or transmitted. Browser permission remains visible and
-revocable through the browser; closing the tab releases OWD's in-memory
+revocable through the browser; closing the tab releases MDevolved's in-memory
 reference. Obsidian must be closed during the write so its shutdown cannot
 overwrite the enabled-plugin list. A clean vault remains in Restricted Mode
 until the owner explicitly chooses **Turn on community plugins** inside
@@ -244,11 +244,11 @@ Cloudflare Access is optional defense in depth for browser routes. If enabled, i
 
 ## Agent authentication and authorization
 
-The MCP endpoint follows the current HTTP MCP authorization profile. OWD is the
+The MCP endpoint follows the current HTTP MCP authorization profile. MDevolved is the
 protected resource and issues audience-bound tokens after authenticating the
 owner with the existing passkey flow. Authorization uses PKCE, state and exact
 redirect validation, resource indicators, per-client consent, short-lived
-access tokens, and independently revocable refresh grants. OWD never forwards
+access tokens, and independently revocable refresh grants. MDevolved never forwards
 or accepts another service's token as authority to vault data.
 
 OAuth protocol artifacts live in a dedicated KV namespace, while D1 is the
@@ -305,10 +305,10 @@ prefix requires a new consent ceremony and cannot be inherited by existing
 refresh tokens. Consent and connection management show both the human-readable
 space and its exact vault/path boundaries.
 
-Hoplon and other external applications use the same OAuth/MCP path. OWD ignores
+Hoplon and other external applications use the same OAuth/MCP path. MDevolved ignores
 their organization membership and never accepts their session, provider token,
 service binding, or project identifier as vault authority. The application may
-retain its own isolated OAuth client state, but OWD authorizes every content
+retain its own isolated OAuth client state, but MDevolved authorizes every content
 call from the active D1 grant and revokes at that boundary.
 
 Project grants add explicit `project.read`, append-only collaboration or review
@@ -335,14 +335,14 @@ path failed to cascade a stored status update.
 Agent-first initialization also pins an owner-approved include/exclude policy
 as the Knowledge Space selector. The canonical `.owdignore` receipt contains
 the exact `projectId` and is Project-context policy, not a sync exclusion. A
-fresh task presents that full manifest to `resume_project`; OWD verifies the
+fresh task presents that full manifest to `resume_project`; MDevolved verifies the
 explicit Project identity, live source and Project grants, pinned version, and
 selector hash before returning the current Work Packet. Local policy drift
 cannot widen server authority and is surfaced as a stable failure rather than
 being silently accepted.
 
 An agent may separately have Obsidian CLI, shell, or filesystem access on the
-owner's machine. That capability is outside OWD's grant and can bypass the
+owner's machine. That capability is outside MDevolved's grant and can bypass the
 read-only MCP boundary, so it must never be inferred from Project access. The
 managed `AGENTS.md` block requires each agent to inspect the caller-specific
 `localVaultAccess` role returned by `resume_project`. The first agent that
@@ -353,7 +353,7 @@ and remains read-only. The human remains owner, every bounded write still
 requires owner instruction, all CLI operations put
 `vault=<exact vault name>` first and name the exact path, and ambiguous or
 overlapping responsibility stops for owner clarification. This warning is
-defense in depth, not an operating-system lock; enforceable OWD-originated note
+defense in depth, not an operating-system lock; enforceable MDevolved-originated note
 changes still require the proposal and expected-version path.
 
 Cross-computer Project discovery uses a distinct
@@ -361,7 +361,7 @@ Cross-computer Project discovery uses a distinct
 active Projects whose single-vault Knowledge Space is wholly contained by the
 caller's exact vault/folder grant and whose current Project, Work Item, and
 Knowledge Space versions remain valid. Routine packet expiry or source-library
-change cannot reveal or hide Project metadata; OWD refreshes current context
+change cannot reveal or hide Project metadata; MDevolved refreshes current context
 only after the full authorization and integrity checks. Discovery never returns
 private submissions or treats a label, local path, or agent claim as Project
 identity.
@@ -427,7 +427,7 @@ also closes active sockets with policy code `1008`.
   tool catalog narrow, excerpts and pages bounded, and `.obsidian` plus owner
   exclusions unavailable to the agent.
 - Disclose that once an authorized client sends content to its model provider,
-  OWD cannot enforce that provider's retention or training policy.
+  MDevolved cannot enforce that provider's retention or training policy.
 
 Materialized note objects use fresh generation/content-hash keys with no raw
 filename. R2 objects are written before D1 publication and are never
@@ -461,7 +461,7 @@ Skill evaluation cases are versioned separately from the candidate under test.
 The candidate cannot edit its own approval criteria, auto-promote on a score, or
 replace the prior stable version. Promotion, quarantine, deprecation, and
 rollback are owner-authorized events. A Hoplon Project or model comparison may
-produce evaluation evidence but is not an OWD approval authority.
+produce evaluation evidence but is not an MDevolved approval authority.
 
 ## Encryption and backup keys
 
@@ -482,7 +482,7 @@ is actively publishing.
 The `owd-snapshot-v2` design may split one logical snapshot across encrypted
 content objects. A new object receives randomized authenticated encryption and
 is verified before publication. An identical object may reference that exact
-verified ciphertext within the same owner/recipient boundary; OWD does not use
+verified ciphertext within the same owner/recipient boundary; MDevolved does not use
 convergent or deterministic encryption. The encrypted manifest binds every
 object's plaintext hash, ciphertext integrity metadata, logical section, and
 snapshot membership. Recipient rotation creates a new encryption boundary and
@@ -560,7 +560,7 @@ Batch mutations are atomic at the durable record boundary and carry an
 idempotency key plus canonical request hash. An exact replay returns its prior
 receipt. A key reused with a different payload is `idempotency_conflict`, never
 a second append. Capacity exhaustion is explicit bounded backpressure with
-retry metadata; OWD does not accept a client-supplied schedule, execute retries,
+retry metadata; MDevolved does not accept a client-supplied schedule, execute retries,
 or supervise provider processes. Cursor deltas are opaque, expiring, and bound
 to the exact grant, Project, Run, query, and sequence; cross-Run or altered
 cursors fail closed.
@@ -573,7 +573,7 @@ fence checks occur again at commit time, including when a batch races a lead
 takeover.
 
 Logical-unit and cost-microunit budgets are harness-reported durable evidence.
-An exhausted limit creates a blocking `budget-exhausted` Exception; OWD never
+An exhausted limit creates a blocking `budget-exhausted` Exception; MDevolved never
 estimates provider charges or treats a claimed cost as billing truth. Aggregate
 observations contain counts, retry/rejection totals, bounded p50/p95 latency,
 and timestamps only. They must not contain raw transcripts, hidden reasoning,
@@ -584,7 +584,7 @@ content by default.
 
 The Orca adapter accepts only bounded, inert worktree/branch/commit/PR/session
 references attached to a generic Run or Actor. Orca state is not an identity,
-authorization, scheduler, runtime, or recovery source. OWD does not invoke
+authorization, scheduler, runtime, or recovery source. MDevolved does not invoke
 Orca, import its conversations or terminal history, or inherit its permission
 settings. If Orca disappears, a non-Orca lead must use the generic Run
 snapshot/delta with fresh authorization; no Orca authority is reconstructed.

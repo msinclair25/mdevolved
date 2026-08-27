@@ -59,7 +59,7 @@
     },
     {
       "id": "MTR-008",
-      "title": "OWD pairing handler availability",
+      "title": "MDevolved pairing handler availability",
       "controls": [
         {
           "kind": "test",
@@ -520,7 +520,7 @@
     },
     {
       "id": "MTR-046",
-      "title": "Deterministic clean-macOS OWD Sync installation and BRAT recovery",
+      "title": "Deterministic clean-macOS MDevolved Sync for Obsidian installation and BRAT recovery",
       "controls": [
         {
           "kind": "static",

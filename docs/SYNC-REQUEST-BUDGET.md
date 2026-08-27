@@ -1,6 +1,6 @@
 # Sync control-plane request budget
 
-OWD Sync treats authentication and control-plane calls as a bounded resource.
+MDevolved Sync treats authentication and control-plane calls as a bounded resource.
 This contract applies to every desktop release and every Community or managed
 Worker deployment.
 

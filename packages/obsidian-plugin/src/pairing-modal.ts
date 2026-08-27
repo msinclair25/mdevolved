@@ -27,13 +27,13 @@ class OwdPairingLinkModal extends Modal {
     });
     contentEl.createEl("p", {
       cls: "mod-muted",
-      text: "Copy a short-lived pairing link from your OWD dashboard and paste it below. The link cannot open or select another vault.",
+      text: "Copy a short-lived pairing link from your MDevolved dashboard and paste it below. The link cannot open or select another vault.",
     });
 
     const input = contentEl.createEl("textarea", {
       cls: "owd-pairing-link-input",
       attr: {
-        "aria-label": "OWD pairing link",
+        "aria-label": "MDevolved pairing link",
         autocomplete: "off",
         placeholder: "owd-pair://connect?deployment=…&grant=…",
         rows: "4",

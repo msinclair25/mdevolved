@@ -52,11 +52,11 @@ export function recoveryWorkflowInstruction(
     case "validate":
       return "Both files are ready. Check them safely in this browser.";
     case "target":
-      return "Backup checked. Choose the destination vault.";
+      return "Backup checked. Choose the destination Source.";
     case "preview":
       return "Preparing the preview. The destination is still unchanged.";
     case "confirm":
-      return "Review what will change, then confirm the destination vault.";
+      return "Review what will change, then confirm the destination Source.";
     case "apply":
       return "Restoring the approved notes and checking the result.";
     case "failed":

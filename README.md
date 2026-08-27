@@ -25,13 +25,13 @@
   ·
   <a href="docs/SECURITY-MODEL.md">Trust model</a>
   ·
-  <a href="https://github.com/msinclair25/owd-sync">OWD Sync</a>
+  <a href="https://github.com/msinclair25/owd-sync">MDevolved Sync for Obsidian</a>
 </p>
 
 <p align="center">
   <a href="https://github.com/msinclair25/mdevolved/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/msinclair25/mdevolved/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-d7ff64.svg" /></a>
-  <a href="https://github.com/msinclair25/owd-sync/releases/tag/0.1.7"><img alt="OWD Sync 0.1.7" src="https://img.shields.io/badge/OWD%20Sync-0.1.7-90a5ff.svg" /></a>
+  <a href="https://github.com/msinclair25/owd-sync/releases/tag/0.1.7"><img alt="MDevolved Sync for Obsidian 0.1.7" src="https://img.shields.io/badge/MDevolved%20Sync%20for%20Obsidian-0.1.7-90a5ff.svg" /></a>
   <a href="docs/OBSIDIAN-MIND-COMPATIBILITY.md"><img alt="Obsidian Mind 8.3.1 profile" src="https://img.shields.io/badge/Obsidian%20Mind-8.3.1%20profile-90a5ff.svg" /></a>
   <a href="docs/EVE-COMPATIBILITY.md"><img alt="Eve.dev 0.29.4 profile" src="https://img.shields.io/badge/Eve.dev-0.29.4%20profile-90a5ff.svg" /></a>
   <a href="docs/ALBATROSS-COMPATIBILITY.md"><img alt="Albatross 2.0 profile" src="https://img.shields.io/badge/Albatross-2.0%20profile-90a5ff.svg" /></a>
@@ -241,7 +241,7 @@ Start with [policy autopilot](docs/POLICY-AUTOPILOT.md), the
 The technical compatibility protocol retains the OWD name and exposes one
 authenticated remote MCP server using Streamable HTTP and
 OAuth 2.1 with S256 PKCE. It implements the current MCP `2026-07-28` protocol
-and stateless `2025-11-25` compatibility. OWD-specific behavior is expressed
+and stateless `2025-11-25` compatibility. Legacy protocol-specific behavior is expressed
 through ordinary MCP Tools, Resources, and Prompts—not a custom transport or a
 client-side protocol fork. See the frozen [MCP compatibility
 matrix](docs/MCP-COMPATIBILITY.md).
@@ -278,7 +278,7 @@ The reviewed upstream versions, source commits, critical paths, and package
 integrities live in
 [`compatibility/upstreams.json`](compatibility/upstreams.json). A daily,
 low-noise monitor opens one rolling GitHub issue only when a newer upstream
-contract needs human review; it never silently advances an OWD compatibility
+contract needs human review; it never silently advances an MDevolved compatibility
 claim.
 
 ### Obsidian Mind: local intelligence, durable collaboration
@@ -287,7 +287,7 @@ Obsidian Mind turns an Obsidian Source into an active local knowledge system
 with graph search, scoped recall, reasoning, and capture. MDevolved gives
 selected work a durable, owner-approved Project record that can move between
 independently authorized agents without exposing the rest of the Source or
-flattening local memory into shared truth. Existing OWD identities and MCP
+flattening local memory into shared truth. Existing MDevolved identities and MCP
 connections remain compatible.
 
 - Keep Obsidian Mind's native `qmd` and `om` servers. MDevolved is added beside
@@ -324,14 +324,14 @@ explicit rather than assumed. See the
 ### Eve.dev: durable agents, portable Project memory
 
 Eve runs durable agent sessions, subagents, sandboxes, channels, and schedules.
-OWD gives that execution an owner-approved Project record that can survive the
+MDevolved gives that execution an owner-approved Project record that can survive the
 Eve session and become a cited head start for another independently authorized
 agent.
 
-- Copy one generated `agent/connections/owd.ts` module from the OWD dashboard.
+- Copy one generated `agent/connections/owd.ts` module from the MDevolved dashboard.
 - Authenticate through Eve's native user-scoped Vercel Connect flow—no static
-  token, proxy, custom transport, or OWD-specific tool-call protocol.
-- Discover the standard OWD tools as `owd__<tool>` and use the same
+  token, proxy, custom transport, or MDevolved-specific tool-call protocol.
+- Discover the standard MDevolved tools as `owd__<tool>` and use the same
   `open_project` → wait-if-needed → `resume_project` lifecycle.
 - Give every genuinely independent Eve reviewer a distinct connector identity,
   preserving real attribution instead of treating a renamed child as another
@@ -344,11 +344,11 @@ The profile is source-verified against Eve `0.29.4` and `@vercel/connect`
 ### Albatross: local execution, portable Project continuity
 
 Albatross is a local coding harness with open-weight model support, operator
-modes, checkpoints, resets, and parallel path exploration. OWD gives those
+modes, checkpoints, resets, and parallel path exploration. MDevolved gives those
 runs a cited Project record another independently authorized agent can resume.
 
-- Copy one generated setup kit from the OWD dashboard.
-- Pre-authorize the exact OWD client before Albatross starts, avoiding its
+- Copy one generated setup kit from the MDevolved dashboard.
+- Pre-authorize the exact MDevolved client before Albatross starts, avoiding its
   30-second MCP initialize limit.
 - Keep Albatross's native `agent.config.json`, tools, approvals, `/reset`, and
   `/path fork`; add only one MCP entry and one marked workspace-prompt block.
@@ -358,7 +358,7 @@ runs a cited Project record another independently authorized agent can resume.
   and OAuth authorization, preserving real attribution.
 
 Albatross `2.0.3` is currently stdio-only, so the profile pins the temporary
-`mcp-remote` `0.1.38` bridge. OWD remains ordinary remote Streamable HTTP MCP
+`mcp-remote` `0.1.38` bridge. MDevolved remains ordinary remote Streamable HTTP MCP
 with OAuth; there is no Albatross-only server or custom tool protocol. The
 profile is source-verified, while live Albatross acceptance remains explicit
 rather than assumed. See the
@@ -370,7 +370,7 @@ rather than assumed. See the
   are intentionally outside the current authorization model.
 - **Read-only agent context.** Every MCP vault call rechecks the live client,
   audience, vault, folder, scope, expiry, and revocation boundary.
-- **No hidden-conversation ingestion.** OWD stores durable contributions and
+- **No hidden-conversation ingestion.** MDevolved stores durable contributions and
   provenance, not provider transcripts or chain-of-thought.
 - **Owner Decisions remain distinct.** Agents can append contributions; they
   cannot approve their own work or silently promote it into owner truth.
@@ -398,7 +398,7 @@ synthetic alpha data.
 | Owner controls infrastructure and usage cost | Operator manages infrastructure, not vault truth |
 
 The managed model is not a shared multi-tenant vault database. Every owner cell
-has separate runtime and storage resources. A public OWD Cloud account,
+has separate runtime and storage resources. A public MDevolved Cloud account,
 billing system, and service-level offering are not generally available.
 
 See [Deployment Modes](docs/DEPLOYMENT-MODES.md) and
@@ -410,17 +410,17 @@ See [Deployment Modes](docs/DEPLOYMENT-MODES.md) and
 
 The deployment runs in your Cloudflare account. Review the
 [alpha limits](docs/ALPHA-STATUS.md), [security model](docs/SECURITY-MODEL.md),
-and [deployment boundary](docs/DEPLOYMENT-MODES.md) first. OWD never receives
+and [deployment boundary](docs/DEPLOYMENT-MODES.md) first. MDevolved never receives
 your Cloudflare credentials or recovery private key.
 
 ## Current alpha boundary
 
-The alpha is for learning whether OWD makes real cross-agent work materially
+The alpha is for learning whether MDevolved makes real cross-agent work materially
 easier while hardening Community deployment and upgrade behavior.
 
 - Use synthetic or disposable vaults; personal and production-vault adoption
   remains a later safety gate.
-- OWD Sync `0.1.7` is not yet in Obsidian Community Plugins. The OWD desktop
+- MDevolved Sync for Obsidian `0.1.7` is not yet in Obsidian Community Plugins. The MDevolved desktop
   installer is the primary alpha path; BRAT is a disclosed fallback.
 - Web mutation covers Markdown text and note creation. Rename, delete,
   attachment writes, and arbitrary `.obsidian` mutation are out of scope.
@@ -441,7 +441,7 @@ or [request managed alpha access](https://mdevolved.com/#alpha-access).
 
 - [Current alpha status](docs/ALPHA-STATUS.md)
 - [Agent-first quick start](docs/AGENT-FIRST-QUICKSTART.md)
-- [OWD Sync installation and pairing](https://github.com/msinclair25/owd-sync#readme)
+- [MDevolved Sync for Obsidian installation and pairing](https://github.com/msinclair25/owd-sync#readme)
 - [Deployment modes](docs/DEPLOYMENT-MODES.md)
 - [Public roadmap](docs/ROADMAP.md)
 
@@ -490,7 +490,7 @@ managed alpha users receive a pre-provisioned workspace instead.
 - `apps/worker` — Hono API, OAuth/MCP, storage, and orchestration
 - `apps/marketing` — independent [mdevolved.com](https://mdevolved.com) site
 - `packages/contracts` — shared runtime schemas
-- `packages/obsidian-plugin` — OWD Sync development source
+- `packages/obsidian-plugin` — MDevolved Sync for Obsidian development source
 - `packages/client-packs` — optional, protocol-neutral client profiles
 - `migrations` — append-only Community data-plane migrations
 - `docs` — product, architecture, security, compatibility, and release contracts

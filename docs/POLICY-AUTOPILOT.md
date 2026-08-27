@@ -1,7 +1,7 @@
 # Policy autopilot and operational continuity
 
-OWD R4 adds a deliberately small policy and continuity layer over the R1–R3
-Project, lead-lease, Run, evidence, checkpoint, and recovery services. OWD
+MDevolved R4 adds a deliberately small policy and continuity layer over the R1–R3
+Project, lead-lease, Run, evidence, checkpoint, and recovery services. MDevolved
 still does not plan work, supervise agents, execute tools, own worktrees,
 schedule inference, retry providers, or store provider runtime.
 
@@ -48,7 +48,7 @@ protected-path access, conflicting evidence, budget exhaustion, integrity
 failure, unsupported upgrade, and unsupported rollback are fixed
 exception-only actions. The lead may surface these actions and may continue
 only after an owner resolves an action that standing policy explicitly permits.
-OWD never performs the requested privileged or destructive work itself.
+MDevolved never performs the requested privileged or destructive work itself.
 
 The owner UI displays active/inactive bindings, the latest allow or Exception,
 pending operational requests, integrity state, continuity age, and the latest

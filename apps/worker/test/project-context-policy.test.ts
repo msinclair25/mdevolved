@@ -82,13 +82,13 @@ describe("Project context policy", () => {
       projectContextFileContent(compiled.policy, projectId),
     );
     expect(receipt.managedInstructionBlock).toContain(
-      "At the start of every new task",
+      "At the start of every task",
     );
     expect(receipt.managedInstructionBlock).toContain(
-      "first agent that establishes an OWD Project for this vault",
+      "first agent that establishes a Project",
     );
     expect(receipt.managedInstructionBlock).toContain(
-      "inspect `localVaultAccess.role`",
+      "current `localVaultAccess.role`",
     );
     expect(receipt.managedInstructionBlock).toContain(
       "writer role is **unconfirmed**",
@@ -104,7 +104,7 @@ describe("Project context policy", () => {
       "A different client must remain read-only",
     );
     expect(receipt.managedInstructionBlock).toContain(
-      "most-recently-focused vault",
+      "Target the exact vault and path",
     );
     expect(receipt.managedInstructionBlock).toContain(
       "`vault=<exact vault name>` first",
@@ -130,7 +130,7 @@ describe("Project context policy", () => {
       "unique Vercel Connect connector UID",
     );
     expect(receipt.managedInstructionBlock).toContain(
-      "Top-level schedules cannot borrow a user's OWD grant",
+      "Top-level schedules cannot borrow a user's MDevolved grant",
     );
     expect(receipt.managedInstructionBlock).toContain(
       "### Albatross compatibility",

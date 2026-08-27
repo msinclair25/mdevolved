@@ -95,7 +95,7 @@ function throwInitializationProblem(error: unknown): never {
       : status === 403
         ? "This connection cannot request Project setup or access."
         : error.code === "library_not_ready"
-          ? "OWD does not yet have an exact-current searchable library for this vault. Keep Obsidian open and retry shortly; if library status reports a failure, use Build now in OWD."
+          ? "MDevolved does not yet have an exact-current searchable library for this Source. Keep the Source sync client running and retry shortly; if library status reports a failure, use Build now in MDevolved."
           : error.code === "initialization_approval_in_progress"
             ? "This Project approval is already completing. Keep this page open; the agent can continue as soon as the in-flight approval finishes."
             : error.code === "project_already_exists"
@@ -297,7 +297,7 @@ export function registerProjectInitializationRoutes(
           throw new ApiProblem(
             503,
             "project_identity_unavailable",
-            "OWD could not reserve this Project identity.",
+            "MDevolved could not reserve this Project identity.",
           );
         }
 
@@ -311,7 +311,7 @@ export function registerProjectInitializationRoutes(
             throw new ApiProblem(
               503,
               "project_identity_unavailable",
-              "OWD could not read this Project identity reservation.",
+              "MDevolved could not read this Project identity reservation.",
             );
           }
 
@@ -393,7 +393,7 @@ export function registerProjectInitializationRoutes(
               throw new ApiProblem(
                 503,
                 "project_identity_unavailable",
-                "OWD created the Project but could not recover its durable identity receipt.",
+                "MDevolved created the Project but could not recover its durable identity receipt.",
               );
             }
             const creatorBound = boundProjectCreation(reservation);
@@ -404,7 +404,7 @@ export function registerProjectInitializationRoutes(
               throw new ApiProblem(
                 503,
                 "project_identity_unavailable",
-                "OWD created the Project but could not bind its durable identity receipt.",
+                "MDevolved created the Project but could not bind its durable identity receipt.",
               );
             }
             created = creatorBound;
@@ -426,7 +426,7 @@ export function registerProjectInitializationRoutes(
             throw new ApiProblem(
               409,
               "project_creation_in_progress",
-              "The same Project is being created by another approved agent request. Retry this approval once; OWD will attach it to that Project and will not create a duplicate.",
+              "The same Project is being created by another approved agent request. Retry this approval once; MDevolved will attach it to that Project and will not create a duplicate.",
             );
           }
           await waitForProjectCreation(delay);
@@ -530,7 +530,7 @@ export function registerProjectInitializationRoutes(
           throw new ApiProblem(
             409,
             "project_identity_conflict",
-            "OWD could not safely upgrade this legacy Project identity. Return to the same agent and open the existing Project; do not create a duplicate.",
+            "MDevolved could not safely upgrade this legacy Project identity. Return to the same agent and open the existing Project; do not create a duplicate.",
           );
         }
       }

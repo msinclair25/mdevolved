@@ -177,11 +177,11 @@ for (const value of forbiddenCopy) {
 if (
   normalizedAgents.includes("build its current searchable library") ||
   normalizedOnboardingContract.includes(
-    "Follow OWD's next action to build the note library",
+    "Follow MDevolved's next action to build the note library",
   ) ||
   normalizedQualityGates.includes("Build this vault's library") ||
   !normalizedAgents.includes(
-    "wait for OWD to publish its current searchable library automatically",
+    "wait for MDevolved to publish its current searchable library automatically",
   ) ||
   !normalizedQualityGates.includes(
     "wait for its library to publish automatically",
@@ -202,7 +202,7 @@ if (/^\s*CREATE\s+TRIGGER\b/imu.test(migration)) {
 }
 if (!versionAtLeast(pluginManifest.version, acceptedPluginBaseline)) {
   throw new Error(
-    `MTR-008 regression: OWD Sync must not move below the accepted 0.1.5 baseline; found ${String(pluginManifest.version)}.`,
+    `MTR-008 regression: MDevolved Sync must not move below the accepted 0.1.5 baseline; found ${String(pluginManifest.version)}.`,
   );
 }
 if (!zodAdapter.includes("z.config({ jitless: true });")) {
@@ -220,17 +220,15 @@ if (
   );
 }
 if (
-  !projectContextPolicy.includes(
-    "first agent that establishes an OWD Project for this vault",
-  ) ||
-  !projectContextPolicy.includes("inspect \\`localVaultAccess.role\\`") ||
+  !projectContextPolicy.includes("first agent that establishes a Project") ||
+  !projectContextPolicy.includes("current \\`localVaultAccess.role\\`") ||
   !projectContextPolicy.includes(
     "A \\`read-only-collaborator\\` must warn the owner",
   ) ||
   !projectContextPolicy.includes("writer role is **unconfirmed**") ||
   !projectContextPolicy.includes("**MDevolved resume project**") ||
   !projectContextPolicy.includes("**OWD resume project**") ||
-  !projectContextPolicy.includes("most-recently-focused vault") ||
+  !projectContextPolicy.includes("Target the exact vault and path") ||
   !projectContextPolicy.includes("vault=<exact vault name>") ||
   !projectContextPolicy.includes("not a filesystem lock") ||
   !mcpServer.includes("OWD_LOCAL_VAULT_WRITE_SUMMARY") ||

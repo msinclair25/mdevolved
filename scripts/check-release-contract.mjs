@@ -103,7 +103,7 @@ if (
   !normalizedMarketingSite.includes("No custom transport")
 ) {
   throw new Error(
-    "OWD public copy must keep the source-verified Eve.dev integration visible without claiming a custom transport or completed live acceptance.",
+    "MDevolved public copy must keep the source-verified Eve.dev integration visible without claiming a custom transport or completed live acceptance.",
   );
 }
 if (
@@ -119,7 +119,7 @@ if (
   !releaseCompatibility.includes("`0543226b800ee57659f200c1ef928925868c90c9`")
 ) {
   throw new Error(
-    "OWD public copy must keep the source-verified Albatross profile visible, pin its temporary bridge, and avoid claiming completed live acceptance.",
+    "MDevolved public copy must keep the source-verified Albatross profile visible, pin its temporary bridge, and avoid claiming completed live acceptance.",
   );
 }
 if (
@@ -162,10 +162,10 @@ if (
 if (
   !pluginReadme.includes("temporary direct desktop installer") ||
   pluginReadme.includes("/blob/main/docs/TRUSTED-TESTER-START.md") ||
-  pluginReadme.includes("deploys the private OWD Platform fork")
+  pluginReadme.includes("deploys the private MDevolved Platform fork")
 ) {
   throw new Error(
-    "OWD Sync alpha guidance must use the version-matched desktop installer without a private repository handoff.",
+    "MDevolved Sync alpha guidance must use the version-matched desktop installer without a private repository handoff.",
   );
 }
 if (
@@ -174,7 +174,7 @@ if (
   pluginSettings.includes(`${platformRepositoryUrl}/blob/`)
 ) {
   throw new Error(
-    `The future plugin Deploy OWD action must retain cloneable source ${platformRepositoryUrl}.`,
+    `The future plugin Deploy MDevolved action must retain cloneable source ${platformRepositoryUrl}.`,
   );
 }
 
@@ -238,7 +238,7 @@ if (
   pluginVersions[pluginManifest.version] !== pluginManifest.minAppVersion
 ) {
   throw new Error(
-    "OWD Sync package, manifest, and Obsidian minimum-version metadata disagree.",
+    "MDevolved Sync package, manifest, and Obsidian minimum-version metadata disagree.",
   );
 }
 if (
@@ -247,7 +247,7 @@ if (
   )
 ) {
   throw new Error(
-    "The tester installer must display the exact compatible OWD Sync version.",
+    "The tester installer must display the exact compatible MDevolved Sync version.",
   );
 }
 if (
@@ -256,7 +256,7 @@ if (
   !pluginPackager.includes("manifestVersion: manifest.version")
 ) {
   throw new Error(
-    "OWD Sync packaging must apply the tested namespace-aware tag policy.",
+    "MDevolved Sync packaging must apply the tested namespace-aware tag policy.",
   );
 }
 
@@ -283,7 +283,7 @@ if (
   packagedPluginManifest.version !== pluginManifest.version
 ) {
   throw new Error(
-    "The packaged OWD Sync release does not match the source plugin identity and version.",
+    "The packaged MDevolved Sync release does not match the source plugin identity and version.",
   );
 }
 if (
@@ -298,7 +298,7 @@ if (
   )
 ) {
   throw new Error(
-    "The web installer must bundle the exact versioned OWD Sync release asset set.",
+    "The web installer must bundle the exact versioned MDevolved Sync release asset set.",
   );
 }
 if (
@@ -311,10 +311,10 @@ if (
   )
 ) {
   throw new Error(
-    "An OWD Sync web-installer asset is empty, oversized, or disagrees with the packaged checksums.",
+    "An MDevolved Sync web-installer asset is empty, oversized, or disagrees with the packaged checksums.",
   );
 }
 
 console.log(
-  `Release contract verified: Community ${CORE_VERSION}, OWD Sync ${pluginManifest.version}, direct installer ${installerAssets.length} hashed assets.`,
+  `Release contract verified: Community ${CORE_VERSION}, MDevolved Sync ${pluginManifest.version}, direct installer ${installerAssets.length} hashed assets.`,
 );

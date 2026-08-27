@@ -34,7 +34,7 @@ describe("recovery key setup card", () => {
     expect(html).toContain("Create the key to your backups");
     expect(html).toContain("Encrypted backup");
     expect(html).toContain("Recovery key");
-    expect(html).toContain("Restorable vault");
+    expect(html).toContain("Restorable Source");
     expect(html).toContain("cannot recreate");
   });
 

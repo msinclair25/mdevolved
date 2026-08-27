@@ -117,7 +117,7 @@ function normalizeDeployment(value: string): URL {
     url = new URL(value);
   } catch {
     throw new OwdPairingError(
-      "The OWD pairing link has an invalid deployment URL.",
+      "The MDevolved pairing link has an invalid deployment URL.",
     );
   }
 
@@ -126,7 +126,7 @@ function normalizeDeployment(value: string): URL {
     ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
   if (url.protocol !== "https:" && !localHttp) {
     throw new OwdPairingError(
-      "OWD pairing requires HTTPS, except when using a local development server.",
+      "MDevolved pairing requires HTTPS, except when using a local development server.",
     );
   }
   if (
@@ -137,7 +137,7 @@ function normalizeDeployment(value: string): URL {
     url.hash
   ) {
     throw new OwdPairingError(
-      "The OWD pairing link has an invalid deployment origin.",
+      "The MDevolved pairing link has an invalid deployment origin.",
     );
   }
 
@@ -153,7 +153,7 @@ export function parseOwdPairingParameters(
 
   if (!isBase64Url(grant)) {
     throw new OwdPairingError(
-      "The OWD pairing link is incomplete or malformed. Generate a new link from your dashboard.",
+      "The MDevolved pairing link is incomplete or malformed. Generate a new link from your dashboard.",
     );
   }
 
@@ -171,7 +171,7 @@ export function parseObsidianPairingProtocol(
     !keys.includes("grant")
   ) {
     throw new OwdPairingError(
-      "The OWD pairing link is incomplete or malformed. Generate a new link from your dashboard.",
+      "The MDevolved pairing link is incomplete or malformed. Generate a new link from your dashboard.",
     );
   }
 
@@ -189,7 +189,7 @@ export function parseOwdPairingLink(value: string): OwdPairingParameters {
     hasControlCharacters(link)
   ) {
     throw new OwdPairingError(
-      "The OWD pairing link is incomplete or malformed. Generate a new link from your dashboard.",
+      "The MDevolved pairing link is incomplete or malformed. Generate a new link from your dashboard.",
     );
   }
 
@@ -198,7 +198,7 @@ export function parseOwdPairingLink(value: string): OwdPairingParameters {
     url = new URL(link);
   } catch {
     throw new OwdPairingError(
-      "The OWD pairing link is incomplete or malformed. Generate a new link from your dashboard.",
+      "The MDevolved pairing link is incomplete or malformed. Generate a new link from your dashboard.",
     );
   }
 
@@ -218,7 +218,7 @@ export function parseOwdPairingLink(value: string): OwdPairingParameters {
     !uniqueKeys.has("grant")
   ) {
     throw new OwdPairingError(
-      "The OWD pairing link is incomplete or malformed. Generate a new link from your dashboard.",
+      "The MDevolved pairing link is incomplete or malformed. Generate a new link from your dashboard.",
     );
   }
 
@@ -237,7 +237,7 @@ function parseConnection(
 ): OwdConnection {
   if (!isRecord(value)) {
     throw new OwdPairingError(
-      "The OWD deployment returned an invalid pairing response.",
+      "The MDevolved deployment returned an invalid pairing response.",
     );
   }
 
@@ -260,7 +260,7 @@ function parseConnection(
     Number(supported.max) < OWD_SCHEMA_VERSION
   ) {
     throw new OwdPairingError(
-      "The OWD deployment returned an invalid pairing response.",
+      "The MDevolved deployment returned an invalid pairing response.",
     );
   }
 
@@ -272,7 +272,7 @@ function parseConnection(
     (!isUuid(deviceId) || deviceId !== expectedDeviceId)
   ) {
     throw new OwdPairingError(
-      "The OWD deployment returned an invalid pairing response.",
+      "The MDevolved deployment returned an invalid pairing response.",
     );
   }
 
@@ -305,7 +305,7 @@ export async function pairOwdVault(
     hasControlCharacters(vaultName)
   ) {
     throw new OwdPairingError(
-      "This vault name cannot be used for OWD pairing.",
+      "This vault name cannot be used for MDevolved pairing.",
     );
   }
 
@@ -321,7 +321,7 @@ export async function pairOwdVault(
     hasControlCharacters(rootIdentity)
   ) {
     throw new OwdPairingError(
-      "This vault root cannot be used for OWD pairing.",
+      "This vault root cannot be used for MDevolved pairing.",
     );
   }
   const capabilities = ["markdown", "editor-integration", "watch"] as const;
@@ -340,7 +340,9 @@ export async function pairOwdVault(
     !isUuid(material.deviceId) ||
     !isUuid(material.idempotencyKey)
   ) {
-    throw new OwdPairingError("OWD could not create a safe device identity.");
+    throw new OwdPairingError(
+      "MDevolved could not create a safe device identity.",
+    );
   }
 
   const rootFingerprintSha256 = await sourceRootFingerprintSha256(rootIdentity);
@@ -392,8 +394,8 @@ export async function pairOwdVault(
   if (response.status !== 200) {
     throw new OwdPairingError(
       response.status === 400
-        ? "This pairing link is expired or has already been used. Generate a new link from your OWD dashboard."
-        : `OWD could not pair this vault (server status ${response.status}).`,
+        ? "This pairing link is expired or has already been used. Generate a new link from your MDevolved dashboard."
+        : `MDevolved could not pair this vault (server status ${response.status}).`,
     );
   }
 

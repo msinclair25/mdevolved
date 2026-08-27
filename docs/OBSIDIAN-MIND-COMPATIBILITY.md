@@ -1,6 +1,6 @@
 # Obsidian Mind compatibility profile
 
-OWD remains one client-neutral MCP Streamable HTTP server implementing current
+MDevolved remains one client-neutral MCP Streamable HTTP server implementing current
 `2026-07-28` requests and stateless `2025-11-25` compatibility, with OAuth
 discovery, S256 PKCE, resource indicators, standard Tools, Resources, and
 Prompts. Obsidian Mind support is a thin profile over that server—not a second
@@ -11,33 +11,33 @@ The reviewed upstream is
 [`breferrari/obsidian-mind`](https://github.com/breferrari/obsidian-mind) version
 `8.3.1` at commit
 `538522e4ea660cdc1265f8ef71ef43966e1d9a96`, reviewed 2026-07-31. Upstream is
-MIT-licensed. OWD copies no upstream executable source; the profile records
+MIT-licensed. MDevolved copies no upstream executable source; the profile records
 observed public conventions and links to the upstream repository.
 
 Version 8.3.1 is the recommended baseline for this dual-server profile. Its
 local `om` exposure path fixes case-insensitive `mcp_never_expose` matching,
 private frontmatter markers beyond the ordinary head window, and promoted-note
-resolution. These are protections on Mind's local server; OWD's independent
+resolution. These are protections on Mind's local server; MDevolved's independent
 server-side OAuth and vault boundary remain authoritative.
 
 ## Complementary topology
 
 | Layer                               | Authority and best use                                                                                                                  |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| OWD remote MCP                      | Owner OAuth consent, exact vault boundary, durable Project UUID, Work Packet, provenance, Decisions, Artifacts, and multi-agent handoff |
+| MDevolved remote MCP                | Owner OAuth consent, exact vault boundary, durable Project UUID, Work Packet, provenance, Decisions, Artifacts, and multi-agent handoff |
 | Obsidian Mind `om` stdio MCP        | Local graph search, project-scoped memory recall, cross-note reasoning, and owner-authorized local capture                              |
-| OWD Sync                            | Markdown content transport and current immutable OWD library                                                                            |
+| MDevolved Sync                      | Markdown content transport and current immutable MDevolved library                                                                      |
 | ShardMind/Git or upstream installer | Obsidian Mind scripts, hooks, templates, settings, Bases, and other runtime files                                                       |
 
-An agent connects to OWD and `om` side by side. OWD does not proxy `om`; `om`
-does not mint OWD authority. A raw `qmd` connection is retained inside the
+An agent connects to MDevolved and `om` side by side. MDevolved does not proxy `om`; `om`
+does not mint MDevolved authority. A raw `qmd` connection is retained inside the
 Obsidian Mind vault, while external repositories use `om` so its memory scope
 rules remain active.
 
 The dashboard's Claude command uses project scope:
 
 ```sh
-claude mcp add --transport http --scope project md-evolved 'https://YOUR-OWD/mcp'
+claude mcp add --transport http --scope project mdevolved 'https://YOUR-MDEVOLVED-HOST/mcp'
 ```
 
 Claude updates the existing `.mcp.json`; it must preserve the existing `qmd`
@@ -57,7 +57,7 @@ For a matching vault:
 
 - use `documentationPlan.decision = "keep-current-locations"` rather than
   moving Mind notes into `docs/`;
-- use the UUID in `.owdignore` for OWD Project identity and resume;
+- use the UUID in `.owdignore` for MDevolved Project identity and resume;
 - use `.om-project` only as Obsidian Mind's local memory-routing identity;
 - select the narrowest relevant concrete roots from `work/active`,
   `work/archive`, `work/incidents`, `work/1-1`, `org/people`, `org/teams`,
@@ -73,7 +73,7 @@ For a matching vault:
 Profile facts may narrow a proposed context. They never expand an OAuth grant,
 select a Project, approve a request, or replace server-side validation.
 
-OWD Sync `0.1.7` reports only a schema-validated descriptor. Once detected, an
+MDevolved Sync `0.1.7` reports only a schema-validated descriptor. Once detected, an
 ordinary sync that omits the descriptor does not silently clear it. The Worker
 intersects its content roots with the owner's OAuth folders and applies that
 effective boundary consistently to direct reads, FTS search, recent changes,
@@ -83,22 +83,22 @@ fresh projection has classified private frontmatter.
 
 ## Force-multiplier routing
 
-Use Mind for fast local cognition and OWD for durable collaboration:
+Use Mind for fast local cognition and MDevolved for durable collaboration:
 
-1. call OWD `resume_project` to obtain the current packet, exact provenance,
+1. call MDevolved `resume_project` to obtain the current packet, exact provenance,
    and caller-specific `localVaultAccess`;
 2. use Mind `search`, `expand`, and `recall` to find related local knowledge;
 3. use Mind `reason` when judgment across several local notes is worth the
    extra model call;
-4. produce and hand off work through the OWD Project so another client receives
+4. produce and hand off work through the MDevolved Project so another client receives
    the same durable state without a transcript; and
 5. write a local Mind record only when it adds a distinct vault-side value.
 
 Mind's `record_work` and `remember` are direct filesystem writes even though
-they arrive through MCP. They therefore obey OWD's single-writer coordination:
+they arrive through MCP. They therefore obey MDevolved's single-writer coordination:
 the `primary-writer` may perform an owner-requested bounded write; a
 `read-only-collaborator` must propose or hand off. A restarted process retains
-its role only through the same authorized OWD client; a different Mind
+its role only through the same authorized MDevolved client; a different Mind
 authorization remains read-only and the global Agents screen never promotes
 it.
 
@@ -112,7 +112,7 @@ The same versioned profile is available through:
   `owd://compatibility-profiles/obsidian-mind/v1`;
 - the standard MCP Prompt `connect-obsidian-mind`;
 - the dashboard's additive setup command and generic merge fragment; and
-- the managed OWD block inserted into Project `AGENTS.md`.
+- the managed MDevolved block inserted into Project `AGENTS.md`.
 
 At owner consent, a detected Mind vault prefills the concrete safe content
 roots. The owner may narrow those folders. Entering a broader folder cannot
@@ -131,24 +131,24 @@ This profile does not:
 - expose `memories/` as ordinary notes;
 - make `.om-project` an authorization identity;
 - let a second agent call Mind write tools merely because they are installed;
-- duplicate every record into OWD and Mind; or
+- duplicate every record into MDevolved and Mind; or
 - claim that advisory writer rules are a filesystem lock.
 
 The current transport and authorization requirements remain those in the
 [MCP 2026-07-28 transport specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports)
 and
 [MCP 2026-07-28 authorization specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization).
-OWD's legacy compatibility path remains bounded to the
+MDevolved's legacy compatibility path remains bounded to the
 [MCP 2025-11-25 transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
 and authorization baseline documented in [MCP compatibility](./MCP-COMPATIBILITY.md).
 
 ## Obsidian Mind 8.3 memory lifecycle
 
 Before implementation commits to an approach, carry the useful result of local
-Mind consultation into the OWD Artifact or Handoff: supporting Decisions,
+Mind consultation into the MDevolved Artifact or Handoff: supporting Decisions,
 contrary evidence, or an explicit statement that nothing applicable was
 recorded. That makes consultation durable and reviewable without copying Mind's
-private memory store into OWD.
+private memory store into MDevolved.
 
 When `remember` declares `scope: "general"`, include the optional `generality`
 rationale introduced in 8.2. Promotion into `brain/` is additive: copy the
@@ -157,5 +157,5 @@ block or heading anchor allows Mind 8.3 recall to serve the corrected promoted
 text. An unanchored, stale, private, never-exposed, or unreadable promotion
 falls back to the original capture with a warning; the promoted note remains
 the correction authority and wins any conflict. These are Obsidian Mind
-conventions and remain subject to OWD's advisory `localVaultAccess` writer
+conventions and remain subject to MDevolved's advisory `localVaultAccess` writer
 boundary.

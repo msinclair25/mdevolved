@@ -848,9 +848,8 @@ export function RestorePanel({
                 <p>
                   MDevolved asked you to save it before creating the backup. New
                   files look like <code>mdevolved-recovery-key-date.txt</code>.
-                  A legacy OWD backup may use{" "}
-                  <code>owd-recovery-key-date.txt</code> or{" "}
-                  <code>owd-recovery-identity-date.txt</code>.
+                  A legacy backup may use <code>owd-recovery-key-date.txt</code>{" "}
+                  or <code>owd-recovery-identity-date.txt</code>.
                 </p>
                 <p>
                   <strong>Can’t find it?</strong> Stop here. A replacement key

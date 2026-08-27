@@ -1,21 +1,21 @@
 # Storage, Compaction, and Cache Policy
 
-This document distinguishes the data OWD must preserve from the derived data it
+This document distinguishes the data MDevolved must preserve from the derived data it
 may compact, cache, rebuild, or retire. The goal is fast sync and agent access
 without turning a user's CPU, SSD, or Cloudflare account into an unbounded
 indexing system.
 
 ## Storage tiers
 
-| Layer                 | Role                                                    | Current policy                                                                                                                                    |
-| --------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Obsidian vault        | Owner's readable Markdown and attachments               | Canonical local files; never rewritten merely to optimize OWD                                                                                     |
-| Vault Durable Object  | Canonical live Yjs sync state                           | Per-vault, hibernating object; incremental journal plus verified checkpoints                                                                      |
-| D1/R2 library         | Current browse, search, MCP, and snapshot source        | Immutable derived generation; rebuildable from live state                                                                                         |
-| Encrypted R2 snapshot | Timestamped workspace recovery point                    | Logically complete, physically incremental, and encrypted with the owner-held identity                                                            |
-| Plugin indexes        | Avoid repeated disk reads and hashes                    | Derived `mtime`/size/hash metadata; resettable and repairable                                                                                     |
-| Project ledger        | Work Packets, submissions, Decisions, Knowledge, Skills | D1 relationships/events plus content-addressed R2 bodies; Approved records and optionally quarantined Unvetted records are recoverable owner data |
-| Agent working context | Harness-local conversation and bounded OWD packet views | Ephemeral or derived; never a replacement for cited source or accepted owner data                                                                 |
+| Layer                 | Role                                                          | Current policy                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Obsidian vault        | Owner's readable Markdown and attachments                     | Canonical local files; never rewritten merely to optimize MDevolved                                                                               |
+| Vault Durable Object  | Canonical live Yjs sync state                                 | Per-vault, hibernating object; incremental journal plus verified checkpoints                                                                      |
+| D1/R2 library         | Current browse, search, MCP, and snapshot source              | Immutable derived generation; rebuildable from live state                                                                                         |
+| Encrypted R2 snapshot | Timestamped workspace recovery point                          | Logically complete, physically incremental, and encrypted with the owner-held identity                                                            |
+| Plugin indexes        | Avoid repeated disk reads and hashes                          | Derived `mtime`/size/hash metadata; resettable and repairable                                                                                     |
+| Project ledger        | Work Packets, submissions, Decisions, Knowledge, Skills       | D1 relationships/events plus content-addressed R2 bodies; Approved records and optionally quarantined Unvetted records are recoverable owner data |
+| Agent working context | Harness-local conversation and bounded MDevolved packet views | Ephemeral or derived; never a replacement for cited source or accepted owner data                                                                 |
 
 ## What is already efficient
 
@@ -45,10 +45,10 @@ indexing system.
 
 ## Deliberate non-features
 
-- OWD does not maintain a second local plaintext copy of the vault.
-- OWD does not install a local embedding or reranking model by default.
-- OWD does not lossy-compress canonical notes or Yjs state into an agent summary.
-- OWD does not put authenticated note bodies into Cloudflare's shared Cache API.
+- MDevolved does not maintain a second local plaintext copy of the vault.
+- MDevolved does not install a local embedding or reranking model by default.
+- MDevolved does not lossy-compress canonical notes or Yjs state into an agent summary.
+- MDevolved does not put authenticated note bodies into Cloudflare's shared Cache API.
 
 A QMD/vector adapter can be optional later for users who want local semantic
 search, but its model downloads, disk index, CPU use, refresh schedule, and

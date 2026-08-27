@@ -81,7 +81,7 @@ Durable Object, and verify the reconstructed Yjs document. The WebSocket test
 uses the exact y-partyserver update frame and closes all sockets before
 eviction.
 
-The companion client lives in `packages/obsidian-plugin`. OWD-specific adapters
+The companion client lives in `packages/obsidian-plugin`. MDevolved-specific adapters
 are under `src`, while the reviewed upstream client is pinned under
 `vendor/yaos-src` and excluded from mechanical root lint/format rewrites. Use
 `pnpm build:plugin` for a production bundle and its security guard,

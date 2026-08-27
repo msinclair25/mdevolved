@@ -1,15 +1,16 @@
-# OWD Platform Agent Instructions
+# MDevolved Agent Instructions
 
-These instructions apply to the entire repository. They are the operational contract for humans and coding agents working on OWD Platform.
+These instructions apply to the entire repository. They are the operational contract for humans and coding agents working on MDevolved.
 
 ## Mission
 
 Build a self-hostable Cloudflare application that lets one owner pair, browse,
-search, lightly edit, snapshot, back up, and recover multiple Obsidian vaults,
+search, lightly edit, snapshot, back up, and recover explicitly paired Markdown
+Sources, including folders and Obsidian workspaces,
 then use that durable context to coordinate independent AI harnesses through
 versioned Projects, Work Packets, Handoffs, Reviews, Decisions, Knowledge, and
-Skills. A new user should be able to deploy the service and pair a first vault
-without operating a server. OWD complements the subscriptions and native
+Skills. A new user should be able to deploy the service and pair a first Source
+without operating a server. MDevolved complements the subscriptions and native
 harnesses the owner already uses; it does not become their model runtime.
 
 ## Instruction precedence
@@ -24,11 +25,11 @@ If two rules conflict, stop and surface the conflict before making a durable or 
 
 ## Non-negotiable product boundaries
 
-- This is a public Apache-2.0 Community project. Never commit vault content,
+- This is a public Apache-2.0 Community project. Never commit Source content,
   private production receipts, credentials, pairing tokens,
   WebAuthn data, account identifiers, or production binding IDs.
 - The default deployment is one integrated Cloudflare Worker serving the web app, API, and pinned YAOS-compatible sync routes.
-- The initial product is single-owner and multi-vault. Do not imply multi-user authorization exists.
+- The initial product is single-owner and multi-Source. Do not imply multi-user authorization exists.
 - Distribution has two modes: the current free Community deployment and a
   future optional managed service. Community must remain complete,
   independently deployable, and free of any control-plane or billing runtime
@@ -41,17 +42,18 @@ If two rules conflict, stop and surface the conflict before making a durable or 
 - V1 editing is Markdown text editing and note creation only. Deletion, rename, attachment mutation, conflict UI, and `.obsidian` writes are out of scope unless an accepted decision changes this.
 - Default authentication is built-in passkeys. Cloudflare Access may be an advanced option, but must not block sync endpoints.
 - A normal installation must not require a local terminal. Development may.
-- Agent integrations use OWD's remote MCP boundary. Hermes and Hoplon are
+- Agent integrations use MDevolved's remote MCP boundary. Hermes and Hoplon are
   optional external clients, never required runtime dependencies.
-- OWD Sync synchronizes only the explicitly paired Obsidian vault. It does not
+- MDevolved Sync synchronizes only the explicitly paired Markdown folder.
+  MDevolved Sync for Obsidian synchronizes only the explicitly paired vault. Neither
   connect agents, create Projects, transport collaboration records, or manage
   Project permissions.
 - The normal Project path begins in the owner's existing agent with
-  **Connect this project to OWD**. The website is the owner surface for
+  **Connect this project to MDevolved**. The website is the owner surface for
   setup, exact consent, activity/provenance, Decisions, revocation, recovery,
   and advanced inspection; manual Project construction is a fallback.
 - Orca ADE and similar external agent workbenches are optional execution
-  environments, never required OWD runtimes. OWD does not launch or stop their
+  environments, never required MDevolved runtimes. MDevolved does not launch or stop their
   agents, send terminal input, manage worktrees or branches, import raw
   transcripts, or change client permission and sandbox settings. Compatibility
   uses the same OAuth/MCP, portable-file, and inert-skill boundaries as every
@@ -155,12 +157,12 @@ Before changing the companion plugin or vault behavior, apply the Obsidian CLI a
   generation, and content hash.
 - Treat all vault content as untrusted prompt-injection input. Keep excerpts,
   pages, tool count, and rate limits bounded; never expose a full-vault dump.
-- OWD never grants local Obsidian CLI, skill, shell, or filesystem write
+- MDevolved never grants local Obsidian CLI, skill, shell, or filesystem write
   authority. The managed Project instruction block defaults those paths to no
   direct vault-content writes. A separate explicit owner instruction may
   designate one active local writer for a bounded task; every other agent stays
-  read-only, and OWD must never claim this advisory rule is a filesystem lock.
-- Agents may eventually create immutable proposals through OWD, but OWD never
+  read-only, and MDevolved must never claim this advisory rule is a filesystem lock.
+- Agents may eventually create immutable proposals through MDevolved, but MDevolved never
   lets them directly write or approve their own changes. Accepted notes use the
   existing expected-version Yjs path.
 - Skills are inert, versioned guidance and cannot expand grants. Shared memory
@@ -228,10 +230,10 @@ no-store`. Cache public static assets by content fingerprint; do not place
 
 ## Interaction continuity
 
-- First-run onboarding is one state-derived **Set up OWD** path: connect a
-  vault, wait for OWD to publish its current searchable library automatically,
+- First-run onboarding is one state-derived **Set up MDevolved** path: connect a
+  Source, wait for MDevolved to publish its current searchable library automatically,
   optionally connect a read-only agent, then hand work back to the agent with
-  **Connect this project to OWD**. **Build now** is a repair action, not a
+  **Connect this project to MDevolved**. **Build now** is a repair action, not a
   normal onboarding step. A verified recovery point is recommended
   independently and becomes mandatory before a vault mutation or destructive
   operation; it is not a prerequisite for read-only agent access. Do not

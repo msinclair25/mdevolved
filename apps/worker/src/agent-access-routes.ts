@@ -377,7 +377,7 @@ export function registerAgentAccessRoutes(app: Hono<AppBindings>): void {
       throw new ApiProblem(
         409,
         "vault_protection_required",
-        "OWD does not yet have an exact-current searchable library for this vault. Keep Obsidian open and retry shortly; if library status reports a failure, use Build now.",
+        "MDevolved does not yet have an exact-current searchable library for this Source. Keep the Source sync client running and retry shortly; if library status reports a failure, use Build now.",
       );
     }
     const client = await helpers.lookupClient(authRequest.clientId);
@@ -400,7 +400,7 @@ export function registerAgentAccessRoutes(app: Hono<AppBindings>): void {
         throw new ApiProblem(
           409,
           "project_authorization_ambiguous",
-          "More than one approved Project is waiting for this client. Open OWD, archive the unwanted duplicate, then retry authorization.",
+          "More than one approved Project is waiting for this client. Open MDevolved, archive the unwanted duplicate, then retry authorization.",
         );
       }
       if (pending === null) {
@@ -509,7 +509,7 @@ export function registerAgentAccessRoutes(app: Hono<AppBindings>): void {
         throw new ApiProblem(
           409,
           "vault_protection_required",
-          "OWD does not yet have an exact-current searchable library for this vault. Keep Obsidian open and retry shortly; if library status reports a failure, use Build now.",
+          "MDevolved does not yet have an exact-current searchable library for this Source. Keep the Source sync client running and retry shortly; if library status reports a failure, use Build now.",
         );
       }
       const prefixes = normalizePathPrefixes(parsed.data.pathPrefixes);
@@ -840,7 +840,7 @@ export function registerAgentAccessRoutes(app: Hono<AppBindings>): void {
         throw new ApiProblem(
           409,
           "project_handoff_unavailable",
-          "OWD could not prepare this active agent for the first Project.",
+          "MDevolved could not prepare this active agent for the first Project.",
         );
       }
       context.header("Cache-Control", "private, no-store");

@@ -19,7 +19,7 @@ interface SetupLinkControllerDeps {
 export class SetupLinkController {
 	constructor(private readonly deps: SetupLinkControllerDeps) {}
 
-	/** Apply a connection after OWD's explicit pre-exchange consent. */
+	/** Apply a connection after MDevolved's explicit pre-exchange consent. */
 	async applyOwdConnection(params: Record<string, string>): Promise<void> {
 		await this.handleSetupLink(params, { confirmVaultIdSwitch: false });
 	}

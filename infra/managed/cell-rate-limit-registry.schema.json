@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://owd.dev/schemas/managed-rate-limit-registry-v1.json",
-  "title": "OWD managed rate-limit registry v1",
-  "description": "Private account-scoped reservations that prevent rate-limit namespace reuse across isolated OWD cells.",
+  "title": "MDevolved managed rate-limit registry v1",
+  "description": "Private account-scoped reservations that prevent rate-limit namespace reuse across isolated MDevolved cells.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -1,12 +1,12 @@
 ---
 name: owd-albatross
-description: Connect, initialize, resume, or coordinate OWD Projects from Albatross using its agent.config.json stdio MCP surface, a pinned OAuth bridge, qualified tool names, workspace prompt continuity, path forks, resets, and independently attributable participant identities. Use when a repository runs Albatross, contains .albatross or agent.config.json, needs OWD MCP setup, or must resume OWD safely after /reset.
+description: Connect, initialize, resume, or coordinate MDevolved Projects from Albatross using its agent.config.json stdio MCP surface, a pinned OAuth bridge, qualified tool names, workspace prompt continuity, path forks, resets, and independently attributable participant identities. Use when a repository runs Albatross, contains .albatross or agent.config.json, needs MDevolved MCP setup, or must resume MDevolved safely after /reset.
 ---
 
-# OWD + Albatross
+# MDevolved + Albatross
 
-Keep one universal OWD server. Apply this profile only as Albatross-side
-configuration and instructions; never change OWD framing, OAuth, tool schemas,
+Keep one universal MDevolved server. Apply this profile only as Albatross-side
+configuration and instructions; never change MDevolved framing, OAuth, tool schemas,
 Project lifecycle, or server-side authority.
 
 ## Confirm the runtime
@@ -21,11 +21,11 @@ Project lifecycle, or server-side authority.
 
 Albatross `2.0.3` supports child-process stdio MCP only. Use the profile's
 pinned `mcp-remote@0.1.38` bridge with `--transport http-only`. This is a
-temporary client adapter, not an OWD proxy or protocol fork. Remove it when
+temporary client adapter, not an MDevolved proxy or protocol fork. Remove it when
 Albatross supports authenticated remote Streamable HTTP natively.
 
 Do not add a static bearer token, custom Project call, translated tool schema,
-client-side authorization rule, or a second OWD endpoint.
+client-side authorization rule, or a second MDevolved endpoint.
 
 ## Preserve participant identity
 
@@ -33,19 +33,19 @@ The bridge configuration includes a non-secret
 `X-OWD-Albatross-Participant` header. The pinned bridge includes custom headers
 in its OAuth cache key:
 
-- Reusing `primary` means the Albatross sessions are one OWD OAuth participant.
+- Reusing `primary` means the Albatross sessions are one MDevolved OAuth participant.
 - A genuinely independent writer or reviewer uses another safe ID such as
   `reviewer` and completes a separate authorization.
 - A new session, `/reset`, path fork, model, or display name using the same ID
-  is still the same OWD participant.
+  is still the same MDevolved participant.
 
 The header partitions local credential storage; it is not a credential and
-grants no access. OWD OAuth identity and live server-side grants remain
+grants no access. MDevolved OAuth identity and live server-side grants remain
 authoritative.
 
 ## Install without overwriting
 
-Prefer the authenticated OWD dashboard's **Copy Albatross setup kit** action.
+Prefer the authenticated MDevolved dashboard's **Copy Albatross setup kit** action.
 It generates one fresh, internally consistent participant ID across these
 steps. Choose **New participant ID** before copying a kit for another workspace
 or independently attributable reviewer.
@@ -73,13 +73,13 @@ OAuth material outside the workspace.
 
 Albatross ignores MCP initialize instructions, Resources, Prompts, and
 `structuredContent`, so `.albatross/prompt.md` carries the client-specific
-workflow and OWD text responses remain the compatible result surface.
+workflow and MDevolved text responses remain the compatible result surface.
 
 On a fresh task:
 
 1. Read `.owdignore`.
 2. If it exists, call `mcp__owd__resume_project` with its exact Project UUID
-   and complete context policy before any other OWD action.
+   and complete context policy before any other MDevolved action.
 3. Until resume returns, treat the writer role as unconfirmed.
 4. If no receipt exists, call `mcp__owd__connection_info`, then
    `mcp__owd__open_project` with the visible Project name supplied by the
@@ -89,52 +89,52 @@ On a fresh task:
    `timeoutSeconds: 20`.
 6. If still pending, repeat only the same wait. Never reconnect OAuth, repeat
    setup, rerun `open_project`, or create a duplicate Project.
-7. Persist the returned `.owdignore` receipt and replace only OWD's marked
+7. Persist the returned `.owdignore` receipt and replace only MDevolved's marked
    instruction blocks.
 
-After Albatross `/reset`, repeat the receipt-based resume as the first OWD
+After Albatross `/reset`, repeat the receipt-based resume as the first MDevolved
 action. `.albatross/continue.md` restores one Albatross runtime; it does not
-replace portable OWD Project continuity.
+replace portable MDevolved Project continuity.
 
 ## Turn Albatross execution into portable work
 
 Keep Albatross's private execution machinery local and promote only useful,
-cited results into OWD:
+cited results into MDevolved:
 
-- Start from the current OWD Work Packet before implementation.
+- Start from the current MDevolved Work Packet before implementation.
 - Treat `/iterate` candidates and `critique` results as internal Attempts.
-  Submit meaningful alternatives and the selected result as OWD Attempts or
+  Submit meaningful alternatives and the selected result as MDevolved Attempts or
   Artifacts; do not upload every private turn.
 - Keep `/auto` inside the current Work Packet, configured budget, and deadline.
-  Its automatic `/reset` must resume OWD before work continues. Stop if OWD
+  Its automatic `/reset` must resume MDevolved before work continues. Stop if MDevolved
   reports a stale packet, revoked grant, or policy mismatch.
 - Treat `/path fork` branches as alternative Attempts inside the same Project.
   Carry the winning path and contrary evidence into a cited Artifact.
-- Use an OWD Handoff when another agent should continue. Albatross checkpoints
+- Use an MDevolved Handoff when another agent should continue. Albatross checkpoints
   and `.albatross/continue.md` remain runtime recovery, not the cross-agent
   record.
 - Albatross review mode and built-in critique are self-evaluation when they use
-  the same participant ID. Submit an independent OWD Review only from a
+  the same participant ID. Submit an independent MDevolved Review only from a
   separately authorized reviewer identity.
 
 ## Coordinate paths and writes
 
 Treat each `/path fork` as an alternative Attempt or Artifact within the same
-OWD Project. Do not create one OWD Project per path. Carry useful results into
-an OWD Artifact or Handoff so another independent agent can resume them.
+MDevolved Project. Do not create one MDevolved Project per path. Carry useful results into
+an MDevolved Artifact or Handoff so another independent agent can resume them.
 
-Albatross tool approval confirms local execution only. It never replaces OWD
+Albatross tool approval confirms local execution only. It never replaces MDevolved
 OAuth, owner consent, exact vault and folder boundaries, Project grants, or
 revocation.
 
 Before Albatross writes through shell, filesystem, an Obsidian CLI, or another
-skill, resume OWD and obey the returned `localVaultAccess.role`:
+skill, resume MDevolved and obey the returned `localVaultAccess.role`:
 
 - `primary-writer`: perform only the owner-requested bounded write;
 - `read-only-collaborator`: propose or hand off instead of writing; and
-- restarted process: resume the exact Project through the same authorized OWD
+- restarted process: resume the exact Project through the same authorized MDevolved
   client to retain its role; a different authorization remains read-only and
   hands proposed changes to the human owner.
 
-OWD collaboration submissions are append-only Project records. They do not
+MDevolved collaboration submissions are append-only Project records. They do not
 grant local filesystem authority.

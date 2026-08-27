@@ -46,7 +46,7 @@ async function loadInstallerFiles(): Promise<InstallerFile[]> {
     pluginManifest.version !== OWD_SYNC_REQUIRED_VERSION
   ) {
     throw new Error(
-      "The packaged OWD Sync manifest does not match the web installer.",
+      "The packaged MDevolved Sync for Obsidian manifest does not match the web installer.",
     );
   }
 

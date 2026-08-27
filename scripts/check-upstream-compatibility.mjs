@@ -269,7 +269,7 @@ export function renderProfileReport(result) {
     `<!-- owd-upstream:${result.id} -->`,
     `# ${result.name} compatibility ${result.drift ? "review required" : "current"}`,
     "",
-    `OWD last reviewed this profile on **${result.reviewedAt}**.`,
+    `MDevolved last reviewed this profile on **${result.reviewedAt}**.`,
     "",
     "| Contract | Reviewed | Latest | Status |",
     "| --- | --- | --- | --- |",
@@ -304,7 +304,7 @@ export function renderProfileReport(result) {
     } else {
       lines.push(
         "",
-        "No configured compatibility-critical path changed, but the release pin still requires a human review before OWD advances its claim.",
+        "No configured compatibility-critical path changed, but the release pin still requires a human review before MDevolved advances its claim.",
       );
     }
   }
@@ -323,10 +323,10 @@ export function renderProfileReport(result) {
     "- [ ] Read the upstream release notes and complete source comparison.",
     "- [ ] Re-run the profile's deterministic contract tests.",
     "- [ ] Update the compatibility manifest, profile source, documentation, and badges together.",
-    "- [ ] Confirm OWD still uses its standard MCP transport, OAuth authority, and Project tools.",
+    "- [ ] Confirm MDevolved still uses its standard MCP transport, OAuth authority, and Project tools.",
     "- [ ] Merge the reviewed pin; this issue will close automatically on the next monitor run.",
     "",
-    "_This issue is maintained by `.github/workflows/upstream-compatibility.yml`. It never auto-advances an OWD compatibility claim._",
+    "_This issue is maintained by `.github/workflows/upstream-compatibility.yml`. It never auto-advances an MDevolved compatibility claim._",
   );
   return `${lines.join("\n")}\n`;
 }
@@ -434,7 +434,7 @@ async function writeSummary(results) {
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath === undefined) return;
   const body = [
-    "# OWD upstream compatibility",
+    "# MDevolved upstream compatibility",
     "",
     ...results.flatMap((result) => [
       `## ${result.name}`,

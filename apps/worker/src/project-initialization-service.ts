@@ -345,25 +345,25 @@ function unavailableProject(
 ): ProjectInspection {
   const nextActions: Record<ProjectUnavailableReason, string> = {
     "folder-scope-mismatch":
-      "This agent's approved folder does not include the Project sources. OWD cannot widen access silently. Approve a folder that includes this exact Project once in the agent's OWD connection, then retry the same Project.",
+      "This agent's approved folder does not include the Project sources. MDevolved cannot widen access silently. Approve a folder that includes this exact Project once in the agent's MDevolved connection, then retry the same Project.",
     "integrity-invalid":
-      "Open the Project in OWD and create a fresh continuation packet.",
+      "Open the Project in MDevolved and create a fresh continuation packet.",
     "multi-vault-project":
       "This Project uses more than one vault. Agent-first access currently requires one Project vault so every source is shown in one exact owner approval. Use a single-vault Project; do not create a duplicate just to bypass this boundary.",
     "packet-expired":
-      "Retry the Project request. OWD refreshes routine agent context automatically; no owner renewal is required.",
+      "Retry the Project request. MDevolved refreshes routine agent context automatically; no owner renewal is required.",
     "packet-missing":
-      "Open the Project in OWD and create its first continuation packet.",
+      "Open the Project in MDevolved and create its first continuation packet.",
     "packet-stale":
-      "This Project's pinned context changed. Repair this existing Project in OWD; do not initialize a replacement Project.",
+      "This Project's pinned context changed. Repair this existing Project in MDevolved; do not initialize a replacement Project.",
     "project-context-invalid":
-      "Open the Project in OWD and repair its Knowledge Space before connecting an agent.",
+      "Open the Project in MDevolved and repair its Knowledge Space before connecting an agent.",
     "source-unavailable":
-      "Restore or sync the missing cited note inside this Project's existing vault boundary, then retry the same Project. OWD rechecks the current library automatically; do not create a duplicate.",
+      "Restore or sync the missing cited note inside this Project's existing vault boundary, then retry the same Project. MDevolved rechecks the current library automatically; do not create a duplicate.",
     "vault-not-member":
-      "This local Project receipt belongs to a different approved vault boundary. Open the owner page to choose the Project's existing vault or retire the stale local receipt; OWD will not change Knowledge Space membership silently.",
+      "This local Project receipt belongs to a different approved vault boundary. Open the owner page to choose the Project's existing vault or retire the stale local receipt; MDevolved will not change Knowledge Space membership silently.",
     "work-item-closed":
-      "Open this exact Project in OWD and select Reopen current Work Item, then retry this same connection. Do not create a duplicate Project.",
+      "Open this exact Project in MDevolved and select Reopen current Work Item, then retry this same connection. Do not create a duplicate Project.",
   };
   return {
     loaded: null,
@@ -829,8 +829,8 @@ export async function listJoinableProjects(
         ? "Open this single compatible Project automatically. Ask only if the user explicitly named different work."
         : "More than one compatible Project exists. Ask the user to identify one by its visible name; never guess."
       : inspection.catalogComplete
-        ? "No compatible OWD Project exists in this exact vault and folder grant. Unavailable Project metadata stays private unless the user explicitly targets its receipt ID. Continue with a New Project draft; do not ask the user to choose between New and Existing."
-        : "No compatible OWD Project appeared in the bounded automatic scan. Continue with the exact user-named Project or a bounded New Project draft; open_project will check that exact identity across the catalog before creating anything. Unrelated Projects must not block this vault.",
+        ? "No compatible MDevolved Project exists in this exact vault and folder grant. Unavailable Project metadata stays private unless the user explicitly targets its receipt ID. Continue with a New Project draft; do not ask the user to choose between New and Existing."
+        : "No compatible MDevolved Project appeared in the bounded automatic scan. Continue with the exact user-named Project or a bounded New Project draft; open_project will check that exact identity across the catalog before creating anything. Unrelated Projects must not block this vault.",
     newProjectAllowed: true,
     projects: projects.map((value) => value.candidate),
     requiresExplicitChoice: projects.length > 1,
@@ -1543,7 +1543,7 @@ export async function requestProjectAccess(
     } catch {
       throw new ProjectInitializationProblem(
         "project_not_joinable",
-        "OWD could not refresh this existing Project's context automatically. Retry once; if the source document was removed or moved outside the Project boundary, repair that source in OWD.",
+        "MDevolved could not refresh this existing Project's context automatically. Retry once; if the source document was removed or moved outside the Project boundary, repair that source in MDevolved.",
       );
     }
   }
@@ -1556,7 +1556,7 @@ export async function requestProjectAccess(
   ) {
     throw new ProjectInitializationProblem(
       "project_not_joinable",
-      "OWD did not finish refreshing this existing Project's context. Retry once; no owner renewal is required.",
+      "MDevolved did not finish refreshing this existing Project's context. Retry once; no owner renewal is required.",
     );
   }
   const folderBoundary =

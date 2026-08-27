@@ -2,19 +2,19 @@
 
 **Format:** `owd-hermes-hands-off-adapter-v1`
 
-**Status:** inert, script-free guidance over the generic OWD MCP services
+**Status:** inert, script-free guidance over the generic MDevolved MCP services
 
 The same guidance is discoverable as the MCP resource
 `owd://adapters/hermes/hands-off/v1`.
 
 This adapter gives Hermes no executable code, credentials, provider state, or
 additional authority. It describes how an already authorized Project lead can
-map Hermes delegation onto OWD's provider-neutral R2 services. Other harnesses
+map Hermes delegation onto MDevolved's provider-neutral R2 services. Other harnesses
 use the same tools and durable contracts.
 
-This is a compatibility recipe, not an OWD runtime. OWD never schedules,
+This is a compatibility recipe, not an MDevolved runtime. MDevolved never schedules,
 launches, retries, supervises, or stops Hermes workers; Hermes owns that
-execution loop. OWD only persists the bounded Project, Run, Actor, evidence,
+execution loop. MDevolved only persists the bounded Project, Run, Actor, evidence,
 review, exception, and checkpoint records submitted by an authorized client.
 
 ## Preconditions
@@ -35,7 +35,7 @@ review, exception, and checkpoint records submitted by an authorized client.
 4. Call `get_run_context` with that worker's `actorId`, then give the worker the
    returned context. Do not send raw transcripts,
    hidden reasoning, terminal history, credentials, OAuth state, or runtime
-   caches to OWD.
+   caches to MDevolved.
 5. Call `submit_bundle` for bounded provisional results. Use
    `run-shared-unvetted`; it is visible only inside the exact Run and is never
    an owner Decision.
@@ -59,7 +59,7 @@ Requests for expanded authority, destructive action, or protected paths are
 recorded as Exceptions and are not executed. Budget exhaustion and conflicting
 evidence also block completion. Surface the Exception to the owner; do not
 retry it as authority, weaken the policy, create a replacement Project, or ask
-workers to bypass OWD.
+workers to bypass MDevolved.
 
 Explicit grant or lease revocation, Actor expiry, stale fencing, cross-Run or
 cross-Project identifiers, malformed bundles, and incompatible formats fail

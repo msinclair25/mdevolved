@@ -179,7 +179,7 @@ describe("hands-off lead operation UI", () => {
     expect(html).toContain("Standing policy not active");
     expect(html).toContain("Activate the fixed standing policy once");
     expect(html).toContain("routine requests do not need owner approval");
-    expect(html).toContain("Execution remains external to OWD");
+    expect(html).toContain("Execution remains external to MDevolved");
     expect(html).toContain("Community remains independent");
     expect(html).not.toContain("Cloudflare");
     expect(html).not.toContain("secret provider");

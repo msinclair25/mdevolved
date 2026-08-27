@@ -4,7 +4,7 @@ This guide describes the agent-first workflow shared by Community deployments
 and the invitation-only managed alpha. Community operators deploy from this
 public repository; managed users start from a pre-provisioned workspace
 invitation. MDevolved Sync synchronizes a selected Markdown folder; its optional
-Obsidian adapter retains the OWD Sync compatibility identity. MDevolved MCP
+Obsidian adapter retains the frozen `owd-sync` compatibility identity. MDevolved MCP
 gives an already-authorized agent explicitly approved access to durable Project
 memory. You continue working in your project folder, Obsidian workspace, and
 existing agent.
@@ -110,7 +110,7 @@ choices. Community operators see infrastructure only during deployment and
 maintenance. The direct local plugin installer is a temporary desktop-alpha
 path. BRAT is the unsupported-browser fallback: its deep link opens a
 prefilled form, but the user must still choose **Add Plugin**, wait for BRAT to
-finish, and enable MDevolved Sync for Obsidian (legacy plugin ID: OWD Sync).
+finish, and enable MDevolved Sync for Obsidian (legacy plugin ID: `owd-sync`).
 
 ## Set up the Project from the agent
 
@@ -166,7 +166,7 @@ included/excluded context remain reviewable. MDevolved does not guess which Mark
 is legitimate Project context. The owner can correct the proposed paths before
 approval. Include paths are an allowlist; exclusions win, including for future
 notes created under an included folder. The policy affects Project context
-only. It does not exclude notes from OWD Sync or encrypted recovery.
+only. It does not exclude notes from MDevolved Sync or encrypted recovery.
 
 If the selected Source is a recovery target, agent consent separately lists
 each named restore source and leaves it unchecked. Leave it unchecked unless
@@ -210,7 +210,7 @@ client's separate Project grant on the existing connection; it does not create
 or change the Project.
 
 The second computer does not need the Source on disk. Its agent reaches the
-approved server-side context through the OWD-compatible MCP after owner consent. The
+approved server-side context through the legacy-compatible MCP after owner consent. The
 durable Project ID—not a label, path, or remembered chat—is how both agents
 refer to the same Project.
 
@@ -241,17 +241,17 @@ After approval, the initializing agent receives two exact continuity artifacts:
 
 - `.owdignore`, a versioned JSON manifest containing the exact `projectId`,
   `includePaths`, and `excludePaths`; and
-- a bounded OWD-managed block for the project root `AGENTS.md`.
+- a bounded MDevolved-managed block for the project root `AGENTS.md`.
 
-The agent writes the exact `.owdignore` receipt and merges only the marked OWD
+The agent writes the exact `.owdignore` receipt and merges only the marked MDevolved
 block into `AGENTS.md`; it must preserve every existing project instruction.
 It never asks the owner to copy the receipt, Project ID, policy JSON, or
 instruction block.
 Codex reads the applicable `AGENTS.md` instruction chain at the start of a new
-task. The OWD block therefore tells a fresh task to read `.owdignore` and call
+task. The MDevolved block therefore tells a fresh task to read `.owdignore` and call
 `owd_resume` with its exact `projectId` before using prior Project context.
 
-That `owd_resume` call is the first OWD action when `.owdignore` exists. Until
+That `owd_resume` call is the first MDevolved action when `.owdignore` exists. Until
 it returns, the fresh session's writer role is **unconfirmed**—the agent must
 not claim that it is or is not primary from chat history, a new session
 identity, or local tool availability. The current `localVaultAccess.role` is
@@ -273,12 +273,12 @@ an owner-approved Knowledge Space change so MDevolved can issue a new pinned ver
 
 ## When an agent can also edit the vault
 
-An OWD connection does not grant write access, even when the same agent has an
+An MDevolved connection does not grant write access, even when the same agent has an
 Obsidian skill, Obsidian CLI, shell, or filesystem permission. Those local
-tools bypass OWD's read-only MCP boundary.
+tools bypass MDevolved's read-only MCP boundary.
 
 The human always remains the vault owner. The first agent that establishes an
-OWD Project for the vault becomes its primary vault writer across Projects.
+MDevolved Project for the vault becomes its primary vault writer across Projects.
 Every successful `open_project`, connection completion, and `owd_resume`
 returns that caller's advisory `localVaultAccess` role. The managed `AGENTS.md`
 block requires an agent to check that role before a local mutation.
@@ -286,7 +286,7 @@ block requires an agent to check that role before a local mutation.
 The primary writer may create or organize content only for an owner-requested
 bounded task or paths. Every later client receives
 `read-only-collaborator`, warns the owner before a direct write, and hands off
-proposed changes. A restarted session using the same OWD client retains the
+proposed changes. A restarted session using the same MDevolved client retains the
 role after `resume_project`. A different authorization remains read-only; the
 global Agents screen never promotes it. Agents do not infer a transfer from
 having Obsidian or filesystem tools, and they do not need to be disconnected to
@@ -295,7 +295,7 @@ remain read-only.
 Never give two agents overlapping write responsibility. The writer targets the
 exact vault and paths, putting `vault=<exact vault name>` first in every
 Obsidian CLI command instead of falling back to whichever vault was most
-recently focused. It then lets OWD Sync publish the bounded batch and reports
+recently focused. It then lets MDevolved Sync publish the bounded batch and reports
 completion before another bounded task begins. `localVaultAccess` and `AGENTS.md`
 warn and coordinate compliant agents; they are not a filesystem lock. If the
 role, scope, or overlap is unclear, the agent stops and asks.

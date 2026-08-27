@@ -211,7 +211,7 @@ function resumeMarkdown(
     : "";
   const contextData =
     workingProfile === undefined ? context : { ...context, workingProfile };
-  const markdown = `# OWD Project Context\n\n## Context data\n\n    ${canonicalizeCollaborationJson(contextData)}\n${disclosure}`;
+  const markdown = `# MDevolved Project Context\n\n## Context data\n\n    ${canonicalizeCollaborationJson(contextData)}\n${disclosure}`;
   if (utf8Bytes(markdown) >= RESUME_MARKDOWN_MAX_BYTES) {
     throw new CollaborationProblem("submission_too_large");
   }
@@ -1124,7 +1124,7 @@ export async function getAgentMemorySkill(
     projectId: request.projectId,
     skill,
   };
-  const markdown = `# OWD Inert Skill Package\n\n    ${canonicalizeCollaborationJson(packageValue)}`;
+  const markdown = `# MDevolved Inert Skill Package\n\n    ${canonicalizeCollaborationJson(packageValue)}`;
   if (utf8Bytes(markdown) > GET_SKILL_MARKDOWN_MAX_BYTES) {
     throw new CollaborationProblem("submission_too_large");
   }
@@ -1244,7 +1244,7 @@ function serializeFindMarkdown(input: {
     input.citations.map((citation) => [citation.citationId, citation]),
   );
   const lines = [
-    "# OWD Find",
+    "# MDevolved Find",
     "",
     "## Query data",
     "",

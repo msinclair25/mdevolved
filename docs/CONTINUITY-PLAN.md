@@ -1,4 +1,4 @@
-# OWD agent-native product plan
+# MDevolved agent-native product plan
 
 **Status:** R1-R4 continuity infrastructure is complete and remains a hidden
 foundation. M1-M4 are verified, merged, and deployed to the persistent
@@ -8,10 +8,10 @@ Community alpha.
 
 ## Product promise
 
-> Connect OWD once, and every AI starts with the right project memory,
+> Connect MDevolved once, and every AI starts with the right project memory,
 > preferences, skills, evidence, and next step.
 
-OWD should make successful project work compound across sessions and AI tools.
+MDevolved should make successful project work compound across sessions and AI tools.
 It is not an agent runtime, scheduler, worktree manager, model router, or
 replacement for Codex, Claude, Cursor, Hermes, Orca, or future harnesses.
 
@@ -45,7 +45,7 @@ Resume relevant context
   -> improve the next resume
 ```
 
-OWD exposes this loop through three plain agent operations:
+MDevolved exposes this loop through three plain agent operations:
 
 ### `owd_resume(project, task?, contextMode?, acceptedContextVersions?)`
 
@@ -67,7 +67,7 @@ negotiation, not a provider-specific profile toggle.
 `focused` is the default context mode. `independent` returns the shared
 objective, scope, sources, constraints, and definition of done while withholding
 peer conclusions and provisional results. `synthesis` may include separately
-attributable submitted results for comparison. OWD records the bounded context
+attributable submitted results for comparison. MDevolved records the bounded context
 version supplied to the agent; it never treats hidden reasoning as context.
 
 ### `owd_find(question)`
@@ -88,7 +88,7 @@ bound to the exact frozen packet and stays separately attributable.
 These names describe the product contract. Adapters may map them onto existing
 versioned services while current clients remain compatible.
 
-## What OWD remembers
+## What MDevolved remembers
 
 | Layer                | Purpose                                                    | Typical scope                 |
 | -------------------- | ---------------------------------------------------------- | ----------------------------- |
@@ -104,13 +104,13 @@ terminal history, and runtime state are never memory.
 
 ## Portable skills
 
-OWD uses the open Agent Skills `SKILL.md` format rather than inventing a skill
+MDevolved uses the open Agent Skills `SKILL.md` format rather than inventing a skill
 language. It may import, store, version, attach, retrieve, and export a skill
 plus its supporting files.
 
-OWD does not execute skill scripts or grant their requested tools. Each harness
+MDevolved does not execute skill scripts or grant their requested tools. Each harness
 decides how a skill is loaded and executed under its own permission model. An
-OWD adapter may generate disposable `AGENTS.md`, `CLAUDE.md`, Cursor-rule, or
+MDevolved adapter may generate disposable `AGENTS.md`, `CLAUDE.md`, Cursor-rule, or
 Hermes references, but those formats do not become required durable state.
 
 Only skill descriptions enter the initial resume context. Full skill contents
@@ -118,10 +118,10 @@ load on demand when the task needs them.
 
 ## Compounding without clutter
 
-OWD improves future context from small structured checkpoints, not from storing
+MDevolved improves future context from small structured checkpoints, not from storing
 entire conversations.
 
-When the same instruction or successful practice recurs, OWD may create a
+When the same instruction or successful practice recurs, MDevolved may create a
 non-blocking draft such as:
 
 > You have asked several agents to use pnpm and avoid new dependencies. Save
@@ -133,7 +133,7 @@ or:
 > skill?
 
 Suggestions never interrupt work. The owner can accept, edit, ignore, or later
-delete them. OWD must not claim that correlation proves a preference or that a
+delete them. MDevolved must not claim that correlation proves a preference or that a
 skill caused success.
 
 ## Agent experience requirements
@@ -142,7 +142,7 @@ skill caused success.
 - A short bootstrap instruction tells agents to resume before meaningful work,
   find prior knowledge when needed, and checkpoint before finishing.
 - Tool names, descriptions, inputs, outputs, and errors must be understandable
-  without OWD documentation or internal schema knowledge.
+  without MDevolved documentation or internal schema knowledge.
 - Resume output must be bounded, predictable, cited, and useful as Markdown as
   well as structured data.
 - Writes must be idempotent; retrying a checkpoint cannot duplicate memory.
@@ -175,7 +175,7 @@ advanced diagnostics without becoming product vocabulary.
 
 ## Responsibility boundary
 
-| OWD owns                                     | The execution harness owns                      |
+| MDevolved owns                               | The execution harness owns                      |
 | -------------------------------------------- | ----------------------------------------------- |
 | Portable preferences and Project memory      | Model and agent loop                            |
 | Skill packages and Project attachments       | Skill selection and execution                   |
@@ -265,7 +265,7 @@ review accepted the remediated candidate with no open finding.
 ### M4 — Minimum lovable release
 
 **Outcome:** A new multi-AI user experiences the cross-agent continuation
-moment without understanding OWD internals.
+moment without understanding MDevolved internals.
 
 **Build:** Finish agent-led onboarding, Project brief editing, simple Memory and
 Skills surfaces, cross-harness setup recipes, a synthetic demonstration
@@ -311,7 +311,7 @@ or new managed-service dependency was involved.
 - Verified checkpoints that improve a later resume.
 - Continued use across two or more AI harnesses.
 
-OWD should measure outcomes and corrections, not tokens stored, records
+MDevolved should measure outcomes and corrections, not tokens stored, records
 created, actors registered, or automation volume.
 
 ## Automated acceptance and delivery
@@ -330,7 +330,7 @@ release gates.
 
 ## Explicit non-goals
 
-- Building an OWD agent, planner, scheduler, model router, terminal, browser,
+- Building an MDevolved agent, planner, scheduler, model router, terminal, browser,
   worktree manager, or retry engine.
 - Competing with Hermes, Codex, Claude, Cursor, Orca, or their memory systems.
 - Ingesting raw transcripts, hidden reasoning, terminal history, runtime state,
@@ -357,7 +357,7 @@ story. Historical R4 acceptance evidence remains in
 
 M4 is closed at the boundary where a new user can connect a supported harness,
 understand and edit the Project brief, experience a synthetic cross-agent
-continuation, review Memory and Skills without learning OWD internals, and see
+continuation, review Memory and Skills without learning MDevolved internals, and see
 privacy-safe outcome feedback through an accessible Community deployment path.
 Further orchestration, policy automation, or managed-service expansion requires
 a fresh task and acceptance decision.

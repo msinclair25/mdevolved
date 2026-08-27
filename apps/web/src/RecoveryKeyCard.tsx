@@ -95,16 +95,17 @@ export function RecoveryKeyCard({
             <>
               <h3>Confirm the downloaded key.</h3>
               <p>
-                OWD asked your browser to download {pending.filename} (
+                MDevolved asked your browser to download {pending.filename} (
                 {pending.byteLength.toLocaleString()} bytes) through its normal
-                Downloads flow. OWD has not assumed where the browser placed it.
+                Downloads flow. MDevolved has not assumed where the browser
+                placed it.
               </p>
               <ol className="recovery-key-checklist">
                 <li>Keep this small `.txt` file private.</li>
                 <li>Save a second copy somewhere you can recover later.</li>
                 <li>
-                  Find the exact timestamped file and choose it below. OWD will
-                  read and verify it locally.
+                  Find the exact timestamped file and choose it below. MDevolved
+                  will read and verify it locally.
                 </li>
               </ol>
               {configured ? (
@@ -144,9 +145,10 @@ export function RecoveryKeyCard({
             <>
               <h3>Download your recovery key now.</h3>
               <p>
-                OWD uses the browser&apos;s normal Downloads flow and does not
-                call the native save-location API. OWD will not claim the key is
-                safely kept until you select and verify the downloaded file.
+                MDevolved uses the browser&apos;s normal Downloads flow and does
+                not call the native save-location API. MDevolved will not claim
+                the key is safely kept until you select and verify the
+                downloaded file.
               </p>
               <div
                 className="recovery-key-equation"
@@ -156,7 +158,7 @@ export function RecoveryKeyCard({
                 <b aria-hidden="true">+</b>
                 <span>Recovery key</span>
                 <b aria-hidden="true">=</b>
-                <strong>Restorable vault</strong>
+                <strong>Restorable Source</strong>
               </div>
               <p>
                 File: {pending.filename} ({pending.byteLength.toLocaleString()}{" "}
@@ -195,14 +197,14 @@ export function RecoveryKeyCard({
           <h3>Create the key to your backups.</h3>
           <p>
             This is a small private file you keep. You only need it when
-            restoring a backup, and OWD cannot recreate it for you.
+            restoring a backup, and MDevolved cannot recreate it for you.
           </p>
           <div className="recovery-key-equation" aria-label="Recovery model">
             <span>Encrypted backup</span>
             <b aria-hidden="true">+</b>
             <span>Recovery key</span>
             <b aria-hidden="true">=</b>
-            <strong>Restorable vault</strong>
+            <strong>Restorable Source</strong>
           </div>
           <button
             className="primary-action"
@@ -217,8 +219,8 @@ export function RecoveryKeyCard({
         <>
           <h3>Confirm you still have your recovery key.</h3>
           <p>
-            Choose the small `.txt` file you saved during setup. OWD checks it
-            only in this browser and never uploads it.
+            Choose the small `.txt` file you saved during setup. MDevolved
+            checks it only in this browser and never uploads it.
           </p>
           {keyPicker}
           <details className="recovery-key-help">
@@ -248,8 +250,8 @@ export function RecoveryKeyCard({
         <>
           <h3>Recovery key ready.</h3>
           <p>
-            OWD confirmed that you still have the key needed to restore new
-            backups. You can safely continue to step 2.
+            MDevolved confirmed that you still have the key needed to restore
+            new backups. You can safely continue to step 2.
           </p>
           <div className="recovery-key-ready" aria-live="polite">
             <strong>Ready for backup</strong>

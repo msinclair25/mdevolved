@@ -101,7 +101,7 @@ function throwContentProblem(code: VaultContentFailureCode): never {
       throw new ApiProblem(
         426,
         code,
-        "Update OWD Sync and reconnect this vault before editing from the web.",
+        "Update MDevolved Sync and reconnect this vault before editing from the web.",
       );
     case "note_too_large":
     case "generation_too_large":

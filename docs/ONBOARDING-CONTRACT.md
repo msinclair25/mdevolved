@@ -35,9 +35,9 @@ quit Obsidian with **Obsidian → Quit Obsidian** or **⌘Q** because closing
 the window does not quit the app. It distinguishes a waiting Chrome folder
 picker from an active verified install, reports cancellation as “nothing
 changed,” and gives named recovery for permission or write failures. The BRAT
-fallback is pinned to the compatible OWD Sync version and says that its deep
+fallback is pinned to the compatible MDevolved Sync version and says that its deep
 link opens a form; the user must still choose **Add Plugin**, wait for BRAT,
-and enable OWD Sync. Direct install and BRAT are never presented as simultaneous
+and enable MDevolved Sync. Direct install and BRAT are never presented as simultaneous
 steps.
 
 Recovery is tracked beside this path, not inside it. MDevolved recommends a verified
@@ -94,7 +94,7 @@ understand “materialization” or service library freshness.
 
 **Build now** and **Refresh now** are immediate repair actions. When retained
 history exists but does not match current sync state, the UI labels it stale
-while OWD prepares the successor automatically. Agents, search tools, Project
+while MDevolved prepares the successor automatically. Agents, search tools, Project
 initialization, and snapshots cannot treat it as current.
 
 ## Ordinary work after setup
@@ -113,7 +113,7 @@ back to checkpoint unchanged. Focused and synthesis stale memory fails closed;
 independent work remains bound to the exact frozen packet. These are
 agent-handled receipts, never a human approval step.
 
-The owner retains root authority and may revoke immediately. OWD does not grant
+The owner retains root authority and may revoke immediately. MDevolved does not grant
 local shell, skill, Obsidian CLI, or filesystem access. Packet renewal, leases,
 fencing, Runs, and continuity internals are advanced compatibility concerns,
 not routine owner work.
@@ -137,13 +137,13 @@ not routine owner work.
   name one creation identity. Sequential and concurrent approvals converge on
   the creator's exact durable Project receipt; a later caller cannot create a
   second Project through a race.
-- If another request is already creating that identity, OWD waits briefly for
+- If another request is already creating that identity, MDevolved waits briefly for
   its durable receipt and attaches the caller to the resulting Project. A
   different creation contract fails closed and directs the agent to the
   existing Project instead of guessing or duplicating it.
 - A changed semantic request is a new request and requires exact consent.
 - A pending request is visible as **Review and approve Project** without a
-  reload. OWD mints a short-lived owner-only alias after passkey authentication;
+  reload. MDevolved mints a short-lived owner-only alias after passkey authentication;
   it does not store the raw agent token.
 - A one-time request remains open for one hour. Repeating the exact expired
   idempotent request renews it rather than creating a duplicate.
@@ -177,7 +177,7 @@ corresponding authorization is revoked.
 
 ## Duplicates
 
-OWD never silently deletes or merges Projects. The lifecycle dashboard displays
+MDevolved never silently deletes or merges Projects. The lifecycle dashboard displays
 the full Project ID, source vault IDs, record count, active grants, packet
 state, and last activity. When historical duplicates are found:
 
@@ -208,5 +208,5 @@ content, credentials, Project labels, Project objectives, and client origins.
 ## Release rule
 
 Onboarding changes are incomplete until the same source release, migration
-chain, compatible OWD Sync package, and verification suite are applied to every
+chain, compatible MDevolved Sync package, and verification suite are applied to every
 live deployment and retained trial template.

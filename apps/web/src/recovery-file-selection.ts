@@ -72,7 +72,7 @@ export function validateRecoveryFile(
   const maximumBytes =
     kind === "backup" ? MAX_PORTABLE_BACKUP_BYTES : MAX_RECOVERY_IDENTITY_BYTES;
   if (file.size > maximumBytes) {
-    return `The selected ${fileDescription[kind]} file is larger than OWD's recovery limit.`;
+    return `The selected ${fileDescription[kind]} file is larger than MDevolved's recovery limit.`;
   }
   return null;
 }

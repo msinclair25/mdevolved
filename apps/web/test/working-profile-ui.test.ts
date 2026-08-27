@@ -49,7 +49,7 @@ describe("Project Working Profile UI", () => {
     expect(html).toContain("Memory &amp; Skills");
     expect(html).toContain("Personal");
     expect(html).toContain("This Project");
-    expect(html).toContain("never executed by OWD");
+    expect(html).toContain("never executed by MDevolved");
     expect(html).toContain("grants no authority or tools");
     expect(html).toContain("Validate and import skill");
     expect(WorkingProfilePanel.toString()).toContain('role: "alert"');

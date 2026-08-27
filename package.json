@@ -62,6 +62,8 @@
     "test:md5:acceptance": "node --test scripts/md5-brand-transition.test.mjs && pnpm test:md4:acceptance && vitest run apps/web/test/workspace-navigation.test.ts apps/web/test/plugin-setup-guide.test.ts apps/web/test/obsidian-plugin-installer.test.ts apps/web/test/obsidian-plugin-links.test.ts apps/web/test/vault-presentation.test.ts --config vitest.config.ts && pnpm test:marketing && pnpm release:check",
     "test:md6:acceptance": "pnpm check && pnpm test:migrations && pnpm test && pnpm test:e2e && pnpm build && pnpm deploy:dry-run && pnpm deploy:marketing:dry-run && pnpm test:md6:clients && pnpm public-source:check",
     "test:md6:clients": "pnpm --filter @owd/yaos-core test && pnpm --filter @owd/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @owd/desktop test && pnpm --filter @owd/obsidian-plugin test && pnpm test:continuity:harness && pnpm test:clean-install:mdevolved && pnpm test:desktop:e2e",
+    "test:md7:brand": "node --test scripts/md5-brand-transition.test.mjs scripts/md7-brand-completion.test.mjs",
+    "test:md7:acceptance": "pnpm test:md7:brand && pnpm test:md6:acceptance",
     "test:desktop:e2e": "pnpm --filter @owd/desktop package && pnpm --filter @owd/desktop test:e2e",
     "test:e2e": "playwright test",
     "test:integration": "vitest run --config vitest.config.ts",

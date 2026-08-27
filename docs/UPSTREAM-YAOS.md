@@ -1,6 +1,6 @@
 # Upstream YAOS Policy
 
-OWD Platform reuses a reviewed and pinned subset of YAOS. Upstream is a dependency with a compatibility boundary, not an automatically merged code stream.
+MDevolved Platform reuses a reviewed and pinned subset of YAOS. Upstream is a dependency with a compatibility boundary, not an automatically merged code stream.
 
 ## Current pin
 
@@ -18,7 +18,7 @@ OWD Platform reuses a reviewed and pinned subset of YAOS. Upstream is a dependen
 - Record the exact upstream repository, commit, license, and imported paths.
 - Preserve copyright and license notices in `NOTICE` and vendored directories.
 - Keep adaptations small and documented.
-- Separate upstream code from OWD-specific authentication, provisioning, UI, and backup behavior.
+- Separate upstream code from MDevolved-specific authentication, provisioning, UI, and backup behavior.
 - Do not import examples, deployment credentials, telemetry, or unrelated tooling.
 
 ## Compatibility contract

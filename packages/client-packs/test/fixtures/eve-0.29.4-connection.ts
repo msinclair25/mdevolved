@@ -6,7 +6,7 @@ const owdMcpUrl = "https://private-deployment.example/mcp";
 export default defineMcpClientConnection({
   url: owdMcpUrl,
   description:
-    "OWD owner-approved Obsidian knowledge and durable cross-agent Projects. Use it to connect, resume, read bounded context, and exchange cited handoffs.",
+    "MDevolved owner-approved Obsidian knowledge and durable cross-agent Projects. Use it to connect, resume, read bounded context, and exchange cited handoffs.",
   auth: connect({
     connector: "oauth/owd",
     principalType: "user",
@@ -19,8 +19,8 @@ export default defineMcpClientConnection({
       resources: [owdMcpUrl],
     },
     autoProvision: true,
-    displayName: "OWD",
+    displayName: "MDevolved",
     instructions:
-      "Open OWD, verify this eve agent and the exact vault and folder boundary, then approve to continue.",
+      "Open MDevolved, verify this eve agent and the exact vault and folder boundary, then approve to continue.",
   }),
 });

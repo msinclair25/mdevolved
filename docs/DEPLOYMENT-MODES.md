@@ -5,19 +5,19 @@
 Community remains the complete single-owner, multi-vault reference data plane
 and independent self-hosted release path. Its source is public under
 Apache-2.0. The optional managed service is still an invitation-only alpha;
-public OWD Cloud accounts, billing, and service-level commitments remain later
+public MDevolved Cloud accounts, billing, and service-level commitments remain later
 gates. A managed trial cell is not a public managed launch.
 
 ## Distribution principle
 
-OWD has one open-source product core and optional operational convenience:
+MDevolved has one open-source product core and optional operational convenience:
 
-| Mode          | Infrastructure owner                      | Data location                          | Availability        |
-| ------------- | ----------------------------------------- | -------------------------------------- | ------------------- |
-| Community     | The user                                  | The user's Cloudflare account          | Public alpha source |
-| Managed alpha | The service operator                      | One isolated Cloudflare cell per owner | Invitation-only     |
-| OWD Cloud     | The service operator                      | One isolated Cloudflare cell per owner | Planned public mode |
-| Managed BYOC  | The user, with narrowly scoped automation | The user's Cloudflare account          | Possible later mode |
+| Mode            | Infrastructure owner                      | Data location                          | Availability        |
+| --------------- | ----------------------------------------- | -------------------------------------- | ------------------- |
+| Community       | The user                                  | The user's Cloudflare account          | Public alpha source |
+| Managed alpha   | The service operator                      | One isolated Cloudflare cell per owner | Invitation-only     |
+| MDevolved Cloud | The service operator                      | One isolated Cloudflare cell per owner | Planned public mode |
+| Managed BYOC    | The user, with narrowly scoped automation | The user's Cloudflare account          | Possible later mode |
 
 Community is not a reduced feature tier. It must deploy, upgrade, back up,
 recover, and connect agents without a managed-service account or control-plane
@@ -89,7 +89,7 @@ development-vault notes, private evidence, operator runbooks, worktrees, source
 branches, resource ledgers, or other testers' metadata.
 Pre-invitation verification proves the cell is unclaimed and empty and that
 Project discovery cannot return operator-only metadata. This delivery contract
-does not by itself claim that the public OWD Cloud service or a particular
+does not by itself claim that the public MDevolved Cloud service or a particular
 trial cell has passed its release gate.
 
 Provisioning is incomplete until the private per-cell build record satisfies
@@ -99,10 +99,10 @@ storing secret values or vault metadata.
 
 ## Trust disclosure
 
-Community users trust their own Cloudflare account and the reviewed OWD release.
+Community users trust their own Cloudflare account and the reviewed MDevolved release.
 Managed users additionally trust the service operator's Cloudflare account and
 operational staff. Live sync state and searchable materializations are not
-end-to-end encrypted from that operator. OWD Cloud must state this plainly and
+end-to-end encrypted from that operator. MDevolved Cloud must state this plainly and
 must not claim zero-knowledge storage.
 
 Backup private identities remain owner-held. The managed service may store the
@@ -122,8 +122,8 @@ Before publishing any Community release:
 1. Scan the complete Git history for credentials, account identifiers,
    production binding IDs, and vault content.
 2. Verify the pinned one-click deployment from clean GitHub and Cloudflare
-   accounts. The user chooses **Deploy OWD**, approves the two providers, and
-   opens the permanent OWD URL; they do not select a branch, type a command,
+   accounts. The user chooses **Deploy MDevolved**, approves the two providers, and
+   opens the permanent MDevolved URL; they do not select a branch, type a command,
    name a binding, create a resource, or apply a migration.
 3. Complete the disposable-vault backup and recovery drill.
 4. Complete the disposable Project Handoff/Review/Decision drill with two
@@ -141,17 +141,17 @@ move missing automation or operational work onto managed users.
 
 The Community installation simplicity contract is:
 
-- one public start link and one primary **Deploy OWD** action;
+- one public start link and one primary **Deploy MDevolved** action;
 - provider sign-in/authorization and an explicit final deploy confirmation are
   the only infrastructure choices;
 - release configuration owns the Worker name, build, complete fresh migration
   chain, D1/R2/KV/Durable Object provisioning, health check, and permanent URL;
-- the permanent companion-plugin action opens OWD Sync in Obsidian Community
+- the permanent companion-plugin action opens MDevolved Sync in Obsidian Community
   Plugins; until listing, the version-matched desktop installer is the primary
   alpha path, while BRAT and ZIP remain technical fallbacks;
 - upgrades use a versioned, rollback-protected path and cannot run migration
   discovery or DDL during ordinary Worker requests; and
-- setup continues inside OWD with one next action at a time. GitHub and
+- setup continues inside MDevolved with one next action at a time. GitHub and
   Cloudflare vocabulary does not leak into vault, recovery, or agent setup.
 
 The current managed alpha removes the GitHub and Cloudflare approvals by
@@ -185,7 +185,7 @@ feature ticket, accept a versioned package that defines:
 The gate passes only if the first synthetic managed cell can be designed from a
 pinned Community release without adding shared tenancy to the Community schema
 or placing the control plane on a vault, recovery, or MCP request path. Passing
-this gate means OWD Cloud is ready to build, not available.
+this gate means MDevolved Cloud is ready to build, not available.
 
 ## Managed beta gate
 

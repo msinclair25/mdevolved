@@ -2,7 +2,7 @@
   "name": "@owd/client-packs",
   "version": "1.0.0-alpha.7",
   "private": true,
-  "description": "Thin, protocol-neutral compatibility profiles for OWD clients and vault runtimes.",
+  "description": "Thin, protocol-neutral compatibility profiles for MDevolved clients and Source runtimes.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

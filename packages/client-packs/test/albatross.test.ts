@@ -54,7 +54,7 @@ describe("Albatross compatibility profile", () => {
         waitTimeoutSeconds: 20,
       },
       runtime: {
-        automation: expect.stringContaining("current OWD Work Packet"),
+        automation: expect.stringContaining("current MDevolved Work Packet"),
         evaluation: expect.stringContaining("/iterate"),
       },
       source: {

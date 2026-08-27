@@ -3757,10 +3757,11 @@ function Dashboard() {
                       <summary>Manual fallback</summary>
                       <p>
                         If Obsidian says{" "}
-                        <strong>unrecognized URI action</strong>, OWD Sync is
-                        not loaded at version {OWD_SYNC_REQUIRED_VERSION} in the
-                        vault Obsidian opened. Install or update and enable OWD
-                        Sync there, then reopen this request. If the direct
+                        <strong>unrecognized URI action</strong>, MDevolved Sync
+                        for Obsidian is not loaded at version{" "}
+                        {OWD_SYNC_REQUIRED_VERSION} in the vault Obsidian
+                        opened. Install or update and enable MDevolved Sync for
+                        Obsidian there, then reopen this request. If the direct
                         handoff is still blocked, copy the request, run{" "}
                         <strong>
                           MDevolved Sync: Pair this vault with MDevolved

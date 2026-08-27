@@ -140,7 +140,7 @@ async function authorize(origin, clientName, authorizationLabel) {
       "Referrer-Policy": "no-referrer",
     });
     response.end(
-      "<!doctype html><meta charset=utf-8><title>OWD authorized</title><style>body{font-family:system-ui;max-width:42rem;margin:5rem auto;padding:0 1rem}</style><h1>OWD authorization received</h1><p>Return to the continuity drill.</p>",
+      "<!doctype html><meta charset=utf-8><title>MDevolved authorized</title><style>body{font-family:system-ui;max-width:42rem;margin:5rem auto;padding:0 1rem}</style><h1>MDevolved authorization received</h1><p>Return to the continuity drill.</p>",
     );
     if (requestUrl.searchParams.get("state") !== state) {
       callbackReject(new Error("OAuth state validation failed."));
@@ -427,7 +427,7 @@ async function claimLead(client, projectId, displayName) {
     leadIdentity: {
       claimedHarness: {
         assertedBy: "client",
-        name: "OWD live continuity acceptance",
+        name: "MDevolved live continuity acceptance",
         verification: "claimed",
         version: "0.1.0",
       },
@@ -521,10 +521,14 @@ async function replacementAssessment(point) {
 async function runSourceDrill(origin, expectedVaultName, projectId, plan) {
   const sourceToken = await authorize(
     origin,
-    "OWD continuity source lead",
+    "MDevolved continuity source lead",
     "OWD_CONTINUITY_SOURCE_AUTHORIZATION_URL",
   );
-  const source = mcpClient(origin, sourceToken, "OWD continuity source lead");
+  const source = mcpClient(
+    origin,
+    sourceToken,
+    "MDevolved continuity source lead",
+  );
   await verifyClientContract(source, expectedVaultName);
   const sourceReady = await openExactProject(
     source,
@@ -569,20 +573,20 @@ async function runSourceDrill(origin, expectedVaultName, projectId, plan) {
 
   console.log("OWD_CONTINUITY_REMOVE_SOURCE_NOW=1");
   await readInputLine(
-    "Remove the source client/session in OWD, then press Enter: ",
+    "Remove the source client/session in MDevolved, then press Enter: ",
   );
   const substitutionStartedAt = performance.now();
   const sourceRevoked = await verifyRevoked(source, "source client");
 
   const replacementToken = await authorize(
     origin,
-    "OWD continuity replacement lead",
+    "MDevolved continuity replacement lead",
     "OWD_CONTINUITY_REPLACEMENT_AUTHORIZATION_URL",
   );
   const replacement = mcpClient(
     origin,
     replacementToken,
-    "OWD continuity replacement lead",
+    "MDevolved continuity replacement lead",
   );
   await verifyClientContract(replacement, expectedVaultName);
   const replacementReady = await openExactProject(
@@ -636,7 +640,7 @@ async function runSourceDrill(origin, expectedVaultName, projectId, plan) {
 
   console.log("OWD_CONTINUITY_REMOVE_REPLACEMENT_NOW=1");
   await readInputLine(
-    "Remove the replacement client/session in OWD, then press Enter: ",
+    "Remove the replacement client/session in MDevolved, then press Enter: ",
   );
   const replacementRevoked = await verifyRevoked(
     replacement,
@@ -689,13 +693,13 @@ async function restoredTargetInput(sourceOrigin, sourceProjectId) {
 async function runRestoredDrill(target, expectedPoint, plan) {
   const restoredToken = await authorize(
     target.origin,
-    "OWD continuity restored-cell lead",
+    "MDevolved continuity restored-cell lead",
     "OWD_CONTINUITY_RESTORED_AUTHORIZATION_URL",
   );
   const restored = mcpClient(
     target.origin,
     restoredToken,
-    "OWD continuity restored-cell lead",
+    "MDevolved continuity restored-cell lead",
   );
   await verifyClientContract(restored, target.expectedVaultName);
   const restoredReady = await openExactProject(
@@ -743,7 +747,7 @@ async function runRestoredDrill(target, expectedPoint, plan) {
   );
   console.log("OWD_CONTINUITY_REMOVE_RESTORED_CLIENT_NOW=1");
   await readInputLine(
-    "Remove the restored-cell client/session in OWD, then press Enter: ",
+    "Remove the restored-cell client/session in MDevolved, then press Enter: ",
   );
   return {
     postRestoreFence: restoredLease.fencingToken,

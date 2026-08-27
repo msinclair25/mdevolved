@@ -65,7 +65,7 @@ export const AGENT_MEMORY_FACADE_LEAD_IDENTITY = {
     version: "1",
   },
   claimedModel: null,
-  displayName: "Connected OWD agent",
+  displayName: "Connected MDevolved agent",
 };
 
 async function requestSha256(value: unknown): Promise<string> {
@@ -861,7 +861,7 @@ export async function buildPortableContinuityBundle(
   if (elasticText.length > 4 * 1024 * 1024) {
     throw new CollaborationProblem("submission_too_large");
   }
-  const readme = `# OWD Project Continuity\n\nThis provider-neutral bundle contains the latest acknowledged Continuity Point for Project ${stored.point.project.projectId}${elasticRecords.length === 0 ? "." : ` and ${elasticRecords.length} inert elastic continuity record${elasticRecords.length === 1 ? "" : "s"} in elastic-records.json.`} It contains no live grant, lease, credential, transcript, hidden reasoning, terminal history, or runtime state. Reauthorize the target client independently before resuming work.\n`;
+  const readme = `# MDevolved Project Continuity\n\nThis provider-neutral bundle contains the latest acknowledged Continuity Point for Project ${stored.point.project.projectId}${elasticRecords.length === 0 ? "." : ` and ${elasticRecords.length} inert elastic continuity record${elasticRecords.length === 1 ? "" : "s"} in elastic-records.json.`} It contains no live grant, lease, credential, transcript, hidden reasoning, terminal history, or runtime state. Reauthorize the target client independently before resuming work.\n`;
   return portableContinuityBundleSchema.parse({
     continuityPointId: stored.point.continuityPointId,
     files: [

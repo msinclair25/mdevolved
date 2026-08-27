@@ -1,6 +1,6 @@
 # Security
 
-OWD Sync handles a vault-scoped credential and live Markdown synchronization.
+MDevolved Sync for Obsidian handles a vault-scoped credential and live Markdown synchronization.
 Please do not publish suspected vulnerabilities, credentials, pairing links,
 recovery keys, private deployment hostnames, vault names, or note content in a
 public issue.
@@ -12,7 +12,7 @@ contact path.
 
 ## Pairing boundary
 
-- Pairing starts from the OWD Sync command inside the vault the owner already
+- Pairing starts from the MDevolved Sync for Obsidian command inside the vault the owner already
   opened. A browser URI never selects a vault.
 - The plugin repeats the current vault name and deployment host before any
   exchange.
@@ -20,9 +20,9 @@ contact path.
   the server only as hashes.
 - The resulting credential is vault scoped. Revocation is rechecked before
   socket admission and closes active access.
-- OWD Sync does not use an automatic updater of its own. Private-beta updates
+- MDevolved Sync for Obsidian does not use an automatic updater of its own. Private-beta updates
   come from the public GitHub Release through BRAT; the long-term path is
   Obsidian's reviewed Community Plugin updater.
 
 The current compatibility and security contracts are maintained in the
-[OWD Platform repository](https://github.com/msinclair25/mdevolved).
+[MDevolved repository](https://github.com/msinclair25/mdevolved).

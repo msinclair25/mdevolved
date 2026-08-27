@@ -1,13 +1,17 @@
 # MDevolved brand compatibility
 
-MDevolved is the human-facing product name. It was formerly called OWD. MD5
-changes display copy and artwork only; it does not rename the wire protocol,
-stored model, package scope, or released compatibility identities.
+MDevolved is the human-facing product name. It was formerly called OWD. MD7
+completes the display-copy transition without renaming the wire protocol,
+stored model, package scope, or released compatibility identities. Normal user
+and agent workflows say MDevolved; OWD appears only as a frozen identifier or
+inside an explicit legacy compatibility explanation.
 
 ## Normal product path
 
 - Use **MDevolved** for the product and **MDevolved Community** for the
   self-hosted distribution.
+- Spell the product exactly **MDevolved**. Do not use “MD Evolved”,
+  “MD evolved”, or “MDEvolved”.
 - Use **Sources** for connected Markdown folders and Obsidian workspaces.
 - Use **Workspace** for the selected local root and **Project** for durable AI
   memory and provenance.
@@ -15,6 +19,8 @@ stored model, package scope, or released compatibility identities.
   Obsidian. Obsidian is optional and first-class, not the product model.
 - Keep implementation terms under **Technical details**, **Advanced**, or an
   explicit compatibility notice.
+- Say **MDevolved Sync** for the folder app and **MDevolved Sync for Obsidian**
+  for the companion plugin. Its `owd-sync` ID remains a compatibility detail.
 
 ## Frozen compatibility identities
 

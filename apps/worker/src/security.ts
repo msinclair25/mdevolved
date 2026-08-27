@@ -98,7 +98,7 @@ export function requireSameOrigin(context: Context<AppBindings>): void {
     throw new ApiProblem(
       403,
       "origin_denied",
-      "This request was not sent by the OWD site.",
+      "This request was not sent by the MDevolved site.",
     );
   }
 }

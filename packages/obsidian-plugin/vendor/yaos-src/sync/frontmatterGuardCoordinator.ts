@@ -131,7 +131,7 @@ export class FrontmatterGuardCoordinator {
 
 	showFrontmatterGuardNotice(path: string): void {
 		new Notice(
-			`OWD Sync paused a properties update in "${path}" because the frontmatter looked unsafe. Check diagnostics before accepting the change.`,
+			`MDevolved Sync for Obsidian paused a properties update in "${path}" because the frontmatter looked unsafe. Check diagnostics before accepting the change.`,
 			12_000,
 		);
 	}
