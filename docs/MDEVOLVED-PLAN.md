@@ -1,18 +1,17 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD6 are complete. MD7 brand completion is active.<br />
+**Status:** MD1–MD7 are complete.<br />
 **Date:** 2026-08-26
 
 ## Milestone boundary
 
-MD0 planning and MD1 through MD6 delivery are complete. MD7 is the only active
-milestone. The source-neutral
+MD0 planning and MD1 through MD7 delivery are complete. The source-neutral
 architecture, compatibility rules, rollout order, security boundaries, and
 independent acceptance decisions below remain explicit. MD5's final candidate
 passed its exact complete gate and authoritative legacy-repository redirect
 check. Its required PR checks, merge, and post-merge `main` health complete the
-recorded delivery workflow. MD7 completes the human- and agent-facing naming
-transition without changing frozen compatibility identities. Later product
+recorded delivery workflow. MD7 completed the human- and agent-facing naming
+transition without changing frozen compatibility identities. Any later product
 expansion requires a fresh milestone and acceptance decision.
 
 ## Product promise
@@ -569,7 +568,7 @@ inert and restores no grants, credentials, actors, sessions, leases, devices,
 OAuth state, or other live authority. No npm package, plugin, desktop release,
 GitHub Release, paid service, R3 work, or later milestone was started.
 
-## MD7 local candidate receipt
+## MD7 delivery receipt
 
 MD7 completes the human- and agent-facing transition to MDevolved across the
 web app, marketing site, recovery and collaboration workflows, MCP guidance,
@@ -599,8 +598,8 @@ migration, build, public-history, continuity, and non-deploying release gates.
 Validation uses only synthetic or disposable data and projects $0 incremental
 cost.
 
-Local acceptance does not publish the branch. MD7 remains active until the
-candidate is pushed with owner authorization and the configured macOS,
-Windows, and Linux GitHub checks pass on that exact commit. No production
+The validated candidate was pushed with owner authorization to PR #45. Its
+configured macOS, Windows, and Linux package checks passed, along with the
+complete GitHub verification job on the exact candidate. No production
 deployment, migration, package publication, plugin release, paid service, or
-external resource mutation is part of this local receipt.
+external resource mutation was part of MD7 delivery.
