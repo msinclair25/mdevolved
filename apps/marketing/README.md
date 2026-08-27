@@ -4,30 +4,34 @@ This static site is the public front door for MDevolved. It promotes the
 source-independent product without sharing a hostname, authentication boundary,
 storage binding, or runtime dependency with an owner's private deployment.
 
-The canonical product promise is **Every AI. One durable Project memory.**
-Public copy should explain source-independent onboarding, deliberate cited
-handoffs, and durable Project continuity. It must not collapse MDevolved into a generic "AI team" or agent
-orchestration product.
+The lead product promise is **Your AI should not forget your project when the
+session ends.** The compact brand promise remains **Every AI. One durable
+Project memory.** Public copy should sell the cross-session outcome first, then
+explain source-independent onboarding, cited evidence, preferences, portable
+skills, useful failures, and the exact next action. It must not collapse
+MDevolved into a generic "AI team" or agent orchestration product.
 
 Most of the site is intentionally evergreen. It describes durable product
 capabilities, ownership boundaries, and the end-to-end collaboration model
 without phase names, release numbers, or launch dates. A small availability
-label may distinguish private acceptance cells from the future public managed
-Cloud service and Community release; review that label whenever the delivery
-model changes. Private acceptance is not a public managed-service launch.
+label distinguishes the public Community alpha from invitation-only managed
+cells; review that label whenever the delivery model changes. Managed alpha is
+not a public managed-service launch.
 
-The site explains the guided setup path before asking a visitor to request
-private-alpha access. The source section links the invited
-[MDevolved repository](https://github.com/msinclair25/mdevolved) with an
-explicit availability label and the public
+The site leads with the lovable resume moment, explains the one-command folder
+path and one-click Community deployment, then offers invitation-only managed
+alpha access. The source section links the public
+[MDevolved repository](https://github.com/msinclair25/mdevolved) and the public
 [Obsidian adapter compatibility repository](https://github.com/msinclair25/owd-sync). Detailed release
 and installation status belongs in those GitHub READMEs.
 
-The Eve.dev integration section markets the source-verified Eve `0.29.4`
-profile without implying live client acceptance has already passed. It keeps
-Eve's execution runtime distinct from MDevolved's portable Project authority and
-must continue to describe standard MCP plus user-scoped OAuth—not a custom
-transport, bundled Eve runtime, or app-scoped shortcut.
+The compatibility section must stay provider-neutral and useful to solo agents,
+lead-mediated orchestrations, and portable handoffs. Eve.dev remains one
+source-verified compatibility proof without implying live client acceptance has
+already passed. It keeps Eve's execution runtime distinct from MDevolved's
+portable Project authority and continues to describe standard MCP plus
+user-scoped OAuth—not a custom transport, bundled Eve runtime, or app-scoped
+shortcut.
 
 The site does not imply team accounts, autonomous truth promotion, model
 training, shared hidden sessions, a bundled agent runtime, or a required graph
