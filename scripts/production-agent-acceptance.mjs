@@ -41,6 +41,7 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const OPAQUE_KEY_PATTERN = /^[A-Za-z0-9_-]{43,128}$/u;
 const ROOT_MARKDOWN_PATTERN = /^[^/\\\p{Cc}\p{Cf}]+\.md$/iu;
+const OAUTH_APPROVAL_TIMEOUT_MS = 600_000;
 const PROJECT_APPROVAL_TIMEOUT_MS = 600_000;
 
 function fail(message) {
@@ -339,7 +340,7 @@ async function main() {
 
   const timeout = setTimeout(
     () => callbackReject(new Error("OAuth authorization timed out.")),
-    180_000,
+    OAUTH_APPROVAL_TIMEOUT_MS,
   );
   let code;
   try {

@@ -1,7 +1,7 @@
 # MD6 source-independent MLR acceptance matrix
 
-**Frozen:** 2026-08-26 before MD6 implementation edits  
-**Candidate:** pending  
+**Frozen:** 2026-08-26 before MD6 implementation edits
+**Candidate:** PR #44 final head
 **Acceptance decision:** MD6 closes only when a new user can continue one real
 Project on a second computer through a different compatible client without
 Obsidian or copied context, repeat the equivalent path through Obsidian, and
@@ -36,12 +36,42 @@ customer, or production-content ingestion.
 | Deployed health and denial                                                      | Production acceptance scripts cover health, current/legacy MCP discovery, bounded source reads, Project lifecycle, revocation, and continuity.                                                                | Observe health, capabilities, compatibility, auth denial, exact Project resume/checkpoint, and revocation over a bounded interval; redact all bindings, IDs, logs, names, paths, and content.                                                                                                                                                                                                                                                                                                                              |
 | Cleanup, costs, publication, and boundary                                       | MD6 authorizes only the existing Community deployment when incremental cost is zero.                                                                                                                          | Remove disposable local/remote exercise data, retain rollback evidence, report $0 incremental cost, publish no npm/plugin/desktop package or GitHub Release, and confirm no later milestone began.                                                                                                                                                                                                                                                                                                                         |
 
-## Frozen audit gaps
+## Delivery evidence
 
-The pre-edit audit found no justified Worker schema or product-authority change.
-It found acceptance gaps in rapid rename/write bursts, partial-write recovery,
-offline folder recovery, genuinely large trees, desktop UI E2E on all three
-runners, disposable-vault Obsidian E2E, a single named MD6 gate, and the exact
-live cross-device/cross-client exercise. Implementation must close those gaps
-with the smallest reusable fixtures and workflow changes; it must not invent a
-new runtime or migration.
+The pre-edit audit found no justified Worker schema or product-authority
+change. MD6 closed its rapid rename/write, partial-write, offline recovery,
+large-tree, packaged-desktop, adapter-equivalence, accessibility, upgrade,
+recovery, compatibility, and live continuity gaps with reusable fixtures and
+one named gate. It added no scheduler, agent runner, provider inference,
+transcript importer, shell/skill executor, worktree manager, migration, or new
+runtime.
+
+The live acceptance used sequential independently authorized clients: the
+final fresh OAuth authorization resumed a predecessor Continuity Point written
+under an earlier authorization and wrote and re-resumed its exact successor.
+The final client exposed its immutable authorization UUID through the additive
+`connection_info.authorizationId` field. Exact-ID owner revocation reduced the
+active inventory and the same bearer was denied on its next Source call and its
+dependent Project resume. This proves authorization substitution without
+claiming that one process or one token is two clients.
+
+The pinned Obsidian 1.12.7 application and OWD Sync 0.1.7 bundle were exercised
+in an isolated disposable vault for installation, command registration, note
+visibility, error inspection, and cleanup. The automated adapter-equivalence,
+pairing, publication, Project continuity, installer, updater, populated legacy
+settings, and packaging suites provide the repeatable no-human acceptance path.
+Hands-on usability feedback may add confidence but is not a release gate.
+
+The complete exact-candidate gate and GitHub CI provide frozen install/audit,
+full migration, repository, browser, build, deployment dry-run, and
+public-history evidence. Current macOS, Windows, and Linux jobs run the bounded
+client gate. The existing Community Worker had no pending D1 migration; the
+acceptance candidate deployed healthy with a previous version retained for
+rollback and projected incremental cost of $0.
+
+Cleanup revoked every disposable authorization, archived the synthetic
+Project, disconnected all Source registrations created from the disposable
+folder, and deleted the local fixture. Archived/disconnected records retain
+immutable provenance only and carry no live authority. No package, plugin,
+desktop artifact, GitHub Release, paid service, or later milestone was
+published or started.
