@@ -1,7 +1,7 @@
 {
   "name": "MDevolved",
   "short_name": "MDevolved",
-  "description": "Source-independent, owner-controlled Project memory for every AI, starting from a Markdown folder or Obsidian.",
+  "description": "Source-independent, owner-controlled Project memory that survives AI sessions, tools, orchestrations, and computers.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#10120f",

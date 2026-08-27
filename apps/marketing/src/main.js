@@ -6,15 +6,19 @@ const header = document.querySelector("[data-header]");
 const navToggle = document.querySelector("[data-nav-toggle]");
 const nav = document.querySelector("[data-nav]");
 
-const closeNavigation = () => {
-  navToggle?.setAttribute("aria-expanded", "false");
-  nav?.removeAttribute("data-open");
+const setNavigationOpen = (isOpen) => {
+  navToggle?.setAttribute("aria-expanded", String(isOpen));
+  navToggle
+    ?.querySelector(".sr-only")
+    ?.replaceChildren(isOpen ? "Close navigation" : "Open navigation");
+  nav?.toggleAttribute("data-open", isOpen);
 };
+
+const closeNavigation = () => setNavigationOpen(false);
 
 navToggle?.addEventListener("click", () => {
   const isOpen = navToggle.getAttribute("aria-expanded") === "true";
-  navToggle.setAttribute("aria-expanded", String(!isOpen));
-  nav?.toggleAttribute("data-open", !isOpen);
+  setNavigationOpen(!isOpen);
 });
 
 nav?.querySelectorAll("a").forEach((link) => {

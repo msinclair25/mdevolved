@@ -60,12 +60,21 @@ const releaseCompatibility = await readFile(
   "docs/RELEASE-COMPATIBILITY.md",
   "utf8",
 );
+const eveCompatibility = await readFile("docs/EVE-COMPATIBILITY.md", "utf8");
+const albatrossCompatibility = await readFile(
+  "docs/ALBATROSS-COMPATIBILITY.md",
+  "utf8",
+);
 const pluginSettings = await readFile(
   "packages/obsidian-plugin/vendor/yaos-src/settings/settingsTab.ts",
   "utf8",
 );
 const normalizedRootReadme = rootReadme.replace(/\s+/gu, " ");
 const normalizedMarketingReadme = marketingReadme.replace(/\s+/gu, " ");
+const normalizedAlbatrossCompatibility = albatrossCompatibility.replace(
+  /\s+/gu,
+  " ",
+);
 const normalizedMarketingSite = marketingSite
   .replace(/<[^>]+>/gu, " ")
   .replace(/\s+/gu, " ");
@@ -89,12 +98,11 @@ if (
   );
 }
 if (
-  !normalizedRootReadme.includes(
-    "Eve.dev: durable agents, portable Project memory",
+  !eveCompatibility.includes(
+    "This is a source-verified compatibility profile",
   ) ||
-  !normalizedRootReadme.includes(
-    "source-verified against Eve `0.29.4` and `@vercel/connect`",
-  ) ||
+  !eveCompatibility.includes("| Eve               | `0.29.4`") ||
+  !eveCompatibility.includes("| `@vercel/connect` | `0.6.0`") ||
   !marketingSite.includes('id="eve"') ||
   !normalizedMarketingSite.includes(
     "Eve runs the agent. MDevolved makes the work portable.",
@@ -107,13 +115,15 @@ if (
   );
 }
 if (
-  !normalizedRootReadme.includes(
-    "Albatross: local execution, portable Project continuity",
+  !albatrossCompatibility.includes(
+    "This is a source-verified compatibility profile",
   ) ||
-  !normalizedRootReadme.includes("Albatross `2.0.3` is currently stdio-only") ||
-  !normalizedRootReadme.includes("`mcp-remote` `0.1.38` bridge") ||
-  !normalizedRootReadme.includes(
-    "live Albatross acceptance remains explicit rather than assumed",
+  !albatrossCompatibility.includes("| Albatross               | `2.0.3`") ||
+  !albatrossCompatibility.includes(
+    "| Temporary MCP bridge    | `mcp-remote` `0.1.38`",
+  ) ||
+  !normalizedAlbatrossCompatibility.includes(
+    "It does not claim vendor certification or a completed live Albatross acceptance run",
   ) ||
   !releaseCompatibility.includes("| Albatross profile") ||
   !releaseCompatibility.includes("`0543226b800ee57659f200c1ef928925868c90c9`")
