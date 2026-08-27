@@ -461,9 +461,48 @@ expected-version path only after owner approval.
 
 These tools are MCP adapters over transport-neutral application services. The
 same versioned Work Packet and submission contracts support a portable
-Markdown/JSON file fallback for clients without MCP mutation tools. MDevolved does not
-depend on MCP Tasks, A2A, a vendor-specific skill API, or a fixed sequence of
-agent roles.
+Markdown/JSON file fallback for clients without MCP mutation tools. MDevolved
+does not depend on MCP Tasks, A2A, a vendor-specific skill API, or a fixed
+sequence of agent roles.
+
+### Autonomous Project loop
+
+Capability resource
+`owd://collaboration/lead-operation-capabilities/v4` adds two completion modes
+without changing the older resources or tool names:
+
+- omitted `completionMode` remains `orchestrated-reviewed`: at least three
+  claimed actors, an independently routed passing review, purpose-specific
+  evidence, a fresh checkpoint, and the exact allow Decision;
+- `solo-verified` is available only after explicit owner consent in the
+  standing Policy Binding: exactly one claimed actor, purpose-specific
+  verification evidence, a fresh checkpoint, and the exact allow Decision.
+
+The owner may replace either immutable binding with the other mode. Replacing
+solo verification with reviewed completion immediately supersedes the solo
+binding and pauses its schedule; clients cannot edit or self-approve policy.
+`create_work_item` inherits no evidence by default. A lead may pass an exact
+accepted `sourceWorkPacketId` to carry forward that packet's already-bounded
+evidence with an explicit immutable predecessor dependency.
+
+The harness still executes tests, research checks, tools, worktrees, retries,
+and agents. MDevolved records bounded evidence and verifies policy state; it
+does not claim to have run an external test merely because a client submitted
+verification evidence.
+
+Direct clients may claim the Project lead and register themselves as the one
+solo actor. Orchestration managers keep one authorized lead connection and
+register distinct scoped actors without copying OAuth credentials. Clients
+without compatible mutation tools download the exact Work Packet, Continuity
+Point, and operational export, then reauthorize independently before
+continuing. Codex, Claude, Cursor, Antigravity, Grok Build, Hermes Agent, T3
+Code, Orca ADE, and LangChain/LangGraph are compatibility fixtures and smoke
+targets, never durable product enums.
+
+`owd-run-context-v1` is intentionally `run-shared-unvetted`; it is not an
+independent-discovery context. Harnesses use `owd_resume` with `independent`
+for discovery without peer conclusions, and expose only an explicitly routed
+target provisional result when an actor is assigned as its reviewer.
 
 ## Hoplon connector boundary
 

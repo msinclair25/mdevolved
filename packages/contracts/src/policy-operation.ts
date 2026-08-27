@@ -10,10 +10,13 @@ export const OWD_CONTINUITY_RECEIPT_FORMAT =
   "owd-continuity-receipt-v1" as const;
 export const OWD_R4_CAPABILITIES_FORMAT =
   "owd-lead-operation-capabilities-v3" as const;
+export const OWD_MD8_CAPABILITIES_FORMAT =
+  "owd-lead-operation-capabilities-v4" as const;
 export const OWD_RESEARCH_COMPLETION_GATE =
   "owd-research-completion-gate-v1" as const;
 export const OWD_CODING_COMPLETION_GATE =
   "owd-coding-completion-gate-v1" as const;
+export const OWD_COMPLETION_POLICY_FORMAT = "owd-completion-policy-v1" as const;
 
 export const MAX_POLICY_EVIDENCE_REFS = 64;
 export const MAX_OPERATIONAL_RECORD_BYTES = 1024 * 1024;
@@ -31,6 +34,38 @@ const authoritySchema = z
     restoredAuthorityAllowed: z.literal(false),
   })
   .strict();
+
+export const completionModeSchema = z.enum([
+  "orchestrated-reviewed",
+  "solo-verified",
+]);
+export type CompletionMode = z.infer<typeof completionModeSchema>;
+
+export const completionPolicySchema = z
+  .object({
+    allowedModes: z.array(completionModeSchema).min(1).max(2),
+    defaultMode: z.literal("orchestrated-reviewed"),
+    format: z.literal(OWD_COMPLETION_POLICY_FORMAT),
+    schemaVersion: z.literal(1),
+    soloVerifiedOwnerConsent: z.boolean(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const modes = new Set(value.allowedModes);
+    if (
+      modes.size !== value.allowedModes.length ||
+      !modes.has("orchestrated-reviewed") ||
+      modes.has("solo-verified") !== value.soloVerifiedOwnerConsent
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Completion modes must be unique, retain reviewed completion, and match explicit solo consent.",
+        path: ["allowedModes"],
+      });
+    }
+  });
+export type CompletionPolicy = z.infer<typeof completionPolicySchema>;
 
 export const policyExceptionActionSchema = z.enum([
   "authority-expansion",
@@ -65,6 +100,7 @@ export const policyBindingSchema = z
     authority: authoritySchema,
     bindingId: idSchema,
     checkpointIntervalSeconds: z.number().int().min(300).max(86_400),
+    completionPolicy: completionPolicySchema.optional(),
     drillIntervalSeconds: z
       .number()
       .int()
@@ -176,6 +212,7 @@ export const policyDecisionSchema = z
     acceptedBundleCount: z.number().int().nonnegative(),
     authority: authoritySchema,
     checks: z.array(policyGateCheckSchema).length(GATE_CHECK_KEYS.length),
+    completionMode: z.literal("solo-verified").optional(),
     continuityPointId: idSchema.nullable(),
     decisionId: idSchema,
     evaluatedAt: timestampSchema,
@@ -229,6 +266,21 @@ export const policyDecisionSchema = z
         code: "custom",
         message: "The decision outcome must match its deterministic checks.",
         path: ["outcome"],
+      });
+    }
+    const independentReview = value.checks.find(
+      (check) => check.key === "independent-review",
+    );
+    if (
+      value.completionMode === "solo-verified" &&
+      (independentReview?.passed !== true ||
+        independentReview.evidenceRefs.length !== 0)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Solo completion satisfies the review requirement without claiming review evidence.",
+        path: ["checks"],
       });
     }
     if (
@@ -511,6 +563,7 @@ export type PolicyOperationalRecord = z.infer<
 export const activatePolicyBindingRequestSchema = z
   .object({
     checkpointIntervalSeconds: z.number().int().min(300).max(86_400),
+    completionMode: completionModeSchema.optional(),
     drillIntervalSeconds: z
       .number()
       .int()
@@ -832,6 +885,36 @@ export const r4CapabilitiesSchema = z
     schemaVersion: z.literal(3),
   })
   .strict();
+
+export const md8CapabilitiesSchema = z
+  .object({
+    authority: authoritySchema,
+    completionModes: z.array(completionModeSchema).length(2),
+    completionPolicyFormat: z.literal(OWD_COMPLETION_POLICY_FORMAT),
+    connectionModes: z
+      .array(z.enum(["direct-mcp", "lead-mediated-mcp", "portable-handoff"]))
+      .length(3),
+    format: z.literal(OWD_MD8_CAPABILITIES_FORMAT),
+    legacyDefaultMode: z.literal("orchestrated-reviewed"),
+    mcpProtocolRevision: z.literal("2025-11-25"),
+    requiredScope: z.literal("project.lead"),
+    schemaVersion: z.literal(4),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (
+      new Set(value.completionModes).size !== 2 ||
+      !value.completionModes.includes("orchestrated-reviewed") ||
+      !value.completionModes.includes("solo-verified") ||
+      new Set(value.connectionModes).size !== 3
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "MD8 capabilities must advertise each bounded mode once.",
+        path: ["completionModes"],
+      });
+    }
+  });
 
 export const policyBindingJsonSchema = {
   $id: "urn:owd:schema:policy-binding:v1",

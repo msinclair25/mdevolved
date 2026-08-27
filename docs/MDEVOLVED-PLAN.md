@@ -1,7 +1,7 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD7 are complete.<br />
-**Date:** 2026-08-26
+**Status:** MD1–MD8 are complete through local acceptance.<br />
+**Date:** 2026-08-27
 
 ## Milestone boundary
 
@@ -11,8 +11,9 @@ independent acceptance decisions below remain explicit. MD5's final candidate
 passed its exact complete gate and authoritative legacy-repository redirect
 check. Its required PR checks, merge, and post-merge `main` health complete the
 recorded delivery workflow. MD7 completed the human- and agent-facing naming
-transition without changing frozen compatibility identities. Any later product
-expansion requires a fresh milestone and acceptance decision.
+transition without changing frozen compatibility identities. MD8 passed its
+exact local acceptance and repository gates; commit, push, PR, deployment, and
+named proprietary-client certification remain separate delivery actions.
 
 ## Product promise
 
@@ -24,9 +25,11 @@ between AI tools, computers, and local workspaces. A plain folder is the
 compatibility floor. Obsidian becomes an optional, deeply integrated source
 adapter instead of a prerequisite.
 
-The lovable moment remains unchanged: a fresh agent on another computer or in
-another compatible harness continues correctly without copied prompts or a
-reconstructed provider session.
+The lovable moment expands from continuity into autonomous delivery: after one
+owner instruction, a single agent or a harness-managed group of agents receives
+the right bounded work, verifies it, preserves useful evidence, and continues
+from the exact next action without copied prompts, reconstructed provider
+sessions, or routine owner coordination.
 
 ## Decisions frozen now
 
@@ -47,6 +50,25 @@ reconstructed provider session.
    records remain compatible throughout the first MDevolved release.
 6. **No local sync client gains agent authority.** Source synchronization and
    agent authorization remain separate boundaries.
+7. **Autonomy must reduce owner work.** The normal path is one initial Project
+   instruction and consent followed by machine-managed resume, bounded
+   delegation, verification, checkpoint, review when required by the selected
+   completion policy, and continuation. The owner returns only for an explicit
+   exception or a decision that exceeds previously granted authority.
+8. **MDevolved coordinates but does not execute.** Harnesses retain agent
+   spawning, scheduling, supervision, tools, worktrees, retries, and test
+   execution. MDevolved retains durable Project identity, scoped Work Items and
+   Work Packets, actor claims, evidence, review, continuity, recovery,
+   revocation, and exceptions.
+9. **Compatibility is capability-negotiated, not brand-coded.** Apps, IDEs,
+   CLIs, headless agents, agent managers, and orchestration frameworks use the
+   same versioned services according to the tools, transports, identity,
+   context-isolation, and lifecycle signals they actually support. A provider
+   name never changes Project truth or authority.
+10. **Workers may connect directly or through their lead.** A compatible actor
+    may call MDevolved itself, or an authorized harness lead may register actors
+    and submit their bounded evidence. Subagents are not required to share one
+    MCP connection, credential, conversation, or runtime.
 
 The MDevolved name still needs ordinary trademark and store-listing clearance
 before paid promotion or app-store publication. A preliminary web search found
@@ -70,7 +92,7 @@ The later external gates are deliberately narrow:
 - obtain explicit owner authorization at execution time before package
   publication, production deployment, repository renaming, or paid services.
 
-Human usability feedback is valuable but is not a prerequisite for MD1-MD6
+Human usability feedback is valuable but is not a prerequisite for MD1-MD8
 implementation or automated validation. Each milestone's automated acceptance
 decision remains mandatory.
 
@@ -95,6 +117,105 @@ Codex · Claude · Hermes · Orca · Cursor · other compatible harnesses
 The execution harness still owns its model, tools, shell, browser, worktrees,
 retries, and runtime context. MDevolved owns durable Project identity, bounded
 memory, evidence, continuity, recovery, and revocation.
+
+## Autonomous Project Loop
+
+The normal path begins with **Connect this project to MDevolved** and should not
+create a second planning job for the owner.
+
+For one agent in focused mode, the current unit is the latest valid Continuity
+Point's `nextAction`, falling back to the active Work Packet objective when no
+point exists. The agent works with its native harness, performs
+task-appropriate verification, checkpoints bounded evidence, and receives the
+next unit. Compatible-client behavior keeps the same semantic unit active after
+failed verification and records the useful failure; MDevolved does not claim
+that an arbitrary client-reported sentence proves the check ran.
+
+For an orchestration, the harness or its authorized lead delegates bounded
+units inside one Run and registers multiple claimed actors against that Run's
+Work Packet. Each actor receives only the context and authority required for
+its role. Focused actors receive current accepted state, independent actors omit
+peer conclusions, and synthesis actors receive permitted provisional results.
+An independent reviewer receives the target provisional result and its rubric,
+but not hidden reasoning, runtime state, or unrelated context supplied by the
+harness. MDevolved records actor claims, bounded results, review routing,
+conflicts, checkpoints, and the next eligible work; the harness decides which
+agent runs and when.
+
+Verification evidence is concise, provider-neutral, and reported by the client.
+MDevolved does not claim to execute or independently prove a test, and it does
+not ingest raw logs, transcripts, hidden reasoning, terminal history, runtime
+state, or credentials. Coding units may use focused tests, type checks, builds,
+or smoke checks. Research units use cited evidence and an explicit acceptance
+rubric rather than a fake shell test.
+
+Routine expiry and exact-context renewal remain machine-managed. Authority
+expansion, destructive action, protected-path access, budget exhaustion, and
+conflicting evidence produce the existing explicit Project Exceptions.
+Revocation produces an immediate authoritative denial. Other blockers remain
+durable in the Continuity Point and halt compatible-client continuation instead
+of being mislabeled as a Project Exception or silently treated as completion.
+
+## Client and orchestration compatibility
+
+MDevolved supports integration shapes rather than maintaining a separate
+workflow engine for every agent product:
+
+- **Direct MCP hosts:** desktop apps, IDE agents, and terminal agents that can
+  connect to remote HTTP MCP with OAuth call the normal resume, context,
+  checkpoint, Run, evidence, review, and exception tools directly.
+- **Lead-mediated harnesses:** agent managers, multi-agent workbenches, and
+  graph runtimes may keep one authorized lead connection. The lead registers
+  scoped actors, gives each worker a bounded unit through its native mechanism,
+  and submits provider-neutral results and review evidence without copying
+  credentials or raw runtime state into the workers.
+- **Portable fallback:** clients without usable remote MCP receive the same
+  bounded Work Packet and return a versioned Markdown/JSON handoff through the
+  existing inert skill or file boundary. This remains less automatic than MCP
+  but preserves Project identity and compatibility.
+
+The representative compatibility matrix includes interactive apps such as
+Codex, Claude, Cursor, and Antigravity; their CLI or headless counterparts;
+native agent harnesses such as Grok Build and Hermes Agent; provider-CLI
+managers such as T3 Code; multi-agent workbenches such as Orca ADE; and
+framework runtimes such as LangChain/LangGraph. These names are acceptance
+fixtures and live-smoke targets, not durable enum values or required runtime
+dependencies.
+
+Capability negotiation must establish the supported protocol and context
+version, direct or lead-mediated operation, OAuth and mutation availability,
+focused/independent/synthesis context modes, actor and bundle ceilings,
+idempotency behavior, and bounded evidence formats. Unsupported optional
+capabilities degrade to the next compatible integration shape instead of
+silently widening access or failing the whole Project.
+
+MDevolved never changes a client's sandbox, tool approval, permission, network,
+or background-execution settings. Hands-off operation means no repeated
+MDevolved-specific owner work after the owner has configured and consented to
+that client's ordinary trusted-tool policy. A client that requires approval for
+every MCP call remains supported, but cannot truthfully be advertised as
+hands-off until its owner enables a bounded native auto-approval mode.
+
+The compatibility rule applies across the complete product, not only MD8:
+
+| Product surface            | Cross-client requirement                                                                                                                                                                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source sync                | Folder and Obsidian adapters publish the same durable library without knowing which agent, app, CLI, or orchestrator will consume it.                                                                                                                                |
+| Setup                      | The dashboard always offers one universal remote-MCP path, then optional generated helpers for clients whose native installer or configuration format materially reduces owner work. Helpers contain no token or authority.                                          |
+| Identity and consent       | Every direct client has its own OAuth identity and exact grant. Lead-mediated workers have distinct claimed actor identities but receive no copied OAuth credential or implied authority.                                                                            |
+| Context and memory         | Focused, independent, and synthesis context; working preferences; attached Skills; citations; and Continuity Points remain provider-neutral, bounded, and attributable. Skills remain inert until a compatible harness chooses to load them.                         |
+| Autonomous work            | Direct MCP, lead-mediated MCP, and portable handoff use the same Project, Work Item, evidence, review, checkpoint, and exception semantics.                                                                                                                          |
+| Evidence and observability | Apps may report different native test, build, review, and lifecycle events, but MDevolved stores only bounded normalized evidence and redacted receipts, never raw transcripts, logs, or runtime state.                                                              |
+| Export and recovery        | Portable export, encrypted snapshot, restore, and quarantine preserve Project truth and compatibility metadata without restoring client credentials, sessions, actors, leases, grants, scheduler state, or provider runtime.                                         |
+| Owner UI                   | Activity and revocation show the actual client, grant, actor, Run, capability, and provenance while normal Project concepts remain the same across brands.                                                                                                           |
+| Release evidence           | Protocol conformance is universal. Named clients receive separate dated receipts recording exact app/CLI version, transport, capabilities, approval mode, tested operations, limitations, and last verification date. A generated setup helper is not certification. |
+
+Client drift is expected. A newer client version that removes or changes a
+capability falls back safely or loses its dated supported status; it never
+causes a durable Project migration. Add a client-specific pack only when a
+universal connection plus capability negotiation cannot provide a usable path,
+and keep that pack optional, generated, script-free where possible, and covered
+by the same authority and recovery invariants.
 
 ## Source-neutral sync boundary
 
@@ -327,6 +448,73 @@ authority; the exact candidate passes focused brand/compatibility checks, the
 complete repository gate, cross-platform packaging, independent review, and
 non-deploying release validation.
 
+### MD8 — Autonomous Project Loop
+
+**Outcome:** After one initial instruction, either one compatible agent or a
+harness-managed orchestration can keep a coding or research Work Item moving
+through bounded work, verification, review, checkpoint, and exact continuation
+without routine owner coordination.
+
+**Build:** First freeze synthetic baseline evaluations for premature
+completion, wrong-unit resume, failed-verification advance, repeated owner
+action, context leakage, redundant calls, latency, and cost. Then reuse the
+existing Project, Work Item, Work Packet, Run, Actor, Event Bundle, Review,
+Continuity Point, and Exception services to present one deterministic current
+unit and next unit through the existing transport-neutral services, MCP
+guidance, and compatible client packs.
+
+Freeze contract fixtures for direct MCP, lead-mediated MCP, and portable
+handoff clients before changing behavior. Test representative interactive,
+terminal/headless, provider-manager, workbench, and graph-runtime adapters
+without embedding product names in durable schemas. A client pack may explain
+native installation or lifecycle integration, but it must remain inert,
+optional, generated from the same provider-neutral contract, and unable to
+expand authority.
+
+The current completion contract always requires three claimed actors and an
+independent passing review, so it cannot close a genuinely single-agent Work
+Item. MD8 must add the smallest additive, versioned completion-policy choice:
+the existing contract remains the default **orchestrated reviewed** mode, while
+an explicitly owner-consented **solo verified** mode may close only after
+task-appropriate evidence, a fresh fenced checkpoint, a current deterministic
+policy allow Decision, and no blocking exception. Old records and clients map
+to orchestrated reviewed mode. Any new durable field receives forward-only
+migration, export, snapshot, restore, quarantine, retention, and no-restored-
+authority coverage. Add no scheduler, executor, stop hook, GLRP artifact,
+per-actor planning subsystem, or separate planning UI.
+
+**Acceptance decision:** Close only when the same synthetic coding and research
+fixtures prove both paths from only **Connect this project to MDevolved**:
+
+- one authorized agent under the owner-consented solo verified policy resumes,
+  performs, verifies, checkpoints, continues through successive deterministic
+  units, and closes one Work Item without claiming independent review;
+- one authorized lead delegates to at least three claimed actors, shares only
+  permitted provisional results, routes an independent review, checkpoints the
+  accepted evidence, and closes one Work Item through the existing orchestrated
+  reviewed policy;
+- compatible-client evaluation proves failed or malformed verification retains
+  the same semantic unit; server-side completion rejects missing required
+  evidence, policy, checkpoint, review when applicable, or blocking-exception
+  gates; stale and changed replays conflict, exact replay remains idempotent,
+  and a fresh compatible client on another computer resumes the exact next
+  unit;
+- the happy paths require no owner action after initial consent, while authority
+  expansion, destructive action, protected paths, exhausted budgets,
+  conflicting evidence surface as Project Exceptions, revocation fails closed,
+  and other blockers halt continuation with an explicit next action; and
+- old clients remain compatible, independent actors do not receive forbidden
+  shared conclusions, no raw harness state enters durable context, restore
+  creates no authority, and the candidate improves the frozen autonomy
+  baseline without a material operator-work, latency, call-count, or cost
+  regression;
+- the same Project completes through direct MCP and lead-mediated MCP fixtures,
+  resumes through the portable fallback, and passes disposable live smokes on
+  at least one interactive app, one terminal/headless agent, and one
+  orchestration or agent-management host when those clients are available at
+  zero projected cost. Unavailable proprietary clients remain an explicit
+  compatibility risk rather than a false acceptance claim.
+
 ## Required verification matrix
 
 - Shared-core contract tests run against in-memory, folder, and Obsidian ports.
@@ -335,6 +523,14 @@ non-deploying release validation.
   very large trees under explicit ceilings.
 - Worker tests cover old-client compatibility, source-kind isolation, immediate
   revocation, export/snapshot/restore, quarantine, and no restored authority.
+- Autonomous-loop evaluations cover single-agent and three-actor orchestration,
+  deterministic unit selection, failed-verification retention, isolated review,
+  replay conflicts, exact cross-client resume, bounded evidence, explicit
+  exceptions, and zero routine owner action on the happy path.
+- Client-shape fixtures cover direct MCP, lead-mediated MCP, portable handoff,
+  interactive app, CLI/headless, provider-manager, workbench, and graph-runtime
+  integrations. Live smokes are representative and additive; no proprietary
+  client is allowed to become a Community runtime dependency.
 - Desktop E2E runs on current macOS, Windows, and Linux GitHub runners.
 - Obsidian E2E keeps the pinned plugin, direct-installer, and updater paths.
 - Release gates keep the complete public-history scan and existing Community
@@ -346,6 +542,16 @@ non-deploying release validation.
 - Mirroring arbitrary code, binaries, dependency trees, or an entire home
   directory in the first folder release.
 - Executing skills, agents, shell commands, or provider APIs.
+- Owning agent scheduling, supervision, worktrees, retries, test execution, or
+  a harness stop/continue loop.
+- Reimplementing Codex, Claude, Cursor, Antigravity, Grok Build, Hermes, T3 Code,
+  Orca, LangChain/LangGraph, or any other harness's runtime, thread store,
+  checkpoint graph, permissions, or agent manager.
+- Adding a durable provider-name switch or requiring one client-specific plugin
+  when capability negotiation, lead mediation, or the portable fallback works.
+- Requiring owners to maintain a duplicate plan, manually create every unit,
+  copy context between actors, interpret raw agent logs, or choose the next
+  routine action.
 - Importing chats, hidden reasoning, terminal history, runtime state, browser
   state, or credentials.
 - Renaming durable tables, MCP tools, package scopes, or plugin identity merely
@@ -603,3 +809,68 @@ configured macOS, Windows, and Linux package checks passed, along with the
 complete GitHub verification job on the exact candidate. No production
 deployment, migration, package publication, plugin release, paid service, or
 external resource mutation was part of MD7 delivery.
+
+## MD8 delivery receipt
+
+MD8 implements the Autonomous Project Loop without making MDevolved an agent
+runtime. An owner may retain the existing **orchestrated reviewed** policy or
+explicitly activate **solo verified** completion. The reviewed path requires an
+authorized lead, at least three claimed actors, independently routed review,
+accepted evidence, a fresh fenced checkpoint, a current policy allow Decision,
+and no blocking exception. The solo path requires one actor, explicit active
+owner consent, task-appropriate reported evidence, the same checkpoint and
+Decision fences, and no false independent-review claim. Revoking or replacing
+solo consent immediately prevents an in-flight solo Run from completing.
+
+The versioned contracts and generic MCP surface negotiate direct MCP,
+lead-mediated MCP, and portable-handoff operation. Representative fixtures
+cover interactive applications, terminal and headless agents, provider
+managers, multi-agent workbenches, and graph runtimes without making any
+product name a durable enum or runtime dependency. Explicit
+`sourceWorkPacketId` inheritance records same-Project accepted packet and
+evidence dependencies; omission inherits nothing. Focused, independent,
+run-shared-unvetted, reviewer, and synthesis contexts retain their documented
+visibility boundaries. MDevolved stores bounded provider-neutral evidence and
+provenance, never raw transcripts, hidden reasoning, terminal history,
+credentials, scheduler state, or provider runtime.
+
+Forward-only migration `0038_autonomous_completion_mode.sql` adds the Run
+completion mode and owner policy-consent flag with reviewed-safe defaults. Old
+records and clients remain orchestrated reviewed. New durable values participate
+in portable export, encrypted snapshot, staged restore, quarantine, retention,
+and no-restored-authority checks. Restore never revives grants, actors, leases,
+credentials, OAuth state, sessions, or live consent; rollback code ignores the
+additive columns rather than attempting a destructive down-migration.
+
+Focused acceptance covers solo coding and research, the actual three-actor
+lead-mediated MCP loop, direct MCP, portable continuity, explicit evidence
+inheritance, old-client compatibility, replay and idempotency conflicts,
+cross-Run and cross-Project denial, revocation and expiry, context isolation,
+malformed and oversized bundles, evidence conflict, budget exhaustion,
+protected paths, destructive requests, and restore without authority. The
+complete repository gate additionally covers contracts, Workers services,
+web UI, source adapters, CLI, desktop, Obsidian, migrations, public-source
+history, builds, browser acceptance, and non-deploying Cloudflare dry-runs.
+The exact named MD8 gate passes 8 test files and 157 tests plus both
+client-shape contract checks. The complete repository evidence passes 91 core
+test files and 551 tests plus the YAOS, folder, CLI, desktop, Obsidian,
+marketing, continuity, and lifecycle package suites; 74 browser cases; 20
+migration files and 23 migration tests; builds; public-history inspection; both
+non-deploying Cloudflare dry-runs; and the final format, lint, type, policy,
+release, and 33-migration managed-cell checks.
+
+Adversarial review found and drove repairs for strict v1 operational-overview
+compatibility, a missing real lead-mediated MCP exercise, implicit evidence
+inheritance without explicit provenance, ambiguous Run context visibility,
+owner consent replacement, and migration-ledger fixtures. The remaining
+compatibility risk is empirical rather than architectural: synthetic fixtures
+prove integration shapes, but unavailable proprietary client releases are not
+claimed as dated live certification. Harness-reported verification remains
+reported evidence; MDevolved does not execute or independently attest the
+underlying tests.
+
+All MD8 validation uses synthetic local data and projects $0 incremental cost.
+It creates no external Cloudflare resource and performs no production mutation,
+package publication, repository push, or deployment. The accepted local
+candidate remains uncommitted on `codex/md8-autonomous-project-loop`; repository
+and release actions require separate owner authorization.

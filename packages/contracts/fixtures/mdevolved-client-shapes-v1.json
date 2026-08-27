@@ -1,0 +1,46 @@
+{
+  "format": "mdevolved-client-shapes-v1",
+  "observedAt": "2026-08-27",
+  "schemaVersion": 1,
+  "shapes": [
+    {
+      "category": "interactive-app",
+      "members": ["Codex app", "Claude app", "Cursor", "Antigravity"],
+      "primaryConnectionMode": "direct-mcp"
+    },
+    {
+      "category": "terminal-or-headless",
+      "members": [
+        "Codex CLI",
+        "Claude Code",
+        "Cursor CLI",
+        "Grok Build",
+        "Hermes Agent"
+      ],
+      "primaryConnectionMode": "direct-mcp"
+    },
+    {
+      "category": "provider-cli-manager",
+      "members": ["T3 Code"],
+      "primaryConnectionMode": "lead-mediated-mcp"
+    },
+    {
+      "category": "multi-agent-workbench",
+      "members": ["Orca ADE"],
+      "primaryConnectionMode": "lead-mediated-mcp"
+    },
+    {
+      "category": "agent-framework",
+      "members": ["LangChain", "LangGraph"],
+      "primaryConnectionMode": "lead-mediated-mcp"
+    }
+  ],
+  "universalContract": {
+    "capabilityNegotiationRequired": true,
+    "connectionModes": ["direct-mcp", "lead-mediated-mcp", "portable-handoff"],
+    "durableProductEnum": false,
+    "harnessOwnsExecution": true,
+    "portableFallbackRequired": true,
+    "restoresAuthority": false
+  }
+}

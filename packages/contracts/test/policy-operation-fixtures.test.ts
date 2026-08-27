@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_POLICY_EVIDENCE_REFS,
   completeContinuityDrillRequestSchema,
+  completionPolicySchema,
   continuityReceiptSchema,
   evaluateRunPolicyRequestSchema,
+  md8CapabilitiesSchema,
   policyBindingSchema,
   policyDecisionSchema,
   r4CapabilitiesSchema,
@@ -13,6 +15,40 @@ import receiptFixture from "../fixtures/owd-continuity-receipt-v1.json";
 import decisionFixture from "../fixtures/owd-policy-decision-v1.json";
 
 describe("R4 policy autopilot and continuity fixtures", () => {
+  it("requires explicit owner consent before advertising solo completion", () => {
+    expect(
+      completionPolicySchema.parse({
+        allowedModes: ["orchestrated-reviewed", "solo-verified"],
+        defaultMode: "orchestrated-reviewed",
+        format: "owd-completion-policy-v1",
+        schemaVersion: 1,
+        soloVerifiedOwnerConsent: true,
+      }).soloVerifiedOwnerConsent,
+    ).toBe(true);
+    expect(
+      completionPolicySchema.safeParse({
+        allowedModes: ["orchestrated-reviewed", "solo-verified"],
+        defaultMode: "orchestrated-reviewed",
+        format: "owd-completion-policy-v1",
+        schemaVersion: 1,
+        soloVerifiedOwnerConsent: false,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("does not let solo completion claim an independent review", () => {
+    const solo = structuredClone(decisionFixture);
+    solo.completionMode = "solo-verified";
+    const review = solo.checks.find(
+      (check) => check.key === "independent-review",
+    );
+    if (review === undefined) throw new Error("Review check missing.");
+    review.evidenceRefs = [];
+    expect(policyDecisionSchema.safeParse(solo).success).toBe(true);
+    review.evidenceRefs = [solo.decisionId];
+    expect(policyDecisionSchema.safeParse(solo).success).toBe(false);
+  });
+
   it("parses the frozen owner policy, deterministic allow, and redacted drill receipt", () => {
     expect(policyBindingSchema.parse(bindingFixture).ownerAuthored).toBe(true);
     expect(policyDecisionSchema.parse(decisionFixture).checks).toHaveLength(10);
@@ -170,5 +206,31 @@ describe("R4 policy autopilot and continuity fixtures", () => {
         schemaVersion: 3,
       }).schemaVersion,
     ).toBe(3);
+  });
+
+  it("negotiates autonomous completion without changing the reviewed legacy default", () => {
+    expect(
+      md8CapabilitiesSchema.parse({
+        authority: {
+          liveAuthorityIncluded: false,
+          restoredAuthorityAllowed: false,
+        },
+        completionModes: ["orchestrated-reviewed", "solo-verified"],
+        completionPolicyFormat: "owd-completion-policy-v1",
+        connectionModes: [
+          "direct-mcp",
+          "lead-mediated-mcp",
+          "portable-handoff",
+        ],
+        format: "owd-lead-operation-capabilities-v4",
+        legacyDefaultMode: "orchestrated-reviewed",
+        mcpProtocolRevision: "2025-11-25",
+        requiredScope: "project.lead",
+        schemaVersion: 4,
+      }),
+    ).toMatchObject({
+      legacyDefaultMode: "orchestrated-reviewed",
+      schemaVersion: 4,
+    });
   });
 });

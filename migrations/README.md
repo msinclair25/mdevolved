@@ -67,6 +67,13 @@ integrity, and continuity-receipt provenance while application rollback simply
 stops reading newer projections. No release provides or invokes a destructive
 down-migration, and restored R1–R4 records recreate no live authority.
 
+`0038_autonomous_completion_mode.sql` additively maps every existing Run to
+`orchestrated-reviewed`. A `solo-verified` Run is valid only when its immutable
+Run record, owner-authored Policy Binding, and latest allow Decision agree.
+Application rollback leaves the column in place and resumes the reviewed
+three-actor behavior; restore keeps Run and policy records quarantined and
+recreates no actor, grant, lease, credential, OAuth, or policy authority.
+
 Local SQLite execution is not sufficient evidence that Wrangler will transport
 a migration to remote D1 correctly. The first managed-cell rehearsal found
 that Wrangler's SQL splitter removed the terminating delimiter from a

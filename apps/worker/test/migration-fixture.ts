@@ -30,6 +30,7 @@ import workingProfileSkillsMigration from "../../../migrations/0034_working_prof
 import compoundingDraftsMigration from "../../../migrations/0035_compounding_drafts.sql";
 import sourceDescriptorsMigration from "../../../migrations/0036_source_descriptors.sql";
 import sourceDevicesMigration from "../../../migrations/0037_source_devices.sql";
+import autonomousCompletionModeMigration from "../../../migrations/0038_autonomous_completion_mode.sql";
 
 export const migrations = [
   { file: "0001_platform_metadata.sql", source: migration0001 },
@@ -124,6 +125,10 @@ export const migrations = [
     source: sourceDescriptorsMigration,
   },
   { file: "0037_source_devices.sql", source: sourceDevicesMigration },
+  {
+    file: "0038_autonomous_completion_mode.sql",
+    source: autonomousCompletionModeMigration,
+  },
 ] as const;
 
 export const priorReleaseMigrations = migrations.slice(0, 10);
@@ -151,6 +156,7 @@ export const workingProfileSkillsMigrationEntry = migrations[28]!;
 export const compoundingDraftsMigrationEntry = migrations[29]!;
 export const sourceDescriptorsMigrationEntry = migrations[30]!;
 export const sourceDevicesMigrationEntry = migrations[31]!;
+export const autonomousCompletionModeMigrationEntry = migrations[32]!;
 
 export function executableMigration(source: string): string {
   return source
@@ -433,5 +439,19 @@ export async function applyPolicyAutopilotR4Migration(
     .first<{ count: number }>();
   if (table?.count !== 1) {
     await applyMigrations(db, [policyAutopilotR4MigrationEntry]);
+  }
+}
+
+export async function applyAutonomousCompletionModeMigration(
+  db: D1Database,
+): Promise<void> {
+  const column = await db
+    .prepare(
+      `SELECT COUNT(*) AS count FROM pragma_table_info('project_runs')
+       WHERE name = 'completion_mode'`,
+    )
+    .first<{ count: number }>();
+  if (column?.count !== 1) {
+    await applyMigrations(db, [autonomousCompletionModeMigrationEntry]);
   }
 }

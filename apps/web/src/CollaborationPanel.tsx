@@ -724,7 +724,7 @@ export function PolicyContinuityStatus({
   disabled = false,
 }: {
   operation: OperationalOverview["projects"][number];
-  onActivate?: () => void;
+  onActivate?: (mode: "orchestrated-reviewed" | "solo-verified") => void;
   activating?: boolean;
   disabled?: boolean;
 }) {
@@ -778,17 +778,38 @@ export function PolicyContinuityStatus({
         Execution remains external to MDevolved; the Community remains
         independent.
       </span>
-      {!active ? (
-        <button
-          className="primary-action"
-          disabled={activating || disabled}
-          type="button"
-          onClick={onActivate}
-        >
-          {activating
-            ? "Activating standing policy…"
-            : "Activate fixed standing policy"}
-        </button>
+      {active ? (
+        <span>
+          The active completion policy is immutable. Re-select either mode to
+          replace it with a fresh owner-authored binding; choosing reviewed
+          completion immediately removes solo consent.
+        </span>
+      ) : null}
+      {onActivate ? (
+        <div className="collaboration-actions">
+          <button
+            className="primary-action"
+            disabled={activating || disabled}
+            type="button"
+            onClick={() => onActivate?.("orchestrated-reviewed")}
+          >
+            {activating
+              ? "Activating standing policy…"
+              : active
+                ? "Use reviewed completion"
+                : "Require independent review"}
+          </button>
+          <button
+            className="secondary-action"
+            disabled={activating || disabled}
+            type="button"
+            onClick={() => onActivate?.("solo-verified")}
+          >
+            {active
+              ? "Use solo verified completion"
+              : "Allow solo verified completion"}
+          </button>
+        </div>
       ) : null}
     </article>
   );
@@ -1531,7 +1552,16 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
 
   async function activateStandingPolicy(
     project: CollaborationProjectSummary,
+    completionMode: "orchestrated-reviewed" | "solo-verified",
   ): Promise<void> {
+    if (
+      completionMode === "solo-verified" &&
+      !window.confirm(
+        "Allow one authorized agent to close a Work Item after it submits purpose-specific verification evidence and a fresh checkpoint? MDevolved records and checks that evidence but does not run the external harness's tests. Independent review remains available for orchestrated Runs.",
+      )
+    ) {
+      return;
+    }
     await run(
       `Activating ${project.label}'s standing policy…`,
       async (csrf) => {
@@ -1540,10 +1570,13 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
           csrf,
           {
             checkpointIntervalSeconds: 3600,
+            ...(completionMode === "solo-verified" ? { completionMode } : {}),
             drillIntervalSeconds: 604800,
           },
         );
-        return "Standing policy activated. Routine requests continue without owner approval; execution remains external and the Community remains independent.";
+        return completionMode === "solo-verified"
+          ? "Standing policy activated with solo verified completion. One authorized agent may close only after bounded evidence, a fresh checkpoint, and a passing policy Decision; execution remains external."
+          : "Standing policy activated with independent review required. Routine requests continue without owner approval; execution remains external and the Community remains independent.";
       },
     );
   }
@@ -1776,7 +1809,9 @@ export function CollaborationPanel({ activeVaults, autoOpen = false }: Props) {
                       `Activating ${project.label}'s standing policy…`
                     }
                     disabled={working !== null}
-                    onActivate={() => void activateStandingPolicy(project)}
+                    onActivate={(mode) =>
+                      void activateStandingPolicy(project, mode)
+                    }
                     operation={operationalOverviewByProject.get(
                       project.projectId,
                     )!}

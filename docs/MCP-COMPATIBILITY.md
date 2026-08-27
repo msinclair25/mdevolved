@@ -40,6 +40,18 @@ advanced operations. None of these operations makes MDevolved an agent runtime o
 grants a client local shell, skill, or filesystem authority. The owner retains
 root authority and immediate revocation.
 
+The additive v4 lead-operation capability resource advertises
+`orchestrated-reviewed` and `solo-verified`. Requests and records that omit
+the new field retain the reviewed three-actor default. Solo completion is not a
+client-side flag that weakens policy: the selected Run mode, owner-authored
+Policy Binding, immutable allow Decision, actor count, evidence, checkpoint,
+and current bundle count must agree. Direct MCP, lead-mediated MCP, and the
+portable handoff preserve the same Project and Work Item identities.
+Owners can supersede solo consent with a fresh reviewed-only binding. New Work
+Items inherit no evidence unless the lead explicitly names an accepted
+`sourceWorkPacketId`; the new packet records that predecessor and its bounded
+evidence dependencies.
+
 ## Authentication boundary
 
 The endpoint is protected by OAuth 2.1-style authorization with RFC 9728
@@ -88,6 +100,9 @@ retirement responses, so custom behavior cannot hide a protocol mismatch.
 - Unknown protocol versions and unknown MDevolved contract versions fail closed.
 - Capabilities remain additive. Older clients can ignore MDevolved Resources and
   Prompts without losing the portable read-only vault baseline.
+- Older Run clients that do not send `completionMode` remain on
+  `orchestrated-reviewed`; they need no reconnect, reauthorization, or record
+  migration.
 - MCP inputs never include hidden reasoning, provider credentials, raw
   terminal history, customer logs, or restored live authority.
 

@@ -30,6 +30,7 @@ import {
   submitBundleRequestSchema,
   workPacketSchema,
   type Actor,
+  type CompletionMode,
   type EventBundle,
   type LeadOperationOverview,
   type PolicyBinding,
@@ -151,6 +152,7 @@ export type RunRow = {
   bundle_count: number;
   completed_at: number | null;
   completion_outcome: string | null;
+  completion_mode: CompletionMode;
   created_at: number;
   logical_bytes: number;
   policy_id: string;
@@ -433,14 +435,15 @@ function dependencyStatement(
   db: D1Database,
   recordId: string,
   dependencyId: string,
+  dependencyKind: "evidence" | "record" = "record",
 ): D1PreparedStatement {
   return db
     .prepare(
       `INSERT INTO collaboration_dependencies (
         record_id, dependency_id, dependency_kind
-      ) VALUES (?, ?, 'record')`,
+      ) VALUES (?, ?, ?)`,
     )
-    .bind(recordId, dependencyId);
+    .bind(recordId, dependencyId, dependencyKind);
 }
 
 function defaultPolicy(
@@ -690,7 +693,7 @@ export async function readRunRow(
     .prepare(
       `SELECT run_id, project_id, work_item_id, work_packet_id, policy_id,
         purpose, status, created_at, completed_at, completion_outcome,
-        actor_count, bundle_count, logical_bytes
+        completion_mode, actor_count, bundle_count, logical_bytes
        FROM project_runs WHERE run_id = ? AND project_id = ?`,
     )
     .bind(runId, projectId)
@@ -699,6 +702,9 @@ export async function readRunRow(
 
 function currentRun(row: RunRow): Run {
   return runSchema.parse({
+    ...(row.completion_mode === "solo-verified"
+      ? { completionMode: row.completion_mode }
+      : {}),
     completedAt: row.completed_at,
     createdAt: row.created_at,
     format: "owd-run-v1",
@@ -864,6 +870,43 @@ export async function createLeadWorkItem(
   if (project === null || project.status !== "active") {
     throw new LeadOperationProblem("project_invalid");
   }
+  const sourcePacketRow =
+    request.sourceWorkPacketId === undefined
+      ? null
+      : await db
+          .prepare(
+            `SELECT records.id
+             FROM collaboration_records records
+             JOIN collaboration_record_states states
+               ON states.record_id = records.id
+             WHERE records.id = ? AND records.project_id = ?
+               AND records.record_type = 'work-packet'
+               AND records.restored_at IS NULL
+               AND states.disposition = 'accepted' LIMIT 1`,
+          )
+          .bind(request.sourceWorkPacketId, request.projectId)
+          .first<{ id: string }>();
+  if (request.sourceWorkPacketId !== undefined && sourcePacketRow === null) {
+    throw new LeadOperationProblem("work_item_invalid");
+  }
+  let inheritedEvidenceObjects: WorkPacket["evidenceObjects"] = [];
+  let inheritedSourceCitations: WorkPacket["sourceCitations"] = [];
+  if (sourcePacketRow !== null) {
+    const sourcePacket = await readCollaborationRecord(
+      db,
+      storage,
+      sourcePacketRow.id,
+    );
+    if (
+      sourcePacket?.record.recordType !== "work-packet" ||
+      sourcePacket.record.projectId !== request.projectId
+    ) {
+      throw new LeadOperationProblem("integrity_mismatch");
+    }
+    await verifyPacketIntegrity(sourcePacket.record);
+    inheritedEvidenceObjects = sourcePacket.record.evidenceObjects;
+    inheritedSourceCitations = sourcePacket.record.sourceCitations;
+  }
 
   const workItemId = crypto.randomUUID();
   const workItemVersionId = crypto.randomUUID();
@@ -890,7 +933,7 @@ export async function createLeadWorkItem(
     await withIntegrity({
       brief: request.workItemBrief,
       createdAt: input.now,
-      evidenceObjects: [],
+      evidenceObjects: inheritedEvidenceObjects,
       excluded: [],
       expiresAt: input.now + request.packetExpiresInSeconds,
       format: "owd-work-packet-v1" as const,
@@ -918,7 +961,7 @@ export async function createLeadWorkItem(
       recordType: "work-packet" as const,
       requestedRole: request.requestedRole,
       schemaVersion: 1 as const,
-      sourceCitations: [],
+      sourceCitations: inheritedSourceCitations,
       truncationNotices: [],
       workItemId,
       workItemVersionId,
@@ -967,6 +1010,12 @@ export async function createLeadWorkItem(
     ),
     dependencyStatement(db, packetId, workItemId),
     dependencyStatement(db, packetId, workItemVersionId),
+    ...(sourcePacketRow === null
+      ? []
+      : [dependencyStatement(db, packetId, sourcePacketRow.id)]),
+    ...inheritedEvidenceObjects.map((evidence) =>
+      dependencyStatement(db, packetId, evidence.evidenceObjectId, "evidence"),
+    ),
     db
       .prepare(
         `INSERT INTO collaboration_work_items (
@@ -1074,7 +1123,9 @@ export async function startLeadRun(
     projectId: request.projectId,
     projectVersionId: current.active_project_version_id,
   });
+  const completionMode = request.completionMode ?? "orchestrated-reviewed";
   const run = runSchema.parse({
+    ...(completionMode === "solo-verified" ? { completionMode } : {}),
     completedAt: null,
     createdAt: input.now,
     format: "owd-run-v1",
@@ -1204,10 +1255,11 @@ export async function startLeadRun(
           run_id, operation_record_id, project_id, work_item_id,
           work_packet_id, policy_id, source_lease_id, source_fencing_token,
           live_fence_valid, purpose, status, created_at,
+          completion_mode,
           max_actors_per_run, max_bundles_per_run, max_events_per_bundle,
           max_bundle_bytes, max_run_logical_bytes
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${LIVE_FENCE_SQL},
-          ?, 'active', ?, ?, ?, ?, ?, ?)`,
+          ?, 'active', ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         run.runId,
@@ -1221,6 +1273,7 @@ export async function startLeadRun(
         ...fenceBindings(request.projectId, fence, grant, input.now),
         request.purpose,
         input.now,
+        completionMode,
         standing.policy.maxActorsPerRun,
         standing.policy.maxBundlesPerRun,
         standing.policy.maxEventsPerBundle,
@@ -2157,6 +2210,23 @@ async function readCompletionPolicyFence(
     workItemId: string;
   },
 ): Promise<CompletionPolicyFence | null> {
+  let storedRun: Run | null = null;
+  try {
+    const stored = await readLeadOperationRecord(db, storage, input.runId);
+    storedRun = stored?.format === "owd-run-v1" ? stored : null;
+  } catch {
+    throw new LeadOperationProblem("integrity_mismatch");
+  }
+  if (
+    storedRun === null ||
+    storedRun.projectId !== input.projectId ||
+    storedRun.workItemId !== input.workItemId ||
+    storedRun.policyId !== input.run.policy_id ||
+    (storedRun.completionMode ?? "orchestrated-reviewed") !==
+      input.run.completion_mode
+  ) {
+    throw new LeadOperationProblem("integrity_mismatch");
+  }
   const bindingRow = await db
     .prepare(
       `SELECT binding.binding_id, binding.operational_record_id,
@@ -2204,6 +2274,15 @@ async function readCompletionPolicyFence(
     !storedBinding.ownerAuthored
   ) {
     throw new LeadOperationProblem("integrity_mismatch");
+  }
+  const mode = input.run.completion_mode;
+  if (
+    mode === "solo-verified" &&
+    (storedBinding.completionPolicy === undefined ||
+      !storedBinding.completionPolicy.allowedModes.includes(mode) ||
+      !storedBinding.completionPolicy.soloVerifiedOwnerConsent)
+  ) {
+    throw new LeadOperationProblem("policy_required");
   }
   const decisionRow = await db
     .prepare(
@@ -2275,6 +2354,7 @@ async function readCompletionPolicyFence(
     storedDecision.workPacketId !== input.run.work_packet_id ||
     storedDecision.continuityPointId !== decisionRow.continuity_point_id ||
     storedDecision.acceptedBundleCount !== decisionRow.current_bundle_count ||
+    (storedDecision.completionMode ?? "orchestrated-reviewed") !== mode ||
     !storedDecision.checks.every((check) => check.passed)
   ) {
     throw new LeadOperationProblem("integrity_mismatch");
@@ -2322,7 +2402,12 @@ export async function completeLeadWorkItem(
   ) {
     throw new LeadOperationProblem("run_invalid");
   }
-  if (run.actor_count < MIN_HANDS_OFF_ACTORS) {
+  const completionMode = run.completion_mode;
+  if (
+    (completionMode === "solo-verified" && run.actor_count !== 1) ||
+    (completionMode === "orchestrated-reviewed" &&
+      run.actor_count < MIN_HANDS_OFF_ACTORS)
+  ) {
     throw new LeadOperationProblem("review_required");
   }
   const blocker = await db
@@ -2356,7 +2441,9 @@ export async function completeLeadWorkItem(
     )
     .bind(request.runId, request.projectId)
     .first<{ bundle_id: string }>();
-  if (review === null) throw new LeadOperationProblem("review_required");
+  if (completionMode === "orchestrated-reviewed" && review === null) {
+    throw new LeadOperationProblem("review_required");
+  }
   const checkpoint = await db
     .prepare(
       `SELECT 1 AS found FROM project_continuity_points
@@ -2382,6 +2469,9 @@ export async function completeLeadWorkItem(
     runId: request.runId,
     workItemId: request.workItemId,
   });
+  if (completionMode === "solo-verified" && completionPolicy === null) {
+    throw new LeadOperationProblem("policy_required");
+  }
   const result = {
     completed: true,
     idempotencyKey: request.idempotencyKey,

@@ -40,6 +40,8 @@ The approved gate extends rather than replaces the proven foundation:
 | Continuity Point                | `owd-continuity-point-v1`             | Acknowledged bounded Project state for lead substitution                         |
 | Lead continuity capabilities    | `owd-lead-continuity-capabilities-v1` | Additive MCP tools, scope, point, and portable-bundle negotiation                |
 | Portable continuity bundle      | `owd-portable-continuity-bundle-v1`   | Provider-neutral README plus canonical latest Continuity Point                   |
+| Completion policy               | `owd-completion-policy-v1`            | Owner consent for additive solo verification while preserving reviewed default   |
+| Autonomous loop capabilities    | `owd-lead-operation-capabilities-v4`  | Completion and connection-mode negotiation without provider runtime coupling     |
 
 All structural schemas target
 [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12). The shared
@@ -524,12 +526,16 @@ Actor scopes only narrow work inside that authority: `run.context.read`,
 `run.bundle.submit`, and `run.review.submit`. They never widen the Project,
 Knowledge Space, vault, folder, protected-path, or owner boundary. Review must
 be explicitly routed to a different active actor, and only that routed actor
-may submit the result. Completion requires at least three claimed actors, a
-routed independent passing review, a fresh live Continuity Point for the Work
-Item against the Run's exact pinned Work Packet, and no blocking Exception. A
-newer packet does not silently retarget an active Run. `start_run` only selects
-an accepted, non-restored packet; quarantined or restored packet bodies can
-never seed live Run authority.
+may submit the result. Compatible reviewed completion requires at least three
+claimed actors and a routed independent passing review; owner-consented solo
+completion requires exactly one claimed actor and never claims review evidence.
+Both require purpose evidence, a fresh live Continuity Point for the Work Item
+against the Run's exact pinned Work Packet, a current allow Decision, and no
+blocking Exception. `create_work_item` inherits nothing unless an accepted
+`sourceWorkPacketId` is explicit, in which case the new packet records the
+predecessor and its evidence dependencies. A newer packet does not silently
+retarget an active Run. `start_run` only selects an accepted, non-restored
+packet; quarantined or restored packet bodies can never seed live Run authority.
 
 Requests for authority expansion, destructive action, or access below the
 exact `.git`, `.owdignore`, or `.obsidian` protected roots are recorded and not

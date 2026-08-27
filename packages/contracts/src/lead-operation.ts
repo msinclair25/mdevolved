@@ -1,5 +1,6 @@
 import { z } from "./zod";
 import { workItemBriefSchema, workPacketSchema } from "./collaboration";
+import { completionModeSchema } from "./policy-operation";
 
 export const OWD_PROJECT_POLICY_FORMAT = "owd-project-policy-v1" as const;
 export const OWD_RUN_FORMAT = "owd-run-v1" as const;
@@ -139,6 +140,7 @@ export const runStatusSchema = z.enum([
 ]);
 export const runSchema = z
   .object({
+    completionMode: z.literal("solo-verified").optional(),
     format: z.literal(OWD_RUN_FORMAT),
     schemaVersion: z.literal(1),
     runId: idSchema,
@@ -541,6 +543,7 @@ export const createWorkItemRequestSchema = mutationEnvelopeSchema
       .int()
       .positive()
       .max(7 * 24 * 60 * 60),
+    sourceWorkPacketId: idSchema.optional(),
   })
   .strict();
 export const createWorkItemReceiptSchema = receiptBaseSchema
@@ -548,6 +551,7 @@ export const createWorkItemReceiptSchema = receiptBaseSchema
   .strict();
 export const startRunRequestSchema = mutationEnvelopeSchema
   .extend({
+    completionMode: completionModeSchema.optional(),
     workItemId: idSchema,
     purpose: runPurposeSchema,
     elastic: z

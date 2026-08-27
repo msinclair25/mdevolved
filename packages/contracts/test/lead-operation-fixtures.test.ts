@@ -4,6 +4,7 @@ import {
   MAX_R3_BUNDLE_BATCH,
   MAX_R3_DELTA_PAGE,
   MAX_R3_REGISTER_BATCH,
+  createWorkItemRequestSchema,
   elasticRunPlaneSchema,
   eventBundleSchema,
   leadOperationCapabilitiesSchema,
@@ -12,6 +13,7 @@ import {
   projectPolicySchema,
   r3CapabilitiesSchema,
   registerActorsBatchRequestSchema,
+  runSchema,
   runObservationSchema,
   runContextSchema,
   runDeltaPageSchema,
@@ -24,6 +26,59 @@ import packetFixture from "../fixtures/owd-work-packet-v1.json";
 import elasticFixture from "../fixtures/owd-elastic-run-plane-v1.json";
 
 describe("R2 hands-off lead operation fixtures", () => {
+  it("keeps old Work Item requests valid and makes evidence carry-forward explicit", () => {
+    const legacy = {
+      fencingToken: 1,
+      idempotencyKey: "md8-contract-create-work-item",
+      leaseId: "70000000-0000-4000-8000-000000000001",
+      packetExpiresInSeconds: 600,
+      projectId: policyFixture.projectId,
+      requestedRole: { authority: "none", label: "coding actor" },
+      workItemBrief: {
+        constraints: [],
+        definitionOfDone: ["Return bounded evidence."],
+        objective: "Exercise one compatible request.",
+        requestedOutput: "Markdown",
+      },
+    };
+    expect(
+      createWorkItemRequestSchema.parse(legacy).sourceWorkPacketId,
+    ).toBeUndefined();
+    expect(
+      createWorkItemRequestSchema.parse({
+        ...legacy,
+        sourceWorkPacketId: packetFixture.packetId,
+      }).sourceWorkPacketId,
+    ).toBe(packetFixture.packetId);
+  });
+
+  it("keeps old Runs reviewed by default and accepts only an additive solo selection", () => {
+    const legacyRun = {
+      completedAt: null,
+      createdAt: 1_784_820_500,
+      format: "owd-run-v1",
+      logicalBytes: 0,
+      policyId: policyFixture.policyId,
+      projectId: policyFixture.projectId,
+      purpose: "coding",
+      runId: bundleFixture.runId,
+      schemaVersion: 1,
+      status: "active",
+      workItemId: "74000000-0000-4000-8000-000000000001",
+    };
+    expect(runSchema.parse(legacyRun).completionMode).toBeUndefined();
+    expect(
+      runSchema.parse({ ...legacyRun, completionMode: "solo-verified" })
+        .completionMode,
+    ).toBe("solo-verified");
+    expect(
+      runSchema.safeParse({
+        ...legacyRun,
+        completionMode: "orchestrated-reviewed",
+      }).success,
+    ).toBe(false);
+  });
+
   it("parses the frozen policy, bundle, and capabilities envelopes", () => {
     expect(projectPolicySchema.parse(policyFixture).protectedPaths).toEqual([
       ".git",

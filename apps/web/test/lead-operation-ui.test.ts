@@ -179,6 +179,8 @@ describe("hands-off lead operation UI", () => {
     expect(html).toContain("Standing policy not active");
     expect(html).toContain("Activate the fixed standing policy once");
     expect(html).toContain("routine requests do not need owner approval");
+    expect(html).toContain("Require independent review");
+    expect(html).toContain("Allow solo verified completion");
     expect(html).toContain("Execution remains external to MDevolved");
     expect(html).toContain("Community remains independent");
     expect(html).not.toContain("Cloudflare");
@@ -190,6 +192,7 @@ describe("hands-off lead operation UI", () => {
     (outcome) => {
       const html = renderToStaticMarkup(
         createElement(PolicyContinuityStatus, {
+          onActivate: () => undefined,
           operation: policyOperation({
             continuityAgeSeconds: 12,
             integrityStatus: "ok",
@@ -219,6 +222,11 @@ describe("hands-off lead operation UI", () => {
       );
       expect(html).toContain(`latest Decision ${outcome}`);
       expect(html).toContain("research");
+      expect(html).toContain(
+        "choosing reviewed completion immediately removes solo consent",
+      );
+      expect(html).toContain("Use reviewed completion");
+      expect(html).toContain("Use solo verified completion");
       expect(html).toContain("12 seconds");
       expect(html).toContain("RPO 3600s");
       expect(html).toContain("RTO 7200s");

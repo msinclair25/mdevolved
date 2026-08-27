@@ -143,10 +143,18 @@ or scheduler projection.
 Migration 0033 is additive, forward-only, STRICT, and trigger-free. It retains
 transport-safe foreign keys and checks and has no destructive down-migration.
 Activation records immutable upgrade evidence from 0032 to 0033 and rollback
-evidence stating that rollback is application-only, never automatic. The v1
-and v2 MCP capability resources and legacy portable-continuity format remain
-unchanged; R4 clients opt into the additive v3 capability resource and its two
-generic read/evaluate tools plus the fenced `complete_continuity_drill` tool.
+evidence stating that rollback is application-only, never automatic. The v1,
+v2, and v3 MCP capability resources and legacy portable-continuity format
+remain unchanged. MD8 clients opt into the additive v4 capability resource.
+Existing records map to reviewed completion; owner-consented solo completion
+is frozen in the Run and its exact Decision. Migration 0038 is forward-only,
+and application rollback resumes the stricter reviewed path without deleting
+the additive columns.
+
+The owner may supersede an active immutable binding with the other completion
+mode while retaining the fixed checkpoint and drill intervals. Selecting
+reviewed completion immediately revokes standing solo consent. Agent requests
+still cannot edit policy or replace the owner-authored binding.
 
 Managed-cell health is aggregate operational evidence only. It declares the
 execution engine external and the Community data path independent; no managed
