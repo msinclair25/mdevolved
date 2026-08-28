@@ -1,21 +1,20 @@
 # MDevolved minimum lovable product plan
 
-**Status:** MD9 active; MD10 and MD11 are queued and cannot close early.
+**Status:** MD9 complete; MD10 is next and MD11 remains queued.
 **Date:** 2026-08-27
 
-## Current milestone
+## Completed milestone
 
-**MD9 — Canonical MDevolved identity** is the only active milestone.
+**MD9 — Canonical MDevolved identity** passed on 2026-08-28.
 
 The final acceptance decision is binary: a clean installation and every new
 normal workflow must write, display, and advertise MDevolved identities, while
 the same candidate still reads supported legacy clients and records through a
 contained compatibility boundary and never restores or copies live authority.
 
-Planning, implementation, regression repair, adversarial review, and the exact
-candidate gate remain in MD9. Publishing, pushing, deploying, migrating a live
-cell, or creating an external plugin repository are delivery actions, not proof
-of correctness, and require owner authorization at execution time.
+The owner-authorized delivery is complete. MD10 is the next independently
+acceptable milestone; its lovable-product proof and alpha-user evidence were
+not used to close MD9 early.
 
 ## Outcome
 
@@ -159,6 +158,50 @@ MD9 stops and reports an explicit exception for an unsupported legacy version,
 identity conflict, authority expansion, protected-path request, destructive
 migration, unavailable external name, failed exact-candidate gate, or any
 operation requiring ungranted external authority.
+
+#### MD9 delivery receipt — 2026-08-28
+
+- **Outcome:** passed. New installations, advertised interfaces, portable
+  records, documentation, and public distribution use canonical MDevolved
+  identities. Supported former identities remain contained read/adapter paths.
+  Restore and migration do not restore grants, actors, leases, credentials,
+  OAuth state, or other live authority.
+- **Source delivery:** PRs
+  [#48](https://github.com/msinclair25/mdevolved/pull/48) and
+  [#49](https://github.com/msinclair25/mdevolved/pull/49) merged as
+  `9ce01d603972f94ae2146f5d3b3a20b3719c562c` and
+  `ade2bf1c999dd4d09a721f3962e72010718297e0`. The release tag is
+  `mdevolved-v0.1.0-alpha.2`.
+- **Schema and runtime:** forward-only migration
+  `0039_canonical_portable_formats.sql` was applied to the existing production
+  cell. The Worker version is `877dab2e-4e7e-4d72-b528-b867590e6b72`; the
+  marketing version is `cb0e6ca9-ca5f-4fc3-84e2-cfde4065746f`. Existing D1,
+  R2, Worker, route, and storage identities were retained rather than renamed
+  or copied.
+- **Distribution:** the canonical adapter is published at
+  [mdevolved-sync](https://github.com/msinclair25/mdevolved-sync) with prerelease
+  `mdevolved-sync-v0.2.0-alpha.1`, checksums, provenance, and rollback notes.
+  Desktop archives are attached to the
+  [alpha.2 release](https://github.com/msinclair25/mdevolved/releases/tag/mdevolved-v0.1.0-alpha.2).
+  `mdevolved@0.1.0-alpha.2` is public on npm and is the `latest` tag.
+- **Validation:** the complete repository gate, the 23/23 migration test suite,
+  559 main tests,
+  94 adapter/CLI/desktop/plugin tests, 74 browser tests, builds, clean installs,
+  release checks, public-source scan, and Community/marketing deployment dry
+  runs passed. The public npm package was then installed into a disposable
+  directory and its protected-stdin pairing behavior was verified.
+- **Adversarial findings and rework:** independent review found no remaining
+  local P0/P1. Repairs included canonical pairing output in browser fixtures,
+  source-neutral normal-path copy, additive resume phrases, recovery filename
+  guidance, and explicit separation of former identities into compatibility
+  surfaces.
+- **Costs and cleanup:** projected and incurred external cost was $0. Only
+  synthetic/disposable data was used. No production data, authority, credential,
+  or legacy storage resource was copied. The prior Worker version remains the
+  rollback target.
+- **Unresolved risks:** official Obsidian Community Plugin listing and evidence
+  from real alpha users remain MD10/MD11 work. They do not weaken the verified
+  MD9 identity, compatibility, authority, or distribution boundary.
 
 ### MD10 — Lovable proof and one simple path
 
