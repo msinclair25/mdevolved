@@ -2,7 +2,11 @@ import { expect, test } from "@playwright/test";
 
 const marketingUrl = `http://127.0.0.1:${process.env.MD10_MARKETING_PORT ?? "4174"}`;
 
-test("keeps the lovable demo and six-action path usable", async ({ page }) => {
+test("keeps the lovable demo and six-action path usable", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
   await page.goto(marketingUrl);
 
   const quickstart = page.locator("[data-md10-quickstart]");
@@ -33,11 +37,14 @@ test("keeps the lovable demo and six-action path usable", async ({ page }) => {
     "https://mdevolved.com/og-mdevolved.png",
   );
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
+  await context.close();
 });
 
 test("shows every caption without autoplay for reduced motion", async ({
-  page,
+  browser,
 }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(marketingUrl);
 
@@ -48,6 +55,7 @@ test("shows every caption without autoplay for reduced motion", async ({
     await expect(frame).toBeVisible();
   }
   await expect(demo.locator(".demo-controls")).toBeHidden();
+  await context.close();
 });
 
 test("keeps the complete demo available without JavaScript", async ({
