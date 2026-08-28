@@ -1,17 +1,17 @@
 # Release compatibility
 
 This page records the explicit compatibility boundary for MDevolved Community
-`1.0.0-alpha.7` and the MD9 candidate for MDevolved Sync for Obsidian. A newer
-upstream release is not supported merely because it exists. The candidate is
-not published or listed yet; existing `owd-sync` installations remain the
-supported compatibility path.
+`1.0.0-alpha.7` and MDevolved Sync for Obsidian `0.2.0-alpha.1`. A newer
+upstream release is not supported merely because it exists. The canonical
+prerelease is published but is not yet listed in Obsidian Community Plugins;
+existing `owd-sync` installations remain the supported compatibility path.
 
 ## Supported contracts
 
 | Surface                     | Reviewed contract                                                                                                                                      | Boundary                                                                                                                                                          |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MDevolved Sync              | `0.1.0-alpha.1` folder client; source schema 3; server reads schemas 1–3                                                                               | A newer unsupported source schema fails with update guidance.                                                                                                     |
-| MDevolved Sync for Obsidian | MD9 candidate `0.2.0-alpha.1`; plugin ID `mdevolved-sync`                                                                                              | Publication, store listing, and live client acceptance are pending; old `owd-sync` remains readable.                                                              |
+| MDevolved Sync              | `0.1.0-alpha.2` folder client; source schema 3; server reads schemas 1–3                                                                               | A newer unsupported source schema fails with update guidance.                                                                                                     |
+| MDevolved Sync for Obsidian | Public prerelease `0.2.0-alpha.1`; plugin ID `mdevolved-sync`                                                                                          | Plugin-store listing and broader live client acceptance are pending; old `owd-sync` remains readable.                                                             |
 | YAOS live sync              | Pinned server `0.3.0`; Yjs schema fixtures 1–3                                                                                                         | MDevolved preserves the pinned upstream contract and carries explicit local adaptations.                                                                          |
 | MCP                         | Authenticated Streamable HTTP against MCP `2026-07-28`, with stateless `2025-11-25` compatibility                                                      | Read-only vault tools are the portable baseline. Project behavior uses ordinary MCP Tools, Resources, and Prompts. See [MCP compatibility](MCP-COMPATIBILITY.md). |
 | Project lifecycle           | `open_project`, `wait_for_project_connection`, and `mdevolved_resume`; lower-level `resume_project` remains compatible                                 | Create, join, rejoin, and resume converge on one exact Project without a client-specific transport.                                                               |

@@ -35,7 +35,7 @@ explanation.
 | MCP primary loop          | `mdevolved_resume`, `mdevolved_find`, `mdevolved_get_skill`, `mdevolved_checkpoint`         |
 | Pairing                   | `mdevolved://connect`; Obsidian `obsidian://mdevolved-pair`                                 |
 | Portable data             | `mdevolved-backup-v1`, `mdevolved-snapshot-v3`, provider-neutral restore                    |
-| Obsidian plugin           | ID `mdevolved-sync`; repository and release publication pending verification                |
+| Obsidian plugin           | ID `mdevolved-sync`; public repository and `0.2.0-alpha.1` prerelease verified              |
 | Source identity           | User-facing **Source** and **Workspace**; frozen `vaultId` remains storage compatibility    |
 | Repository and deployment | `msinclair25/mdevolved`; fresh Community installs use the separate canonical resource names |
 

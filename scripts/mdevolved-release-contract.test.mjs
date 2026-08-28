@@ -8,15 +8,15 @@ import {
 
 test("MDevolved desktop and CLI share one prerelease version", () => {
   assert.deepEqual(getMdevolvedRelease(), {
-    version: "0.1.0-alpha.1",
-    tag: "mdevolved-v0.1.0-alpha.1",
+    version: "0.1.0-alpha.2",
+    tag: "mdevolved-v0.1.0-alpha.2",
   });
 });
 
 test("MDevolved release tags must exactly match the package version", () => {
   assert.equal(
-    assertMdevolvedReleaseTag("mdevolved-v0.1.0-alpha.1").version,
-    "0.1.0-alpha.1",
+    assertMdevolvedReleaseTag("mdevolved-v0.1.0-alpha.2").version,
+    "0.1.0-alpha.2",
   );
   assert.throws(
     () => assertMdevolvedReleaseTag("mdevolved-v0.1.0"),
