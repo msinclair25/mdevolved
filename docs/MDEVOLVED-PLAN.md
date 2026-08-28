@@ -1,15 +1,15 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD8 are complete; MD9 is active; MD10–MD11 are queued in the MLP plan.<br />
+**Status:** MD1–MD9 are complete; MD10 is next and MD11 is queued in the MLP plan.<br />
 **Date:** 2026-08-27
 
 > **Next execution plan:** [MDevolved minimum lovable product plan](MDEVOLVED-MLP-PLAN.md).
 > This document remains the historical MD1–MD8 architecture and delivery
 > record. Its decisions to retain OWD as the canonical protocol and plugin
-> identity are superseded for new writes and new installations by the active
-> MD9 candidate. They
+> identity are superseded for new writes and new installations by the accepted
+> MD9 release. They
 > remain binding compatibility requirements for existing users and data until
-> MD9 passes its exact-candidate and owner-authorized delivery gates.
+> their documented support window ends.
 
 ## Milestone boundary
 
