@@ -4606,8 +4606,12 @@ footer {
 }
 
 .project-continue {
-  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
+}
+
+.project-continue > button {
+  width: fit-content;
 }
 
 .project-continue code {
@@ -4618,7 +4622,7 @@ footer {
 }
 
 .project-continue span {
-  grid-column: 2;
+  grid-column: 1;
   color: var(--muted);
   font-size: 0.74rem;
 }

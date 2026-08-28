@@ -21,6 +21,29 @@ MDevolved keeps four identities separate:
 
 Names may match, but a Source is never implicitly treated as a Project.
 
+<!-- md10-quickstart:start -->
+
+## Six actions to your first durable resume
+
+1. **Deploy or open MDevolved.** Deploy Community into your Cloudflare account,
+   or open the MDevolved workspace you were invited to.
+2. **Claim it with a passkey.** Create the owner passkey that controls Sources,
+   agents, recovery, and revocation.
+3. **Connect one disposable Markdown folder.** In that test folder, run
+   `npx mdevolved@latest sync .` and approve only that Source.
+4. **Authorize one compatible agent.** Approve its exact Source and folder
+   boundary. You can revoke it at any time.
+5. **Connect the Project.** In that agent, say **Connect this project to
+   MDevolved** and keep working normally.
+6. **Resume in a fresh session.** Open a fresh authorized session, say
+   **MDevolved resume project**, and verify that the objective, evidence, useful
+   failure, and next action return.
+
+<!-- md10-quickstart:end -->
+
+That is the complete normal path. The rest of this guide explains what agents
+do automatically, optional adapters, recovery, and technical fallbacks.
+
 ## The normal agent loop
 
 After the Project is connected once, the user does not manage packets, leases,
@@ -82,10 +105,11 @@ either the folder path or the optional Obsidian path:
    **Obsidian → Quit Obsidian** or **⌘Q**. Closing a macOS window is not a
    quit.
 3. In **Sources**, choose the folder path, or choose **Install MDevolved Sync
-   for Obsidian 0.1.7**. For Obsidian, select
+   for Obsidian 0.2.0-alpha.1**. For Obsidian, select
    the exact synthetic vault root containing `.obsidian`, not `.obsidian`
    itself, and allow Chrome's write request.
-4. Reopen that exact vault and confirm MDevolved Sync for Obsidian `0.1.7` is enabled.
+4. Reopen that exact vault and confirm MDevolved Sync for Obsidian
+   `0.2.0-alpha.1` is enabled.
 5. Return to MDevolved, create the private pairing request, and approve it from
    the selected folder app or exact open Obsidian workspace.
 6. Keep the sync client open while MDevolved automatically publishes the current searchable

@@ -56,13 +56,14 @@ test("normal product surfaces lead with MDevolved and Sources", async () => {
   assert.match(app, /Source access/u);
   assert.match(navigation, /label: "Sources"/u);
   assert.match(navigation, /candidate === "sources"/u);
-  assert.match(marketing, /Every AI\. One durable Project memory\./u);
-  assert.match(marketing, /src="\/og-mdevolved\.png"/u);
+  assert.match(marketing, /data-demo-duration="25000"/u);
+  assert.equal((marketing.match(/data-demo-frame/gu) ?? []).length, 5);
+  assert.match(marketing, /https:\/\/mdevolved\.com\/og-mdevolved\.png/u);
   assert.doesNotMatch(
     marketing,
     /og-head-start|MD EVOLVED|MD Evolved|>MD<|>Evolved<|Choose vault/u,
   );
-  assert.match(marketing, /Choose a Markdown folder or Obsidian/u);
+  assert.match(marketing, /Connect one disposable Markdown folder/u);
   assert.match(manifest, /"name": "MDevolved"/u);
   assert.match(readme, /^# MDevolved$/mu);
   assert.match(readme, /MDevolved was formerly called \*\*OWD\*\*/u);

@@ -21,6 +21,7 @@ import {
   generateX25519Identity,
   identityToRecipient,
 } from "age-encryption";
+import { captureMd10Proof } from "./md10-capture";
 
 const targetVaultId = "11111111-1111-4111-8111-111111111111";
 const disconnectedVaultId = "77777777-7777-4777-8777-777777777777";
@@ -1068,7 +1069,7 @@ test("makes clean-Mac picker cancellation and permission recovery explicit", asy
 
 test("captures a managed invitation fragment into the fast claim screen", async ({
   browser,
-}) => {
+}, testInfo) => {
   const context = await browser.newContext();
   await context.route("**/healthz", (route) =>
     route.fulfill({
@@ -1125,6 +1126,7 @@ test("captures a managed invitation fragment into the fast claim screen", async 
     page.getByText(/The private link is removed from the address bar/u),
   ).toBeVisible();
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
+  await captureMd10Proof(page, testInfo, "01-passkey-claim");
   await context.close();
 });
 
@@ -1346,7 +1348,7 @@ test("keeps archived internal acceptance Projects out of the end-user surface", 
 
 test("keeps onboarding progress bound to one explicitly named vault", async ({
   browser,
-}) => {
+}, testInfo) => {
   const context = await browser.newContext();
   await mockFoundation(context, {
     activeAgentCount: 1,
@@ -1411,6 +1413,7 @@ test("keeps onboarding progress bound to one explicitly named vault", async ({
   await expect(setup.locator(".setup-progress-receipt")).toContainText(
     "7 verified milestones · show details",
   );
+  await captureMd10Proof(page, testInfo, "02-source-connected");
   await context.close();
 });
 
@@ -2845,6 +2848,7 @@ test("requires an explicit vault choice before agent authorization", async ({
   ).not.toBeChecked();
   await expect(approve).toBeEnabled();
   await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
+  await captureMd10Proof(page, testInfo, "03-agent-authorization");
   await context.close();
 });
 

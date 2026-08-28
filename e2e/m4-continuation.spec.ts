@@ -5,6 +5,7 @@ import {
   type Route,
 } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { captureMd10Proof } from "./md10-capture";
 
 const fixture = JSON.parse(
   readFileSync(
@@ -331,7 +332,7 @@ async function mockM4(context: BrowserContext): Promise<void> {
 
 test("shows Client A checkpoint and fresh Client B continuation", async ({
   browser,
-}) => {
+}, testInfo) => {
   const context = await browser.newContext({
     permissions: ["clipboard-read", "clipboard-write"],
   });
@@ -354,6 +355,7 @@ test("shows Client A checkpoint and fresh Client B continuation", async ({
   await expect(
     collaboration.getByText(fixture.clientA.checkpoint.citedEvidence[0]!.path),
   ).toBeVisible();
+  await captureMd10Proof(page, testInfo, "04-checkpoint");
   await collaboration.getByRole("button", { name: "Edit brief" }).click();
   await collaboration
     .getByRole("textbox", { name: "Current objective" })
@@ -362,6 +364,10 @@ test("shows Client A checkpoint and fresh Client B continuation", async ({
   await expect(
     collaboration.getByText("Resume the edited brief in Client B.").first(),
   ).toBeVisible();
+  await collaboration
+    .getByRole("heading", { name: fixture.project.label })
+    .scrollIntoViewIfNeeded();
+  await captureMd10Proof(page, testInfo, "05-resume");
   await collaboration.getByText("Project outcome evidence").click();
   await expect(
     collaboration.getByText("Ready for another client slot"),
@@ -375,6 +381,7 @@ test("shows Client A checkpoint and fresh Client B continuation", async ({
       hasText: fixture.clientB.resumeInstruction,
     }),
   ).toBeVisible();
+  await expect(page.locator("body")).not.toHaveCSS("overflow-x", "scroll");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     fixture.clientB.resumeInstruction,
   );

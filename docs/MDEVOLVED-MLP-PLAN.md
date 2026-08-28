@@ -1,20 +1,20 @@
 # MDevolved minimum lovable product plan
 
-**Status:** MD9 complete; MD10 is next and MD11 remains queued.
+**Status:** MD9 complete; MD10 is active and MD11 remains queued.
 **Date:** 2026-08-27
 
-## Completed milestone
+## Current milestone
 
-**MD9 — Canonical MDevolved identity** passed on 2026-08-28.
+**MD10 — Lovable proof and one simple path** is the only active milestone.
 
-The final acceptance decision is binary: a clean installation and every new
-normal workflow must write, display, and advertise MDevolved identities, while
-the same candidate still reads supported legacy clients and records through a
-contained compatibility boundary and never restores or copies live authority.
+The final acceptance decision is binary: a first-time visitor can watch the
+complete value loop, then follow the same six-action public path from the
+website, GitHub README, npm page, or quickstart without learning protocol
+internals before the first successful fresh-session resume.
 
-The owner-authorized delivery is complete. MD10 is the next independently
-acceptable milestone; its lovable-product proof and alpha-user evidence were
-not used to close MD9 early.
+Implementation, synthetic-data captures, accessibility, automated validation,
+regression repair, and review remain in MD10. Unassisted external-user evidence
+belongs to MD11 and cannot be used to close MD10 early.
 
 ## Outcome
 
@@ -252,6 +252,42 @@ The website, GitHub README, and npm page use this same path. Tool names,
 receipt fields, Obsidian, orchestration, recovery internals, and self-hosting
 details remain available, but they do not interrupt the first success.
 
+#### MD10 autonomous candidate receipt — 2026-08-28
+
+- **Outcome:** The complete buildable MD10 slice is ready on
+  `codex/md10-autonomous-candidate`. The website now uses a captioned,
+  non-looping 25-second demonstration made from five real application captures
+  with synthetic data. The same six-action folder-first path appears on the
+  website, GitHub README, npm README, and agent-first guide.
+- **Surfaces:** Marketing HTML, styles, playback controls, social and install
+  links; web continuation layout; README and quickstart copy; release metadata;
+  deterministic capture helpers; static, browser, accessibility, and release
+  contract tests.
+- **Schema and recovery:** No migration, durable-record, authority, export,
+  snapshot, restore, or quarantine contract changed. No production or customer
+  data was read or written.
+- **Focused evidence:** MD10 acceptance passed its static contract, eight
+  marketing tests, clean-install replay, and six desktop/narrow Playwright
+  scenarios including keyboard use, reduced motion, JavaScript-disabled
+  fallback, social metadata, and horizontal-overflow checks.
+- **Complete gate:** `pnpm check`, migrations (23), repository tests (559 plus
+  package suites), browser E2E (80), build, MD6 client compatibility including
+  packaged desktop E2E (2), public-source history scan (91 revisions and 1,572
+  unique blobs), and both application and marketing Wrangler dry-runs passed
+  on the exact functional candidate.
+- **Adversarial finding and rework:** Capture review exposed horizontal overflow
+  in the fresh-session continuation panel. The existing layout was simplified
+  and an E2E regression assertion added. Reduced-motion and JavaScript-disabled
+  review also hardened the native demo fallback.
+- **Cost and cleanup:** Only local synthetic fixtures and zero-cost deployment
+  dry-runs were used. No deployment, publication, tag, account mutation, paid
+  service, migration, or disposable cloud resource was created.
+- **Delivery state:** Local candidate only. Owner approval is still required to
+  commit/push, create the `mdevolved-v0.1.0-alpha.3` release, publish the paired
+  npm version, and deploy the application and marketing site. Official Obsidian
+  Community Plugins review remains an external store gate. Five independent
+  unassisted-user results belong to MD11, not MD10.
+
 ### MD11 — Unassisted alpha evidence
 
 **Acceptance decision:** Close MD11 only when at least five external users
@@ -347,15 +383,7 @@ MDevolved again without user evidence.
 
 ## Next action
 
-Finish **MD9 — Canonical MDevolved identity** in this task. The identity matrix,
-dual-read/new-write boundary, runtime and portable contracts, canonical client
-discovery, plugin release candidate, migrations, UI, docs, and focused
-acceptance suite are implemented. Freeze the exact candidate, run the complete
-repository/browser/build/deployment-dry-run gate once, then request explicit
-owner authorization for commit, push, canonical plugin-repository creation,
-publication, and deployment. Do not archive the legacy plugin or migrate a live
-cell until the replacement repository, release assets, checksums, installer,
-and rollback path are independently verified. MD10 begins only after MD9
-passes; MD11 begins only after the public MD9/MD10 candidate is available to
-testers. The final milestone receipt, rather than this planning document,
-records the exact-candidate gate and delivery result.
+Review the owner-controlled MD10 delivery actions for the green local candidate:
+commit and push, GitHub prerelease, paired npm publication, and application and
+marketing deployment. Keep official store review explicit and reserve
+independent unassisted-user evidence for MD11.

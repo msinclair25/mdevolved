@@ -195,7 +195,7 @@ instead. Both use the same source-neutral sync and durable Project model;
 Obsidian is an optional richer adapter, not a requirement. The canonical MD9
 plugin identity is `mdevolved-sync`; the previously published `owd-sync`
 adapter remains available as a clearly labelled compatibility path while the
-new release is prepared.
+canonical prerelease completes Community Plugins review.
 
 ### Deploy Community
 
@@ -204,13 +204,29 @@ new release is prepared.
 The deployment runs in your Cloudflare account. MDevolved never receives your
 Cloudflare credentials or recovery private key.
 
-Then follow the [agent-first quick start](docs/AGENT-FIRST-QUICKSTART.md):
+<!-- md10-quickstart:start -->
 
-1. claim the deployment with a passkey;
-2. connect one disposable Source;
-3. connect one compatible agent;
-4. say **Connect this project to MDevolved**; and
-5. resume the Project from a fresh session.
+## Six actions to your first durable resume
+
+1. **Deploy or open MDevolved.** Deploy Community into your Cloudflare account,
+   or open the MDevolved workspace you were invited to.
+2. **Claim it with a passkey.** Create the owner passkey that controls Sources,
+   agents, recovery, and revocation.
+3. **Connect one disposable Markdown folder.** In that test folder, run
+   `npx mdevolved@latest sync .` and approve only that Source.
+4. **Authorize one compatible agent.** Approve its exact Source and folder
+   boundary. You can revoke it at any time.
+5. **Connect the Project.** In that agent, say **Connect this project to
+   MDevolved** and keep working normally.
+6. **Resume in a fresh session.** Open a fresh authorized session, say
+   **MDevolved resume project**, and verify that the objective, evidence, useful
+   failure, and next action return.
+
+<!-- md10-quickstart:end -->
+
+Watch the [25-second product demonstration](https://mdevolved.com/#graph), then
+use the [agent-first quick start](docs/AGENT-FIRST-QUICKSTART.md) for client
+recipes and technical details.
 
 ## Public alpha
 

@@ -73,10 +73,10 @@
           {
             "@type": "SoftwareSourceCode",
             "name": "MDevolved Sync for Obsidian",
-            "codeRepository": "https://github.com/msinclair25/mdevolved/tree/main/packages/obsidian-plugin",
+            "codeRepository": "https://github.com/msinclair25/mdevolved-sync",
             "license": "https://www.apache.org/licenses/LICENSE-2.0",
             "programmingLanguage": ["TypeScript", "JavaScript"],
-            "description": "The optional MDevolved Sync for Obsidian adapter; the MD9 candidate is developed in the Community repository and is not yet published."
+            "description": "The optional MDevolved Sync for Obsidian adapter, published as a checksummed public alpha."
           }
         ]
       }
@@ -399,22 +399,120 @@
             </p>
           </div>
 
-          <figure class="agent-visual" data-reveal>
-            <img
-              src="/og-mdevolved.png"
-              width="1200"
-              height="630"
-              loading="lazy"
-              alt="Every AI. One durable Project memory. Folders or Obsidian, with owner control throughout."
-            />
-            <figcaption>
-              <strong>Every AI. One durable Project memory.</strong>
-              <span>
-                Each agent keeps its own tools and session. The durable work
-                compounds for whoever works next.
-              </span>
-            </figcaption>
-          </figure>
+          <div
+            class="handoff-demo"
+            data-demo
+            data-demo-duration="25000"
+            data-reveal
+          >
+            <div class="demo-toolbar">
+              <div>
+                <span class="card-index">25-SECOND PRODUCT DEMO</span>
+                <h3>One setup. One checkpoint. A real fresh-session resume.</h3>
+              </div>
+              <div class="demo-controls" aria-label="Demo playback" hidden>
+                <button type="button" data-demo-toggle>Pause</button>
+                <button type="button" data-demo-replay>Replay</button>
+              </div>
+            </div>
+
+            <div class="demo-stage" aria-live="polite">
+              <figure class="demo-frame" data-demo-frame>
+                <img
+                  src="/demo/01-passkey-claim.png"
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  alt="MDevolved owner claim screen asking the owner to create a passkey."
+                />
+                <figcaption>
+                  <strong>1 · Claim control</strong>
+                  <span>The owner creates a passkey. No agent has access.</span>
+                </figcaption>
+              </figure>
+              <figure class="demo-frame" data-demo-frame>
+                <img
+                  src="/demo/02-source-connected.png"
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  alt="MDevolved setup showing a synthetic Source with its searchable library ready."
+                />
+                <figcaption>
+                  <strong>2 · Connect one Source</strong>
+                  <span>
+                    A disposable Markdown folder is synced and Project-ready.
+                  </span>
+                </figcaption>
+              </figure>
+              <figure class="demo-frame" data-demo-frame>
+                <img
+                  src="/demo/03-agent-authorization.png"
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  alt="MDevolved authorization screen limiting a synthetic agent to one selected Source."
+                />
+                <figcaption>
+                  <strong>3 · Bound the agent</strong>
+                  <span>
+                    The owner approves one exact Source; restored content stays
+                    blocked by default.
+                  </span>
+                </figcaption>
+              </figure>
+              <figure class="demo-frame" data-demo-frame>
+                <img
+                  src="/demo/04-checkpoint.png"
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  alt="MDevolved Project view showing a synthetic checkpoint from Client A."
+                />
+                <figcaption>
+                  <strong>4 · Client A checkpoints</strong>
+                  <span>
+                    Objective, cited evidence, a useful rejected approach, and
+                    the next action become durable.
+                  </span>
+                </figcaption>
+              </figure>
+              <figure class="demo-frame" data-demo-frame>
+                <img
+                  src="/demo/05-resume.png"
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  alt="MDevolved Project view showing Client B resumed with the updated synthetic objective."
+                />
+                <figcaption>
+                  <strong>5 · Client B resumes</strong>
+                  <span>
+                    A fresh session receives the current objective and next
+                    action without the prior chat.
+                  </span>
+                </figcaption>
+              </figure>
+            </div>
+
+            <div
+              class="demo-step-controls"
+              aria-label="Choose a demo step"
+              hidden
+            >
+              <button type="button" data-demo-step="0">Claim</button>
+              <button type="button" data-demo-step="1">Source</button>
+              <button type="button" data-demo-step="2">Authorize</button>
+              <button type="button" data-demo-step="3">Checkpoint</button>
+              <button type="button" data-demo-step="4">Resume</button>
+            </div>
+            <p class="demo-note">
+              Every AI. One durable Project memory. These frames were captured
+              from the real MDevolved app using synthetic browser-test data.
+              Reduced-motion and no-script visitors see every captioned frame
+              without autoplay.
+            </p>
+          </div>
 
           <div class="graph-grid">
             <article class="graph-card" data-reveal>
@@ -524,15 +622,14 @@
             </p>
           </div>
 
-          <ol class="journey-list">
+          <ol class="journey-list" data-md10-quickstart>
             <li data-reveal>
               <span class="journey-index">01</span>
               <div>
-                <h3>Deploy MDevolved Community</h3>
+                <h3>Deploy or open MDevolved</h3>
                 <p>
-                  Use the one-click path to create the owner-controlled data
-                  plane in your Cloudflare account, then claim it with a
-                  passkey.
+                  Deploy Community into your Cloudflare account, or open the
+                  MDevolved workspace you were invited to.
                 </p>
               </div>
               <span class="status-tag">Your workspace</span>
@@ -540,61 +637,59 @@
             <li data-reveal>
               <span class="journey-index">02</span>
               <div>
-                <h3>Choose a Markdown folder or Obsidian</h3>
+                <h3>Claim it with a passkey</h3>
                 <p>
-                  Run <code>npx mdevolved@latest sync .</code> for a folder, or
-                  use the optional compatibility-preserving Obsidian adapter.
-                  Only the Source you approve is connected.
+                  Create the owner passkey. It remains the root approval for
+                  Sources, agents, recovery, and revocation.
+                </p>
+              </div>
+              <span class="status-tag">Your control</span>
+            </li>
+            <li data-reveal>
+              <span class="journey-index">03</span>
+              <div>
+                <h3>Connect one disposable Markdown folder</h3>
+                <p>
+                  Run <code>npx mdevolved@latest sync .</code> in the test
+                  folder and approve only that Source.
                 </p>
               </div>
               <span class="status-tag">Your files</span>
             </li>
             <li data-reveal>
-              <span class="journey-index">03</span>
+              <span class="journey-index">04</span>
               <div>
-                <h3>Connect the agents you choose</h3>
+                <h3>Authorize one compatible agent</h3>
                 <p>
-                  Add MDevolved as a standard MCP server and authorize each
-                  client for one exact Source and optional folders. Every grant
-                  is distinct, scoped, expiring, and immediately revocable.
+                  Choose the agent and approve its exact Source and folder
+                  boundary. You can revoke it at any time.
                 </p>
               </div>
               <span class="status-tag">Your boundary</span>
             </li>
             <li data-reveal>
-              <span class="journey-index">04</span>
+              <span class="journey-index">05</span>
               <div>
-                <h3>Connect the Project once</h3>
+                <h3>Connect the Project</h3>
                 <p>
-                  Say <strong>“Connect this project to MDevolved.”</strong> The
-                  agent creates, joins, or resumes the exact Project without a
-                  copied prompt or manual Project ID.
+                  In that agent, say
+                  <strong>“Connect this project to MDevolved.”</strong> Keep
+                  working normally; the agent checkpoints verified progress.
                 </p>
               </div>
               <span class="status-tag">Your choice</span>
             </li>
             <li data-reveal>
-              <span class="journey-index">05</span>
-              <div>
-                <h3>Keep working in the agent</h3>
-                <p>
-                  The agent resumes, retrieves targeted evidence when needed,
-                  and checkpoints verified progress before it finishes.
-                </p>
-              </div>
-              <span class="status-tag">Agent-first</span>
-            </li>
-            <li data-reveal>
               <span class="journey-index">06</span>
               <div>
-                <h3>Resume anywhere</h3>
+                <h3>Resume in a fresh session</h3>
                 <p>
-                  Open another compatible agent, session, orchestration, or
-                  computer and say <strong>“MDevolved resume project.”</strong>
-                  Start from the durable Project tip, not from zero.
+                  Open a fresh authorized session and say
+                  <strong>“MDevolved resume project.”</strong> Verify that the
+                  objective, evidence, useful failure, and next action return.
                 </p>
               </div>
-              <span class="status-tag">Your record</span>
+              <span class="status-tag">Your proof</span>
             </li>
           </ol>
         </div>
@@ -655,15 +750,14 @@
             <article class="source-card" data-reveal data-delay="1">
               <div class="source-card-topline">
                 <span class="card-index">OBSIDIAN COMPANION</span>
-                <span class="status-tag">MD9 candidate</span>
+                <span class="status-tag">Public alpha</span>
               </div>
               <h3>MDevolved Sync for Obsidian</h3>
               <p>
                 The optional Apache-2.0 Obsidian adapter. The canonical
-                <code>mdevolved-sync</code> candidate is developed here and is
-                not yet published or listed in Community Plugins. Existing users
-                can continue with the <code>owd-sync</code> compatibility
-                adapter.
+                checksummed <code>mdevolved-sync</code> prerelease is public but
+                not yet listed in Community Plugins. Existing users can continue
+                with the <code>owd-sync</code> compatibility adapter.
               </p>
               <ul
                 class="source-facts"
@@ -676,18 +770,20 @@
               <div class="source-actions">
                 <a
                   class="button button-quiet"
-                  href="https://github.com/msinclair25/mdevolved/tree/main/packages/obsidian-plugin"
+                  href="https://github.com/msinclair25/mdevolved-sync"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Inspect the Obsidian adapter <span aria-hidden="true">↗</span>
                 </a>
-                <span
+                <a
                   class="text-link"
-                  aria-label="Canonical adapter publication pending"
+                  href="https://github.com/msinclair25/mdevolved-sync/releases/tag/mdevolved-sync-v0.2.0-alpha.1"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  Publication pending
-                </span>
+                  Download alpha release <span aria-hidden="true">↗</span>
+                </a>
               </div>
             </article>
           </div>
@@ -846,10 +942,10 @@
           ·
           <a
             class="footer-link"
-            href="https://github.com/msinclair25/mdevolved/tree/main/packages/obsidian-plugin"
+            href="https://github.com/msinclair25/mdevolved-sync"
             target="_blank"
             rel="noopener noreferrer"
-            >Obsidian adapter candidate ↗</a
+            >MDevolved Sync ↗</a
           >
           ·
           <a class="footer-link" href="mailto:support@mdevolved.com"

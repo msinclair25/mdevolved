@@ -58,6 +58,77 @@ if ("IntersectionObserver" in window) {
   revealElements.forEach((element) => element.setAttribute("data-visible", ""));
 }
 
+const demo = document.querySelector("[data-demo]");
+
+if (demo instanceof HTMLElement) {
+  const frames = [...demo.querySelectorAll("[data-demo-frame]")];
+  const stepButtons = [...demo.querySelectorAll("[data-demo-step]")];
+  const toggle = demo.querySelector("[data-demo-toggle]");
+  const replay = demo.querySelector("[data-demo-replay]");
+  const controls = demo.querySelector(".demo-controls");
+  const stepControls = demo.querySelector(".demo-step-controls");
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+  const stepDuration = Number(demo.dataset.demoDuration) / frames.length;
+  let activeStep = 0;
+  let timer = 0;
+
+  const showStep = (step) => {
+    activeStep = Math.max(0, Math.min(step, frames.length - 1));
+    frames.forEach((frame, index) => {
+      frame.hidden = !reducedMotion && index !== activeStep;
+    });
+    stepButtons.forEach((button, index) => {
+      button.toggleAttribute("aria-current", index === activeStep);
+    });
+  };
+
+  const pause = () => {
+    window.clearTimeout(timer);
+    timer = 0;
+    if (toggle instanceof HTMLButtonElement) toggle.textContent = "Play";
+  };
+
+  const scheduleNext = () => {
+    if (reducedMotion || timer !== 0) return;
+    if (toggle instanceof HTMLButtonElement) toggle.textContent = "Pause";
+    timer = window.setTimeout(() => {
+      timer = 0;
+      if (activeStep === frames.length - 1) {
+        pause();
+        return;
+      }
+      showStep(activeStep + 1);
+      scheduleNext();
+    }, stepDuration);
+  };
+
+  demo.toggleAttribute("data-reduced-motion", reducedMotion);
+  if (!reducedMotion) {
+    controls?.removeAttribute("hidden");
+    stepControls?.removeAttribute("hidden");
+  }
+  showStep(0);
+  scheduleNext();
+
+  toggle?.addEventListener("click", () => {
+    if (timer === 0) scheduleNext();
+    else pause();
+  });
+  replay?.addEventListener("click", () => {
+    pause();
+    showStep(0);
+    scheduleNext();
+  });
+  stepButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      pause();
+      showStep(Number(button.getAttribute("data-demo-step")));
+    });
+  });
+}
+
 const alphaForm = document.querySelector("[data-alpha-form]");
 const alphaSubmit = document.querySelector("[data-alpha-submit]");
 const alphaSubmitLabel = document.querySelector("[data-alpha-submit-label]");

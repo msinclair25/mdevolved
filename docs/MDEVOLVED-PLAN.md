@@ -1,6 +1,6 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD9 are complete; MD10 is next and MD11 is queued in the MLP plan.<br />
+**Status:** MD1–MD9 are complete; MD10 is active and MD11 is queued in the MLP plan.<br />
 **Date:** 2026-08-27
 
 > **Next execution plan:** [MDevolved minimum lovable product plan](MDEVOLVED-MLP-PLAN.md).

@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const e2ePort = process.env.OWD_E2E_PORT ?? "4173";
 const e2eBaseUrl = `http://127.0.0.1:${e2ePort}`;
+const marketingPort = process.env.MD10_MARKETING_PORT ?? "4174";
 
 export default defineConfig({
   expect: { timeout: 10_000 },
@@ -19,14 +20,24 @@ export default defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
-  webServer: {
-    command: `pnpm --filter @mdevolved/web dev --host 127.0.0.1 --port ${e2ePort}`,
-    reuseExistingServer: !process.env.CI,
-    stderr: "pipe",
-    stdout: "pipe",
-    timeout: 120_000,
-    url: e2eBaseUrl,
-  },
+  webServer: [
+    {
+      command: `pnpm --filter @mdevolved/web dev --host 127.0.0.1 --port ${e2ePort}`,
+      reuseExistingServer: !process.env.CI,
+      stderr: "pipe",
+      stdout: "pipe",
+      timeout: 120_000,
+      url: e2eBaseUrl,
+    },
+    {
+      command: `pnpm --filter @mdevolved/marketing dev --host 127.0.0.1 --port ${marketingPort}`,
+      reuseExistingServer: !process.env.CI,
+      stderr: "pipe",
+      stdout: "pipe",
+      timeout: 120_000,
+      url: `http://127.0.0.1:${marketingPort}`,
+    },
+  ],
   projects: [
     {
       name: "chrome-desktop",
