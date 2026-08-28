@@ -1,6 +1,6 @@
 {
   "name": "@mdevolved/desktop",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "MDevolved Sync desktop shell",
   "license": "Apache-2.0",
   "private": true,

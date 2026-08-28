@@ -70,6 +70,7 @@
     "test:md8:client-shapes": "node --test scripts/md8-client-shapes.test.mjs",
     "test:md9:acceptance": "pnpm test:md9:identity && vitest run apps/worker/test/worker.test.ts apps/worker/test/agent-access.test.ts apps/worker/test/project-context-policy.test.ts apps/worker/test/pairing.test.ts apps/worker/test/backup.test.ts apps/worker/test/snapshot.test.ts apps/worker/test/migrations-empty.test.ts apps/web/test/obsidian-plugin-installer.test.ts apps/web/test/obsidian-plugin-links.test.ts apps/web/test/snapshot-panel-ui.test.ts packages/client-packs/test/mdevolved-client-packs.test.ts --config vitest.config.ts && pnpm --filter @mdevolved/obsidian-plugin test && pnpm test:clean-install:mdevolved && pnpm release:check",
     "test:md9:identity": "node --test scripts/md5-brand-transition.test.mjs scripts/md7-brand-completion.test.mjs scripts/md9-identity-contract.test.mjs",
+    "test:md10:acceptance": "node --test scripts/md10-lovable-proof.test.mjs && pnpm test:marketing && pnpm test:clean-install:mdevolved && playwright test e2e/md10-marketing.spec.ts",
     "test:desktop:e2e": "pnpm --filter @mdevolved/desktop package && pnpm --filter @mdevolved/desktop test:e2e",
     "test:e2e": "playwright test",
     "test:integration": "vitest run --config vitest.config.ts",
