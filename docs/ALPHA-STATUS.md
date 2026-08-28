@@ -2,7 +2,7 @@
 
 **Updated:** August 26, 2026<br />
 **MDevolved Community:** `1.0.0-alpha.7`<br />
-**MDevolved Sync for Obsidian (MD9 candidate):** `0.2.0-alpha.1` (not yet published)
+**MDevolved Sync for Obsidian:** public prerelease `0.2.0-alpha.1`
 
 MDevolved is available as an Apache-2.0 Community alpha. The optional
 managed service remains invitation-only. Alpha means the contracts and safety
@@ -11,15 +11,15 @@ durability evidence is still being accumulated.
 
 ## Availability
 
-| Surface                         | Current status                                                              |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| Community source                | Public Apache-2.0 alpha                                                     |
-| Community self-hosting          | Available for technical alpha use in the owner's Cloudflare account         |
-| Managed service                 | Invitation-only alpha; one isolated data-plane cell per owner               |
-| MDevolved Sync                  | Public `0.1.0-alpha.1` npm and unsigned macOS/Windows/Linux prerelease      |
-| MDevolved Sync for Obsidian     | MD9 candidate `0.2.0-alpha.1`; publication and plugin-store listing pending |
-| Obsidian Community Plugin       | Submission/listing pending                                                  |
-| Public MDevolved Cloud accounts | Not generally available; billing and service commitments are future work    |
+| Surface                         | Current status                                                           |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| Community source                | Public Apache-2.0 alpha                                                  |
+| Community self-hosting          | Available for technical alpha use in the owner's Cloudflare account      |
+| Managed service                 | Invitation-only alpha; one isolated data-plane cell per owner            |
+| MDevolved Sync                  | Public `0.1.0-alpha.2` npm and unsigned macOS/Windows/Linux prerelease   |
+| MDevolved Sync for Obsidian     | Public `0.2.0-alpha.1` prerelease; plugin-store listing pending          |
+| Obsidian Community Plugin       | Submission/listing pending                                               |
+| Public MDevolved Cloud accounts | Not generally available; billing and service commitments are future work |
 
 Community is the complete product core, not a reduced tier. Managed hosting
 uses the same pinned Community release and adds operational convenience; it
