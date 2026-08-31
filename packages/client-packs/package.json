@@ -16,6 +16,6 @@
   },
   "devDependencies": {
     "@vercel/connect": "0.6.0",
-    "eve": "0.29.4"
+    "eve": "0.47.2"
   }
 }

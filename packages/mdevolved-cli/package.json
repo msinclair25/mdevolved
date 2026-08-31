@@ -30,8 +30,8 @@
   "devDependencies": {
     "@mdevolved/folder-adapter": "workspace:*",
     "@mdevolved/yaos-core": "workspace:*",
-    "@types/node": "26.1.1",
-    "esbuild": "0.25.5",
+    "@types/node": "26.4.0",
+    "esbuild": "0.28.2",
     "fake-indexeddb": "6.2.5",
     "y-indexeddb": "9.0.12",
     "y-partyserver": "2.1.2",
