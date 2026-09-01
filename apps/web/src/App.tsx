@@ -70,10 +70,10 @@ import {
 import {
   createAlbatrossSetupKit,
   createAntigravityConfig,
-  createCodexSetupCommands,
   createCursorInstallUrl,
   createEveConnectionSource,
   createObsidianMindProjectMcpCommand,
+  createOneCommandSetup,
 } from "./agent-client-config";
 import {
   captureOwnerClaimToken,
@@ -464,15 +464,21 @@ function freshAlbatrossParticipantId(): string {
 type AgentClientId =
   | "albatross"
   | "antigravity"
+  | "claude"
   | "codex"
   | "cursor"
   | "eve"
+  | "grok"
+  | "hermes"
   | "obsidian-mind"
   | "other";
 
 const AGENT_CLIENTS: Array<{ id: AgentClientId; label: string }> = [
   { id: "codex", label: "Codex" },
+  { id: "claude", label: "Claude" },
   { id: "cursor", label: "Cursor" },
+  { id: "grok", label: "Grok Build" },
+  { id: "hermes", label: "Hermes" },
   { id: "antigravity", label: "Antigravity" },
   { id: "obsidian-mind", label: "Obsidian Mind" },
   { id: "eve", label: "Eve" },
@@ -1067,38 +1073,41 @@ function AgentConnectionsPanel({
                 </div>
 
                 <article className="agent-client-guide">
-                  {selectedClient === "codex" ? (
+                  {selectedClient === "codex" ||
+                  selectedClient === "claude" ||
+                  selectedClient === "grok" ||
+                  selectedClient === "hermes" ? (
                     <>
                       <div className="agent-client-guide-heading">
                         <div>
-                          <span className="pairing-label">Codex</span>
-                          <h3>Install and authenticate</h3>
+                          <span className="pairing-label">
+                            {selectedClient === "codex"
+                              ? "Codex"
+                              : selectedClient === "claude"
+                                ? "Claude"
+                                : selectedClient === "grok"
+                                  ? "Grok Build"
+                                  : "Hermes"}
+                          </span>
+                          <h3>Connect with one command</h3>
                         </div>
                         <span className="client-path">
-                          Terminal → browser approval → <code>/mcp</code>
+                          Project folder → browser approval
                         </span>
                       </div>
                       <SmartCopyField
                         label="Copy setup"
-                        value={createCodexSetupCommands(state.mcpUrl)}
+                        value={createOneCommandSetup(
+                          state.mcpUrl,
+                          selectedClient,
+                        )}
                       />
                       <p>
-                        Run both lines. Approve the exact Source in the page
-                        that opens, restart Codex, then use <code>/mcp</code> to
-                        verify.
+                        Run once from the Project folder. MDevolved uses the
+                        client&apos;s native installer. Approve the exact Source
+                        when asked, then say{" "}
+                        <strong>Connect this project to MDevolved</strong>.
                       </p>
-                      <details className="agent-client-help">
-                        <summary>Use Codex Settings instead</summary>
-                        <p>
-                          Settings → MCP servers → Add server → Streamable HTTP.
-                          Paste the MCP URL, save, restart, then choose
-                          Authenticate.
-                        </p>
-                        <SmartCopyField
-                          label="Copy MCP URL"
-                          value={state.mcpUrl}
-                        />
-                      </details>
                     </>
                   ) : selectedClient === "cursor" ? (
                     <>

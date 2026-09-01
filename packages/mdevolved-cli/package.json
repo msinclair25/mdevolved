@@ -1,7 +1,7 @@
 {
   "name": "mdevolved",
-  "version": "0.1.0-alpha.3",
-  "description": "MDevolved source-neutral Markdown folder sync client.",
+  "version": "0.1.0-alpha.4",
+  "description": "One-command agent connection and Markdown folder sync for MDevolved.",
   "license": "Apache-2.0",
   "homepage": "https://mdevolved.com",
   "repository": {

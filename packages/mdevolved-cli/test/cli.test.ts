@@ -5,6 +5,10 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseCliArguments, runCli } from "../src/cli.js";
 import {
+  harnessSetupCommands,
+  validateMcpUrl,
+} from "../src/harness-connect.js";
+import {
   MemoryProtectedCredentialBackend,
   ProtectedCredentialCustody,
 } from "../src/custody.js";
@@ -56,6 +60,138 @@ describe("mdevolved CLI safety", () => {
       pairingFromStdin: true,
       json: true,
     });
+  });
+
+  it("parses one-command harness setup without accepting credentials", () => {
+    expect(
+      parseCliArguments([
+        "connect",
+        "https://private-deployment.example/mcp",
+        "--client",
+        "claude",
+        "--json",
+      ]),
+    ).toEqual({
+      command: "connect",
+      client: "claude",
+      json: true,
+      mcpUrl: "https://private-deployment.example/mcp",
+    });
+    expect(() =>
+      parseCliArguments([
+        "connect",
+        "https://private-deployment.example/mcp",
+        "--token=secret",
+      ]),
+    ).toThrow("credentials_must_not_be_passed_as_arguments");
+    const credentialBearingUrl = [
+      "https://",
+      "user:",
+      "secret@example.com/mcp",
+    ].join("");
+    expect(() => validateMcpUrl(credentialBearingUrl)).toThrow(
+      "mcp_url_must_not_contain_credentials_or_state",
+    );
+    expect(() => validateMcpUrl("http://example.com/mcp")).toThrow(
+      "mcp_url_insecure",
+    );
+  });
+
+  it("uses each harness native installer without a shell or static token", () => {
+    const url = "https://private-deployment.example/mcp";
+    expect(harnessSetupCommands("codex", url)).toEqual([
+      {
+        command: "codex",
+        args: ["mcp", "add", "mdevolved", "--url", url],
+      },
+      {
+        command: "codex",
+        args: [
+          "mcp",
+          "login",
+          "mdevolved",
+          "--scopes",
+          "vault.read,project.initialize.request,project.connect.request",
+        ],
+      },
+    ]);
+    expect(JSON.stringify(harnessSetupCommands("claude", url))).not.toContain(
+      "Bearer",
+    );
+    expect(harnessSetupCommands("claude", url)).toEqual([
+      {
+        command: "claude",
+        args: ["mcp", "add", "--transport", "http", "mdevolved", url],
+      },
+    ]);
+    expect(JSON.stringify(harnessSetupCommands("grok", url))).not.toContain(
+      "Bearer",
+    );
+    expect(harnessSetupCommands("grok", url)).toEqual([
+      {
+        command: "grok",
+        args: ["mcp", "add", "--transport", "http", "mdevolved", url],
+      },
+    ]);
+    expect(JSON.stringify(harnessSetupCommands("hermes", url))).not.toContain(
+      "Bearer",
+    );
+    expect(harnessSetupCommands("hermes", url)).toEqual([
+      {
+        command: "hermes",
+        args: ["mcp", "add", "mdevolved", "--url", url, "--auth", "oauth"],
+      },
+    ]);
+  });
+
+  it("configures an explicit harness and fails closed on ambiguous auto-detection", async () => {
+    const calls: Array<{ command: string; args: readonly string[] }> = [];
+    const connected = await runCli(
+      {
+        command: "connect",
+        client: "codex",
+        json: true,
+        mcpUrl: "https://private-deployment.example/mcp",
+      },
+      {
+        commandExists: async (command) => command === "codex",
+        commandRunner: async (command, args) => {
+          calls.push({ command, args });
+          return 0;
+        },
+      },
+    );
+    expect(connected).toMatchObject({
+      action: "client_configured",
+      client: "codex",
+      ok: true,
+    });
+    expect(calls).toHaveLength(2);
+
+    let ran = false;
+    const ambiguous = await runCli(
+      {
+        command: "connect",
+        client: "auto",
+        json: true,
+        mcpUrl: "https://private-deployment.example/mcp",
+      },
+      {
+        env: { PATH: "/synthetic" },
+        commandExists: async (command) =>
+          command === "codex" || command === "claude",
+        commandRunner: async () => {
+          ran = true;
+          return 0;
+        },
+      },
+    );
+    expect(ambiguous).toMatchObject({
+      action: "client_setup_failed",
+      message: "multiple_clients_detected:codex,claude",
+      ok: false,
+    });
+    expect(ran).toBe(false);
   });
 
   it("parses only bounded, HTTPS pairing links", () => {

@@ -27,31 +27,60 @@ import {
   confirmSourcePublication,
   createPortableVaultSync,
 } from "./vaultFactory.js";
+import {
+  connectHarness,
+  HARNESS_CLIENT_IDS,
+  type HarnessClientId,
+  type HarnessCommandExists,
+  type HarnessCommandRunner,
+} from "./harness-connect.js";
 
 export const CLIENT_VERSION = "mdevolved-cli-alpha.1";
 
-export interface CliArguments {
-  command: "sync";
-  sourceRoot: string;
-  pairingFromStdin: boolean;
-  json: boolean;
-}
+export type CliArguments =
+  | {
+      command: "sync";
+      sourceRoot: string;
+      pairingFromStdin: boolean;
+      json: boolean;
+    }
+  | {
+      command: "connect";
+      client: HarnessClientId | "auto";
+      mcpUrl: string;
+      json: boolean;
+    };
 
 export type CliNextAction =
-  "provide_pairing" | "pairing_failed" | "sync_complete" | "sync_failed";
+  | "client_configured"
+  | "client_setup_failed"
+  | "provide_pairing"
+  | "pairing_failed"
+  | "sync_complete"
+  | "sync_failed";
 
-export interface CliResult {
-  ok: boolean;
-  action: CliNextAction;
-  sourceId: string;
-  message?: string;
-  stats?: {
-    conflicts: number;
-    diskWrites: number;
-    remoteWrites: number;
-    skippedOversize: number;
-  };
-}
+export type CliResult =
+  | {
+      ok: boolean;
+      action: Exclude<
+        CliNextAction,
+        "client_configured" | "client_setup_failed"
+      >;
+      sourceId: string;
+      message?: string;
+      stats?: {
+        conflicts: number;
+        diskWrites: number;
+        remoteWrites: number;
+        skippedOversize: number;
+      };
+    }
+  | {
+      ok: boolean;
+      action: "client_configured" | "client_setup_failed";
+      client?: HarnessClientId;
+      message?: string;
+    };
 
 export interface CliDependencies {
   stdin?: AsyncIterable<string>;
@@ -63,6 +92,9 @@ export interface CliDependencies {
     descriptor: SourceDescriptor,
   ) => Promise<VaultSyncLike>;
   stateDirectory?: string;
+  env?: NodeJS.ProcessEnv;
+  commandExists?: HarnessCommandExists;
+  commandRunner?: HarnessCommandRunner;
 }
 
 const SECRET_FLAGS = new Set([
@@ -74,10 +106,36 @@ const SECRET_FLAGS = new Set([
 ]);
 
 export function parseCliArguments(argv: readonly string[]): CliArguments {
+  if (argv[0] === "connect") {
+    const mcpUrl = argv[1];
+    if (!mcpUrl || mcpUrl.startsWith("-"))
+      throw new Error(
+        "usage: mdevolved connect <mcp-url> [--client auto|codex|claude|grok|hermes] [--json]",
+      );
+    let client: HarnessClientId | "auto" = "auto";
+    let json = false;
+    for (let index = 2; index < argv.length; index += 1) {
+      const argument = argv[index];
+      if (
+        SECRET_FLAGS.has(argument) ||
+        [...SECRET_FLAGS].some((flag) => argument.startsWith(`${flag}=`))
+      ) {
+        throw new Error("credentials_must_not_be_passed_as_arguments");
+      }
+      if (argument === "--json") json = true;
+      else if (argument === "--client") {
+        const value = argv[index + 1];
+        if (!value) throw new Error("client_required");
+        client = parseHarnessClient(value);
+        index += 1;
+      } else if (argument.startsWith("--client=")) {
+        client = parseHarnessClient(argument.slice("--client=".length));
+      } else throw new Error("unknown_argument");
+    }
+    return { command: "connect", client, mcpUrl, json };
+  }
   if (argv.length < 2 || argv[0] !== "sync")
-    throw new Error(
-      "usage: mdevolved sync <folder> [--pairing-stdin] [--json]",
-    );
+    throw new Error("usage: mdevolved <connect|sync>");
   const sourceRoot = argv[1];
   if (!sourceRoot || sourceRoot.startsWith("-"))
     throw new Error("source_folder_required");
@@ -97,6 +155,13 @@ export function parseCliArguments(argv: readonly string[]): CliArguments {
   return { command: "sync", sourceRoot, pairingFromStdin, json };
 }
 
+function parseHarnessClient(value: string): HarnessClientId | "auto" {
+  if (value === "auto") return value;
+  if ((HARNESS_CLIENT_IDS as readonly string[]).includes(value))
+    return value as HarnessClientId;
+  throw new Error("client_unsupported");
+}
+
 async function readBoundedStdin(input: AsyncIterable<string>): Promise<string> {
   let value = "";
   for await (const chunk of input) {
@@ -114,6 +179,36 @@ export async function runCli(
   args: CliArguments,
   dependencies: CliDependencies = {},
 ): Promise<CliResult> {
+  if (args.command === "connect") {
+    try {
+      const client = await connectHarness(args.client, args.mcpUrl, {
+        ...(dependencies.commandExists === undefined
+          ? {}
+          : { commandExists: dependencies.commandExists }),
+        ...(dependencies.commandRunner === undefined
+          ? {}
+          : { runner: dependencies.commandRunner }),
+        ...(dependencies.env === undefined ? {} : { env: dependencies.env }),
+      });
+      const result = {
+        ok: true,
+        action: "client_configured" as const,
+        client,
+        message:
+          "Open or restart the client, approve the exact Source when asked, then say “Connect this project to MDevolved.”",
+      };
+      emit(result, dependencies);
+      return result;
+    } catch (error) {
+      const result = {
+        ok: false,
+        action: "client_setup_failed" as const,
+        message: error instanceof Error ? error.message : "client_setup_failed",
+      };
+      emit(result, dependencies);
+      return result;
+    }
+  }
   const canonicalRoot = await canonicalizeFolderRoot(args.sourceRoot);
   const sourceId = await folderSourceIdentity(canonicalRoot);
   const custody = new ProtectedCredentialCustody(

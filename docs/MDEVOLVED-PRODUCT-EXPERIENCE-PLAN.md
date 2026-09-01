@@ -1,11 +1,11 @@
-# MDevolved minimum lovable product plan
+# MDevolved product experience plan
 
 **Status:** MD9 complete; MD10 is active and MD11 remains queued.
 **Date:** 2026-08-27
 
 ## Current milestone
 
-**MD10 — Lovable proof and one simple path** is the only active milestone.
+**MD10 — Product proof and one simple path** is the only active milestone.
 
 The final acceptance decision is binary: a first-time visitor can watch the
 complete value loop, then follow the same six-action public path from the
@@ -25,7 +25,7 @@ state, evidence, preferences, skills, failures, and next action so that the
 same agent, a different agent, or an orchestration harness can continue later
 without rebuilding context or requiring routine operator work.
 
-The minimum lovable product is accepted only when:
+The initial product experience is accepted only when:
 
 1. a new user encounters **MDevolved**, never the former product name,
    throughout installation,
@@ -203,7 +203,7 @@ operation requiring ungranted external authority.
   from real alpha users remain MD10/MD11 work. They do not weaken the verified
   MD9 identity, compatibility, authority, or distribution boundary.
 
-### MD10 — Lovable proof and one simple path
+### MD10 — Product proof and one simple path
 
 **Acceptance decision:** Close MD10 only when a first-time visitor can watch the
 complete value loop, then follow a six-step-or-shorter public path using a
@@ -333,7 +333,7 @@ The plan treats these findings as product work, not criticism to dismiss:
 - visible former-brand identities in the separate plugin/release path undermine the
   completed display rename; and
 - adding features before observing unassisted users increases scope and bus
-  factor without proving loveability.
+  factor without proving user value.
 
 These claims are not adopted as requirements: deleting technical architecture,
 hiding orchestration compatibility, forcing every component to share one

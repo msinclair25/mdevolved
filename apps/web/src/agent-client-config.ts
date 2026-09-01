@@ -9,6 +9,16 @@ import {
 
 export const AGENT_SERVER_NAME = "md-evolved";
 
+export type OneCommandClient = "claude" | "codex" | "grok" | "hermes";
+
+export function createOneCommandSetup(
+  mcpUrl: string,
+  client: OneCommandClient,
+): string {
+  const quotedUrl = `'${mcpUrl.replaceAll("'", `'\\''`)}'`;
+  return `npx mdevolved@latest connect ${quotedUrl} --client ${client}`;
+}
+
 function base64EncodeUtf8(value: string): string {
   const bytes = new TextEncoder().encode(value);
   let binary = "";

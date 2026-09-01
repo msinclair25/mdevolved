@@ -7,7 +7,7 @@ computers, and AI tools. Existing sync and provider sessions do not provide one
 owner-controlled Project memory, cited continuity, or portable recovery across
 those boundaries.
 
-The Minimum Lovable Product centers a smaller promise: connect a Project once,
+The initial product experience centers a focused promise: connect a Project once,
 then let a fresh compatible agent resume durable owner-controlled memory,
 retrieve targeted evidence, and leave a verified checkpoint for the next tool.
 MDevolved complements execution harnesses; it does not run, schedule, route, or

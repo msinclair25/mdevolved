@@ -32,7 +32,7 @@ The agent must be able to identify:
 - relevant owner and Project preferences; and
 - useful attached skills.
 
-The lovable moment is not a dashboard. It is the second AI continuing correctly
+The defining product moment is not a dashboard. It is the second AI continuing correctly
 without copied prompts or repeated explanation.
 
 ## One product loop
@@ -262,7 +262,7 @@ and restored only as source-labelled authority-free quarantine. Integrated M3
 validation passed 167 tests before final crash/race regressions; independent
 review accepted the remediated candidate with no open finding.
 
-### M4 — Minimum lovable release
+### M4 — Initial continuity release
 
 **Outcome:** A new multi-AI user experiences the cross-agent continuation
 moment without understanding MDevolved internals.
@@ -338,7 +338,7 @@ release gates.
 - Creating an executable-skill runtime or a skill marketplace before portable
   user-owned skills prove useful.
 - Adding multi-owner enterprise authorization before the single-owner product
-  is lovable.
+  proves useful and effortless.
 - Making governance, continuity metrics, or recovery drills part of ordinary
   project work.
 
