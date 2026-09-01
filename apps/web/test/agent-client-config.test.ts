@@ -12,6 +12,7 @@ import {
   createGenericMcpConfig,
   createObsidianMindMcpMergeConfig,
   createObsidianMindProjectMcpCommand,
+  createOneCommandSetup,
 } from "../src/agent-client-config";
 
 const MCP_URL = "https://private-deployment.example/mcp";
@@ -59,6 +60,20 @@ describe("agent client setup helpers", () => {
       "codex mcp add md-evolved --url 'https://private-deployment.example/mcp'\n" +
         "codex mcp login md-evolved --scopes vault.read,project.initialize.request,project.connect.request",
     );
+  });
+
+  it("creates one safe dashboard command for native harness installers", () => {
+    expect(createOneCommandSetup(MCP_URL, "codex")).toBe(
+      "npx mdevolved@latest connect 'https://private-deployment.example/mcp' --client codex",
+    );
+    expect(createOneCommandSetup(MCP_URL, "claude")).toContain(
+      "--client claude",
+    );
+    expect(createOneCommandSetup(MCP_URL, "grok")).toContain("--client grok");
+    expect(createOneCommandSetup(MCP_URL, "hermes")).toContain(
+      "--client hermes",
+    );
+    expect(createOneCommandSetup(MCP_URL, "codex")).not.toContain("Bearer");
   });
 
   it("creates an additive Obsidian Mind project setup", () => {

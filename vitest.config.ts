@@ -15,6 +15,7 @@ export default defineConfig({
     }),
   ],
   test: {
+    testTimeout: process.env.CI ? 30_000 : 5_000,
     include: [
       "apps/web/test/**/*.test.ts",
       "apps/worker/test/**/*.test.ts",

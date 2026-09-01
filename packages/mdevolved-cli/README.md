@@ -14,6 +14,18 @@ preferences, inert reusable skills, cited outcomes, checkpoints, reviews, and
 recovery evidence. It does not replace your coding harness, schedule agents,
 capture transcripts or hidden reasoning, or inherit filesystem authority.
 
+After the Source is ready, the authenticated dashboard provides one exact
+command for the agent already being used:
+
+```sh
+npx mdevolved@latest connect 'https://YOUR-MDEVOLVED-HOST/mcp' --client codex
+```
+
+The same command supports `claude`, `grok`, and `hermes`. It calls the selected
+harness's native MCP installer without accepting credentials or replacing its
+configuration. The owner approves the exact Source in the browser; the harness
+keeps its own OAuth session and execution permissions.
+
 <!-- md10-quickstart:start -->
 
 ## Six actions to your first durable resume
@@ -24,8 +36,9 @@ capture transcripts or hidden reasoning, or inherit filesystem authority.
    agents, recovery, and revocation.
 3. **Connect one disposable Markdown folder.** In that test folder, run
    `npx mdevolved@latest sync .` and approve only that Source.
-4. **Authorize one compatible agent.** Approve its exact Source and folder
-   boundary. You can revoke it at any time.
+4. **Connect one compatible agent.** Copy the dashboard's one command, run it
+   from the Project folder, and approve its exact Source and folder boundary.
+   You can revoke it at any time.
 5. **Connect the Project.** In that agent, say **Connect this project to
    MDevolved** and keep working normally.
 6. **Resume in a fresh session.** Open a fresh authorized session, say

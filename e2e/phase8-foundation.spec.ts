@@ -1827,12 +1827,20 @@ test("shows one compact agent setup path at a time", async ({ browser }) => {
 
   const agents = operationalRegion(page, "agents");
   await expect(
-    agents.getByRole("heading", { name: "Install and authenticate" }),
+    agents.getByRole("heading", { name: "Connect with one command" }),
   ).toBeVisible();
   await expect(agents.locator(".agent-client-guide")).toHaveCount(1);
+  await expect(agents.locator(".agent-client-guide code")).toContainText(
+    "npx mdevolved@latest connect",
+  );
   await expect(
     agents.getByRole("button", { name: "Copy setup" }),
   ).toBeVisible();
+
+  await agents.getByRole("button", { name: "Claude" }).click();
+  await expect(agents.locator(".agent-client-guide code")).toContainText(
+    "--client claude",
+  );
 
   await agents.getByRole("button", { name: "Antigravity" }).click();
   await expect(
@@ -1842,7 +1850,7 @@ test("shows one compact agent setup path at a time", async ({ browser }) => {
     agents.getByRole("button", { name: "Copy config" }),
   ).toBeVisible();
   await expect(
-    agents.getByRole("heading", { name: "Install and authenticate" }),
+    agents.getByRole("heading", { name: "Connect with one command" }),
   ).toHaveCount(0);
   await context.close();
 });

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const marketingUrl = `http://127.0.0.1:${process.env.MD10_MARKETING_PORT ?? "4174"}`;
 
-test("keeps the lovable demo and six-action path usable", async ({
+test("keeps the continuity demo and six-action path usable", async ({
   browser,
 }) => {
   const context = await browser.newContext();

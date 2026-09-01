@@ -3,7 +3,7 @@
 **Status:** MD1–MD9 are complete; MD10 is active and MD11 is queued in the MLP plan.<br />
 **Date:** 2026-08-27
 
-> **Next execution plan:** [MDevolved minimum lovable product plan](MDEVOLVED-MLP-PLAN.md).
+> **Next execution plan:** [MDevolved product experience plan](MDEVOLVED-PRODUCT-EXPERIENCE-PLAN.md).
 > This document remains the historical MD1–MD8 architecture and delivery
 > record. Its decisions to retain OWD as the canonical protocol and plugin
 > identity are superseded for new writes and new installations by the accepted
@@ -33,7 +33,7 @@ between AI tools, computers, and local workspaces. A plain folder is the
 compatibility floor. Obsidian becomes an optional, deeply integrated source
 adapter instead of a prerequisite.
 
-The lovable moment expands from continuity into autonomous delivery: after one
+The defining product moment expands from continuity into autonomous delivery: after one
 owner instruction, a single agent or a harness-managed group of agents receives
 the right bounded work, verifies it, preserves useful evidence, and continues
 from the exact next action without copied prompts, reconstructed provider
@@ -425,7 +425,7 @@ plugin identity, stored exports, backup restores, deploy links, and update paths
 still work; new users can start with either a folder or Obsidian without seeing
 the old product model in the normal path.
 
-### MD6 — Source-independent minimum lovable release
+### MD6 — Source-independent product release
 
 **Outcome:** A new user on a second computer continues a real Project through a
 different compatible AI without Obsidian or copied context.
@@ -734,7 +734,7 @@ performed.
 
 ## MD6 delivery receipt
 
-MD6 closes the source-independent minimum lovable release. A Markdown folder
+MD6 closes the source-independent product release. A Markdown folder
 can now be selected through the packaged desktop bridge, published through the
 shared folder adapter, resumed as the same durable Project from a fresh OAuth
 authorization, checkpointed, and denied immediately after exact owner

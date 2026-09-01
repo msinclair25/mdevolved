@@ -1088,7 +1088,7 @@ describe("Phase 9B agent-first collaboration walking path", () => {
       expectedProjectVersionId: fixture.packet.projectVersionId,
       expectedWorkItemVersionId: fixture.packet.workItemVersionId,
       idempotencyKey,
-      project: { objective: "Ship the lovable cross-client continuation." },
+      project: { objective: "Ship the reliable cross-client continuation." },
       workItem: {
         constraints: ["Keep the continuation provider-neutral."],
         definitionOfDone: ["A fresh client resumes the edited brief."],
@@ -1130,7 +1130,7 @@ describe("Phase 9B agent-first collaboration walking path", () => {
       request: { projectId: fixture.projectId },
     });
     expect(resumed.context.project.objective).toBe(
-      "Ship the lovable cross-client continuation.",
+      "Ship the reliable cross-client continuation.",
     );
     expect(resumed.context.brief.definitionOfDone).toEqual([
       "A fresh client resumes the edited brief.",

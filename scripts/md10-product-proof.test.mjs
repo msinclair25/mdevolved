@@ -26,7 +26,7 @@ function pngSize(bytes) {
   return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 }
 
-test("public discovery surfaces share one jargon-free six-action path", async () => {
+test("public product surfaces share one jargon-free six-action path", async () => {
   const [readme, guide, packageReadme, marketing] = await Promise.all([
     read("README.md"),
     read("docs/AGENT-FIRST-QUICKSTART.md"),

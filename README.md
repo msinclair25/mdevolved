@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/msinclair25/mdevolved"><strong>Deploy MDevolved Community</strong></a>
   ·
-  <a href="#the-lovable-moment">See the lovable moment</a>
+  <a href="#cross-agent-continuity">See continuity in action</a>
   ·
   <a href="docs/AGENT-FIRST-QUICKSTART.md">Quick start</a>
   ·
@@ -55,7 +55,7 @@ authorized agent works next.
 | Give an agent everything or nothing         | Grant one exact Source and folder boundary       |
 | Mistake sync for recovery                   | Keep encrypted, independently restorable backups |
 
-## The lovable moment
+## Cross-agent continuity
 
 You work on a project in Codex today. Tomorrow you open Claude—or a fresh
 Codex task on another computer—and say:
@@ -214,8 +214,9 @@ Cloudflare credentials or recovery private key.
    agents, recovery, and revocation.
 3. **Connect one disposable Markdown folder.** In that test folder, run
    `npx mdevolved@latest sync .` and approve only that Source.
-4. **Authorize one compatible agent.** Approve its exact Source and folder
-   boundary. You can revoke it at any time.
+4. **Connect one compatible agent.** Copy the dashboard's one command, run it
+   from the Project folder, and approve its exact Source and folder boundary.
+   You can revoke it at any time.
 5. **Connect the Project.** In that agent, say **Connect this project to
    MDevolved** and keep working normally.
 6. **Resume in a fresh session.** Open a fresh authorized session, say

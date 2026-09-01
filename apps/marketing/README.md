@@ -18,7 +18,7 @@ label distinguishes the public Community alpha from invitation-only managed
 cells; review that label whenever the delivery model changes. Managed alpha is
 not a public managed-service launch.
 
-The site leads with the lovable resume moment, explains the one-command folder
+The site leads with cross-session continuity, explains the one-command folder
 path and one-click Community deployment, then offers invitation-only managed
 alpha access. The source section links the public
 [MDevolved repository](https://github.com/msinclair25/mdevolved) and the

@@ -5,7 +5,7 @@ and evidence for Markdown folders, Obsidian, and compatible AI tools. It complem
 harnesses; it does not run, schedule, route, or supervise agents. This roadmap
 describes product outcomes, not deployment schedules or service commitments.
 
-## Current direction — prove the minimum lovable product
+## Current direction — prove the product experience
 
 MDevolved's durable protocol and Community data plane are the compatibility
 foundation for source-independent Project memory, with a plain Markdown folder
@@ -14,7 +14,7 @@ The next work makes MDevolved canonical for all new clients, data, packages,
 and installations while isolating former identities behind a deprecated
 compatibility layer.
 
-The source-core, desktop folder, Obsidian adapter, cross-computer, lovable
+The source-core, desktop folder, Obsidian adapter, cross-computer, product
 release, and naming-completion milestones are complete. The locally accepted
 MD8 candidate adds the Autonomous Project Loop: one owner-consented agent or an authorized
 lead managing several actors can verify, checkpoint, and continue bounded work
@@ -24,7 +24,7 @@ The next three acceptance decisions are canonical identity and release hygiene,
 one simple public path with real product proof, and unassisted alpha evidence.
 New feature development is frozen until those pass. The exact scope, migration
 boundary, external gates, and tests live in the
-[MDevolved minimum lovable product plan](MDEVOLVED-MLP-PLAN.md). The completed
+[MDevolved product experience plan](MDEVOLVED-PRODUCT-EXPERIENCE-PLAN.md). The completed
 architecture and MD1–MD8 delivery record remain in the
 [source-independent product plan](MDEVOLVED-PLAN.md).
 
