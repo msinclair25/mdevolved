@@ -34,7 +34,7 @@
     "esbuild": "0.25.5",
     "fake-indexeddb": "6.2.5",
     "y-indexeddb": "9.0.12",
-    "y-partyserver": "2.1.2",
-    "yjs": "13.6.29"
+    "y-partyserver": "2.2.0",
+    "yjs": "13.6.32"
   }
 }
