@@ -1877,8 +1877,8 @@ describe("scoped universal agent access", () => {
         memoryRoot: "memories",
       },
       source: {
-        commit: "538522e4ea660cdc1265f8ef71ef43966e1d9a96",
-        version: "8.3.1",
+        commit: "af615d100a1d04561409ab9a1e71e615efa1d87b",
+        version: "8.4.0",
       },
     });
     expect(resources.result.resources).toContainEqual(
@@ -1908,9 +1908,9 @@ describe("scoped universal agent access", () => {
       format: "owd-client-profile-v1",
       id: "eve",
       source: {
-        commit: "85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d",
-        connectVersion: "0.6.0",
-        eveVersion: "0.29.4",
+        commit: "247b3f05244893170bcf4dbcf20a2e35e416ccee",
+        connectVersion: "2.0.2",
+        eveVersion: "0.52.2",
         repository: "https://github.com/vercel/eve",
       },
     });
@@ -1936,7 +1936,7 @@ describe("scoped universal agent access", () => {
         package: "mcp-remote",
         temporary: true,
         transportStrategy: "http-only",
-        version: "0.1.38",
+        version: "0.8.4",
       },
       client: {
         configFile: "agent.config.json",
@@ -1952,9 +1952,9 @@ describe("scoped universal agent access", () => {
         waitTimeoutSeconds: 20,
       },
       source: {
-        commit: "0543226b800ee57659f200c1ef928925868c90c9",
+        commit: "6f20178d81c6f0fdbb97ccf826b0d56f04a77faf",
         repository: "https://github.com/morganlinton/Albatross",
-        version: "2.0.3",
+        version: "2.4.0",
       },
     });
     const promptsResponse = await productionFetch("prompts/list");

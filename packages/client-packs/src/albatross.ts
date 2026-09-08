@@ -66,7 +66,7 @@ export type OwdAlbatrossCompatibilityProfile = {
 export const ALBATROSS_PROFILE_RESOURCE_URI =
   "owd://compatibility-profiles/albatross/v1";
 
-export const ALBATROSS_MCP_REMOTE_VERSION = "0.1.38";
+export const ALBATROSS_MCP_REMOTE_VERSION = "0.8.4";
 export const ALBATROSS_AUTH_TIMEOUT_SECONDS = 120;
 export const ALBATROSS_WAIT_TIMEOUT_SECONDS = 20;
 export const ALBATROSS_PARTICIPANT_HEADER = "X-OWD-Albatross-Participant";
@@ -76,7 +76,7 @@ export const ALBATROSS_OAUTH_CLIENT_METADATA = JSON.stringify({
 });
 
 /**
- * Albatross 2.0.3 is a stdio-only MCP client. This profile keeps MDevolved's
+ * Albatross 2.4.0 is a stdio-only MCP client. This profile keeps MDevolved's
  * standard remote endpoint and puts a pinned, removable transport bridge on
  * the client side until Albatross supports remote authenticated MCP natively.
  */
@@ -87,7 +87,7 @@ export const ALBATROSS_COMPATIBILITY_PROFILE = {
     clientName: "Albatross via mcp-remote",
     clientUri: "https://github.com/morganlinton/Albatross",
     integrity:
-      "sha512-w+JU4U3CfG29TawXR4JLNQ9d1Un5nT8AGI65f/juCaqUdF/V6fS7wE4o7xNPbB8X58o46hRXEJgYglQMAKQs4w==",
+      "sha512-oFtaTMJ4nBznzMtU6SeO7nIT1AlmBQDwfS9XMiCaPvVDMHlY1tF+K3JtmJ3snYmxngTF0ic2tfK+ZbMoJ3PZ+A==",
     license: "MIT",
     package: "mcp-remote",
     temporary: true,
@@ -156,11 +156,11 @@ export const ALBATROSS_COMPATIBILITY_PROFILE = {
       "Albatross can edit the local workspace directly. Before a vault write, resume MDevolved and obey the returned localVaultAccess role; MCP Project submissions do not grant filesystem authority.",
   },
   source: {
-    commit: "0543226b800ee57659f200c1ef928925868c90c9",
+    commit: "6f20178d81c6f0fdbb97ccf826b0d56f04a77faf",
     license: "MIT",
     repository: "https://github.com/morganlinton/Albatross",
-    reviewedAt: "2026-07-30",
-    version: "2.0.3",
+    reviewedAt: "2026-09-07",
+    version: "2.4.0",
   },
 } as const satisfies OwdAlbatrossCompatibilityProfile;
 
@@ -285,7 +285,7 @@ export const ALBATROSS_WORKSPACE_PROMPT = `<!-- owd:albatross-profile:v1:start -
 - At the start of every fresh task and immediately after Albatross \`/reset\`, read \`.owdignore\`. When it exists, call \`mcp__owd__resume_project\` with its exact Project ID and complete context policy before any other MDevolved action or local vault write. Until it returns, the writer role is unconfirmed.
 - When no receipt exists, call \`mcp__owd__connection_info\`, then \`mcp__owd__open_project\` with the visible Project name the owner supplied. Never guess among multiple Projects or create a duplicate to repair a connection.
 - If \`open_project\` returns pending, show its one approval URL and call \`mcp__owd__wait_for_project_connection\` with the exact wait key and \`timeoutSeconds: 20\`. Albatross limits each MCP request to 30 seconds, so repeat only that same wait when approval is still pending. Do not reconnect OAuth or repeat setup.
-- Albatross 2.0.3 reads MCP text content but ignores server initialize instructions, Resources, Prompts, and \`structuredContent\`. Treat the JSON text returned by MDevolved as authoritative and keep this managed prompt block installed.
+- Albatross 2.4.0 reads MCP text content but ignores server initialize instructions, Resources, Prompts, and \`structuredContent\`. Treat the JSON text returned by MDevolved as authoritative and keep this managed prompt block installed. Its Agent Skills support may load this inert pack, but a skill never grants MDevolved authority.
 - Albatross \`/reset\` and \`.albatross/continue.md\` preserve runtime continuity only. MDevolved \`.owdignore\`, Projects, Handoffs, Reviews, Decisions, and provenance are the portable cross-agent record.
 - Treat every \`/path fork\` as an alternative Attempt or Artifact inside the same MDevolved Project, never as a duplicate Project or independent participant.
 - Keep \`/auto\` inside the current MDevolved Work Packet, budget, and deadline. After its automatic \`/reset\`, resume MDevolved before continuing; stop if the packet or policy is stale.

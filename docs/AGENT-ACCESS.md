@@ -694,8 +694,8 @@ the protocol boundary:
   app-principal schedules cannot borrow the user's grant.
 - **Albatross** receives a copy-ready setup kit containing one pre-authorization
   command, an additive `agent.config.json` fragment, a marked
-  `.albatross/prompt.md` block, and `/mcp trust owd`. Albatross `2.0.3` is
-  stdio-only, so the profile pins the temporary `mcp-remote` `0.1.38` bridge
+  `.albatross/prompt.md` block, and `/mcp trust owd`. Albatross `2.4.0` is
+  stdio-only, so the profile pins the temporary `mcp-remote` `0.8.4` bridge
   while MDevolved remains standard remote Streamable HTTP MCP plus OAuth. Tools are
   qualified as `mcp__owd__<tool>`; Project waits stay below the client's
   30-second request limit. A distinct non-secret participant header partitions

@@ -4,6 +4,14 @@
 
 **Status:** inert, script-free guidance over the generic MDevolved MCP services
 
+**Source-verified profile:** Hermes Agent `0.21.1`, tag `v2026.9.7`, commit
+`2237be355906fbe6065ce1815711eee52b2d646e`. Reviewed `2026-09-07`.
+
+Hermes now has native remote MCP OAuth support. Point that client at
+`https://YOUR-MDEVOLVED-HOST/mcp`; do not add a transport bridge or place OAuth
+credentials in this adapter. This source review does not claim vendor
+certification or a completed live Hermes acceptance run.
+
 The same guidance is discoverable as the MCP resource
 `mdevolved://adapters/hermes/hands-off/v1`.
 

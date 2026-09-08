@@ -52,6 +52,12 @@ export async function loadConfiguration() {
     }
     assertString(profile.source.repository, `${profile.id}.source.repository`);
     assertString(profile.source.releaseTag, `${profile.id}.source.releaseTag`);
+    if (profile.source.releaseTagPrefix !== undefined) {
+      assertString(
+        profile.source.releaseTagPrefix,
+        `${profile.id}.source.releaseTagPrefix`,
+      );
+    }
     assertSha(profile.source.commit, `${profile.id}.source.commit`);
     assertString(profile.source.reviewedAt, `${profile.id}.source.reviewedAt`);
     if (!Array.isArray(profile.criticalPaths)) {
@@ -175,10 +181,25 @@ async function resolveTagCommit(repository, tag, token) {
 }
 
 async function inspectGitHubSource(profile, token) {
-  const latest = await githubJson(
-    `/repos/${profile.source.repository}/releases/latest`,
-    token,
-  );
+  const latest =
+    profile.source.releaseTagPrefix === undefined
+      ? await githubJson(
+          `/repos/${profile.source.repository}/releases/latest`,
+          token,
+        )
+      : (
+          await githubJson(
+            `/repos/${profile.source.repository}/releases?per_page=100`,
+            token,
+          )
+        ).find((release) =>
+          release.tag_name.startsWith(profile.source.releaseTagPrefix),
+        );
+  if (latest === undefined) {
+    throw new Error(
+      `${profile.source.repository} has no release matching ${profile.source.releaseTagPrefix}.`,
+    );
+  }
   const latestCommit = await resolveTagCommit(
     profile.source.repository,
     latest.tag_name,

@@ -130,11 +130,11 @@ export const OBSIDIAN_MIND_COMPATIBILITY_PROFILE = {
     ],
   },
   source: {
-    commit: "538522e4ea660cdc1265f8ef71ef43966e1d9a96",
+    commit: "af615d100a1d04561409ab9a1e71e615efa1d87b",
     license: "MIT",
     repository: "https://github.com/breferrari/obsidian-mind",
-    reviewedAt: "2026-07-31",
-    version: "8.3.1",
+    reviewedAt: "2026-09-07",
+    version: "8.4.0",
   },
   toolPolicy: {
     localReadTools: ["search", "expand", "recall", "reason", "health"],

@@ -22,8 +22,8 @@ Project lifecycle, or server-side authority.
 4. Use MCP server name `owd`; Albatross exposes its tools as
    `mcp__owd__<tool>`.
 
-Albatross `2.0.3` supports child-process stdio MCP only. Use the profile's
-pinned `mcp-remote@0.1.38` bridge with `--transport http-only`. This is a
+Albatross `2.4.0` supports child-process stdio MCP only. Use the profile's
+pinned `mcp-remote@0.8.4` bridge with `--transport http-only`. This is a
 temporary client adapter, not an MDevolved proxy or protocol fork. Remove it when
 Albatross supports authenticated remote Streamable HTTP natively.
 

@@ -10,30 +10,24 @@ The reviewed profile is pinned to:
 
 | Contract          | Reviewed value                             |
 | ----------------- | ------------------------------------------ |
-| Eve               | `0.29.4`                                   |
-| Eve source commit | `85c1dd7a647a04cc1bd74879ba8d27a3ba0bdd9d` |
-| `@vercel/connect` | `0.6.0`                                    |
+| Eve               | `0.52.2`                                   |
+| Eve source commit | `247b3f05244893170bcf4dbcf20a2e35e416ccee` |
+| `@vercel/connect` | `2.0.2`                                    |
 | License           | Apache-2.0                                 |
-| Reviewed          | July 31, 2026                              |
+| Reviewed          | September 7, 2026                          |
 
 This is a source-verified compatibility profile. It does not yet claim that a
 live Eve deployment has completed MDevolved's independent two-agent acceptance run.
 Unknown future Eve connection or identity changes fall back to MDevolved's universal
 MCP setup until the profile is reviewed again.
 
-Eve 0.29 replaces its retired `/connect` setup command with `eve add` and
-`/add` registry installation. MDevolved's generated `agent/connections/owd.ts`
-module remains a supported authored MCP connection. Until MDevolved is accepted into
-an Eve registry, use the dashboard-generated module rather than claiming an
-`eve add` package that does not exist.
-
-Eve 0.29.4 leaves its authored MCP definition, runtime MCP client, and
-`@vercel/connect` contract unchanged. It adds trusted setup for official
-connection registry items, which creates a path to a future
-`eve add connection/owd` installer. Eve executes declared connector setup only
-for its official registry, so MDevolved will not advertise that command until an
-upstream registry contribution is accepted. The dashboard-generated module
-below remains the complete supported setup in the meantime.
+Eve 0.52.2 retains authored `agent/connections/*.ts` modules,
+`defineMcpClientConnection`, and the user-scoped `@vercel/connect/eve`
+`connect()` helper used by MDevolved. The reviewed update adds first-class
+skills, context, workflow, and connection surfaces without changing
+MDevolved's generated OAuth authority boundary. Until MDevolved is accepted
+into Eve's registry, use the dashboard-generated module rather than claiming
+an `eve add` package that does not exist.
 
 ## Architecture
 
