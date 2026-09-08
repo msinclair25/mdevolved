@@ -12,7 +12,12 @@ test("loads one reviewed profile for each supported upstream", async () => {
   const configuration = await loadConfiguration();
   assert.deepEqual(
     configuration.profiles.map((profile) => profile.id),
-    ["obsidian-mind", "eve", "albatross"],
+    ["obsidian-mind", "eve", "albatross", "hermes", "langchain"],
+  );
+  assert.equal(
+    configuration.profiles.find((profile) => profile.id === "langchain")?.source
+      .releaseTagPrefix,
+    "langchain==",
   );
   await validateEvidence(configuration);
 });
@@ -46,12 +51,12 @@ test("renders a single stable review issue with critical source paths", () => {
   const report = renderProfileReport({
     id: "eve",
     name: "Eve.dev",
-    reviewedAt: "2026-07-31",
+    reviewedAt: "2026-09-07",
     drift: true,
     source: {
       kind: "github-release",
       drift: true,
-      reviewedTag: "eve@0.29.4",
+      reviewedTag: "eve@0.52.2",
       reviewedCommit: "a".repeat(40),
       latestTag: "eve@0.30.0",
       latestCommit: "b".repeat(40),
@@ -66,8 +71,8 @@ test("renders a single stable review issue with critical source paths", () => {
         kind: "npm",
         package: "@vercel/connect",
         drift: false,
-        reviewedVersion: "0.6.0",
-        latestVersion: "0.6.0",
+        reviewedVersion: "2.0.2",
+        latestVersion: "2.0.2",
         packageUrl: "https://www.npmjs.com/package/@vercel/connect",
       },
     ],

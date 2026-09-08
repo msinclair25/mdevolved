@@ -31,7 +31,7 @@ client-side Project authority, or a second MDevolved endpoint. Do not pin a loca
 tool allowlist: MDevolved's advertised catalog and server-side grant remain
 authoritative.
 
-Eve `0.29.4` can install integrations from its registry with `eve add` or
+Eve `0.52.2` can install integrations from its registry with `eve add` or
 interactive `/add`. MDevolved is not represented as registry-installed until Eve's
 upstream registry accepts it. Until then, use the generated
 `agent/connections/owd.ts` module from the MDevolved dashboard; do not claim that

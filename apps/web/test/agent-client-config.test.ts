@@ -104,7 +104,7 @@ describe("agent client setup helpers", () => {
 
   it("creates Albatross's pre-authorized pinned bridge setup", () => {
     expect(createAlbatrossAuthorizationCommand(MCP_URL)).toContain(
-      "mcp-remote@0.1.38 mcp-remote-client",
+      "mcp-remote@0.8.4 mcp-remote-client",
     );
     expect(JSON.parse(createAlbatrossMcpMergeConfig(MCP_URL))).toEqual({
       mcpServers: {
@@ -112,7 +112,7 @@ describe("agent client setup helpers", () => {
           command: "npx",
           args: [
             "-y",
-            "mcp-remote@0.1.38",
+            "mcp-remote@0.8.4",
             MCP_URL,
             "--header",
             "X-OWD-Albatross-Participant:primary",

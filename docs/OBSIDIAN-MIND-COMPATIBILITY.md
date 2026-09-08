@@ -9,16 +9,16 @@ forked Project model.
 
 The reviewed upstream is
 [`breferrari/obsidian-mind`](https://github.com/breferrari/obsidian-mind) version
-`8.3.1` at commit
-`538522e4ea660cdc1265f8ef71ef43966e1d9a96`, reviewed 2026-07-31. Upstream is
+`8.4.0` at commit
+`af615d100a1d04561409ab9a1e71e615efa1d87b`, reviewed 2026-09-07. Upstream is
 MIT-licensed. MDevolved copies no upstream executable source; the profile records
 observed public conventions and links to the upstream repository.
 
-Version 8.3.1 is the recommended baseline for this dual-server profile. Its
-local `om` exposure path fixes case-insensitive `mcp_never_expose` matching,
-private frontmatter markers beyond the ordinary head window, and promoted-note
-resolution. These are protections on Mind's local server; MDevolved's independent
-server-side OAuth and vault boundary remain authoritative.
+Version 8.4.0 is the recommended baseline for this dual-server profile. It
+retains the same side-by-side remote MCP entry while improving local caller
+identity fallback for clients without roots, qmd cold-start handling, and
+malformed tool-call refusal diagnostics. Those changes remain local to Mind;
+MDevolved's independent server-side OAuth and Source boundary are authoritative.
 
 ## Complementary topology
 

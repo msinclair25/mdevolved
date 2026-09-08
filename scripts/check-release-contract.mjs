@@ -65,6 +65,11 @@ const albatrossCompatibility = await readFile(
   "docs/ALBATROSS-COMPATIBILITY.md",
   "utf8",
 );
+const hermesCompatibility = await readFile("docs/HERMES-HANDS-OFF.md", "utf8");
+const langChainCompatibility = await readFile(
+  "docs/LANGCHAIN-COMPATIBILITY.md",
+  "utf8",
+);
 const pluginSettings = await readFile(
   "packages/obsidian-plugin/vendor/yaos-src/settings/settingsTab.ts",
   "utf8",
@@ -72,6 +77,11 @@ const pluginSettings = await readFile(
 const normalizedRootReadme = rootReadme.replace(/\s+/gu, " ");
 const normalizedMarketingReadme = marketingReadme.replace(/\s+/gu, " ");
 const normalizedAlbatrossCompatibility = albatrossCompatibility.replace(
+  /\s+/gu,
+  " ",
+);
+const normalizedHermesCompatibility = hermesCompatibility.replace(/\s+/gu, " ");
+const normalizedLangChainCompatibility = langChainCompatibility.replace(
   /\s+/gu,
   " ",
 );
@@ -101,8 +111,8 @@ if (
   !eveCompatibility.includes(
     "This is a source-verified compatibility profile",
   ) ||
-  !eveCompatibility.includes("| Eve               | `0.29.4`") ||
-  !eveCompatibility.includes("| `@vercel/connect` | `0.6.0`") ||
+  !eveCompatibility.includes("| Eve               | `0.52.2`") ||
+  !eveCompatibility.includes("| `@vercel/connect` | `2.0.2`") ||
   !marketingSite.includes('id="eve"') ||
   !normalizedMarketingSite.includes(
     "Eve runs the agent. MDevolved makes the work portable.",
@@ -118,18 +128,38 @@ if (
   !albatrossCompatibility.includes(
     "This is a source-verified compatibility profile",
   ) ||
-  !albatrossCompatibility.includes("| Albatross               | `2.0.3`") ||
+  !albatrossCompatibility.includes("| Albatross               | `2.4.0`") ||
   !albatrossCompatibility.includes(
-    "| Temporary MCP bridge    | `mcp-remote` `0.1.38`",
+    "| Temporary MCP bridge    | `mcp-remote` `0.8.4`",
   ) ||
   !normalizedAlbatrossCompatibility.includes(
     "It does not claim vendor certification or a completed live Albatross acceptance run",
   ) ||
   !releaseCompatibility.includes("| Albatross profile") ||
-  !releaseCompatibility.includes("`0543226b800ee57659f200c1ef928925868c90c9`")
+  !releaseCompatibility.includes("`6f20178d81c6f0fdbb97ccf826b0d56f04a77faf`")
 ) {
   throw new Error(
     "MDevolved public copy must keep the source-verified Albatross profile visible, pin its temporary bridge, and avoid claiming completed live acceptance.",
+  );
+}
+if (
+  !hermesCompatibility.includes("Hermes Agent `0.21.1`") ||
+  !hermesCompatibility.includes("`2237be355906fbe6065ce1815711eee52b2d646e`") ||
+  !hermesCompatibility.includes("native remote MCP OAuth support") ||
+  !normalizedHermesCompatibility.includes(
+    "does not claim vendor certification or a completed live Hermes acceptance run",
+  ) ||
+  !langChainCompatibility.includes("LangChain `1.4.0`") ||
+  !langChainCompatibility.includes(
+    "`79cab2dc7f58be720cac43db3677b4c1fd971f91`",
+  ) ||
+  !langChainCompatibility.includes("`langchain.mcp`") ||
+  !normalizedLangChainCompatibility.includes(
+    "does not claim vendor certification or a completed live LangChain acceptance run",
+  )
+) {
+  throw new Error(
+    "Hermes and LangChain compatibility recipes must remain source-pinned, native, and honest about live acceptance.",
   );
 }
 if (

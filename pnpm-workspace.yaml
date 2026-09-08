@@ -3,7 +3,7 @@ packages:
   - packages/*
 
 minimumReleaseAgeExclude:
-  - eve@0.29.4
+  - eve@0.52.2
   - electron@44.0.0
 
 overrides:

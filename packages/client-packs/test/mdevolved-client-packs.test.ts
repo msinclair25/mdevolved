@@ -63,7 +63,7 @@ describe("canonical MDevolved client packs", () => {
   it("generates canonical client configurations without changing authority", () => {
     const albatross = createMDevolvedAlbatrossMcpMergeConfig(MCP_URL);
     expect(JSON.parse(albatross)).toHaveProperty("mcpServers.mdevolved");
-    expect(albatross).toContain("mcp-remote@0.1.38");
+    expect(albatross).toContain("mcp-remote@0.8.4");
     expect(albatross).not.toContain("Bearer ");
 
     const eve = createMDevolvedEveConnectionSource(MCP_URL);

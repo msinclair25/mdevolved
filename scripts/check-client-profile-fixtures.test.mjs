@@ -9,7 +9,7 @@ const normalizeSource = (source) => source.replace(/\s+/gu, " ").trim();
 test("the generated Eve connection matches the pinned type-checked fixture", async () => {
   const fixture = await readFile(
     new URL(
-      "../packages/client-packs/test/fixtures/eve-0.29.4-connection.ts",
+      "../packages/client-packs/test/fixtures/eve-0.52.2-connection.ts",
       import.meta.url,
     ),
     "utf8",
