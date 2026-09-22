@@ -1,6 +1,6 @@
 {
   "format": "mdevolved-client-shapes-v1",
-  "observedAt": "2026-08-27",
+  "observedAt": "2026-09-21",
   "schemaVersion": 1,
   "shapes": [
     {
@@ -14,9 +14,17 @@
         "Codex CLI",
         "Claude Code",
         "Cursor CLI",
+        "Gemini CLI",
+        "GitHub Copilot CLI",
         "Grok Build",
-        "Hermes Agent"
+        "Hermes Agent",
+        "OpenCode"
       ],
+      "primaryConnectionMode": "direct-mcp"
+    },
+    {
+      "category": "agent-runtime",
+      "members": ["OpenClaw"],
       "primaryConnectionMode": "direct-mcp"
     },
     {

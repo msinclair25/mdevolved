@@ -1,20 +1,81 @@
 # MDevolved product experience plan
 
-**Status:** MD9 complete; MD10 is active and MD11 remains queued.
-**Date:** 2026-08-27
+**Status:** MD9 and MD10 delivered; MD11 human evidence is open; PAC1 is active.
+**Date:** 2026-09-21
 
 ## Current milestone
 
-**MD10 — Product proof and one simple path** is the only active milestone.
+**PAC1 — Portable Agent Compatibility** is the active engineering milestone.
 
-The final acceptance decision is binary: a first-time visitor can watch the
-complete value loop, then follow the same six-action public path from the
-website, GitHub README, npm page, or quickstart without learning protocol
-internals before the first successful fresh-session resume.
+The final acceptance decision is binary: an owner can connect OpenCode, Gemini
+CLI, and GitHub Copilot CLI through their native remote-MCP installers, or
+install one deployment-specific Agent Plugins 1.0 package in OpenClaw, without
+copying credentials, changing MDevolved authority, or teaching a harness-
+specific Project workflow.
 
-Implementation, synthetic-data captures, accessibility, automated validation,
-regression repair, and review remain in MD10. Unassisted external-user evidence
-belongs to MD11 and cannot be used to close MD10 early.
+PAC1 also refreshes source-verified compatibility baselines for Eve, Albatross,
+Hermes, and LangChain. It closes only when schemas, generated packages, native
+commands, legacy clients, release checks, the complete repository gate, and
+deployment dry-runs pass from one exact candidate. MD11 remains a separate
+human-evidence gate and cannot be closed by PAC1 automation.
+
+### PAC1 frozen scope
+
+1. Generate a credential-free, per-deployment Agent Plugins 1.0 archive with
+   one remote Streamable HTTP MCP server and one inert Project-continuity skill.
+2. Add first-class dashboard and public CLI setup for OpenCode, Gemini CLI, and
+   GitHub Copilot CLI; add an OpenClaw download/install path for the package.
+3. Keep client names in presentation fixtures and helpers, never in durable
+   product records or authorization policy.
+4. Refresh only source-verified upstream pins whose current contracts still
+   satisfy the existing provider-neutral adapter boundary.
+5. Preserve the universal URL/config fallback for every other compatible
+   client and the authority-free portable handoff when direct MCP is absent.
+
+### PAC1 explicit non-goals
+
+- No agent scheduler, model router, terminal, worktree manager, retry loop, or
+  harness supervision.
+- No ingestion of transcripts, hidden reasoning, provider memory, credentials,
+  OAuth state, or runtime state.
+- No custom MDevolved backend per client, no durable client enum, and no claim
+  that an upstream project endorses or certifies MDevolved.
+- No automatic installation into a third-party runtime and no silent expansion
+  of Source, folder, Project, tool, or deployment authority.
+
+### PAC1 candidate receipt — 2026-09-21
+
+- **Outcome:** The exact local candidate adds first-class native setup for
+  OpenCode, Gemini CLI, and GitHub Copilot CLI, plus a deterministic,
+  credential-free Agent Plugins 1.0 archive for OpenClaw. The universal remote
+  MCP fallback remains available for other compatible clients.
+- **Surfaces:** Dashboard setup cards and browser download; CLI connect helpers;
+  vendored Agent Plugins schemas; client-shape fixtures; source-pinned
+  compatibility receipts; README, website, quickstart, release documentation,
+  and release guards.
+- **Schema and recovery:** No durable schema, migration, authority, export,
+  snapshot, restore, or quarantine contract changed. The generated archive
+  contains only `plugin.json`, `mcp.json`, and one inert Markdown skill. It
+  contains no credential, executable, hook, or runtime state.
+- **Automated evidence:** PAC1 focused tests, 56 Worker agent-access tests, 23
+  migration checks, 565 core tests plus every package suite, all 80 Playwright
+  scenarios, builds, Community and marketing deployment dry-runs, a clean
+  install, a 105-revision public-source scan, and the production dependency
+  audit passed on the exact functional candidate.
+- **Adversarial findings and rework:** Review corrected Gemini CLI argument
+  order, a timezone-sensitive ZIP timestamp, stale Worker profile text, and
+  newly disclosed Hono and js-yaml advisories. The final production audit
+  reports no known vulnerability.
+- **Live check:** Archive creation and browser download passed. A disposable
+  OpenClaw CLI install could not execute because its current release requires
+  Node 24.16+ while the repository runtime is Node 22; both isolated attempts
+  were cleaned up. This does not affect OpenClaw users on its supported runtime.
+- **Cost and cleanup:** All checks used synthetic data and projected $0 cost.
+  No cloud resource, customer data, credential, production record, or local
+  agent configuration was created or changed.
+- **Delivery state:** The local candidate is green. GitHub PR/CI/merge and the
+  existing Community and marketing deployments remain to be completed. npm
+  publication and tagging are deliberately separate versioned-release actions.
 
 ## Outcome
 
@@ -383,7 +444,8 @@ MDevolved again without user evidence.
 
 ## Next action
 
-Review the owner-controlled MD10 delivery actions for the green local candidate:
-commit and push, GitHub prerelease, paired npm publication, and application and
-marketing deployment. Keep official store review explicit and reserve
-independent unassisted-user evidence for MD11.
+Complete PAC1's focused and full automated gates on one exact candidate, then
+commit, push, and deploy the compatibility release through the existing
+owner-authorized Community and marketing paths. Keep package publication and
+independent unassisted-user evidence explicit; MD11 remains open until real
+users supply it.

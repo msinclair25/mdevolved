@@ -25,7 +25,7 @@ describe("Albatross compatibility profile", () => {
         package: "mcp-remote",
         temporary: true,
         transportStrategy: "http-only",
-        version: "0.8.4",
+        version: "0.14.3",
       },
       client: {
         configFile: "agent.config.json",
@@ -58,10 +58,10 @@ describe("Albatross compatibility profile", () => {
         evaluation: expect.stringContaining("/iterate"),
       },
       source: {
-        commit: "6f20178d81c6f0fdbb97ccf826b0d56f04a77faf",
+        commit: "e458e4277f463a4688f127ea6ea61f5a344b64b8",
         license: "MIT",
         repository: "https://github.com/morganlinton/Albatross",
-        version: "2.4.0",
+        version: "2.5.0",
       },
     });
     expect(JSON.parse(serializeAlbatrossCompatibilityProfile())).toStrictEqual(
@@ -77,7 +77,7 @@ describe("Albatross compatibility profile", () => {
           command: "npx",
           args: [
             "-y",
-            "mcp-remote@0.8.4",
+            "mcp-remote@0.14.3",
             MCP_URL,
             "--header",
             "X-OWD-Albatross-Participant:primary",
@@ -98,7 +98,7 @@ describe("Albatross compatibility profile", () => {
 
   it("pre-authorizes OAuth outside Albatross's startup timeout", () => {
     expect(createAlbatrossAuthorizationCommand(MCP_URL)).toBe(
-      'npx -y -p mcp-remote@0.8.4 mcp-remote-client \'https://private-deployment.example/mcp\' --header \'X-OWD-Albatross-Participant:primary\' --transport http-only --auth-timeout 120 --static-oauth-client-metadata \'{"client_name":"Albatross via mcp-remote","client_uri":"https://github.com/morganlinton/Albatross"}\'',
+      'npx -y -p mcp-remote@0.14.3 mcp-remote-client \'https://private-deployment.example/mcp\' --header \'X-OWD-Albatross-Participant:primary\' --transport http-only --auth-timeout 120 --static-oauth-client-metadata \'{"client_name":"Albatross via mcp-remote","client_uri":"https://github.com/morganlinton/Albatross"}\'',
     );
   });
 

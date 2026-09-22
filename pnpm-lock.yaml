@@ -6,9 +6,10 @@ settings:
 
 overrides:
   '@hono/node-server': 2.0.11
+  baseline-browser-mapping: 2.11.22
   browserslist: 4.28.7
   fast-uri: 3.1.6
-  hono: 4.12.34
+  hono: 4.13.5
   ip-address: 10.3.1
   nanoid@<3.3.18: 3.3.18
   postcss: 8.5.23
@@ -95,6 +96,9 @@ importers:
       age-encryption:
         specifier: 0.3.0
         version: 0.3.0
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       react:
         specifier: 19.2.7
         version: 19.2.7
@@ -140,10 +144,10 @@ importers:
         version: 0.3.0
       agents:
         specifier: 0.20.1
-        version: 0.20.1(@babel/core@8.0.1)(@babel/runtime@7.29.7)(@cloudflare/workers-types@4.20260702.1)(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3))(@modelcontextprotocol/server@2.0.0)(ai@7.0.93(zod@4.4.3))(react@19.2.7)(rolldown@1.1.5)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(yaml@2.9.0))(zod@4.4.3)
+        version: 0.20.1(@babel/core@8.0.1)(@babel/runtime@7.29.7)(@cloudflare/workers-types@4.20260702.1)(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3))(@modelcontextprotocol/server@2.0.0)(ai@7.0.107(zod@4.4.3))(react@19.2.7)(rolldown@1.1.5)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(yaml@2.9.0))(zod@4.4.3)
       hono:
-        specifier: 4.12.34
-        version: 4.12.34
+        specifier: 4.13.5
+        version: 4.13.5
       partyserver:
         specifier: 0.3.2
         version: 0.3.2(@cloudflare/workers-types@4.20260702.1)
@@ -163,11 +167,11 @@ importers:
   packages/client-packs:
     devDependencies:
       '@vercel/connect':
-        specifier: 2.0.2
-        version: 2.0.2(ai@7.0.93(zod@4.4.3))(eve@0.52.2(ai@7.0.93(zod@4.4.3)))
+        specifier: 2.0.4
+        version: 2.0.4(ai@7.0.107(zod@4.4.3))(eve@0.63.0(ai@7.0.107(zod@4.4.3)))
       eve:
-        specifier: 0.52.2
-        version: 0.52.2(ai@7.0.93(zod@4.4.3))
+        specifier: 0.63.0
+        version: 0.63.0(ai@7.0.107(zod@4.4.3))
 
   packages/contracts:
     dependencies:
@@ -220,8 +224,8 @@ importers:
         specifier: 0.8.3
         version: 0.8.3
       js-yaml:
-        specifier: 4.3.1
-        version: 4.3.1
+        specifier: 4.3.2
+        version: 4.3.2
       partyserver:
         specifier: 0.3.2
         version: 0.3.2(@cloudflare/workers-types@4.20260702.1)
@@ -271,20 +275,20 @@ importers:
 
 packages:
 
-  '@ai-sdk/gateway@4.0.75':
-    resolution: {integrity: sha512-HOnhw3oXtBnboBF7kAKipjToCN6+5w6EuukiUKiULcxBitS+vbHRRv9IUBcq+Z1wkXcJjfywKrt5r++I6OYyXg==}
+  '@ai-sdk/gateway@4.0.87':
+    resolution: {integrity: sha512-6wJmX/D5OO7tvDJbtFdXdBuRt8AkCnW+FLK+W35UHe/tHgolAa4hclXtJcMSYnlTDy/t5DNRgdesVaoMXtwzow==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/provider-utils@5.0.36':
-    resolution: {integrity: sha512-MFXBn6XDyf37PNQAge/HTatPJE8Vmg/g/w4WPtjSV53jq8FKAzoaN5+43hsdQa9bqgN+/13jxug9ChvsG+godQ==}
+  '@ai-sdk/provider-utils@5.0.45':
+    resolution: {integrity: sha512-gLuaCups8OCIRz3eO6WWz5op7VLYNNtFzyH0sWUr0FE9v7cTxR0qxDpQdrKnGcql+9WWttobjnZsJVsuEbsPQQ==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/provider@4.0.10':
-    resolution: {integrity: sha512-fX2ENAc7iDpZ+Wp4+Rk06Usn/Ys7dI9uAkGv0jlF6XVrW13NkRWx5Ou+U6lIM2E1fTLkCs16GGrUAaVvroag7A==}
+  '@ai-sdk/provider@4.0.17':
+    resolution: {integrity: sha512-VYMBxIQdcHqbIf1j+YZlI9Ati6LZ4wJe0GGd4z4a5H/KxTggjeOiyaVYTnfF7LHZK5jMQ+rofmzz4QPqf++NUw==}
     engines: {node: '>=22'}
 
   '@babel/code-frame@8.0.0':
@@ -828,7 +832,7 @@ packages:
     resolution: {integrity: sha512-bjD221KPLoJTWUwso1J6fGKiTXEUFedG/s0visavY4zakFPkeGURMRNly+FhBHs7T8Dz4qHaZIMX9ZoJHSJtKA==}
     engines: {node: '>=20'}
     peerDependencies:
-      hono: 4.12.34
+      hono: 4.13.5
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -1641,15 +1645,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vercel/cli-config@0.2.4':
-    resolution: {integrity: sha512-kZ5SojbrV06GHoU6QIWGwDXLov+s9rWZ7QqdqKfJfBGCNUieGfgaCjeeenNy8Y+QC0bwC0dZ2B4l5Hvdmrgpdw==}
+  '@vercel/cli-config@0.2.6':
+    resolution: {integrity: sha512-2AsKCf6gE/Eniq09ARm1RK9rQMV5pcAHU7BFcR9MISO+4/RsjjkaYbQN6G85/xi9pYZ5CJNXvYn4TI6p1jKBcg==}
 
   '@vercel/cli-exec@1.0.1':
     resolution: {integrity: sha512-g9XerViJ/paZujufXYcu5XYI2vU2rtB4sgdpjUHde5RnOkdmpu0ngH46LCFGHoPXO/C+qDPSczIHIRN+8Q2YKQ==}
     engines: {node: '>= 18'}
 
-  '@vercel/connect@2.0.2':
-    resolution: {integrity: sha512-cW+J44Ac0x9tng3vg+R7Uzn1rjz66MeWArJkiBIyJSQm84L9EskKx8ibBfc8Gn2kh8xT4o/iHOFtlkrsicKr7A==}
+  '@vercel/connect@2.0.4':
+    resolution: {integrity: sha512-VD0dY28Nr8uTa5yOWeHQwgn6e3Oj0gbDvkJ3EowPRSJriarPPX5I2oG6IpEg3sFz6t16AY5Us5eHRb0UMkdfVQ==}
     peerDependencies:
       '@ai-sdk/mcp': ^1 || ^2
       '@auth/core': '>=0.37.0'
@@ -1675,8 +1679,8 @@ packages:
     resolution: {integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==}
     engines: {node: '>= 20'}
 
-  '@vercel/oidc@3.8.5':
-    resolution: {integrity: sha512-RwXYtnt6za+5UO4IaLywN/6B95AlLqynPRUWRJxeJ/qufwkcLUbZNUxYtzT0uMpuraWhlNcGqPNGkTnZr4BGBw==}
+  '@vercel/oidc@3.8.7':
+    resolution: {integrity: sha512-fRu59npOu+1vsV570tiLKskfuRyOJ1MqceAkXbTIfWPnM+c9ve1tSK81oj4umKKirymlGUss3V60Lm5I38rKDw==}
     engines: {node: '>= 20'}
 
   '@vitejs/plugin-react@6.0.3':
@@ -1773,8 +1777,8 @@ packages:
       vite:
         optional: true
 
-  ai@7.0.93:
-    resolution: {integrity: sha512-CJss6zb9mlltk/mCr8qom20NBnqEQxVawkqwtT62tCwsxilZpXfHNRMRwcS3XRpzdP1kEluVuDBUayYWEEd95g==}
+  ai@7.0.107:
+    resolution: {integrity: sha512-PVYQ3W9kR8oYiGQxbg4aFIlhQzKskZm8UV+4E0zB2uKOzFr8ju3bXQncOOZtLsOgJY8vdpgyu3cXtomsfcdQYg==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -1816,8 +1820,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.10.44:
-    resolution: {integrity: sha512-T3ghW+sl/ZJ8w1v/yQx3qvJ9040DWoLBz8JT/CILbAKcFyG9b2MRe75v6W5uXjv6uH1lumK2Kv46y2zSkcej0Q==}
+  baseline-browser-mapping@2.11.22:
+    resolution: {integrity: sha512-pWc4w51fBFd7mav43/zKRC+RI6f4yfzQoVlfvE8dECePyfkn1bzLp01Fj0QACcyCZyFhiEMyD2qScfKRWgWibA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -2026,20 +2030,23 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  eve@0.52.2:
-    resolution: {integrity: sha512-FM3aC2A3SCKQxtyhSNR5+CaIVlKJmTGb7rCqcuHEhZShDKo1IXCTt/F7r4toqkLDG6lW7VcStTku77KWiosLfg==}
+  eve@0.63.0:
+    resolution: {integrity: sha512-iDv0S4MXvZimaXNTJnyB2THumRQLWQSAgpMcZsGtMNquYQpSKB1+i8sxX4KJOHHCLd04lwD+06xnh+ja7rlZIw==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
-      ai: ^7.0.82
+      ai: ^7.0.105
       braintrust: ^3.0.0
+      dd-trace: ^6.13.0
       just-bash: ^3.1.0
       microsandbox: ^0.5.0
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
       braintrust:
+        optional: true
+      dd-trace:
         optional: true
       just-bash:
         optional: true
@@ -2200,8 +2207,8 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  hono@4.12.34:
-    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
+  hono@4.13.5:
+    resolution: {integrity: sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==}
     engines: {node: '>=16.9.0'}
 
   hookable@6.1.1:
@@ -2265,8 +2272,8 @@ packages:
   js-tokens@10.0.0:
     resolution: {integrity: sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==}
 
-  js-yaml@4.3.1:
-    resolution: {integrity: sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ==}
+  js-yaml@4.3.2:
+    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
     hasBin: true
 
   jsesc@3.1.0:
@@ -3064,23 +3071,23 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/gateway@4.0.75(zod@4.4.3)':
+  '@ai-sdk/gateway@4.0.87(zod@4.4.3)':
     dependencies:
-      '@ai-sdk/provider': 4.0.10
-      '@ai-sdk/provider-utils': 5.0.36(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.17
+      '@ai-sdk/provider-utils': 5.0.45(zod@4.4.3)
       '@vercel/oidc': 3.2.0
       zod: 4.4.3
 
-  '@ai-sdk/provider-utils@5.0.36(zod@4.4.3)':
+  '@ai-sdk/provider-utils@5.0.45(zod@4.4.3)':
     dependencies:
-      '@ai-sdk/provider': 4.0.10
+      '@ai-sdk/provider': 4.0.17
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.0
       undici: 7.29.0
       zod: 4.4.3
 
-  '@ai-sdk/provider@4.0.10':
+  '@ai-sdk/provider@4.0.17':
     dependencies:
       json-schema: 0.4.0
 
@@ -3532,9 +3539,9 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/node-server@2.0.11(hono@4.12.34)':
+  '@hono/node-server@2.0.11(hono@4.13.5)':
     dependencies:
-      hono: 4.12.34
+      hono: 4.13.5
 
   '@img/colour@1.1.0': {}
 
@@ -3685,7 +3692,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3)':
     dependencies:
-      '@hono/node-server': 2.0.11(hono@4.12.34)
+      '@hono/node-server': 2.0.11(hono@4.13.5)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
@@ -3695,7 +3702,7 @@ snapshots:
       eventsource-parser: 3.1.0
       express: 5.2.1(supports-color@10.2.2)
       express-rate-limit: 8.6.0(express@5.2.1(supports-color@10.2.2))(supports-color@10.2.2)
-      hono: 4.12.34
+      hono: 4.13.5
       jose: 6.2.3
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -4153,7 +4160,7 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vercel/cli-config@0.2.4':
+  '@vercel/cli-config@0.2.6':
     dependencies:
       xdg-app-paths: 5.5.1
       zod: 4.1.11
@@ -4162,18 +4169,18 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@2.0.2(ai@7.0.93(zod@4.4.3))(eve@0.52.2(ai@7.0.93(zod@4.4.3)))':
+  '@vercel/connect@2.0.4(ai@7.0.107(zod@4.4.3))(eve@0.63.0(ai@7.0.107(zod@4.4.3)))':
     dependencies:
-      '@vercel/oidc': 3.8.5
+      '@vercel/oidc': 3.8.7
     optionalDependencies:
-      ai: 7.0.93(zod@4.4.3)
-      eve: 0.52.2(ai@7.0.93(zod@4.4.3))
+      ai: 7.0.107(zod@4.4.3)
+      eve: 0.63.0(ai@7.0.107(zod@4.4.3))
 
   '@vercel/oidc@3.2.0': {}
 
-  '@vercel/oidc@3.8.5':
+  '@vercel/oidc@3.8.7':
     dependencies:
-      '@vercel/cli-config': 0.2.4
+      '@vercel/cli-config': 0.2.6
       '@vercel/cli-exec': 1.0.1
       jose: 5.10.0
 
@@ -4242,7 +4249,7 @@ snapshots:
       '@noble/post-quantum': 0.5.4
       '@scure/base': 2.2.0
 
-  agents@0.20.1(@babel/core@8.0.1)(@babel/runtime@7.29.7)(@cloudflare/workers-types@4.20260702.1)(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3))(@modelcontextprotocol/server@2.0.0)(ai@7.0.93(zod@4.4.3))(react@19.2.7)(rolldown@1.1.5)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(yaml@2.9.0))(zod@4.4.3):
+  agents@0.20.1(@babel/core@8.0.1)(@babel/runtime@7.29.7)(@cloudflare/workers-types@4.20260702.1)(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3))(@modelcontextprotocol/server@2.0.0)(ai@7.0.107(zod@4.4.3))(react@19.2.7)(rolldown@1.1.5)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(yaml@2.9.0))(zod@4.4.3):
     dependencies:
       '@babel/plugin-proposal-decorators': 8.0.2(@babel/core@8.0.1)
       '@cfworker/json-schema': 4.1.1
@@ -4261,7 +4268,7 @@ snapshots:
       yargs: 18.0.0
       zod: 4.4.3
     optionalDependencies:
-      ai: 7.0.93(zod@4.4.3)
+      ai: 7.0.107(zod@4.4.3)
       vite: 8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@babel/core'
@@ -4270,11 +4277,11 @@ snapshots:
       - '@cloudflare/workers-types'
       - rolldown
 
-  ai@7.0.93(zod@4.4.3):
+  ai@7.0.107(zod@4.4.3):
     dependencies:
-      '@ai-sdk/gateway': 4.0.75(zod@4.4.3)
-      '@ai-sdk/provider': 4.0.10
-      '@ai-sdk/provider-utils': 5.0.36(zod@4.4.3)
+      '@ai-sdk/gateway': 4.0.87(zod@4.4.3)
+      '@ai-sdk/provider': 4.0.17
+      '@ai-sdk/provider-utils': 5.0.45(zod@4.4.3)
       zod: 4.4.3
 
   ajv-formats@3.0.1(ajv@8.20.0):
@@ -4306,7 +4313,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.10.44: {}
+  baseline-browser-mapping@2.11.22: {}
 
   blake3-wasm@2.1.5: {}
 
@@ -4330,7 +4337,7 @@ snapshots:
 
   browserslist@4.28.7:
     dependencies:
-      baseline-browser-mapping: 2.10.44
+      baseline-browser-mapping: 2.11.22
       caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.393
       node-releases: 2.0.51
@@ -4527,9 +4534,9 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.52.2(ai@7.0.93(zod@4.4.3)):
+  eve@0.63.0(ai@7.0.107(zod@4.4.3)):
     dependencies:
-      ai: 7.0.93(zod@4.4.3)
+      ai: 7.0.107(zod@4.4.3)
       nitro: 3.0.260903-beta
       undici: 8.9.0
 
@@ -4704,7 +4711,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono@4.12.34: {}
+  hono@4.13.5: {}
 
   hookable@6.1.1: {}
 
@@ -4750,7 +4757,7 @@ snapshots:
 
   js-tokens@10.0.0: {}
 
-  js-yaml@4.3.1:
+  js-yaml@4.3.2:
     dependencies:
       argparse: 2.0.1
 

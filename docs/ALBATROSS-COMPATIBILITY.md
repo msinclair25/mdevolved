@@ -10,16 +10,16 @@ The reviewed profile is pinned to:
 
 | Contract                | Reviewed value                             |
 | ----------------------- | ------------------------------------------ |
-| Albatross               | `2.4.0`                                    |
-| Albatross source commit | `6f20178d81c6f0fdbb97ccf826b0d56f04a77faf` |
-| Temporary MCP bridge    | `mcp-remote` `0.8.4`                       |
+| Albatross               | `2.5.0`                                    |
+| Albatross source commit | `e458e4277f463a4688f127ea6ea61f5a344b64b8` |
+| Temporary MCP bridge    | `mcp-remote` `0.14.3`                      |
 | Licenses                | MIT / MIT                                  |
 | Reviewed                | September 7, 2026                          |
 
 This is a source-verified compatibility profile. It does not claim vendor
 certification or a completed live Albatross acceptance run.
 
-Albatross `2.4.0` supports MCP tools through child-process stdio only. MDevolved does
+Albatross `2.5.0` supports MCP tools through child-process stdio only. MDevolved does
 not add an Albatross-only endpoint or change its standard remote Streamable
 HTTP MCP server. The client profile temporarily uses the pinned, experimental
 `mcp-remote` package to bridge Albatross stdio to MDevolved HTTP and OAuth. Remove
@@ -36,7 +36,7 @@ Albatross workspace
              │
              │ stdio
              ▼
-     mcp-remote 0.8.4
+     mcp-remote 0.14.3
              │
              │ Streamable HTTP + OAuth 2.1/PKCE
              ▼
@@ -64,7 +64,7 @@ generates a one-time pre-authorization command. The manual examples below use
 `primary` only for readability.
 
 ```sh
-npx -y -p mcp-remote@0.8.4 mcp-remote-client 'https://YOUR-MDEVOLVED-HOST/mcp' --header 'X-OWD-Albatross-Participant:primary' --transport http-only --auth-timeout 120 --static-oauth-client-metadata '{"client_name":"Albatross via mcp-remote","client_uri":"https://github.com/morganlinton/Albatross"}'
+npx -y -p mcp-remote@0.14.3 mcp-remote-client 'https://YOUR-MDEVOLVED-HOST/mcp' --header 'X-OWD-Albatross-Participant:primary' --transport http-only --auth-timeout 120 --static-oauth-client-metadata '{"client_name":"Albatross via mcp-remote","client_uri":"https://github.com/morganlinton/Albatross"}'
 ```
 
 Run it before Albatross starts and finish the MDevolved browser approval. The same
@@ -99,7 +99,7 @@ Merge the generated fragment into the existing config:
       "command": "npx",
       "args": [
         "-y",
-        "mcp-remote@0.8.4",
+        "mcp-remote@0.14.3",
         "https://YOUR-MDEVOLVED-HOST/mcp",
         "--header",
         "X-OWD-Albatross-Participant:primary",
@@ -137,7 +137,7 @@ the changed process definition again.
 
 ## Why the workspace prompt is required
 
-Albatross `2.4.0`:
+Albatross `2.5.0`:
 
 - sends MCP protocol version `2025-06-18`;
 - discovers and calls Tools;
@@ -282,7 +282,7 @@ The same versioned profile ships through:
 - MCP Prompt `connect-albatross`; and
 - the authenticated dashboard's copy-ready setup kit.
 
-Albatross itself cannot consume the Resource or Prompt in `2.4.0`; they remain
+Albatross itself cannot consume the Resource or Prompt in `2.5.0`; they remain
 standard discovery surfaces for other clients, operators, and future native
 support. The installed workspace prompt is the active Albatross surface.
 

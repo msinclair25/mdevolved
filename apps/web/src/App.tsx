@@ -72,9 +72,14 @@ import {
   createAntigravityConfig,
   createCursorInstallUrl,
   createEveConnectionSource,
+  createNativeMcpSetup,
   createObsidianMindProjectMcpCommand,
   createOneCommandSetup,
 } from "./agent-client-config";
+import {
+  AGENT_PLUGIN_FILENAME,
+  createAgentPluginArchive,
+} from "./agent-plugin";
 import {
   captureOwnerClaimToken,
   clearOwnerClaimToken,
@@ -466,17 +471,25 @@ type AgentClientId =
   | "antigravity"
   | "claude"
   | "codex"
+  | "copilot"
   | "cursor"
   | "eve"
+  | "gemini"
   | "grok"
   | "hermes"
   | "obsidian-mind"
+  | "openclaw"
+  | "opencode"
   | "other";
 
 const AGENT_CLIENTS: Array<{ id: AgentClientId; label: string }> = [
   { id: "codex", label: "Codex" },
   { id: "claude", label: "Claude" },
   { id: "cursor", label: "Cursor" },
+  { id: "opencode", label: "OpenCode" },
+  { id: "openclaw", label: "OpenClaw" },
+  { id: "gemini", label: "Gemini CLI" },
+  { id: "copilot", label: "Copilot CLI" },
   { id: "grok", label: "Grok Build" },
   { id: "hermes", label: "Hermes" },
   { id: "antigravity", label: "Antigravity" },
@@ -485,6 +498,24 @@ const AGENT_CLIENTS: Array<{ id: AgentClientId; label: string }> = [
   { id: "albatross", label: "Albatross" },
   { id: "other", label: "Other" },
 ];
+
+function agentClientLabel(clientId: AgentClientId): string {
+  return (
+    AGENT_CLIENTS.find(({ id }) => id === clientId)?.label ?? "Agent client"
+  );
+}
+
+function downloadAgentPlugin(mcpUrl: string): void {
+  const archive = createAgentPluginArchive(mcpUrl);
+  const url = URL.createObjectURL(
+    new Blob([Uint8Array.from(archive).buffer], { type: "application/zip" }),
+  );
+  const link = document.createElement("a");
+  link.download = AGENT_PLUGIN_FILENAME;
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 function authorizedFolderLabel(connection: AgentConnection): string {
   return connection.pathPrefixes.length === 0
@@ -1075,19 +1106,16 @@ function AgentConnectionsPanel({
                 <article className="agent-client-guide">
                   {selectedClient === "codex" ||
                   selectedClient === "claude" ||
+                  selectedClient === "copilot" ||
+                  selectedClient === "gemini" ||
                   selectedClient === "grok" ||
-                  selectedClient === "hermes" ? (
+                  selectedClient === "hermes" ||
+                  selectedClient === "opencode" ? (
                     <>
                       <div className="agent-client-guide-heading">
                         <div>
                           <span className="pairing-label">
-                            {selectedClient === "codex"
-                              ? "Codex"
-                              : selectedClient === "claude"
-                                ? "Claude"
-                                : selectedClient === "grok"
-                                  ? "Grok Build"
-                                  : "Hermes"}
+                            {agentClientLabel(selectedClient)}
                           </span>
                           <h3>Connect with one command</h3>
                         </div>
@@ -1097,16 +1125,51 @@ function AgentConnectionsPanel({
                       </div>
                       <SmartCopyField
                         label="Copy setup"
-                        value={createOneCommandSetup(
-                          state.mcpUrl,
-                          selectedClient,
-                        )}
+                        value={
+                          selectedClient === "copilot" ||
+                          selectedClient === "gemini" ||
+                          selectedClient === "opencode"
+                            ? createNativeMcpSetup(state.mcpUrl, selectedClient)
+                            : createOneCommandSetup(
+                                state.mcpUrl,
+                                selectedClient,
+                              )
+                        }
                       />
                       <p>
                         Run once from the Project folder. MDevolved uses the
                         client&apos;s native installer. Approve the exact Source
                         when asked, then say{" "}
                         <strong>Connect this project to MDevolved</strong>.
+                      </p>
+                    </>
+                  ) : selectedClient === "openclaw" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">OpenClaw</span>
+                          <h3>Install one portable plugin</h3>
+                        </div>
+                        <span className="client-path">
+                          Agent Plugins 1.0 → browser approval
+                        </span>
+                      </div>
+                      <button
+                        className="compact-action"
+                        type="button"
+                        onClick={() => downloadAgentPlugin(state.mcpUrl)}
+                      >
+                        Download MDevolved Agent Plugin
+                      </button>
+                      <SmartCopyField
+                        label="Copy install command"
+                        value={`openclaw plugins install ./${AGENT_PLUGIN_FILENAME}`}
+                      />
+                      <p>
+                        The archive contains one skill and this
+                        deployment&apos;s public MCP URL—no token or credential.
+                        Review it, run the command from its download folder,
+                        then complete OAuth in OpenClaw.
                       </p>
                     </>
                   ) : selectedClient === "cursor" ? (
