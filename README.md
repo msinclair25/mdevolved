@@ -78,8 +78,9 @@ truth, bounded context, evidence, review, exceptions, and continuity.
 ## Use the agents you already like
 
 MDevolved is not another model, IDE, or orchestration runtime. Codex, Claude,
-Cursor, Hermes, Orca, and other compatible tools keep their own models, shells,
-sandboxes, worktrees, retries, and subscriptions.
+Cursor, OpenCode, Gemini CLI, Copilot CLI, OpenClaw, Hermes, Orca, and other
+compatible tools keep their own models, shells, sandboxes, worktrees, retries,
+and subscriptions.
 
 MDevolved sits underneath them as the durable Project layer:
 
@@ -216,7 +217,9 @@ Cloudflare credentials or recovery private key.
    `npx mdevolved@latest sync .` and approve only that Source.
 4. **Connect one compatible agent.** Copy the dashboard's one command, run it
    from the Project folder, and approve its exact Source and folder boundary.
-   You can revoke it at any time.
+   OpenClaw and other Agent Plugins 1.0 clients can instead install the
+   deployment-specific package downloaded from the same screen. You can revoke
+   any connection at any time.
 5. **Connect the Project.** In that agent, say **Connect this project to
    MDevolved** and keep working normally.
 6. **Resume in a fresh session.** Open a fresh authorized session, say

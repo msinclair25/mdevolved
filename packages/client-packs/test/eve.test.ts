@@ -31,12 +31,12 @@ describe("Eve compatibility profile", () => {
       format: "owd-client-profile-v1",
       id: "eve",
       source: {
-        commit: "247b3f05244893170bcf4dbcf20a2e35e416ccee",
-        connectVersion: "2.0.2",
-        eveVersion: "0.52.2",
+        commit: "d004e6d47e9d25d0380c24b5a47b65a18f8b2784",
+        connectVersion: "2.0.4",
+        eveVersion: "0.63.0",
         license: "Apache-2.0",
         repository: "https://github.com/vercel/eve",
-        reviewedAt: "2026-09-07",
+        reviewedAt: "2026-09-21",
       },
     });
     expect(JSON.parse(serializeEveCompatibilityProfile())).toStrictEqual(

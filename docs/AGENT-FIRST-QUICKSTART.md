@@ -249,6 +249,16 @@ recipes below only when a harness cannot run that installer.
 Codex: use the dashboard's **Copy setup** command, authenticate the exact MCP
 server, then ask the agent to call `mdevolved_resume` before meaningful work.
 
+OpenCode, Gemini CLI, and GitHub Copilot CLI: choose the named dashboard entry
+and run its single native remote-MCP command. The client owns its browser OAuth
+state. The public `mdevolved connect` wrapper supports the same clients when a
+scripted or auto-detected setup is more convenient.
+
+OpenClaw: download the deployment-specific Agent Plugins 1.0 archive from the
+dashboard, review its one skill and credential-free `mcp.json`, then run
+`openclaw plugins install ./mdevolved-agent-plugin.zip` from the download
+folder. The archive contains the exact public MCP URL, never a grant or token.
+
 Claude or another compatible client: add the dashboard's MCP URL to its
 project-scoped `mcpServers` configuration. The common HTTP shape is:
 

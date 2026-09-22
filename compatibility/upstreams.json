@@ -52,16 +52,16 @@
       "source": {
         "kind": "github-release",
         "repository": "vercel/eve",
-        "releaseTag": "eve@0.52.2",
-        "commit": "247b3f05244893170bcf4dbcf20a2e35e416ccee",
-        "reviewedAt": "2026-09-07"
+        "releaseTag": "eve@0.63.0",
+        "commit": "d004e6d47e9d25d0380c24b5a47b65a18f8b2784",
+        "reviewedAt": "2026-09-21"
       },
       "dependencies": [
         {
           "kind": "npm",
           "package": "@vercel/connect",
-          "version": "2.0.2",
-          "integrity": "sha512-cW+J44Ac0x9tng3vg+R7Uzn1rjz66MeWArJkiBIyJSQm84L9EskKx8ibBfc8Gn2kh8xT4o/iHOFtlkrsicKr7A=="
+          "version": "2.0.4",
+          "integrity": "sha512-VD0dY28Nr8uTa5yOWeHQwgn6e3Oj0gbDvkJ3EowPRSJriarPPX5I2oG6IpEg3sFz6t16AY5Us5eHRb0UMkdfVQ=="
         }
       ],
       "criticalPaths": [
@@ -80,18 +80,18 @@
         {
           "path": "packages/client-packs/src/eve.ts",
           "requiredMarkers": [
-            "commit: \"247b3f05244893170bcf4dbcf20a2e35e416ccee\"",
-            "connectVersion: \"2.0.2\"",
-            "eveVersion: \"0.52.2\"",
-            "reviewedAt: \"2026-09-07\""
+            "commit: \"d004e6d47e9d25d0380c24b5a47b65a18f8b2784\"",
+            "connectVersion: \"2.0.4\"",
+            "eveVersion: \"0.63.0\"",
+            "reviewedAt: \"2026-09-21\""
           ]
         },
         {
           "path": "docs/EVE-COMPATIBILITY.md",
           "requiredMarkers": [
-            "`0.52.2`",
-            "`247b3f05244893170bcf4dbcf20a2e35e416ccee`",
-            "`2.0.2`"
+            "`0.63.0`",
+            "`d004e6d47e9d25d0380c24b5a47b65a18f8b2784`",
+            "`2.0.4`"
           ]
         }
       ]
@@ -102,16 +102,16 @@
       "source": {
         "kind": "github-release",
         "repository": "morganlinton/Albatross",
-        "releaseTag": "v2.4.0",
-        "commit": "6f20178d81c6f0fdbb97ccf826b0d56f04a77faf",
-        "reviewedAt": "2026-09-07"
+        "releaseTag": "v2.5.0",
+        "commit": "e458e4277f463a4688f127ea6ea61f5a344b64b8",
+        "reviewedAt": "2026-09-21"
       },
       "dependencies": [
         {
           "kind": "npm",
           "package": "mcp-remote",
-          "version": "0.8.4",
-          "integrity": "sha512-oFtaTMJ4nBznzMtU6SeO7nIT1AlmBQDwfS9XMiCaPvVDMHlY1tF+K3JtmJ3snYmxngTF0ic2tfK+ZbMoJ3PZ+A=="
+          "version": "0.14.3",
+          "integrity": "sha512-M8eMA+LQIYbVNpntDhbCzFYNxwF9O9KozOuDxOrGTtRXbHRq/m4NuFZ6892hmJcU4Zhv4qPfpxrXyG2FPWNMKg=="
         }
       ],
       "criticalPaths": [
@@ -131,18 +131,18 @@
         {
           "path": "packages/client-packs/src/albatross.ts",
           "requiredMarkers": [
-            "commit: \"6f20178d81c6f0fdbb97ccf826b0d56f04a77faf\"",
-            "version: \"2.4.0\"",
-            "ALBATROSS_MCP_REMOTE_VERSION = \"0.8.4\"",
-            "reviewedAt: \"2026-09-07\""
+            "commit: \"e458e4277f463a4688f127ea6ea61f5a344b64b8\"",
+            "version: \"2.5.0\"",
+            "ALBATROSS_MCP_REMOTE_VERSION = \"0.14.3\"",
+            "reviewedAt: \"2026-09-21\""
           ]
         },
         {
           "path": "docs/ALBATROSS-COMPATIBILITY.md",
           "requiredMarkers": [
-            "`2.4.0`",
-            "`6f20178d81c6f0fdbb97ccf826b0d56f04a77faf`",
-            "`0.8.4`"
+            "`2.5.0`",
+            "`e458e4277f463a4688f127ea6ea61f5a344b64b8`",
+            "`0.14.3`"
           ]
         }
       ]
@@ -153,9 +153,9 @@
       "source": {
         "kind": "github-release",
         "repository": "NousResearch/hermes-agent",
-        "releaseTag": "v2026.9.7",
-        "commit": "2237be355906fbe6065ce1815711eee52b2d646e",
-        "reviewedAt": "2026-09-07"
+        "releaseTag": "v2026.9.21",
+        "commit": "d337b736aa1e8ebecfab043842d13e4a2d2f48a3",
+        "reviewedAt": "2026-09-21"
       },
       "criticalPaths": [
         "pyproject.toml",
@@ -174,9 +174,9 @@
         {
           "path": "docs/HERMES-HANDS-OFF.md",
           "requiredMarkers": [
-            "`0.21.1`",
-            "`2237be355906fbe6065ce1815711eee52b2d646e`",
-            "Reviewed `2026-09-07`"
+            "`0.21.4`",
+            "`d337b736aa1e8ebecfab043842d13e4a2d2f48a3`",
+            "Reviewed `2026-09-21`"
           ]
         }
       ]
@@ -187,10 +187,10 @@
       "source": {
         "kind": "github-release",
         "repository": "langchain-ai/langchain",
-        "releaseTag": "langchain==1.4.0",
+        "releaseTag": "langchain==1.4.2",
         "releaseTagPrefix": "langchain==",
-        "commit": "79cab2dc7f58be720cac43db3677b4c1fd971f91",
-        "reviewedAt": "2026-09-07"
+        "commit": "a18de590e7ccf5c647fbf3d689e5f1a15f78e9f5",
+        "reviewedAt": "2026-09-21"
       },
       "criticalPaths": [
         "libs/langchain_v1/langchain/mcp/**",
@@ -202,8 +202,8 @@
         {
           "path": "docs/LANGCHAIN-COMPATIBILITY.md",
           "requiredMarkers": [
-            "`1.4.0`",
-            "`79cab2dc7f58be720cac43db3677b4c1fd971f91`",
+            "`1.4.2`",
+            "`a18de590e7ccf5c647fbf3d689e5f1a15f78e9f5`",
             "`langchain.mcp`"
           ]
         }

@@ -10,22 +10,25 @@ The reviewed profile is pinned to:
 
 | Contract          | Reviewed value                             |
 | ----------------- | ------------------------------------------ |
-| Eve               | `0.52.2`                                   |
-| Eve source commit | `247b3f05244893170bcf4dbcf20a2e35e416ccee` |
-| `@vercel/connect` | `2.0.2`                                    |
+| Eve               | `0.63.0`                                   |
+| Eve source commit | `d004e6d47e9d25d0380c24b5a47b65a18f8b2784` |
+| `@vercel/connect` | `2.0.4`                                    |
 | License           | Apache-2.0                                 |
-| Reviewed          | September 7, 2026                          |
+| Reviewed          | September 21, 2026                         |
 
 This is a source-verified compatibility profile. It does not yet claim that a
 live Eve deployment has completed MDevolved's independent two-agent acceptance run.
 Unknown future Eve connection or identity changes fall back to MDevolved's universal
 MCP setup until the profile is reviewed again.
 
-Eve 0.52.2 retains authored `agent/connections/*.ts` modules,
+Eve 0.63.0 retains authored `agent/connections/*.ts` modules,
 `defineMcpClientConnection`, and the user-scoped `@vercel/connect/eve`
-`connect()` helper used by MDevolved. The reviewed update adds first-class
-skills, context, workflow, and connection surfaces without changing
-MDevolved's generated OAuth authority boundary. Until MDevolved is accepted
+`connect()` helper used by MDevolved. Version `2.0.4` is the newest reviewed
+helper old enough to satisfy the repository's minimum-release-age policy;
+newer releases remain monitor-visible drift. The Eve update changes background
+tool and runtime behavior but leaves this user-scoped remote connection shape
+intact; the exact generated module type-checks against both current packages.
+Until MDevolved is accepted
 into Eve's registry, use the dashboard-generated module rather than claiming
 an `eve add` package that does not exist.
 

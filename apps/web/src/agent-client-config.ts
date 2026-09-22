@@ -9,14 +9,36 @@ import {
 
 export const AGENT_SERVER_NAME = "md-evolved";
 
-export type OneCommandClient = "claude" | "codex" | "grok" | "hermes";
+export type OneCommandClient =
+  "claude" | "codex" | "copilot" | "gemini" | "grok" | "hermes" | "opencode";
+
+export type NativeMcpClient = "copilot" | "gemini" | "opencode";
+
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
+}
 
 export function createOneCommandSetup(
   mcpUrl: string,
   client: OneCommandClient,
 ): string {
-  const quotedUrl = `'${mcpUrl.replaceAll("'", `'\\''`)}'`;
+  const quotedUrl = shellQuote(mcpUrl);
   return `npx mdevolved@latest connect ${quotedUrl} --client ${client}`;
+}
+
+export function createNativeMcpSetup(
+  mcpUrl: string,
+  client: NativeMcpClient,
+): string {
+  const quotedUrl = shellQuote(mcpUrl);
+  switch (client) {
+    case "copilot":
+      return `copilot mcp add --transport http mdevolved ${quotedUrl}`;
+    case "gemini":
+      return `gemini mcp add mdevolved ${quotedUrl} --transport http`;
+    case "opencode":
+      return `opencode mcp add mdevolved --url ${quotedUrl}`;
+  }
 }
 
 function base64EncodeUtf8(value: string): string {
@@ -70,7 +92,7 @@ export function createGenericMcpConfig(mcpUrl: string): string {
 }
 
 export function createCodexSetupCommands(mcpUrl: string): string {
-  const quotedUrl = `'${mcpUrl.replaceAll("'", `'\\''`)}'`;
+  const quotedUrl = shellQuote(mcpUrl);
   return [
     `codex mcp add ${AGENT_SERVER_NAME} --url ${quotedUrl}`,
     `codex mcp login ${AGENT_SERVER_NAME} --scopes vault.read,project.initialize.request,project.connect.request`,

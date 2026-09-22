@@ -20,11 +20,15 @@ const expectedClients = [
   "Codex CLI",
   "Cursor",
   "Cursor CLI",
+  "Gemini CLI",
+  "GitHub Copilot CLI",
   "Grok Build",
   "Hermes Agent",
   "LangChain",
   "LangGraph",
   "Orca ADE",
+  "OpenClaw",
+  "OpenCode",
   "T3 Code",
 ];
 

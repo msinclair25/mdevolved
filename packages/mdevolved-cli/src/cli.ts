@@ -110,7 +110,7 @@ export function parseCliArguments(argv: readonly string[]): CliArguments {
     const mcpUrl = argv[1];
     if (!mcpUrl || mcpUrl.startsWith("-"))
       throw new Error(
-        "usage: mdevolved connect <mcp-url> [--client auto|codex|claude|grok|hermes] [--json]",
+        "usage: mdevolved connect <mcp-url> [--client auto|codex|claude|copilot|gemini|grok|hermes|opencode] [--json]",
       );
     let client: HarnessClientId | "auto" = "auto";
     let json = false;

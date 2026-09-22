@@ -5,21 +5,22 @@ you are changing.
 
 ## Start here
 
-| I want to…                                | Read                                                           |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| Understand what MDevolved does            | [Product overview](../README.md)                               |
-| See what the alpha includes               | [Alpha status](ALPHA-STATUS.md)                                |
-| Connect an agent to a Project             | [Agent-first quick start](AGENT-FIRST-QUICKSTART.md)           |
-| Deploy Community or compare hosted modes  | [Deployment modes](DEPLOYMENT-MODES.md)                        |
-| See what is next                          | [Public roadmap](ROADMAP.md)                                   |
-| Review the MDevolved source plan          | [MDevolved plan](MDEVOLVED-PLAN.md)                            |
-| Review brand compatibility invariants     | [Brand compatibility](BRAND-COMPATIBILITY.md)                  |
-| Review MD5 requirement-to-test evidence   | [MD5 acceptance matrix](MD5-TEST-MATRIX.md)                    |
-| Review MD6 requirement-to-evidence gates  | [MD6 acceptance matrix](MD6-TEST-MATRIX.md)                    |
-| Review MD2 migration and recovery         | [MD2 recovery](MD2-RECOVERY.md)                                |
-| Review supported versions and limits      | [Release compatibility](RELEASE-COMPATIBILITY.md)              |
-| Audit monitored upstream integration pins | [Compatibility manifest](../compatibility/upstreams.json)      |
-| Install the Obsidian companion            | [MDevolved Sync README](../packages/obsidian-plugin/README.md) |
+| I want to…                                | Read                                                            |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| Understand what MDevolved does            | [Product overview](../README.md)                                |
+| See what the alpha includes               | [Alpha status](ALPHA-STATUS.md)                                 |
+| Connect an agent to a Project             | [Agent-first quick start](AGENT-FIRST-QUICKSTART.md)            |
+| Deploy Community or compare hosted modes  | [Deployment modes](DEPLOYMENT-MODES.md)                         |
+| See what is next                          | [Public roadmap](ROADMAP.md)                                    |
+| Review the MDevolved source plan          | [MDevolved plan](MDEVOLVED-PLAN.md)                             |
+| Review brand compatibility invariants     | [Brand compatibility](BRAND-COMPATIBILITY.md)                   |
+| Review MD5 requirement-to-test evidence   | [MD5 acceptance matrix](MD5-TEST-MATRIX.md)                     |
+| Review MD6 requirement-to-evidence gates  | [MD6 acceptance matrix](MD6-TEST-MATRIX.md)                     |
+| Review MD2 migration and recovery         | [MD2 recovery](MD2-RECOVERY.md)                                 |
+| Review supported versions and limits      | [Release compatibility](RELEASE-COMPATIBILITY.md)               |
+| Review portable agent setup receipts      | [Portable agent compatibility](PORTABLE-AGENT-COMPATIBILITY.md) |
+| Audit monitored upstream integration pins | [Compatibility manifest](../compatibility/upstreams.json)       |
+| Install the Obsidian companion            | [MDevolved Sync README](../packages/obsidian-plugin/README.md)  |
 
 ## Product and trust
 
@@ -54,6 +55,8 @@ you are changing.
   qualified tools, identity, sandbox boundaries, and durable continuity
 - [Albatross compatibility](ALBATROSS-COMPATIBILITY.md) — stdio bridge,
   workspace prompt, reset continuity, participant identity, and setup kit
+- [Portable agent compatibility](PORTABLE-AGENT-COMPATIBILITY.md) — dated
+  Agent Plugins, OpenCode, OpenClaw, Gemini CLI, and Copilot CLI setup receipts
 
 ## Build and release
 

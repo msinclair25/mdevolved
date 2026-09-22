@@ -142,6 +142,24 @@ describe("mdevolved CLI safety", () => {
         args: ["mcp", "add", "mdevolved", "--url", url, "--auth", "oauth"],
       },
     ]);
+    expect(harnessSetupCommands("opencode", url)).toEqual([
+      {
+        command: "opencode",
+        args: ["mcp", "add", "mdevolved", "--url", url],
+      },
+    ]);
+    expect(harnessSetupCommands("gemini", url)).toEqual([
+      {
+        command: "gemini",
+        args: ["mcp", "add", "mdevolved", url, "--transport", "http"],
+      },
+    ]);
+    expect(harnessSetupCommands("copilot", url)).toEqual([
+      {
+        command: "copilot",
+        args: ["mcp", "add", "--transport", "http", "mdevolved", url],
+      },
+    ]);
   });
 
   it("configures an explicit harness and fails closed on ambiguous auto-detection", async () => {

@@ -10,6 +10,7 @@ import {
   createCursorInstallUrl,
   createEveConnectionSource,
   createGenericMcpConfig,
+  createNativeMcpSetup,
   createObsidianMindMcpMergeConfig,
   createObsidianMindProjectMcpCommand,
   createOneCommandSetup,
@@ -73,7 +74,28 @@ describe("agent client setup helpers", () => {
     expect(createOneCommandSetup(MCP_URL, "hermes")).toContain(
       "--client hermes",
     );
+    expect(createOneCommandSetup(MCP_URL, "opencode")).toContain(
+      "--client opencode",
+    );
+    expect(createOneCommandSetup(MCP_URL, "gemini")).toContain(
+      "--client gemini",
+    );
+    expect(createOneCommandSetup(MCP_URL, "copilot")).toContain(
+      "--client copilot",
+    );
     expect(createOneCommandSetup(MCP_URL, "codex")).not.toContain("Bearer");
+  });
+
+  it("creates official one-line installers for the new native MCP clients", () => {
+    expect(createNativeMcpSetup(MCP_URL, "opencode")).toBe(
+      "opencode mcp add mdevolved --url 'https://private-deployment.example/mcp'",
+    );
+    expect(createNativeMcpSetup(MCP_URL, "gemini")).toBe(
+      "gemini mcp add mdevolved 'https://private-deployment.example/mcp' --transport http",
+    );
+    expect(createNativeMcpSetup(MCP_URL, "copilot")).toBe(
+      "copilot mcp add --transport http mdevolved 'https://private-deployment.example/mcp'",
+    );
   });
 
   it("creates an additive Obsidian Mind project setup", () => {
@@ -104,7 +126,7 @@ describe("agent client setup helpers", () => {
 
   it("creates Albatross's pre-authorized pinned bridge setup", () => {
     expect(createAlbatrossAuthorizationCommand(MCP_URL)).toContain(
-      "mcp-remote@0.8.4 mcp-remote-client",
+      "mcp-remote@0.14.3 mcp-remote-client",
     );
     expect(JSON.parse(createAlbatrossMcpMergeConfig(MCP_URL))).toEqual({
       mcpServers: {
@@ -112,7 +134,7 @@ describe("agent client setup helpers", () => {
           command: "npx",
           args: [
             "-y",
-            "mcp-remote@0.8.4",
+            "mcp-remote@0.14.3",
             MCP_URL,
             "--header",
             "X-OWD-Albatross-Participant:primary",

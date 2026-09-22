@@ -1842,6 +1842,38 @@ test("shows one compact agent setup path at a time", async ({ browser }) => {
     "--client claude",
   );
 
+  for (const [label, command] of [
+    ["OpenCode", "opencode mcp add"],
+    ["Gemini CLI", "gemini mcp add"],
+    ["Copilot CLI", "copilot mcp add"],
+  ] as const) {
+    await agents.getByRole("button", { name: label }).click();
+    await expect(agents.locator(".agent-client-guide code")).toContainText(
+      command,
+    );
+  }
+
+  await agents.getByRole("button", { name: "OpenClaw" }).click();
+  await expect(
+    agents.getByRole("heading", { name: "Install one portable plugin" }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("button", { name: "Download MDevolved Agent Plugin" }),
+  ).toBeVisible();
+  const downloadPromise = page.waitForEvent("download");
+  await agents
+    .getByRole("button", { name: "Download MDevolved Agent Plugin" })
+    .click();
+  await expect((await downloadPromise).suggestedFilename()).toBe(
+    "mdevolved-agent-plugin.zip",
+  );
+  await expect(agents.locator(".agent-client-guide code")).toContainText(
+    "openclaw plugins install ./mdevolved-agent-plugin.zip",
+  );
+  await expect(agents.locator(".agent-client-guide")).not.toContainText(
+    "Bearer",
+  );
+
   await agents.getByRole("button", { name: "Antigravity" }).click();
   await expect(
     agents.getByRole("heading", { name: "Add one MCP entry" }),

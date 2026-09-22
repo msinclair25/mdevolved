@@ -1,7 +1,7 @@
 # MDevolved source-independent product plan
 
-**Status:** MD1–MD9 are complete; MD10 is active and MD11 is queued in the MLP plan.<br />
-**Date:** 2026-08-27
+**Status:** MD1–MD10 are delivered; MD11 human evidence remains open; PAC1 is the active compatibility milestone.<br />
+**Date:** 2026-09-21
 
 > **Next execution plan:** [MDevolved product experience plan](MDEVOLVED-PRODUCT-EXPERIENCE-PLAN.md).
 > This document remains the historical MD1–MD8 architecture and delivery
@@ -13,7 +13,7 @@
 
 ## Milestone boundary
 
-MD0 planning and MD1 through MD7 delivery are complete. The source-neutral
+MD0 planning and MD1 through MD10 delivery are complete. The source-neutral
 architecture, compatibility rules, rollout order, security boundaries, and
 independent acceptance decisions below remain explicit. MD5's final candidate
 passed its exact complete gate and authoritative legacy-repository redirect
@@ -21,7 +21,9 @@ check. Its required PR checks, merge, and post-merge `main` health complete the
 recorded delivery workflow. MD7 completed the human- and agent-facing naming
 transition without changing frozen compatibility identities. MD8 passed its
 exact local acceptance and repository gates; commit, push, PR, deployment, and
-named proprietary-client certification remain separate delivery actions.
+named proprietary-client certification remain separate delivery actions. MD11
+still requires real unassisted-user evidence. PAC1 is an additive compatibility
+release and does not substitute automated checks for that human evidence.
 
 ## Product promise
 

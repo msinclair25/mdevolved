@@ -1908,9 +1908,9 @@ describe("scoped universal agent access", () => {
       format: "owd-client-profile-v1",
       id: "eve",
       source: {
-        commit: "247b3f05244893170bcf4dbcf20a2e35e416ccee",
-        connectVersion: "2.0.2",
-        eveVersion: "0.52.2",
+        commit: "d004e6d47e9d25d0380c24b5a47b65a18f8b2784",
+        connectVersion: "2.0.4",
+        eveVersion: "0.63.0",
         repository: "https://github.com/vercel/eve",
       },
     });
@@ -1936,7 +1936,7 @@ describe("scoped universal agent access", () => {
         package: "mcp-remote",
         temporary: true,
         transportStrategy: "http-only",
-        version: "0.8.4",
+        version: "0.14.3",
       },
       client: {
         configFile: "agent.config.json",
@@ -1952,9 +1952,9 @@ describe("scoped universal agent access", () => {
         waitTimeoutSeconds: 20,
       },
       source: {
-        commit: "6f20178d81c6f0fdbb97ccf826b0d56f04a77faf",
+        commit: "e458e4277f463a4688f127ea6ea61f5a344b64b8",
         repository: "https://github.com/morganlinton/Albatross",
-        version: "2.4.0",
+        version: "2.5.0",
       },
     });
     const promptsResponse = await productionFetch("prompts/list");

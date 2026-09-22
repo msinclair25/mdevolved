@@ -6,8 +6,11 @@ import { spawn } from "node:child_process";
 export const HARNESS_CLIENT_IDS = [
   "codex",
   "claude",
+  "copilot",
+  "gemini",
   "grok",
   "hermes",
+  "opencode",
 ] as const;
 
 export type HarnessClientId = (typeof HARNESS_CLIENT_IDS)[number];
@@ -22,15 +25,21 @@ export type HarnessCommandExists = (command: string) => Promise<boolean>;
 const EXECUTABLES: Record<HarnessClientId, string> = {
   codex: "codex",
   claude: "claude",
+  copilot: "copilot",
+  gemini: "gemini",
   grok: "grok",
   hermes: "hermes",
+  opencode: "opencode",
 };
 
 const ENVIRONMENT_HINTS: Record<HarnessClientId, readonly string[]> = {
   codex: ["CODEX_HOME", "CODEX_THREAD_ID"],
   claude: ["CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT"],
+  copilot: ["COPILOT_HOME"],
+  gemini: [],
   grok: ["GROK_HOME"],
   hermes: ["HERMES_HOME"],
+  opencode: ["OPENCODE_CONFIG"],
 };
 
 export function validateMcpUrl(value: string): string {
@@ -78,6 +87,20 @@ export function harnessSetupCommands(
           args: ["mcp", "add", "--transport", "http", "mdevolved", mcpUrl],
         },
       ];
+    case "copilot":
+      return [
+        {
+          command: "copilot",
+          args: ["mcp", "add", "--transport", "http", "mdevolved", mcpUrl],
+        },
+      ];
+    case "gemini":
+      return [
+        {
+          command: "gemini",
+          args: ["mcp", "add", "mdevolved", mcpUrl, "--transport", "http"],
+        },
+      ];
     case "grok":
       return [
         {
@@ -90,6 +113,13 @@ export function harnessSetupCommands(
         {
           command: "hermes",
           args: ["mcp", "add", "mdevolved", "--url", mcpUrl, "--auth", "oauth"],
+        },
+      ];
+    case "opencode":
+      return [
+        {
+          command: "opencode",
+          args: ["mcp", "add", "mdevolved", "--url", mcpUrl],
         },
       ];
   }

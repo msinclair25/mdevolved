@@ -13,7 +13,7 @@
     "@simplewebauthn/server": "13.3.2",
     "age-encryption": "0.3.0",
     "agents": "0.20.1",
-    "hono": "4.12.34",
+    "hono": "4.13.5",
     "partyserver": "0.3.2",
     "y-partyserver": "2.1.2",
     "yjs": "13.6.20",
