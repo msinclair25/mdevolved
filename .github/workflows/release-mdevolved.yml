@@ -42,6 +42,7 @@ jobs:
           name: mdevolved-sync-${{ runner.os }}-${{ runner.arch }}
           path: dist/mdevolved-desktop/*
           if-no-files-found: error
+          retention-days: 1
 
   publish-release:
     needs: package-desktop
