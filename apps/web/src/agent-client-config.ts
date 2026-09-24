@@ -2,7 +2,7 @@ import {
   createAlbatrossAuthorizationCommand as createProfileAlbatrossAuthorizationCommand,
   createAlbatrossMcpMergeConfig as createProfileAlbatrossMcpMergeConfig,
   createAlbatrossSetupKit as createProfileAlbatrossSetupKit,
-  createEveConnectionSource as createProfileEveConnectionSource,
+  createMDevolvedEveConnectionSource as createProfileEveConnectionSource,
   createObsidianMindMcpMergeConfig as createProfileMcpMergeConfig,
   createObsidianMindProjectMcpCommand as createProfileProjectMcpCommand,
 } from "@mdevolved/client-packs";

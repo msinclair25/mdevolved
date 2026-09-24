@@ -4,8 +4,8 @@
 
 **Status:** inert, script-free guidance over the generic MDevolved MCP services
 
-**Source-verified profile:** Hermes Agent `0.21.4`, tag `v2026.9.21`, commit
-`d337b736aa1e8ebecfab043842d13e4a2d2f48a3`. Reviewed `2026-09-21`.
+**Source-verified profile:** Hermes Agent `0.21.5`, tag `v2026.9.24`, commit
+`f97608f178d1ffeca59860195ab7da295f7c8e5f`. Reviewed `2026-09-24`.
 
 Hermes now has native remote MCP OAuth support. Point that client at
 `https://YOUR-MDEVOLVED-HOST/mcp`; do not add a transport bridge or place OAuth
@@ -16,6 +16,12 @@ The current review also confirms concurrent MCP server management, interactive
 OAuth with an explicit headless login path, and fenced delegated-child identity.
 Hermes memory and skill state remain runtime-owned and are never ingested as
 MDevolved authority or raw session history.
+
+The September 24 tagged-source review found no changes to `tools/mcp_tool.py`,
+`tools/mcp_oauth.py`, or `tools/mcp_oauth_manager.py` from the previous pin.
+The CLI now shares its MCP enabled-state helper; the remote URL/OAuth setup
+remains unchanged. Device login is an explicit Hermes action, not authority
+that this adapter can create.
 
 The same guidance is discoverable as the MCP resource
 `mdevolved://adapters/hermes/hands-off/v1`.

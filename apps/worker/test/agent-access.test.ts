@@ -1908,9 +1908,9 @@ describe("scoped universal agent access", () => {
       format: "owd-client-profile-v1",
       id: "eve",
       source: {
-        commit: "d004e6d47e9d25d0380c24b5a47b65a18f8b2784",
-        connectVersion: "2.0.4",
-        eveVersion: "0.63.0",
+        commit: "7bcc0d16e3f41d44fadfd06b5bac3515a82d441d",
+        connectVersion: "2.3.2",
+        eveVersion: "0.65.0",
         repository: "https://github.com/vercel/eve",
       },
     });
