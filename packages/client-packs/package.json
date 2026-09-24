@@ -15,7 +15,7 @@
     "./owd-obsidian-mind": "./owd-obsidian-mind/SKILL.md"
   },
   "devDependencies": {
-    "@vercel/connect": "2.0.4",
-    "eve": "0.63.0"
+    "@vercel/connect": "2.3.2",
+    "eve": "0.65.0"
   }
 }

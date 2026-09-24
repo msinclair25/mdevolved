@@ -116,8 +116,8 @@ if (
   !eveCompatibility.includes(
     "This is a source-verified compatibility profile",
   ) ||
-  !eveCompatibility.includes("| Eve               | `0.63.0`") ||
-  !eveCompatibility.includes("| `@vercel/connect` | `2.0.4`") ||
+  !eveCompatibility.includes("| Eve               | `0.65.0`") ||
+  !eveCompatibility.includes("| `@vercel/connect` | `2.3.2`") ||
   !marketingSite.includes('id="eve"') ||
   !normalizedMarketingSite.includes(
     "Eve runs the agent. MDevolved makes the work portable.",
@@ -153,13 +153,13 @@ if (
     "`v1.18.32` at `545f51d26cc39a907d2867492d498d9607ea5fa4`",
   ) ||
   !portableAgentCompatibility.includes(
-    "`v2026.9.5` at `ec9c1a13db8938e5a3eaa51fca2e981cde2395a9`",
+    "`v2026.9.6` at `eb377ac59e6c9fd6c7705028034812becf00271b`",
   ) ||
   !portableAgentCompatibility.includes(
-    "`v0.60.0` at `733edcb597ce690ac2e2fe3b3b3690b60a4c8f27`",
+    "`v0.61.0` at `bb523741c7429a44d03e964bc124c7c92df59d5f`",
   ) ||
   !portableAgentCompatibility.includes(
-    "`v1.0.87` at `d418dbf1061152afa17500cbc69478f8dce153d8`",
+    "`v1.0.88` at `c13b3dcae4f1e176c5a074c0d063a6e9f258081f`",
   )
 ) {
   throw new Error(
@@ -167,8 +167,8 @@ if (
   );
 }
 if (
-  !hermesCompatibility.includes("Hermes Agent `0.21.4`") ||
-  !hermesCompatibility.includes("`d337b736aa1e8ebecfab043842d13e4a2d2f48a3`") ||
+  !hermesCompatibility.includes("Hermes Agent `0.21.5`") ||
+  !hermesCompatibility.includes("`f97608f178d1ffeca59860195ab7da295f7c8e5f`") ||
   !hermesCompatibility.includes("native remote MCP OAuth support") ||
   !normalizedHermesCompatibility.includes(
     "does not claim vendor certification or a completed live Hermes acceptance run",

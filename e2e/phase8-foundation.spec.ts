@@ -1853,6 +1853,12 @@ test("shows one compact agent setup path at a time", async ({ browser }) => {
     );
   }
 
+  await agents.getByRole("button", { name: "Eve", exact: true }).click();
+  const eveGuide = agents.locator(".agent-client-guide");
+  await expect(eveGuide).toContainText("agent/connections/mdevolved.ts");
+  await expect(eveGuide).toContainText('connector: "oauth/mdevolved"');
+  await expect(eveGuide).not.toContainText('connector: "oauth/owd"');
+
   await agents.getByRole("button", { name: "OpenClaw" }).click();
   await expect(
     agents.getByRole("heading", { name: "Install one portable plugin" }),

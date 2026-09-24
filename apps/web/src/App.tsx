@@ -1245,11 +1245,11 @@ function AgentConnectionsPanel({
                     <>
                       <div className="agent-client-guide-heading">
                         <div>
-                          <span className="pairing-label">Eve 0.29</span>
+                          <span className="pairing-label">Eve</span>
                           <h3>Add a user-scoped connection</h3>
                         </div>
                         <span className="client-path">
-                          <code>agent/connections/owd.ts</code>
+                          <code>agent/connections/mdevolved.ts</code>
                         </span>
                       </div>
                       <SmartCopyField

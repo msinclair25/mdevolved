@@ -10,24 +10,30 @@ The reviewed profile is pinned to:
 
 | Contract          | Reviewed value                             |
 | ----------------- | ------------------------------------------ |
-| Eve               | `0.63.0`                                   |
-| Eve source commit | `d004e6d47e9d25d0380c24b5a47b65a18f8b2784` |
-| `@vercel/connect` | `2.0.4`                                    |
+| Eve               | `0.65.0`                                   |
+| Eve source commit | `7bcc0d16e3f41d44fadfd06b5bac3515a82d441d` |
+| `@vercel/connect` | `2.3.2`                                    |
 | License           | Apache-2.0                                 |
-| Reviewed          | September 21, 2026                         |
+| Reviewed          | September 24, 2026                         |
 
 This is a source-verified compatibility profile. It does not yet claim that a
 live Eve deployment has completed MDevolved's independent two-agent acceptance run.
 Unknown future Eve connection or identity changes fall back to MDevolved's universal
 MCP setup until the profile is reviewed again.
 
-Eve 0.63.0 retains authored `agent/connections/*.ts` modules,
+Eve 0.65.0 retains authored `agent/connections/*.ts` modules,
 `defineMcpClientConnection`, and the user-scoped `@vercel/connect/eve`
-`connect()` helper used by MDevolved. Version `2.0.4` is the newest reviewed
-helper old enough to satisfy the repository's minimum-release-age policy;
-newer releases remain monitor-visible drift. The Eve update changes background
-tool and runtime behavior but leaves this user-scoped remote connection shape
-intact; the exact generated module type-checks against both current packages.
+`connect()` helper used by MDevolved. The connection definitions, runtime, and
+connection documentation have identical Git blob identities between the
+previous `0.63.0` pin and this release. Connect `2.3.2` retains explicit user
+principals, scopes/resources, and opt-in connector provisioning; its token-cache
+eviction does not replace MDevolved's authoritative grant checks. The exact
+generated module type-checks against both pinned packages.
+
+The newer Eve `0.66.2` release was observed during this review but is not the
+installed compatibility target; the monitor deliberately continues to report
+that drift. MDevolved supports `server/discover`, so the connection keeps Eve's
+default protocol discovery rather than forcing the legacy handshake.
 Until MDevolved is accepted
 into Eve's registry, use the dashboard-generated module rather than claiming
 an `eve add` package that does not exist.
@@ -53,7 +59,11 @@ and qualifies them with its connection name.
 
 ## Install the connection
 
-Create `agent/connections/owd.ts`:
+Create `agent/connections/mdevolved.ts`:
+
+Keep an existing `owd.ts` connection working as-is; do not add a duplicate,
+rename its connector, or repeat authorization just for the naming update.
+The canonical name below is for new connections.
 
 ```ts
 import { connect } from "@vercel/connect/eve";

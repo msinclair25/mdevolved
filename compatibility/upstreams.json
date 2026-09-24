@@ -52,16 +52,16 @@
       "source": {
         "kind": "github-release",
         "repository": "vercel/eve",
-        "releaseTag": "eve@0.63.0",
-        "commit": "d004e6d47e9d25d0380c24b5a47b65a18f8b2784",
-        "reviewedAt": "2026-09-21"
+        "releaseTag": "eve@0.65.0",
+        "commit": "7bcc0d16e3f41d44fadfd06b5bac3515a82d441d",
+        "reviewedAt": "2026-09-24"
       },
       "dependencies": [
         {
           "kind": "npm",
           "package": "@vercel/connect",
-          "version": "2.0.4",
-          "integrity": "sha512-VD0dY28Nr8uTa5yOWeHQwgn6e3Oj0gbDvkJ3EowPRSJriarPPX5I2oG6IpEg3sFz6t16AY5Us5eHRb0UMkdfVQ=="
+          "version": "2.3.2",
+          "integrity": "sha512-qNRdUI6h2zbTruYU92leapFvBRjwF70gewwuj0rBPBHyu2Bnfzm//k4Sc8kA8e/zQfwKbdpYVk8oWe3fNqImzA=="
         }
       ],
       "criticalPaths": [
@@ -80,18 +80,18 @@
         {
           "path": "packages/client-packs/src/eve.ts",
           "requiredMarkers": [
-            "commit: \"d004e6d47e9d25d0380c24b5a47b65a18f8b2784\"",
-            "connectVersion: \"2.0.4\"",
-            "eveVersion: \"0.63.0\"",
-            "reviewedAt: \"2026-09-21\""
+            "commit: \"7bcc0d16e3f41d44fadfd06b5bac3515a82d441d\"",
+            "connectVersion: \"2.3.2\"",
+            "eveVersion: \"0.65.0\"",
+            "reviewedAt: \"2026-09-24\""
           ]
         },
         {
           "path": "docs/EVE-COMPATIBILITY.md",
           "requiredMarkers": [
-            "`0.63.0`",
-            "`d004e6d47e9d25d0380c24b5a47b65a18f8b2784`",
-            "`2.0.4`"
+            "`0.65.0`",
+            "`7bcc0d16e3f41d44fadfd06b5bac3515a82d441d`",
+            "`2.3.2`"
           ]
         }
       ]
@@ -153,9 +153,9 @@
       "source": {
         "kind": "github-release",
         "repository": "NousResearch/hermes-agent",
-        "releaseTag": "v2026.9.21",
-        "commit": "d337b736aa1e8ebecfab043842d13e4a2d2f48a3",
-        "reviewedAt": "2026-09-21"
+        "releaseTag": "v2026.9.24",
+        "commit": "f97608f178d1ffeca59860195ab7da295f7c8e5f",
+        "reviewedAt": "2026-09-24"
       },
       "criticalPaths": [
         "pyproject.toml",
@@ -174,9 +174,9 @@
         {
           "path": "docs/HERMES-HANDS-OFF.md",
           "requiredMarkers": [
-            "`0.21.4`",
-            "`d337b736aa1e8ebecfab043842d13e4a2d2f48a3`",
-            "Reviewed `2026-09-21`"
+            "`0.21.5`",
+            "`f97608f178d1ffeca59860195ab7da295f7c8e5f`",
+            "Reviewed `2026-09-24`"
           ]
         }
       ]

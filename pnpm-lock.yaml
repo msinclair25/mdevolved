@@ -167,11 +167,11 @@ importers:
   packages/client-packs:
     devDependencies:
       '@vercel/connect':
-        specifier: 2.0.4
-        version: 2.0.4(ai@7.0.107(zod@4.4.3))(eve@0.63.0(ai@7.0.107(zod@4.4.3)))
+        specifier: 2.3.2
+        version: 2.3.2(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3))(ai@7.0.107(zod@4.4.3))(eve@0.65.0(ai@7.0.107(zod@4.4.3)))
       eve:
-        specifier: 0.63.0
-        version: 0.63.0(ai@7.0.107(zod@4.4.3))
+        specifier: 0.65.0
+        version: 0.65.0(ai@7.0.107(zod@4.4.3))
 
   packages/contracts:
     dependencies:
@@ -1645,28 +1645,31 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vercel/cli-config@0.2.6':
-    resolution: {integrity: sha512-2AsKCf6gE/Eniq09ARm1RK9rQMV5pcAHU7BFcR9MISO+4/RsjjkaYbQN6G85/xi9pYZ5CJNXvYn4TI6p1jKBcg==}
+  '@vercel/cli-config@0.3.0':
+    resolution: {integrity: sha512-kQLt5Pm8wKd7/imzDY9/9u0tf8OuRkAuXI+s7j057FSUrXapAmumJSKwDqnR4ZZqdWoUcNLlFAgVIAdiwcGTcw==}
 
   '@vercel/cli-exec@1.0.1':
     resolution: {integrity: sha512-g9XerViJ/paZujufXYcu5XYI2vU2rtB4sgdpjUHde5RnOkdmpu0ngH46LCFGHoPXO/C+qDPSczIHIRN+8Q2YKQ==}
     engines: {node: '>= 18'}
 
-  '@vercel/connect@2.0.4':
-    resolution: {integrity: sha512-VD0dY28Nr8uTa5yOWeHQwgn6e3Oj0gbDvkJ3EowPRSJriarPPX5I2oG6IpEg3sFz6t16AY5Us5eHRb0UMkdfVQ==}
+  '@vercel/connect@2.3.2':
+    resolution: {integrity: sha512-qNRdUI6h2zbTruYU92leapFvBRjwF70gewwuj0rBPBHyu2Bnfzm//k4Sc8kA8e/zQfwKbdpYVk8oWe3fNqImzA==}
     peerDependencies:
       '@ai-sdk/mcp': ^1 || ^2
       '@auth/core': '>=0.37.0'
       '@chat-adapter/slack': ^4.0.0
+      '@modelcontextprotocol/sdk': ^1.29.0
       ai: ^6 || ^7.0.0-beta.0
       better-auth: '>=1.5.0'
-      eve: '>=0.13.7'
+      eve: '>=0.39.1'
     peerDependenciesMeta:
       '@ai-sdk/mcp':
         optional: true
       '@auth/core':
         optional: true
       '@chat-adapter/slack':
+        optional: true
+      '@modelcontextprotocol/sdk':
         optional: true
       ai:
         optional: true
@@ -1679,8 +1682,8 @@ packages:
     resolution: {integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==}
     engines: {node: '>= 20'}
 
-  '@vercel/oidc@3.8.7':
-    resolution: {integrity: sha512-fRu59npOu+1vsV570tiLKskfuRyOJ1MqceAkXbTIfWPnM+c9ve1tSK81oj4umKKirymlGUss3V60Lm5I38rKDw==}
+  '@vercel/oidc@3.8.9':
+    resolution: {integrity: sha512-TcbdH3YtGS2KU98T99dN4sbf+E4vbJZsJTRN97wKQ7QWQ0BR7U02QX3KN4+5GHxBtKTj1c5CnvTTitc2ZRad0A==}
     engines: {node: '>= 20'}
 
   '@vitejs/plugin-react@6.0.3':
@@ -2030,14 +2033,15 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  eve@0.63.0:
-    resolution: {integrity: sha512-iDv0S4MXvZimaXNTJnyB2THumRQLWQSAgpMcZsGtMNquYQpSKB1+i8sxX4KJOHHCLd04lwD+06xnh+ja7rlZIw==}
+  eve@0.65.0:
+    resolution: {integrity: sha512-16dcyvpucnMp6f1TKZROvRrDAYWIlV7ulZfEMK+IuK1AVXMQPoLLOrGuLT/qI1TjIkxZt9g1JcXXOv/uu3yjdQ==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
       ai: ^7.0.105
       braintrust: ^3.0.0
+      chat: ^4.41.0
       dd-trace: ^6.13.0
       just-bash: ^3.1.0
       microsandbox: ^0.5.0
@@ -2045,6 +2049,8 @@ packages:
       '@opentelemetry/api':
         optional: true
       braintrust:
+        optional: true
+      chat:
         optional: true
       dd-trace:
         optional: true
@@ -4166,7 +4172,7 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vercel/cli-config@0.2.6':
+  '@vercel/cli-config@0.3.0':
     dependencies:
       xdg-app-paths: 5.5.1
       zod: 4.1.11
@@ -4175,18 +4181,19 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/connect@2.0.4(ai@7.0.107(zod@4.4.3))(eve@0.63.0(ai@7.0.107(zod@4.4.3)))':
+  '@vercel/connect@2.3.2(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3))(ai@7.0.107(zod@4.4.3))(eve@0.65.0(ai@7.0.107(zod@4.4.3)))':
     dependencies:
-      '@vercel/oidc': 3.8.7
+      '@vercel/oidc': 3.8.9
     optionalDependencies:
+      '@modelcontextprotocol/sdk': 1.30.0(@cfworker/json-schema@4.1.1)(supports-color@10.2.2)(zod@4.4.3)
       ai: 7.0.107(zod@4.4.3)
-      eve: 0.63.0(ai@7.0.107(zod@4.4.3))
+      eve: 0.65.0(ai@7.0.107(zod@4.4.3))
 
   '@vercel/oidc@3.2.0': {}
 
-  '@vercel/oidc@3.8.7':
+  '@vercel/oidc@3.8.9':
     dependencies:
-      '@vercel/cli-config': 0.2.6
+      '@vercel/cli-config': 0.3.0
       '@vercel/cli-exec': 1.0.1
       jose: 5.10.0
 
@@ -4540,7 +4547,7 @@ snapshots:
 
   etag@1.8.1: {}
 
-  eve@0.63.0(ai@7.0.107(zod@4.4.3)):
+  eve@0.65.0(ai@7.0.107(zod@4.4.3)):
     dependencies:
       ai: 7.0.107(zod@4.4.3)
       nitro: 3.0.260903-beta

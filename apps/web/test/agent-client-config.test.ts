@@ -114,11 +114,12 @@ describe("agent client setup helpers", () => {
 
   it("creates Eve's user-scoped connection module", () => {
     const source = createEveConnectionSource(MCP_URL);
-    expect(source).toContain(`const owdMcpUrl = "${MCP_URL}";`);
-    expect(source).toContain('connector: "oauth/owd"');
+    expect(source).toContain('connector: "oauth/mdevolved"');
+    expect(source).toContain(`const mdevolvedMcpUrl = "${MCP_URL}";`);
+    expect(source).toContain("resources: [mdevolvedMcpUrl]");
+    expect(source).not.toContain('connector: "oauth/owd"');
     expect(source).toContain('principalType: "user"');
     expect(source).toContain('"vault.read"');
-    expect(source).toContain("resources: [owdMcpUrl]");
     expect(source).toContain("autoProvision: true");
     expect(source).not.toContain('principalType: "app"');
     expect(source).not.toContain("Bearer ");

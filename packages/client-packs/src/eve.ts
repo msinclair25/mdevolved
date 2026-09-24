@@ -103,12 +103,12 @@ export const EVE_COMPATIBILITY_PROFILE = {
       "Top-level schedules run as an app/runtime principal and cannot silently borrow a user's MDevolved grant. Dispatch scheduled MDevolved work through a user-authenticated route or require an explicit user action; do not downgrade MDevolved to app-scoped authorization.",
   },
   source: {
-    commit: "d004e6d47e9d25d0380c24b5a47b65a18f8b2784",
-    connectVersion: "2.0.4",
-    eveVersion: "0.63.0",
+    commit: "7bcc0d16e3f41d44fadfd06b5bac3515a82d441d",
+    connectVersion: "2.3.2",
+    eveVersion: "0.65.0",
     license: "Apache-2.0",
     repository: "https://github.com/vercel/eve",
-    reviewedAt: "2026-09-21",
+    reviewedAt: "2026-09-24",
   },
 } as const satisfies OwdEveCompatibilityProfile;
 
