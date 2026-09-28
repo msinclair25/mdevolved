@@ -10,8 +10,8 @@
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
-    "lib0": "0.2.117",
+    "lib0": "0.2.118",
     "y-protocols": "1.0.7",
-    "yjs": "13.6.20"
+    "yjs": "13.6.33"
   }
 }
