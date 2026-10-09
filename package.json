@@ -23,6 +23,12 @@
     }
   },
   "scripts": {
+    "proof:codex": "node scripts/codex-continuity-proof.mjs",
+    "proof:codex:local": "node scripts/codex-continuity-local.mjs",
+    "proof:claude:local": "node scripts/claude-continuity-local.mjs",
+    "test:proof:claude": "node --test scripts/claude-continuity-proof.test.mjs",
+    "test:proof:codex": "node --test scripts/codex-continuity-proof.test.mjs",
+    "test:proof:codex:local": "node --test scripts/codex-proof-local.test.mjs",
     "acceptance:agent:production": "node scripts/production-agent-acceptance.mjs",
     "acceptance:continuity:live": "node scripts/live-continuity-acceptance.mjs",
     "acceptance:continuity:local": "vitest run apps/worker/test/collaboration.test.ts -t 'round-trips Approved and Unvetted|completes one synthetic research Run and one coding Run|completes an exact scheduled drill|coalesces scheduled replay' --config vitest.config.ts && node scripts/local-policy-continuity-drill.mjs",
@@ -55,7 +61,7 @@
     "release:check": "node --test scripts/plugin-release-tag-policy.test.mjs scripts/mdevolved-release-contract.test.mjs && pnpm package:plugin && node scripts/check-release-contract.mjs && node scripts/check-release-regressions.mjs",
     "release:hash": "node scripts/hash-release-artifacts.mjs",
     "test": "pnpm test:marketing && pnpm test:continuity:harness && pnpm test:operations && vitest run && pnpm --filter @mdevolved/yaos-core test && pnpm --filter @mdevolved/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @mdevolved/desktop test && pnpm --filter @mdevolved/obsidian-plugin test",
-    "test:continuity:harness": "node --test scripts/live-continuity-acceptance.test.mjs scripts/local-policy-continuity-drill.test.mjs",
+    "test:continuity:harness": "node --test scripts/live-continuity-acceptance.test.mjs scripts/local-policy-continuity-drill.test.mjs scripts/codex-continuity-proof.test.mjs scripts/claude-continuity-proof.test.mjs",
     "test:clean-install:mdevolved": "node scripts/test-mdevolved-clean-install.mjs",
     "test:marketing": "pnpm --filter @mdevolved/marketing test",
     "test:md2:acceptance": "pnpm --filter @mdevolved/yaos-core test && pnpm --filter @mdevolved/folder-adapter test && pnpm --filter mdevolved test && pnpm --filter mdevolved build && pnpm --filter @mdevolved/desktop test && vitest run apps/worker/test/source-descriptor-pairing.test.ts apps/worker/test/migrations-source-descriptor-upgrade.test.ts apps/worker/test/snapshot.test.ts packages/contracts/test/source-descriptor.test.ts --config vitest.config.ts && pnpm test:clean-install:mdevolved",
