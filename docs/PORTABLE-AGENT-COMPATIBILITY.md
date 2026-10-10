@@ -4,6 +4,11 @@ This receipt records the exact upstream surfaces reviewed for PAC1, refreshed on
 2026-09-24. These are compatibility claims, not vendor endorsements or claims
 that MDevolved controls a client's runtime.
 
+The [October 7 update](UPDATE-PASS-2026-10-07.md) adds source-reviewed setup
+guidance for Claude / Cowork, Zed, and Cline. It separately records newer
+observed releases; the exact reviewed pins below have not been silently promoted
+to those releases.
+
 | Client or standard | Reviewed release                                          | Source contract used by MDevolved                                                                                                                                   |
 | ------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Agent Plugins      | `1.0.0`                                                   | Root `plugin.json`, optional root `mcp.json`, immediate-child `skills/*/SKILL.md`, and `streamable-http`; OAuth remains client-managed.                             |

@@ -6,6 +6,7 @@ import {
   createAlbatrossSetupKit,
   createAntigravityConfig,
   createClaudeMcpConfig,
+  createClineMcpConfig,
   createCodexSetupCommands,
   createCursorInstallUrl,
   createEveConnectionSource,
@@ -54,6 +55,24 @@ describe("agent client setup helpers", () => {
       createGenericMcpConfig(MCP_URL),
     );
     expect(createClaudeMcpConfig(MCP_URL)).not.toContain("Bearer");
+  });
+
+  it("creates Cline's explicit Streamable HTTP config without approvals", () => {
+    const hostileUrl = MCP_URL + '?quote="\\\n&value=</script>';
+    const config = JSON.parse(createClineMcpConfig(hostileUrl)) as {
+      mcpServers: Record<string, Record<string, unknown>>;
+    };
+    expect(config).toEqual({
+      mcpServers: {
+        [AGENT_SERVER_NAME]: {
+          type: "streamableHttp",
+          url: hostileUrl,
+          disabled: false,
+          autoApprove: [],
+        },
+      },
+    });
+    expect(createClineMcpConfig(MCP_URL)).not.toContain("Bearer");
   });
 
   it("creates a complete least-privilege Codex setup", () => {
