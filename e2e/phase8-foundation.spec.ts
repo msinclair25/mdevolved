@@ -1837,9 +1837,55 @@ test("shows one compact agent setup path at a time", async ({ browser }) => {
     agents.getByRole("button", { name: "Copy setup" }),
   ).toBeVisible();
 
-  await agents.getByRole("button", { name: "Claude" }).click();
+  await agents.getByRole("button", { name: "Claude Code" }).click();
   await expect(agents.locator(".agent-client-guide code")).toContainText(
     "--client claude",
+  );
+
+  await agents.getByRole("button", { name: "Claude / Cowork (cloud)" }).click();
+  await expect(
+    agents.getByRole("heading", { name: "Connect from Claude" }),
+  ).toBeVisible();
+  await expect(agents.locator(".agent-client-guide code")).toContainText(
+    e2eOrigin + "/mcp",
+  );
+  await expect(
+    agents.getByRole("link", { name: /Claude Customize/u }),
+  ).toHaveAttribute("href", "https://claude.ai/customize/connectors");
+  await expect(agents.locator(".agent-client-guide")).not.toContainText(
+    "Bearer",
+  );
+
+  await agents.getByRole("button", { name: "Zed" }).click();
+  await expect(
+    agents.getByRole("heading", { name: "Add a remote MCP server" }),
+  ).toBeVisible();
+  await expect(agents.locator(".agent-client-guide")).toContainText(
+    "Settings → AI → MCP Servers",
+  );
+  await expect(agents.locator(".agent-client-guide code")).toContainText(
+    e2eOrigin + "/mcp",
+  );
+
+  await agents.getByRole("button", { name: "Cline" }).click();
+  await expect(
+    agents.getByRole("heading", { name: "Add a remote MCP server" }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("button", { name: "Copy MCP URL" }),
+  ).toBeVisible();
+  await expect(
+    agents.getByRole("button", { name: "Copy config", exact: true }),
+  ).not.toBeVisible();
+  await agents.getByText("Advanced/manual setup", { exact: true }).click();
+  await expect(
+    agents.locator(".agent-client-guide details code"),
+  ).toContainText('"type": "streamableHttp"');
+  await expect(
+    agents.locator(".agent-client-guide details code"),
+  ).toContainText('"autoApprove": []');
+  await expect(agents.locator(".agent-client-guide")).not.toContainText(
+    "Bearer",
   );
 
   for (const [label, command] of [

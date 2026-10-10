@@ -116,12 +116,14 @@ Clients connect in the simplest shape they support:
   and manages its own workers.
 - **Portable Markdown/JSON handoff** when live remote MCP is unavailable.
 
-The dashboard provides native setup commands for OpenCode, Gemini CLI, and
-Copilot CLI, a portable plugin for OpenClaw, and a ready-to-copy Eve connection.
+The dashboard provides remote-connector guidance for Claude / Cowork and Zed,
+a ready-to-copy Cline configuration, native setup commands for OpenCode,
+Gemini CLI, and Copilot CLI, a portable plugin for OpenClaw, and a ready-to-copy Eve connection.
 Hermes can connect through its native remote MCP and OAuth support. Choose your
 tool, approve its access, and keep working in the environment you already use.
 
 Compatibility is reviewed against dated upstream releases. See the
+[October update](docs/UPDATE-PASS-2026-10-07.md),
 [portable agent guide](docs/PORTABLE-AGENT-COMPATIBILITY.md),
 [Eve setup](docs/EVE-COMPATIBILITY.md), and
 [Hermes guide](docs/HERMES-HANDS-OFF.md) for verified setup details and testing

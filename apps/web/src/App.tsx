@@ -70,6 +70,7 @@ import {
 import {
   createAlbatrossSetupKit,
   createAntigravityConfig,
+  createClineMcpConfig,
   createCursorInstallUrl,
   createEveConnectionSource,
   createNativeMcpSetup,
@@ -470,6 +471,8 @@ type AgentClientId =
   | "albatross"
   | "antigravity"
   | "claude"
+  | "claude-cloud"
+  | "cline"
   | "codex"
   | "copilot"
   | "cursor"
@@ -480,12 +483,16 @@ type AgentClientId =
   | "obsidian-mind"
   | "openclaw"
   | "opencode"
+  | "zed"
   | "other";
 
 const AGENT_CLIENTS: Array<{ id: AgentClientId; label: string }> = [
   { id: "codex", label: "Codex" },
-  { id: "claude", label: "Claude" },
+  { id: "claude", label: "Claude Code" },
+  { id: "claude-cloud", label: "Claude / Cowork (cloud)" },
   { id: "cursor", label: "Cursor" },
+  { id: "zed", label: "Zed" },
+  { id: "cline", label: "Cline" },
   { id: "opencode", label: "OpenCode" },
   { id: "openclaw", label: "OpenClaw" },
   { id: "gemini", label: "Gemini CLI" },
@@ -1142,6 +1149,111 @@ function AgentConnectionsPanel({
                         when asked, then say{" "}
                         <strong>Connect this project to MDevolved</strong>.
                       </p>
+                    </>
+                  ) : selectedClient === "claude-cloud" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">
+                            Claude / Cowork (cloud)
+                          </span>
+                          <h3>Connect from Claude</h3>
+                        </div>
+                        <span className="client-path">
+                          Cloud → Connectors → browser approval
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy connector URL"
+                        value={state.mcpUrl}
+                      />
+                      <ol>
+                        <li>
+                          Open{" "}
+                          <a
+                            href="https://claude.ai/customize/connectors"
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            Claude Customize → Connectors ↗
+                          </a>
+                          .
+                        </li>
+                        <li>Select + Add → Add custom connector.</li>
+                        <li>
+                          Name it MDevolved, paste the URL, and choose Sign in
+                          now.
+                        </li>
+                      </ol>
+                      <p>
+                        Approve the exact Source when MDevolved opens, then
+                        enable the connector in your conversation. Your
+                        organization may require an administrator to add it
+                        first. Context shared with Claude is processed under
+                        your provider settings.
+                      </p>
+                    </>
+                  ) : selectedClient === "zed" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Zed</span>
+                          <h3>Add a remote MCP server</h3>
+                        </div>
+                        <span className="client-path">
+                          Settings → AI → MCP Servers
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy MCP URL"
+                        value={state.mcpUrl}
+                      />
+                      <ol>
+                        <li>Open Settings → AI → MCP Servers.</li>
+                        <li>Choose Add Server → Add Remote Server.</li>
+                        <li>
+                          Enter MDevolved, paste the URL, and authenticate when
+                          Zed prompts you.
+                        </li>
+                      </ol>
+                      <p>
+                        Approve the exact Source when MDevolved opens, then say
+                        “Connect this project to MDevolved” in Zed.
+                      </p>
+                    </>
+                  ) : selectedClient === "cline" ? (
+                    <>
+                      <div className="agent-client-guide-heading">
+                        <div>
+                          <span className="pairing-label">Cline</span>
+                          <h3>Add a remote MCP server</h3>
+                        </div>
+                        <span className="client-path">
+                          MCP Servers → Remote Servers → OAuth
+                        </span>
+                      </div>
+                      <SmartCopyField
+                        label="Copy MCP URL"
+                        value={state.mcpUrl}
+                      />
+                      <p>
+                        In Cline, open MCP Servers → Remote Servers. Name the
+                        server MDevolved, paste the URL, select Streamable HTTP,
+                        and choose Add Server. Authenticate through Cline and
+                        approve the exact Source when MDevolved opens.
+                      </p>
+                      <details>
+                        <summary>Advanced/manual setup</summary>
+                        <p>
+                          Open Configure → Configure MCP Servers. Merge this
+                          entry into the settings file, preserving other
+                          servers. It leaves automatic tool approval off.
+                        </p>
+                        <SmartCopyField
+                          label="Copy config"
+                          value={createClineMcpConfig(state.mcpUrl)}
+                        />
+                      </details>
                     </>
                   ) : selectedClient === "openclaw" ? (
                     <>

@@ -107,6 +107,23 @@ export function createClaudeMcpConfig(mcpUrl: string): string {
   return createGenericMcpConfig(mcpUrl);
 }
 
+export function createClineMcpConfig(mcpUrl: string): string {
+  return JSON.stringify(
+    {
+      mcpServers: {
+        [AGENT_SERVER_NAME]: {
+          type: "streamableHttp",
+          url: mcpUrl,
+          disabled: false,
+          autoApprove: [],
+        },
+      },
+    },
+    null,
+    2,
+  );
+}
+
 export function createObsidianMindProjectMcpCommand(mcpUrl: string): string {
   return createProfileProjectMcpCommand(mcpUrl);
 }
