@@ -4,6 +4,7 @@ import test from "node:test";
 import { EventEmitter } from "node:events";
 import { access, readdir } from "node:fs/promises";
 import { PassThrough } from "node:stream";
+import { fileURLToPath } from "node:url";
 import {
   ANSWER_SCHEMA,
   SERVER,
@@ -406,9 +407,11 @@ test("orchestration runs control before any remote seed and stops on failure", a
 });
 
 test("default/help are offline and missing live opt-in fails closed", () => {
-  const entry = new URL("./codex-continuity-proof.mjs", import.meta.url);
+  const entry = fileURLToPath(
+    new URL("./codex-continuity-proof.mjs", import.meta.url),
+  );
   for (const args of [[], ["--help"]]) {
-    const result = spawnSync(process.execPath, [entry.pathname, ...args], {
+    const result = spawnSync(process.execPath, [entry, ...args], {
       encoding: "utf8",
     });
     assert.equal(result.status, 0);
@@ -416,7 +419,7 @@ test("default/help are offline and missing live opt-in fails closed", () => {
   }
   const result = spawnSync(
     process.execPath,
-    [entry.pathname, "--live", "--url", "https://secret.example/mcp"],
+    [entry, "--live", "--url", "https://secret.example/mcp"],
     { encoding: "utf8" },
   );
   assert.equal(result.status, 1);

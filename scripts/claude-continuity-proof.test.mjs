@@ -4,6 +4,7 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
   claudeArgs,
   claudeCollector,
@@ -236,15 +237,17 @@ test("connected config references an ephemeral env token, never embeds it", asyn
 });
 
 test("Claude command help is offline, and paid execution requires explicit opt-in", () => {
-  const file = new URL("./claude-continuity-local.mjs", import.meta.url);
+  const file = fileURLToPath(
+    new URL("./claude-continuity-local.mjs", import.meta.url),
+  );
   for (const args of [[], ["--help"]]) {
-    const r = spawnSync(process.execPath, [file.pathname, ...args], {
+    const r = spawnSync(process.execPath, [file, ...args], {
       encoding: "utf8",
     });
     assert.equal(r.status, 0);
     assert.match(r.stdout, /proof:claude:local/);
   }
-  const r = spawnSync(process.execPath, [file.pathname, "--model", "sonnet"], {
+  const r = spawnSync(process.execPath, [file, "--model", "sonnet"], {
     encoding: "utf8",
   });
   assert.equal(r.status, 1);

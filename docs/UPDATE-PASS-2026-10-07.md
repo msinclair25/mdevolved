@@ -113,3 +113,9 @@ No deployment, client login, paid model execution, or npm publication is part of
 this delivery. No schema changes or remote resources require cleanup. Rollback
 is a code/manifest/lockfile revert; production remains on its existing version
 until a separately authorized deployment.
+
+Release rework: the first Windows CI run caught file-URL path handling in the
+new proof CLI tests. Both launchers now use Node's `fileURLToPath` instead of
+`.pathname`, preserving Windows drive letters and decoding escaped characters.
+No test was skipped and no production behavior changed; the repaired candidate
+requires a fresh green CI run before merge.
