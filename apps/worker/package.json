@@ -6,7 +6,7 @@
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "0.10.1",
     "@modelcontextprotocol/sdk": "1.31.0",
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "2.3.0",
     "@mdevolved/client-packs": "workspace:*",
     "@mdevolved/contracts": "workspace:*",
     "@mdevolved/yaos-core": "workspace:*",
