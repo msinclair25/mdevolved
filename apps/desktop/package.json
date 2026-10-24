@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
-    "electron": "44.0.0",
+    "electron": "44.9.1",
     "esbuild": "0.25.5"
   },
   "dependencies": {
